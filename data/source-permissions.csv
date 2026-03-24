@@ -19,3 +19,43 @@ FBZP,Payment Parameters,Maintain payment program parameters,SAP ECC,High
 F-53,Post Vendor Payment,Manually post vendor payments,SAP ECC,Medium
 F110E,Payment Run Status,Display payment run execution status,SAP ECC,Low
 FB50,GL Account Posting,Post journal entries to GL,SAP ECC,High
+IW31,Create Maintenance Order,Create plant maintenance work orders,SAP ECC,Medium
+IW32,Change Maintenance Order,Modify existing maintenance orders,SAP ECC,Medium
+IW33,Display Maintenance Order,View maintenance order details,SAP ECC,Low
+IW38,Change Orders List Edit,Mass edit maintenance orders,SAP ECC,High
+IW39,Display Orders List,List display of maintenance orders,SAP ECC,Low
+IW41,Confirm Maintenance Order,Enter time and activity confirmations,SAP ECC,Medium
+IW21,Create Notification,Create maintenance notifications,SAP ECC,Low
+IW22,Change Notification,Modify maintenance notifications,SAP ECC,Low
+IW28,Change Notifications List,Mass edit notifications,SAP ECC,Medium
+IE01,Create Equipment,Create equipment master records,SAP ECC,Medium
+IE02,Change Equipment,Modify equipment master data,SAP ECC,Medium
+IE03,Display Equipment,View equipment master records,SAP ECC,Low
+IL01,Create Functional Location,Create functional location master,SAP ECC,Medium
+IL02,Change Functional Location,Modify functional location data,SAP ECC,Medium
+IL03,Display Functional Location,View functional location details,SAP ECC,Low
+IK01,Create Measuring Point,Create measuring points for condition monitoring,SAP ECC,Low
+IP10,Schedule Maintenance Plans,Schedule and activate maintenance plans,SAP ECC,Medium
+IP30,Deadline Monitoring,Run deadline monitoring for maintenance plans,SAP ECC,Low
+IA01,Create General Task List,Create general maintenance task lists,SAP ECC,Medium
+IA11,Create Equipment Task List,Create equipment-specific task lists,SAP ECC,Medium
+MM01,Create Material,Create material master records,SAP ECC,High
+MM02,Change Material,Modify material master data,SAP ECC,Medium
+MM03,Display Material,View material master records,SAP ECC,Low
+ME21N,Create Purchase Order,Create purchase orders for procurement,SAP ECC,High
+ME22N,Change Purchase Order,Modify existing purchase orders,SAP ECC,Medium
+ME51N,Create Purchase Requisition,Create purchase requisitions,SAP ECC,Medium
+ME52N,Change Purchase Requisition,Modify purchase requisitions,SAP ECC,Low
+ME53N,Display Purchase Requisition,View purchase requisitions,SAP ECC,Low
+ME29N,Release Purchase Order,Release purchase orders for processing,SAP ECC,High
+MIGO,Goods Movement,Post goods receipts and movements,SAP ECC,High
+MB1A,Goods Issue,Post goods issues from inventory,SAP ECC,Medium
+MB1B,Transfer Posting,Post stock transfers between locations,SAP ECC,Medium
+MB1C,Other Goods Receipts,Post miscellaneous goods receipts,SAP ECC,Medium
+MB51,Material Doc. List,Display material document history,SAP ECC,Low
+MB52,Warehouse Stocks,Display warehouse stock overview,SAP ECC,Low
+MMBE,Stock Overview,Display stock levels by plant/location,SAP ECC,Low
+MI01,Create Physical Inventory Doc,Create physical inventory documents,SAP ECC,Medium
+MI04,Enter Count Results,Enter physical inventory count results,SAP ECC,Medium
+MI07,Post Inventory Differences,Post adjustments from physical inventory,SAP ECC,High
+ME2M,POs by Material,List purchase orders by material,SAP ECC,Low
