@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { count } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 import { UploadCard } from "@/components/upload/upload-card";
@@ -8,6 +9,8 @@ import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflo
 import { Upload, UserCircle, Route, ShieldAlert, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Eye } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getCount(table: any) {
@@ -15,6 +18,8 @@ function getCount(table: any) {
 }
 
 export default function DataUploadPage() {
+  const user = requireAuth();
+  const isAdmin = user.role === "admin";
   const counts = {
     users: getCount(schema.users),
     sourceRoles: getCount(schema.sourceRoles),
@@ -48,13 +53,27 @@ export default function DataUploadPage() {
     <div className="space-y-6">
       <WorkflowStepper stages={stages} />
 
+      {!isAdmin && (
+        <Card className="border-yellow-200 bg-yellow-50/50">
+          <CardContent className="flex items-center gap-3 py-3">
+            <Eye className="h-4 w-4 text-yellow-600 shrink-0" />
+            <p className="text-sm text-yellow-800">
+              View only — data uploads are restricted to administrators.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       <div>
         <p className="text-sm text-muted-foreground mb-4">
-          Upload your data files to begin the role mapping process. Required files are marked with <span className="text-red-500">*</span>.
+          {isAdmin
+            ? <>Upload your data files to begin the role mapping process. Required files are marked with <span className="text-red-500">*</span>.</>
+            : "Current data status across all upload categories."
+          }
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className={`grid gap-4 md:grid-cols-2 ${!isAdmin ? "pointer-events-none opacity-75" : ""}`}>
         <UploadCard
           type="users"
           label="User List"
@@ -121,16 +140,18 @@ export default function DataUploadPage() {
         />
       </div>
 
-      <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
-        <p className="text-sm text-muted-foreground">
-          Upload status: <strong>{requiredUploaded} of 3</strong> required files uploaded
-        </p>
-        <Link href="/personas">
-          <Button disabled={requiredUploaded < 3}>
-            Proceed to Persona Generation →
-          </Button>
-        </Link>
-      </div>
+      {isAdmin && (
+        <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
+          <p className="text-sm text-muted-foreground">
+            Upload status: <strong>{requiredUploaded} of 3</strong> required files uploaded
+          </p>
+          <Link href="/personas">
+            <Button disabled={requiredUploaded < 3}>
+              Proceed to Persona Generation →
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }
