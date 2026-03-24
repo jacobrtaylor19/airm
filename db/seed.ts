@@ -203,6 +203,28 @@ function seed() {
   }
   console.log(`  ✓ ${upaCount} user-persona assignments`);
 
+  // ─── 10b. User-Source Role Assignments (optional) ───
+  const usraData = readCsv<any>("user-source-role-assignments.csv");
+  let usraCount = 0;
+  for (const row of usraData) {
+    const user = db.select().from(schema.users)
+      .where(eq(schema.users.sourceUserId, row.user_id)).get();
+    const role = db.select().from(schema.sourceRoles)
+      .where(eq(schema.sourceRoles.roleId, row.role_id)).get();
+    if (user && role) {
+      db.insert(schema.userSourceRoleAssignments).values({
+        userId: user.id,
+        sourceRoleId: role.id,
+      }).run();
+      usraCount++;
+    }
+  }
+  if (usraCount > 0) {
+    console.log(`  ✓ ${usraCount} user-source role assignments`);
+  } else {
+    console.log("  ⊘ user-source-role-assignments.csv not found or empty, skipping");
+  }
+
   // ─── 11. SOD Rules (optional) ───
   const sodData = readCsv<any>("sod-rules.csv");
   if (sodData.length > 0) {
