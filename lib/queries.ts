@@ -855,6 +855,64 @@ export function getGapAnalysis(): GapRow[] {
 }
 
 // ─────────────────────────────────────────────
+// DEPARTMENT MAPPING STATUS
+// ─────────────────────────────────────────────
+
+export interface DepartmentMappingStatus {
+  department: string;
+  totalUsers: number;
+  withPersona: number;
+  mapped: number;
+  sodClean: number;
+  approved: number;
+}
+
+export function getDepartmentMappingStatus(): DepartmentMappingStatus[] {
+  const departments = db.select({
+    department: schema.users.department,
+    totalUsers: count(),
+  }).from(schema.users).groupBy(schema.users.department).all();
+
+  return departments.map((d) => {
+    const dept = d.department || "Unknown";
+
+    const withPersona = db.select({ count: count() })
+      .from(schema.userPersonaAssignments)
+      .innerJoin(schema.users, eq(schema.users.id, schema.userPersonaAssignments.userId))
+      .where(eq(schema.users.department, dept))
+      .get()!.count;
+
+    // Users who have at least one target role assignment
+    const mapped = db.select({
+      count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
+    })
+      .from(schema.userTargetRoleAssignments)
+      .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+      .where(eq(schema.users.department, dept))
+      .get()!.count;
+
+    // Users whose ALL assignments are compliance_approved or sod_risk_accepted or approved
+    const sodClean = db.select({
+      count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
+    })
+      .from(schema.userTargetRoleAssignments)
+      .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status IN ('compliance_approved', 'sod_risk_accepted', 'ready_for_approval', 'approved')`)
+      .get()!.count;
+
+    const approved = db.select({
+      count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
+    })
+      .from(schema.userTargetRoleAssignments)
+      .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'approved'`)
+      .get()!.count;
+
+    return { department: dept, totalUsers: d.totalUsers, withPersona, mapped, sodClean, approved };
+  });
+}
+
+// ─────────────────────────────────────────────
 // WORK ASSIGNMENTS (scope filtering)
 // ─────────────────────────────────────────────
 

@@ -1,4 +1,4 @@
-import { getDashboardStats } from "@/lib/queries";
+import { getDashboardStats, getDepartmentMappingStatus } from "@/lib/queries";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
 import { Upload, UserCircle, Route, ShieldAlert, CheckCircle } from "lucide-react";
@@ -96,24 +96,13 @@ export default function DashboardPage() {
     },
   ];
 
-  // Build department progress data
-  const deptObj: Record<string, { total: number; withPersona: number }> = {};
-  for (const d of stats.departmentStats) {
-    const key = d.department || "Unknown";
-    deptObj[key] = { total: d.count, withPersona: 0 };
-  }
-  for (const d of stats.deptPersonaCounts) {
-    const key = d.department || "Unknown";
-    if (deptObj[key]) deptObj[key].withPersona = d.count;
-  }
-  const departments = Object.entries(deptObj)
-    .map(([name, data]) => ({
-      name,
-      total: data.total,
-      withPersona: data.withPersona,
-      percent: Math.round((data.withPersona / data.total) * 100),
-    }))
-    .sort((a, b) => b.percent - a.percent);
+  const deptStatus = getDepartmentMappingStatus()
+    .sort((a, b) => {
+      // Sort by furthest stage reached (approved > sodClean > mapped > withPersona)
+      const scoreA = a.approved > 0 ? 4 : a.sodClean > 0 ? 3 : a.mapped > 0 ? 2 : a.withPersona > 0 ? 1 : 0;
+      const scoreB = b.approved > 0 ? 4 : b.sodClean > 0 ? 3 : b.mapped > 0 ? 2 : b.withPersona > 0 ? 1 : 0;
+      return scoreB - scoreA || a.department.localeCompare(b.department);
+    });
 
   return (
     <div className="space-y-6">
@@ -153,28 +142,62 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        {/* Department Progress */}
+        {/* Department Mapping Status */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Progress by Department</CardTitle>
+            <CardTitle className="text-sm font-medium">Mapping Status by Department</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            {departments.map((dept) => (
-              <div key={dept.name} className="space-y-1">
+          <CardContent className="space-y-4">
+            {deptStatus.map((dept) => (
+              <div key={dept.department} className="space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
-                  <span>{dept.name}</span>
-                  <span className="tabular-nums text-muted-foreground">
-                    {dept.withPersona}/{dept.total} ({dept.percent}%)
-                  </span>
+                  <span className="font-medium">{dept.department}</span>
+                  <span className="text-xs text-muted-foreground">{dept.totalUsers} users</span>
                 </div>
-                <div className="h-2 rounded-full bg-muted">
-                  <div
-                    className="h-2 rounded-full bg-primary transition-all"
-                    style={{ width: `${dept.percent}%` }}
-                  />
+                <div className="flex h-2 rounded-full bg-muted overflow-hidden">
+                  {dept.approved > 0 && (
+                    <div
+                      className="h-2 bg-emerald-500 transition-all"
+                      style={{ width: `${(dept.approved / dept.totalUsers) * 100}%` }}
+                      title={`${dept.approved} approved`}
+                    />
+                  )}
+                  {dept.sodClean - dept.approved > 0 && (
+                    <div
+                      className="h-2 bg-blue-500 transition-all"
+                      style={{ width: `${((dept.sodClean - dept.approved) / dept.totalUsers) * 100}%` }}
+                      title={`${dept.sodClean - dept.approved} SOD clean`}
+                    />
+                  )}
+                  {dept.mapped - dept.sodClean > 0 && (
+                    <div
+                      className="h-2 bg-yellow-500 transition-all"
+                      style={{ width: `${((dept.mapped - dept.sodClean) / dept.totalUsers) * 100}%` }}
+                      title={`${dept.mapped - dept.sodClean} mapped (pending SOD)`}
+                    />
+                  )}
+                  {dept.withPersona - dept.mapped > 0 && (
+                    <div
+                      className="h-2 bg-zinc-400 transition-all"
+                      style={{ width: `${((dept.withPersona - dept.mapped) / dept.totalUsers) * 100}%` }}
+                      title={`${dept.withPersona - dept.mapped} persona assigned (unmapped)`}
+                    />
+                  )}
+                </div>
+                <div className="flex gap-3 text-xs text-muted-foreground">
+                  <span>{dept.withPersona} persona</span>
+                  <span>{dept.mapped} mapped</span>
+                  <span>{dept.sodClean} SOD ok</span>
+                  <span>{dept.approved} approved</span>
                 </div>
               </div>
             ))}
+            <div className="flex gap-4 text-xs pt-2 border-t">
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Approved</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> SOD Clean</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-yellow-500" /> Mapped</span>
+              <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-400" /> Persona Only</span>
+            </div>
           </CardContent>
         </Card>
 
