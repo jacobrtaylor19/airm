@@ -1,0 +1,21 @@
+permission_id,permission_name,description,system,risk_level
+FB60,Enter Invoice,Post vendor invoices to accounts payable,SAP ECC,Medium
+FBL1N,Vendor Line Items,Display vendor line item details,SAP ECC,Low
+FK10N,Vendor Balance Display,Display vendor account balances,SAP ECC,Low
+XK03,Display Vendor Master,View vendor master records,SAP ECC,Low
+ME23N,Display Purchase Order,View purchase order details,SAP ECC,Low
+FB03,Display Document,Display accounting documents,SAP ECC,Low
+MIRO,Invoice Verification,Verify and post invoices against POs,SAP ECC,Medium
+XK02,Change Vendor Master,Modify vendor master data,SAP ECC,High
+MRBR,Release Blocked Invoices,Release invoices from blocking,SAP ECC,High
+S_ALR_87012172,AP Aging Report,Accounts payable aging analysis,SAP ECC,Low
+FBL3N,GL Account Line Items,Display GL account line items,SAP ECC,Low
+S_ALR_87012197,Vendor Analysis,Vendor payment analysis report,SAP ECC,Low
+FAGLB03,Display GL Balances,Display general ledger balances,SAP ECC,Low
+ME2L,POs by Vendor,List purchase orders by vendor,SAP ECC,Low
+MK03,Display Vendor Account,Display vendor account group info,SAP ECC,Low
+F110,Payment Run,Execute automatic payment run,SAP ECC,High
+FBZP,Payment Parameters,Maintain payment program parameters,SAP ECC,High
+F-53,Post Vendor Payment,Manually post vendor payments,SAP ECC,Medium
+F110E,Payment Run Status,Display payment run execution status,SAP ECC,Low
+FB50,GL Account Posting,Post journal entries to GL,SAP ECC,High

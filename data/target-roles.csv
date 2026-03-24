@@ -1,0 +1,9 @@
+role_id,role_name,description,system,domain
+S4_AP_INV_PROC,AP Invoice Processor,Process and post vendor invoices in Fiori,S/4HANA,Finance
+S4_AP_APPR_BASIC,AP Approver Basic,Approve invoices up to $25000,S/4HANA,Finance
+S4_AP_APPR_ADV,AP Approver Advanced,Approve invoices up to $100000,S/4HANA,Finance
+S4_AP_SUPERVISOR,AP Supervisor,Supervise AP team and review reports,S/4HANA,Finance
+S4_AP_MANAGER,AP Manager,Full AP management with analytics,S/4HANA,Finance
+S4_AP_PAY_SPEC,AP Payment Specialist,Handle payment processing and execution,S/4HANA,Finance
+S4_VEND_SPEC,Vendor Master Specialist,Maintain vendor master data,S/4HANA,Finance
+S4_GL_ACCT,GL Accountant,Post and manage general ledger entries,S/4HANA,Finance

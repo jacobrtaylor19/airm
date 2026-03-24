@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+U068,Ahmed Ibrahim,ahmed.ibrahim@company.com,Staff Accountant,Finance
+U009,Caitlin Burke,caitlin.burke@company.com,QA Engineer,Quality
+U078,Kofi Asante,kofi.asante@company.com,Product Research Analyst,Product Development
+U040,Adebayo Ogundimu,adebayo.ogundimu@company.com,Equipment Maintenance Technician,Maintenance
+U025,Kwame Asante,kwame.asante@company.com,Supply Chain Director,Supply Chain
+U074,Oluwafemi Abiodun,oluwafemi.abiodun@company.com,Field Service Technician,Maintenance
+U026,Fiona MacLeod,fiona.macleod@company.com,Quality Analyst,Quality
+U086,Emeka Nwosu,emeka.nwosu@company.com,Building Services Manager,Facilities
+U010,Jose Ramirez,jose.ramirez@company.com,Warehouse Associate,Warehouse
+U096,Nkechi Obi,nkechi.obi@company.com,Accounts Payable Clerk,Finance
+U063,Amelia Kovacs,amelia.kovacs@company.com,Facilities Coordinator,Facilities
+U013,Jasmine Clarke,jasmine.clarke@company.com,Product Manager,Product
+U089,Camille Fontaine,camille.fontaine@company.com,Payroll Administrator,Finance
+U014,Ryan Nakamura,ryan.nakamura@company.com,Product Developer,Product Development
+U066,Oluwatobi Adegoke,oluwatobi.adegoke@company.com,Product Designer,Product Development
+U049,Florence Mensah,florence.mensah@company.com,Industrial Technician,Maintenance
+U056,Gabriel Osei,gabriel.osei@company.com,Finance Analyst,Finance
+U004,Ethan Morrison,ethan.morrison@company.com,Senior Product Designer,Product Development
+U081,Chidinma Eze,chidinma.eze@company.com,Finance Administrator,Finance
+U005,Hannah Chen,hannah.chen@company.com,Software Developer,Product Development
+U002,James Holloway,james.holloway@company.com,Tax Analyst,Finance
+U071,Priyanka Rao,priyanka.rao@company.com,Equipment Performance Analyst,Maintenance
+U098,Takeshi Kimura,takeshi.kimura@company.com,Work Order Coordinator,Maintenance
+U021,Aisha Mohammed,aisha.mohammed@company.com,Collections Analyst,Finance
+U022,Nathan Goldberg,nathan.goldberg@company.com,Finance Coordinator,Finance
+U094,Adaeze Okeke,adaeze.okeke@company.com,VP of Supply Chain,Supply Chain
+U075,Marina Popova,marina.popova@company.com,Supply Chain Associate,Supply Chain
+U011,Tanya Ivanova,tanya.ivanova@company.com,AR Specialist,Finance
+U012,William Foster,william.foster@company.com,FP&A Analyst,Finance
+U060,Luca Ferrari,luca.ferrari@company.com,QA Tester,Quality
+U067,Valentina Russo,valentina.russo@company.com,Visual Designer,Product Development
+U043,Amara Diallo,amara.diallo@company.com,Operations Supervisor,Supply Chain
+U054,Rashid Hassan,rashid.hassan@company.com,Distribution Coordinator,Supply Chain
+U042,Patrick O'Brien,patrick.obrien@company.com,Associate Product Manager,Product
+U065,Sakura Miyamoto,sakura.miyamoto@company.com,UX Designer,Product Development
+U031,Brendan O'Sullivan,brendan.osullivan@company.com,Product Engineer,Product Development
+U046,Samuel Okafor,samuel.okafor@company.com,AP Administrator,Finance
+U017,Bridget Okonkwo,bridget.okonkwo@company.com,AP Specialist,Finance
+U032,Fatima Al-Hassan,fatima.alhassan@company.com,Senior Maintenance Technician,Maintenance
+U085,Nadia Popescu,nadia.popescu@company.com,UX/UI Designer,Product Development
+U095,Henrik Svensson,henrik.svensson@company.com,Demand & Operations Planner,Supply Chain
+U082,Robert Yamamoto,robert.yamamoto@company.com,Product Owner,Product
+U072,Thomas Beaumont,thomas.beaumont@company.com,FP&A Manager,Finance
+U069,Isabella Nkrumah,isabella.nkrumah@company.com,Financial Reporting Analyst,Finance
+U079,Mei-Ling Zhou,meiling.zhou@company.com,Procurement Associate,Procurement
+U083,Elena Vasquez,elena.vasquez@company.com,Maintenance Technician,Maintenance
+U008,Derek Patel,derek.patel@company.com,Senior Financial Analyst,Finance
+U036,Keiko Yamamoto,keiko.yamamoto@company.com,Payroll Specialist,Finance
+U016,Colin Hughes,colin.hughes@company.com,Asset Performance Analyst,Maintenance
+U099,Blessing Adeyinka,blessing.adeyinka@company.com,Distribution Coordinator,Supply Chain
+U055,Ekaterina Morozova,ekaterina.morozova@company.com,Preventive Maintenance Planner,Maintenance
+U057,Anastasia Kuznetsova,anastasia.kuznetsova@company.com,Budget Analyst,Finance
+U039,Sienna Castellano,sienna.castellano@company.com,Treasury Analyst,Finance
+U052,Hiroshi Watanabe,hiroshi.watanabe@company.com,AP Analyst,Finance
+U059,Beatrice Owusu,beatrice.owusu@company.com,S&OP Analyst,Supply Chain
+U041,Nina Johansson,nina.johansson@company.com,Maintenance Systems Administrator,Maintenance
+U006,Marcus Webb,marcus.webb@company.com,Supplier Relationship Manager,Procurement
+U077,Astrid Lindqvist,astrid.lindqvist@company.com,Equipment Technician,Maintenance
+U019,Mei Lin,mei.lin@company.com,Maintenance Planner,Maintenance
+U037,Oluwaseun Adeyemi,oluwaseun.adeyemi@company.com,Quality Systems Analyst,Quality
+U097,Agnieszka Kowalczyk,agnieszka.kowalczyk@company.com,Treasury Operations Analyst,Finance
+U070,Aleksander Nowak,aleksander.nowak@company.com,Finance Business Partner,Finance
+U093,Miroslav Novak,miroslav.novak@company.com,Supply Chain Associate,Supply Chain
+U023,Carlos Mendez,carlos.mendez@company.com,Warehouse Technician,Warehouse
+U047,Annika Bergstrom,annika.bergstrom@company.com,Reliability Engineer,Maintenance
+U090,Olamide Adebisi,olamide.adebisi@company.com,Finance Data Analyst,Finance
+U062,Henrik Larsen,henrik.larsen@company.com,Corporate Finance Analyst,Finance
+U015,Sofia Petrov,sofia.petrov@company.com,Senior Product Manager,Product
+U020,Tobias Mayer,tobias.mayer@company.com,Demand Planner,Supply Chain
+U051,Yolanda Ferreira,yolanda.ferreira@company.com,Maintenance Technician,Maintenance
+U018,Alexei Volkov,alexei.volkov@company.com,Supply Chain Coordinator,Supply Chain
+U033,Andre Dubois,andre.dubois@company.com,Facilities Manager,Facilities
+U028,Yuki Tanaka,yuki.tanaka@company.com,Junior Buyer,Procurement
+U076,Daniel Mwangi,daniel.mwangi@company.com,Accounting Specialist,Finance
+U088,Emmanuel Osei,emmanuel.osei@company.com,Purchasing Analyst,Procurement
+U084,Solomon Tadesse,solomon.tadesse@company.com,Market Research Analyst,Market Research
+U064,Jonathan Blackwood,jonathan.blackwood@company.com,Strategic Sourcing Manager,Procurement
+U050,Dmitri Volkov,dmitri.volkov@company.com,Logistics Associate,Supply Chain
+U053,Claudia Reyes,claudia.reyes@company.com,Tax Associate,Finance
+U001,Sarah Bennett,sarah.bennett@company.com,Vendor Management Coordinator,Procurement
+U073,Xiomara Delgado,xiomara.delgado@company.com,Research Scientist,Research & Development
+U080,Sebastien Moreau,sebastien.moreau@company.com,Interaction Designer,Product Development
+U091,Viktor Kovalenko,viktor.kovalenko@company.com,Cash Management Specialist,Finance
+U029,Lars Eriksson,lars.eriksson@company.com,R&D Engineer,Research & Development
+U092,Patience Asare,patience.asare@company.com,Supply Chain Planner,Supply Chain
+U034,Tamara Kowalski,tamara.kowalski@company.com,QA Engineer,Quality
+U100,Ozlem Yilmaz,ozlem.yilmaz@company.com,AR Analyst,Finance
+U058,Marcus Jefferson,marcus.jefferson@company.com,Product Analyst,Product
+U007,Natalie Okafor,natalie.okafor@company.com,Financial Analyst,Finance
+U027,Diego Vargas,diego.vargas@company.com,Product Manager,Product
+U048,Raj Krishnaswamy,raj.krishnaswamy@company.com,AR Coordinator,Finance
+U030,Zara Ahmed,zara.ahmed@company.com,Inventory Planner,Supply Chain
+U044,Chen Wei,chen.wei@company.com,AP Coordinator,Finance
+U003,Priya Sharma,priya.sharma@company.com,Facilities Maintenance Technician,Facilities
+U045,Isabeau Laurent,isabeau.laurent@company.com,Market Research Associate,Market Research
+U087,Sioned Williams,sioned.williams@company.com,Freight Coordinator,Supply Chain
+U035,Ivan Petrov,ivan.petrov@company.com,Facilities Associate,Facilities
+U038,Mikhail Sokolov,mikhail.sokolov@company.com,Equipment Technician,Maintenance
+U024,Ingrid Larsson,ingrid.larsson@company.com,Procurement Coordinator,Procurement
+U061,Grace Okonkwo,grace.okonkwo@company.com,Warehouse Operative,Warehouse

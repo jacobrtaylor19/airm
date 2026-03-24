@@ -1,0 +1,51 @@
+name,description,business_function
+Accounts Receivable Processor,"Handles customer billing, payment processing, and collection activities. Requires access to customer account information, invoicing systems, payment processing tools, and aging reports.",Finance
+Procurement Manager,"Manages sourcing, supplier relationships, and purchasing decisions for specific product categories or business units. Requires access to supplier databases, contract management systems, procurement platforms, pricing information, inventory management tools, and vendor performance data.",Procurement
+Maintenance Planner,"Responsible for planning, scheduling, and coordinating maintenance activities across facilities and equipment. Requires access to maintenance management systems, work order platforms, asset databases, equipment documentation, vendor information, and scheduling tools.",Maintenance
+Logistics Coordinator,"Manages the movement and coordination of goods through various stages of the supply chain. Requires access to shipping systems, inventory management tools, carrier platforms, tracking systems, and coordination tools.",Supply Chain
+Product Analyst,"Professionals who research, analyze, and evaluate products, markets, and customer needs to support product development and strategic decisions.",Product
+Product Manager,"Responsible for defining product strategy, managing product roadmaps, and coordinating cross-functional teams to deliver product features.",Product
+Finance Processor,"Handles routine financial transactions, data entry, and basic accounting operations. Requires access to accounting systems, financial databases, and transaction processing tools.",Finance
+Market Research Analyst,"Analyzes market data, customer behavior, and consumer trends to support business decision-making.",Market Research
+Maintenance System Administrator,"Responsible for administrating and managing maintenance management systems, including user access provisioning, system configuration, work order management, and asset data maintenance.",Maintenance
+Operations Planner,Responsible for planning and coordinating operational activities to ensure efficient resource utilization and workflow management.,Supply Chain
+Product Engineer,"Technical professionals responsible for designing, developing, and engineering product solutions.",Product Development
+Maintenance Coordinator,"Responsible for planning, scheduling, and coordinating maintenance activities across facilities and equipment.",Maintenance
+Warehouse Operations Personnel,"Handles physical inventory management, order fulfillment, shipping/receiving, and warehouse logistics operations.",Warehouse
+Tax Processor,"Handles tax-related calculations, compliance, reporting, and documentation across various tax types.",Finance
+Field Maintenance Technician,"Personnel who perform on-site maintenance, repair, and service activities for equipment, systems, or infrastructure.",Maintenance
+Maintenance Technician,"Performs equipment maintenance, repairs, and monitoring activities to ensure operational reliability.",Maintenance
+Supply Chain Coordinator,"Manages relationships and processes with external suppliers, vendors, and partners.",Supply Chain
+Finance Analyst,"Performs financial analysis, reporting, and business intelligence functions within the finance organization.",Finance
+Maintenance Specialist,"Performs maintenance planning, scheduling, and execution activities to ensure equipment reliability and minimize downtime.",Maintenance
+Facilities Manager,"Responsible for maintaining, managing, and overseeing physical facilities and infrastructure.",Facilities
+Facilities Operations Specialist,"Manages and maintains physical infrastructure, building systems, and workplace environments.",Facilities
+Operations Supervisor,"Manages day-to-day operational activities within a specific functional area, supervising staff and ensuring workflow efficiency.",Supply Chain
+Product Developer,"Responsible for researching, designing, and developing new products or improving existing ones.",Product Development
+Payroll Processor,"Handles employee compensation processing, including salary calculations, deductions, tax withholdings, and benefits administration.",Finance
+Product Researcher,Conducts research and analysis to support product development initiatives.,Product Development
+Equipment Maintenance Worker,"Responsible for maintaining, repairing, and servicing equipment, machinery, and facilities.",Maintenance
+Procurement Analyst,"Responsible for analyzing and managing the procurement process, including vendor evaluation, contract analysis, and spend analysis.",Procurement
+Procurement Specialist,"Handles sourcing activities, vendor management, and procurement processes.",Procurement
+Equipment Maintenance Analyst,"Responsible for analyzing equipment performance, reliability metrics, and maintenance data.",Maintenance
+Warehouse Worker,"Personnel who perform physical warehouse operations including receiving, storing, picking, packing, and shipping inventory.",Warehouse
+Supply Chain Manager,Manages external supplier relationships and vendor operations within the supply chain function.,Supply Chain
+Supply Chain Operator,"Handles physical and digital aspects of inventory management, materials movement, and supply chain operations.",Supply Chain
+Equipment Maintenance Technician,"Responsible for maintaining, repairing, and servicing equipment and machinery across the organization.",Maintenance
+Quality Assurance Analyst,"Responsible for testing software applications, systems, and products to ensure they meet quality standards.",Quality
+Treasury Specialist,"Manages cash flow operations, banking relationships, and liquidity management activities.",Finance
+Product Designer,"Creates and develops product designs, user interfaces, and visual elements.",Product Development
+Maintenance Analyst,"Analyzes equipment performance, reliability metrics, and maintenance data to optimize asset uptime.",Maintenance
+Supplier Relations Manager,"Manages relationships with external suppliers and vendors, including supplier onboarding, performance evaluation, and contract coordination.",Procurement
+Quality Assurance Tester,"Personnel responsible for testing products, applications, or systems to ensure they meet quality standards.",Quality
+Vendor Management Specialist,"Manages external supplier and vendor relationships including onboarding, contract coordination, and performance monitoring.",Procurement
+Research Professional,"Performs research, analysis, and investigation activities to support product development, innovation, or business initiatives.",Research & Development
+Finance Accounting Processor,"Handles core accounting functions including transaction recording, account reconciliation, and financial data entry.",Finance
+Supply Chain Planner,"Responsible for planning and coordinating the flow of materials, products, and resources throughout the supply chain.",Supply Chain
+Facilities Maintenance Worker,"Personnel responsible for the upkeep, repair, and maintenance of physical facilities and infrastructure.",Facilities
+Research & Development Engineer,"Technical professional responsible for researching, designing, and developing new products or improving existing ones.",Research & Development
+Accounts Payable Processor,"Handles vendor payments, invoice processing, and payables management functions.",Finance
+Facilities Maintenance Specialist,"Responsible for maintaining, repairing, and operating building systems and infrastructure.",Facilities
+Market Researcher,"Conducts market analysis, competitive intelligence, and customer research to support business strategy and product decisions.",Market Research
+Warehouse Operations Worker,"Handles physical inventory management, material movement, and basic warehouse operations.",Warehouse
+Accounting Processor,"Handles day-to-day accounting transactions and record-keeping activities including journal entries, account reconciliations, and transaction processing.",Finance

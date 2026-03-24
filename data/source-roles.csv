@@ -1,0 +1,11 @@
+role_id,role_name,description,system,domain
+SAP_AP_CLERK_01,AP Clerk Basic,Basic accounts payable clerk role for invoice entry,SAP ECC,Finance
+SAP_AP_CLERK_02,AP Clerk Advanced,Advanced AP clerk with vendor maintenance,SAP ECC,Finance
+SAP_AP_APPR_L1,AP Approver Level 1,Approve invoices up to $10000,SAP ECC,Finance
+SAP_AP_APPR_L2,AP Approver Level 2,Approve invoices up to $50000,SAP ECC,Finance
+SAP_AP_SUPER,AP Supervisor,AP supervisor with team oversight,SAP ECC,Finance
+SAP_VENDOR_MAINT,Vendor Master Maintainer,Create and modify vendor master records,SAP ECC,Finance
+SAP_PAY_PROC,Payment Processor,Process payment runs,SAP ECC,Finance
+SAP_AP_REPORT,AP Reporter,View AP reports and analytics,SAP ECC,Finance
+SAP_GL_POST,GL Poster,Post journal entries to general ledger,SAP ECC,Finance
+SAP_AP_MGR,AP Manager,Full AP management access,SAP ECC,Finance

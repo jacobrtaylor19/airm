@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: airm
+    runtime: node
+    rootDir: airm
+    buildCommand: pnpm install && pnpm db:push && pnpm db:seed && pnpm build
+    startCommand: pnpm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ANTHROPIC_API_KEY
+        sync: false
+    disk:
+      name: airm-data
+      mountPath: /opt/render/project/src/airm/data
+      sizeGB: 1

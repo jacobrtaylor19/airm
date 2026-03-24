@@ -1,0 +1,241 @@
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import Database from "better-sqlite3";
+import * as schema from "./schema";
+import { parse } from "csv-parse/sync";
+import { readFileSync, existsSync } from "fs";
+import { eq } from "drizzle-orm";
+import path from "path";
+
+const DATA_DIR = path.join(process.cwd(), "data");
+
+const sqlite = new Database(path.join(DATA_DIR, "airm.db"));
+sqlite.pragma("journal_mode = WAL");
+sqlite.pragma("foreign_keys = ON");
+
+const db = drizzle(sqlite, { schema });
+
+function readCsv<T>(filename: string): T[] {
+  const filepath = path.join(DATA_DIR, filename);
+  if (!existsSync(filepath)) return [];
+  const content = readFileSync(filepath, "utf-8");
+  const records = parse(content, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  }) as T[];
+  return records;
+}
+
+function seed() {
+  console.log("🌱 Seeding database...\n");
+
+  // ─── Clear tables (reverse dependency order) ───
+  db.delete(schema.auditLog).run();
+  db.delete(schema.processingJobs).run();
+  db.delete(schema.permissionGaps).run();
+  db.delete(schema.sodConflicts).run();
+  db.delete(schema.sodRules).run();
+  db.delete(schema.userTargetRoleAssignments).run();
+  db.delete(schema.personaTargetRoleMappings).run();
+  db.delete(schema.userPersonaAssignments).run();
+  db.delete(schema.personaSourcePermissions).run();
+  db.delete(schema.userSourceRoleAssignments).run();
+  db.delete(schema.sourceRolePermissions).run();
+  db.delete(schema.targetSecurityRoleTasks).run();
+  db.delete(schema.targetTaskRolePermissions).run();
+  db.delete(schema.targetRolePermissions).run();
+  db.delete(schema.targetTaskRoles).run();
+  db.delete(schema.personas).run();
+  db.delete(schema.consolidatedGroups).run();
+  db.delete(schema.sourcePermissions).run();
+  db.delete(schema.sourceRoles).run();
+  db.delete(schema.targetPermissions).run();
+  db.delete(schema.targetRoles).run();
+  db.delete(schema.users).run();
+
+  // ─── 1. Users ───
+  const usersData = readCsv<any>("users.csv");
+  for (const row of usersData) {
+    db.insert(schema.users).values({
+      sourceUserId: row.source_user_id,
+      displayName: row.display_name,
+      email: row.email,
+      jobTitle: row.job_title,
+      department: row.department,
+    }).run();
+  }
+  console.log(`  ✓ ${usersData.length} users`);
+
+  // ─── 2. Consolidated Groups ───
+  const groupsData = readCsv<any>("consolidated-groups.csv");
+  for (const row of groupsData) {
+    db.insert(schema.consolidatedGroups).values({
+      name: row.name,
+      accessLevel: row.access_level,
+      description: row.description,
+    }).run();
+  }
+  console.log(`  ✓ ${groupsData.length} consolidated groups`);
+
+  // ─── 3. Personas ───
+  const personasData = readCsv<any>("personas.csv");
+  for (const row of personasData) {
+    db.insert(schema.personas).values({
+      name: row.name,
+      description: row.description,
+      businessFunction: row.business_function,
+      source: "ai",
+    }).run();
+  }
+  console.log(`  ✓ ${personasData.length} personas`);
+
+  // ─── 4. Persona → Group Mappings ───
+  const pgMappings = readCsv<any>("persona-group-mappings.csv");
+  let pgCount = 0;
+  for (const row of pgMappings) {
+    const group = db.select().from(schema.consolidatedGroups)
+      .where(eq(schema.consolidatedGroups.name, row.consolidated_group_name))
+      .get();
+    if (group) {
+      db.update(schema.personas)
+        .set({ consolidatedGroupId: group.id })
+        .where(eq(schema.personas.name, row.persona_name))
+        .run();
+      pgCount++;
+    }
+  }
+  console.log(`  ✓ ${pgCount} persona-group mappings`);
+
+  // ─── 5. Source Roles ───
+  const rolesData = readCsv<any>("source-roles.csv");
+  for (const row of rolesData) {
+    db.insert(schema.sourceRoles).values({
+      roleId: row.role_id,
+      roleName: row.role_name,
+      description: row.description,
+      system: row.system || "SAP ECC",
+      domain: row.domain,
+    }).run();
+  }
+  console.log(`  ✓ ${rolesData.length} source roles`);
+
+  // ─── 6. Source Permissions ───
+  const permData = readCsv<any>("source-permissions.csv");
+  for (const row of permData) {
+    db.insert(schema.sourcePermissions).values({
+      permissionId: row.permission_id,
+      permissionName: row.permission_name || null,
+      description: row.description || null,
+      system: row.system || "SAP ECC",
+      riskLevel: row.risk_level || null,
+    }).run();
+  }
+  console.log(`  ✓ ${permData.length} source permissions`);
+
+  // ─── 7. Source Role-Permission Assignments ───
+  const rpData = readCsv<any>("source-role-permissions.csv");
+  let rpCount = 0;
+  for (const row of rpData) {
+    const role = db.select().from(schema.sourceRoles)
+      .where(eq(schema.sourceRoles.roleId, row.role_id)).get();
+    const perm = db.select().from(schema.sourcePermissions)
+      .where(eq(schema.sourcePermissions.permissionId, row.permission_id)).get();
+    if (role && perm) {
+      db.insert(schema.sourceRolePermissions).values({
+        sourceRoleId: role.id,
+        sourcePermissionId: perm.id,
+      }).run();
+      rpCount++;
+    }
+  }
+  console.log(`  ✓ ${rpCount} role-permission assignments`);
+
+  // ─── 8. Target Roles ───
+  const targetRolesData = readCsv<any>("target-roles.csv");
+  for (const row of targetRolesData) {
+    if (row.role_id === "Role ID") continue; // skip header row if duplicated
+    db.insert(schema.targetRoles).values({
+      roleId: row.role_id,
+      roleName: row.role_name,
+      description: row.description,
+      system: row.system || "S/4HANA",
+      domain: row.domain || "Finance",
+    }).run();
+  }
+  console.log(`  ✓ ${targetRolesData.length} target roles`);
+
+  // ─── 9. Target Permissions (optional) ───
+  const targetPermData = readCsv<any>("target-permissions.csv");
+  if (targetPermData.length > 0) {
+    for (const row of targetPermData) {
+      db.insert(schema.targetPermissions).values({
+        permissionId: row.permission_id,
+        permissionName: row.permission_name || null,
+        description: row.description || null,
+        system: row.system || "S/4HANA",
+        riskLevel: row.risk_level || null,
+      }).run();
+    }
+    console.log(`  ✓ ${targetPermData.length} target permissions`);
+  } else {
+    console.log("  ⊘ target-permissions.csv not found or empty, skipping");
+  }
+
+  // ─── 10. User-Persona Assignments ───
+  const upaData = readCsv<any>("user-persona-assignments.csv");
+  let upaCount = 0;
+  for (const row of upaData) {
+    const user = db.select().from(schema.users)
+      .where(eq(schema.users.sourceUserId, row.source_user_id)).get();
+    const persona = db.select().from(schema.personas)
+      .where(eq(schema.personas.name, row.persona_name)).get();
+    if (user && persona) {
+      db.insert(schema.userPersonaAssignments).values({
+        userId: user.id,
+        personaId: persona.id,
+        consolidatedGroupId: persona.consolidatedGroupId,
+        confidenceScore: parseFloat(row.confidence_score) || null,
+        assignmentMethod: row.assignment_method || "ai",
+      }).run();
+      upaCount++;
+    }
+  }
+  console.log(`  ✓ ${upaCount} user-persona assignments`);
+
+  // ─── 11. SOD Rules (optional) ───
+  const sodData = readCsv<any>("sod-rules.csv");
+  if (sodData.length > 0) {
+    for (const row of sodData) {
+      db.insert(schema.sodRules).values({
+        ruleId: row.rule_id,
+        ruleName: row.rule_name,
+        description: row.description || null,
+        permissionA: row.permission_a,
+        permissionB: row.permission_b,
+        severity: row.severity || "medium",
+        riskDescription: row.risk_description || null,
+      }).run();
+    }
+    console.log(`  ✓ ${sodData.length} SOD rules`);
+  } else {
+    console.log("  ⊘ sod-rules.csv not found or empty, skipping");
+  }
+
+  // ─── Verification ───
+  console.log("\n📊 Verification:");
+  const counts = {
+    users: db.select().from(schema.users).all().length,
+    consolidatedGroups: db.select().from(schema.consolidatedGroups).all().length,
+    personas: db.select().from(schema.personas).all().length,
+    sourceRoles: db.select().from(schema.sourceRoles).all().length,
+    sourcePermissions: db.select().from(schema.sourcePermissions).all().length,
+    rolePermissions: db.select().from(schema.sourceRolePermissions).all().length,
+    targetRoles: db.select().from(schema.targetRoles).all().length,
+    userPersonaAssignments: db.select().from(schema.userPersonaAssignments).all().length,
+    sodRules: db.select().from(schema.sodRules).all().length,
+  };
+  console.log(counts);
+  console.log("\n✅ Seed complete!");
+}
+
+seed();
