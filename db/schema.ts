@@ -237,6 +237,7 @@ export const userTargetRoleAssignments = sqliteTable("user_target_role_assignmen
   approvedBy: text("approved_by"),
   approvedAt: text("approved_at"),
   sentBackReason: text("sent_back_reason"),
+  mappedBy: text("mapped_by"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
@@ -322,6 +323,47 @@ export const auditLog = sqliteTable("audit_log", {
   oldValue: text("old_value"),
   newValue: text("new_value"),
   actorEmail: text("actor_email"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// APP USERS (tool users — mappers, approvers, admins)
+// ─────────────────────────────────────────────
+
+export const appUsers = sqliteTable("app_users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  username: text("username").notNull().unique(),
+  displayName: text("display_name").notNull(),
+  email: text("email"),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("viewer"),
+  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// APP USER SESSIONS
+// ─────────────────────────────────────────────
+
+export const appUserSessions = sqliteTable("app_user_sessions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  sessionToken: text("session_token").notNull().unique(),
+  appUserId: integer("app_user_id").notNull().references(() => appUsers.id, { onDelete: "cascade" }),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// WORK ASSIGNMENTS (mapper/approver → department/user)
+// ─────────────────────────────────────────────
+
+export const workAssignments = sqliteTable("work_assignments", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  appUserId: integer("app_user_id").notNull().references(() => appUsers.id, { onDelete: "cascade" }),
+  assignmentType: text("assignment_type").notNull(),
+  scopeType: text("scope_type").notNull(),
+  scopeValue: text("scope_value").notNull(),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
@@ -440,4 +482,17 @@ export const sodConflictsRelations = relations(sodConflicts, ({ one }) => ({
 export const permissionGapsRelations = relations(permissionGaps, ({ one }) => ({
   persona: one(personas, { fields: [permissionGaps.personaId], references: [personas.id] }),
   sourcePermission: one(sourcePermissions, { fields: [permissionGaps.sourcePermissionId], references: [sourcePermissions.id] }),
+}));
+
+export const appUsersRelations = relations(appUsers, ({ many }) => ({
+  sessions: many(appUserSessions),
+  workAssignments: many(workAssignments),
+}));
+
+export const appUserSessionsRelations = relations(appUserSessions, ({ one }) => ({
+  appUser: one(appUsers, { fields: [appUserSessions.appUserId], references: [appUsers.id] }),
+}));
+
+export const workAssignmentsRelations = relations(workAssignments, ({ one }) => ({
+  appUser: one(appUsers, { fields: [workAssignments.appUserId], references: [appUsers.id] }),
 }));

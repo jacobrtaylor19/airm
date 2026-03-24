@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { count, sql, eq, desc, ne } from "drizzle-orm";
+import { count, sql, eq, desc, ne, and, inArray } from "drizzle-orm";
 
 export function getDashboardStats() {
   const totalUsers = db.select({ count: count() }).from(schema.users).get()!.count;
@@ -852,4 +852,87 @@ export function getGapAnalysis(): GapRow[] {
     .innerJoin(schema.personas, eq(schema.personas.id, schema.permissionGaps.personaId))
     .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.permissionGaps.sourcePermissionId))
     .all();
+}
+
+// ─────────────────────────────────────────────
+// WORK ASSIGNMENTS (scope filtering)
+// ─────────────────────────────────────────────
+
+export function getAssignedScope(appUserId: number, assignmentType: string): { departments: string[]; userIds: string[] } {
+  const assignments = db.select().from(schema.workAssignments)
+    .where(and(
+      eq(schema.workAssignments.appUserId, appUserId),
+      eq(schema.workAssignments.assignmentType, assignmentType)
+    ))
+    .all();
+
+  const departments: string[] = [];
+  const userIds: string[] = [];
+
+  for (const a of assignments) {
+    if (a.scopeType === "department") departments.push(a.scopeValue);
+    else if (a.scopeType === "user") userIds.push(a.scopeValue);
+  }
+
+  return { departments, userIds };
+}
+
+export function getSourceUserIdsInScope(scope: { departments: string[]; userIds: string[] }): number[] {
+  const ids = new Set<number>();
+
+  if (scope.departments.length > 0) {
+    const users = db.select({ id: schema.users.id })
+      .from(schema.users)
+      .where(inArray(schema.users.department, scope.departments))
+      .all();
+    for (const u of users) ids.add(u.id);
+  }
+
+  if (scope.userIds.length > 0) {
+    const users = db.select({ id: schema.users.id })
+      .from(schema.users)
+      .where(inArray(schema.users.sourceUserId, scope.userIds))
+      .all();
+    for (const u of users) ids.add(u.id);
+  }
+
+  return Array.from(ids);
+}
+
+export function getApprovalQueueScoped(appUserId: number): ApprovalRow[] {
+  const scope = getAssignedScope(appUserId, "approver");
+  const all = getApprovalQueue();
+
+  // If no assignments, return empty (not everything)
+  if (scope.departments.length === 0 && scope.userIds.length === 0) return [];
+
+  const scopedUserIds = getSourceUserIdsInScope(scope);
+  const idSet = new Set(scopedUserIds);
+  return all.filter((a) => idSet.has(a.userId));
+}
+
+export function getUsersScoped(appUserId: number, assignmentType: string): UserRow[] {
+  const scope = getAssignedScope(appUserId, assignmentType);
+  const all = getUsers();
+
+  if (scope.departments.length === 0 && scope.userIds.length === 0) return [];
+
+  const scopedUserIds = getSourceUserIdsInScope(scope);
+  const idSet = new Set(scopedUserIds);
+  return all.filter((u) => idSet.has(u.id));
+}
+
+export function getPersonaIdsForUsers(userIds: number[]): number[] {
+  if (userIds.length === 0) return [];
+  const idSet = new Set(userIds);
+  const assignments = db.select({
+    personaId: schema.userPersonaAssignments.personaId,
+    userId: schema.userPersonaAssignments.userId,
+  }).from(schema.userPersonaAssignments).all();
+
+  const personaIds = new Set<number>();
+  for (const a of assignments) {
+    if (a.personaId && idSet.has(a.userId)) personaIds.add(a.personaId);
+  }
+  return Array.from(personaIds);
 }

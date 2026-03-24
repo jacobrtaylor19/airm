@@ -244,6 +244,23 @@ function seed() {
     console.log("  ⊘ sod-rules.csv not found or empty, skipping");
   }
 
+  // ─── 12. Default Admin User ───
+  db.delete(schema.workAssignments).run();
+  db.delete(schema.appUserSessions).run();
+  db.delete(schema.appUsers).run();
+
+  // Hash password synchronously using bcryptjs
+  const bcrypt = require("bcryptjs");
+  const adminHash = bcrypt.hashSync("admin123", 10);
+
+  db.insert(schema.appUsers).values({
+    username: "admin",
+    displayName: "Administrator",
+    passwordHash: adminHash,
+    role: "admin",
+  }).run();
+  console.log("  ✓ Default admin user (admin/admin123)");
+
   // ─── Verification ───
   console.log("\n📊 Verification:");
   const counts = {

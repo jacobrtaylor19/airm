@@ -4,16 +4,38 @@ import {
   getGapAnalysis,
   getTargetRoles,
   getPersonaDetail,
+  getAssignedScope,
+  getSourceUserIdsInScope,
+  getPersonaIdsForUsers,
 } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth";
 import { MappingClient } from "./mapping-client";
 
 export const dynamic = "force-dynamic";
 
 export default function MappingPage() {
-  const personas = getPersonaMappingWorkspace();
-  const refinements = getUserRefinements();
-  const gaps = getGapAnalysis();
+  const user = requireAuth();
+
+  let personas = getPersonaMappingWorkspace();
+  let refinements = getUserRefinements();
+  let gaps = getGapAnalysis();
   const targetRoles = getTargetRoles();
+
+  // Filter for mappers — only show personas containing their assigned users
+  if (user.role === "mapper") {
+    const scope = getAssignedScope(user.id, "mapper");
+    if (scope.departments.length > 0 || scope.userIds.length > 0) {
+      const scopedUserIds = getSourceUserIdsInScope(scope);
+      const scopedPersonaIds = new Set(getPersonaIdsForUsers(scopedUserIds));
+      personas = personas.filter((p) => scopedPersonaIds.has(p.personaId));
+      refinements = refinements.filter((r) => scopedUserIds.includes(r.userId));
+      gaps = gaps.filter((g) => scopedPersonaIds.has(g.personaId));
+    } else {
+      personas = [];
+      refinements = [];
+      gaps = [];
+    }
+  }
 
   // Pre-fetch persona details for the workspace
   const personaDetails: Record<number, { sourcePermissionCount: number; mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; confidence: string | null }[] }> = {};
