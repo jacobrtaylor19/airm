@@ -2,8 +2,7 @@ services:
   - type: web
     name: airm
     runtime: node
-    rootDir: airm
-    buildCommand: pnpm install && pnpm build
+    buildCommand: pnpm install && pnpm db:push && pnpm db:seed && pnpm build
     startCommand: pnpm db:push && pnpm db:seed && pnpm start
     envVars:
       - key: NODE_ENV

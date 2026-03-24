@@ -1,6 +1,8 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { count } from "drizzle-orm";
+
+export const dynamic = "force-dynamic";
 import { UploadCard } from "@/components/upload/upload-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
 import { Upload, UserCircle, Route, ShieldAlert, CheckCircle } from "lucide-react";

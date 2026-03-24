@@ -4,6 +4,8 @@ import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflo
 import { Upload, UserCircle, Route, ShieldAlert, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
+export const dynamic = "force-dynamic";
+
 export default function DashboardPage() {
   const stats = getDashboardStats();
 
