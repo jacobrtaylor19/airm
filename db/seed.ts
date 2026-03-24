@@ -253,13 +253,62 @@ function seed() {
   const bcrypt = require("bcryptjs");
   const adminHash = bcrypt.hashSync("admin123", 10);
 
-  db.insert(schema.appUsers).values({
-    username: "admin",
-    displayName: "Administrator",
-    passwordHash: adminHash,
-    role: "admin",
-  }).run();
-  console.log("  ✓ Default admin user (admin/admin123)");
+  const testPassword = bcrypt.hashSync("test123", 10);
+
+  const testUsers = [
+    { username: "admin", displayName: "Administrator", role: "admin", hash: adminHash },
+    { username: "mapper.finance", displayName: "Jane Chen (Finance Mapper)", role: "mapper", hash: testPassword },
+    { username: "mapper.maintenance", displayName: "Mike Torres (Maintenance Mapper)", role: "mapper", hash: testPassword },
+    { username: "mapper.procurement", displayName: "Sarah Kim (Procurement Mapper)", role: "mapper", hash: testPassword },
+    { username: "approver.finance", displayName: "David Okafor (Finance Approver)", role: "approver", hash: testPassword },
+    { username: "approver.operations", displayName: "Lisa Park (Operations Approver)", role: "approver", hash: testPassword },
+    { username: "viewer", displayName: "Chris Reed (Viewer)", role: "viewer", hash: testPassword },
+  ];
+
+  for (const u of testUsers) {
+    db.insert(schema.appUsers).values({
+      username: u.username,
+      displayName: u.displayName,
+      passwordHash: u.hash,
+      role: u.role,
+    }).run();
+  }
+
+  // Create work assignments for the test users
+  const mapperFinance = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.finance")).get()!;
+  const mapperMaint = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.maintenance")).get()!;
+  const mapperProc = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.procurement")).get()!;
+  const approverFin = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "approver.finance")).get()!;
+  const approverOps = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "approver.operations")).get()!;
+
+  const assignments = [
+    { appUserId: mapperFinance.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Finance" },
+    { appUserId: mapperMaint.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Maintenance" },
+    { appUserId: mapperMaint.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Facilities" },
+    { appUserId: mapperProc.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Procurement" },
+    { appUserId: mapperProc.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Supply Chain" },
+    { appUserId: mapperProc.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Warehouse" },
+    { appUserId: approverFin.id, assignmentType: "approver", scopeType: "department", scopeValue: "Finance" },
+    { appUserId: approverOps.id, assignmentType: "approver", scopeType: "department", scopeValue: "Maintenance" },
+    { appUserId: approverOps.id, assignmentType: "approver", scopeType: "department", scopeValue: "Facilities" },
+    { appUserId: approverOps.id, assignmentType: "approver", scopeType: "department", scopeValue: "Procurement" },
+    { appUserId: approverOps.id, assignmentType: "approver", scopeType: "department", scopeValue: "Supply Chain" },
+    { appUserId: approverOps.id, assignmentType: "approver", scopeType: "department", scopeValue: "Warehouse" },
+  ];
+
+  for (const a of assignments) {
+    db.insert(schema.workAssignments).values(a).run();
+  }
+
+  console.log(`  ✓ ${testUsers.length} app users + ${assignments.length} work assignments`);
+  console.log("    Credentials:");
+  console.log("    admin / admin123 (admin — full access)");
+  console.log("    mapper.finance / test123 (mapper — Finance dept)");
+  console.log("    mapper.maintenance / test123 (mapper — Maintenance + Facilities)");
+  console.log("    mapper.procurement / test123 (mapper — Procurement + Supply Chain + Warehouse)");
+  console.log("    approver.finance / test123 (approver — Finance dept)");
+  console.log("    approver.operations / test123 (approver — Maintenance + Facilities + Procurement + Supply Chain + Warehouse)");
+  console.log("    viewer / test123 (viewer — read-only)");
 
   // ─── Verification ───
   console.log("\n📊 Verification:");
