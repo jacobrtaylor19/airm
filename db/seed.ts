@@ -11,6 +11,7 @@ const DATA_DIR = path.join(process.cwd(), "data");
 const sqlite = new Database(path.join(DATA_DIR, "airm.db"));
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
+sqlite.pragma("busy_timeout = 5000");
 
 const db = drizzle(sqlite, { schema });
 
@@ -236,6 +237,9 @@ function seed() {
   };
   console.log(counts);
   console.log("\n✅ Seed complete!");
+
+  // Close the database connection so subsequent processes can access it
+  sqlite.close();
 }
 
 seed();
