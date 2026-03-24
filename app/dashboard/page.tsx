@@ -66,6 +66,7 @@ export default function DashboardPage() {
       <WorkflowStepper stages={stages} />
 
       {/* Global KPI Cards */}
+      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Project Role Mapping Progress</h3>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
         <KpiCard title="Total Users" value={stats.totalUsers} subtitle={`${stats.totalSourceRoles} source roles`} />
         <KpiCard title="Personas Generated" value={stats.totalPersonas} subtitle={`${stats.totalGroups} consolidated groups`} />

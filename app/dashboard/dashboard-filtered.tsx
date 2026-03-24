@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { DepartmentMappingStatus } from "@/lib/queries";
 
 interface Props {
@@ -59,107 +59,68 @@ function DeptProgressBar({ depts }: { depts: DepartmentMappingStatus[] }) {
   );
 }
 
-export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sodConflicts, lowConfidence, sodRulesCount, personasWithMapping, totalPersonas }: Props) {
+export function DashboardFiltered({ allDepts, assignedDepartments, sodConflicts, lowConfidence, sodRulesCount, personasWithMapping, totalPersonas }: Props) {
   const allDeptNames = allDepts.map((d) => d.department).sort();
 
-  // For mapper/approver, default to their assigned departments
-  // For admin/viewer, default to all departments
-  const [selectedDepts, setSelectedDepts] = useState<Set<string>>(
-    new Set(assignedDepartments ?? allDeptNames)
-  );
+  // Default: assigned departments for mapper/approver, "all" for admin/viewer
+  const defaultValue = assignedDepartments && assignedDepartments.length === 1
+    ? assignedDepartments[0]
+    : "__all__";
 
-  function toggleDept(dept: string) {
-    setSelectedDepts((prev) => {
-      const next = new Set(prev);
-      if (next.has(dept)) {
-        if (next.size > 1) next.delete(dept); // Don't allow empty selection
-      } else {
-        next.add(dept);
-      }
-      return next;
-    });
-  }
-
-  function selectAll() {
-    setSelectedDepts(new Set(allDeptNames));
-  }
-
-  function selectAssigned() {
-    if (assignedDepartments) setSelectedDepts(new Set(assignedDepartments));
-  }
+  const [selected, setSelected] = useState(defaultValue);
 
   const filteredDepts = useMemo(() => {
-    return allDepts
-      .filter((d) => selectedDepts.has(d.department))
-      .sort((a, b) => {
-        const scoreA = a.approved > 0 ? 4 : a.sodClean > 0 ? 3 : a.mapped > 0 ? 2 : a.withPersona > 0 ? 1 : 0;
-        const scoreB = b.approved > 0 ? 4 : b.sodClean > 0 ? 3 : b.mapped > 0 ? 2 : b.withPersona > 0 ? 1 : 0;
-        return scoreB - scoreA || a.department.localeCompare(b.department);
-      });
-  }, [allDepts, selectedDepts]);
+    let depts = allDepts;
+    if (selected !== "__all__") {
+      depts = allDepts.filter((d) => d.department === selected);
+    }
+    return depts.sort((a, b) => {
+      const scoreA = a.approved > 0 ? 4 : a.sodClean > 0 ? 3 : a.mapped > 0 ? 2 : a.withPersona > 0 ? 1 : 0;
+      const scoreB = b.approved > 0 ? 4 : b.sodClean > 0 ? 3 : b.mapped > 0 ? 2 : b.withPersona > 0 ? 1 : 0;
+      return scoreB - scoreA || a.department.localeCompare(b.department);
+    });
+  }, [allDepts, selected]);
 
-  const scopedTotals = useMemo(() => {
-    return {
-      users: filteredDepts.reduce((s, d) => s + d.totalUsers, 0),
-      persona: filteredDepts.reduce((s, d) => s + d.withPersona, 0),
-      mapped: filteredDepts.reduce((s, d) => s + d.mapped, 0),
-      sodClean: filteredDepts.reduce((s, d) => s + d.sodClean, 0),
-      approved: filteredDepts.reduce((s, d) => s + d.approved, 0),
-    };
-  }, [filteredDepts]);
+  const scopedTotals = useMemo(() => ({
+    users: filteredDepts.reduce((s, d) => s + d.totalUsers, 0),
+    persona: filteredDepts.reduce((s, d) => s + d.withPersona, 0),
+    mapped: filteredDepts.reduce((s, d) => s + d.mapped, 0),
+    sodClean: filteredDepts.reduce((s, d) => s + d.sodClean, 0),
+    approved: filteredDepts.reduce((s, d) => s + d.approved, 0),
+  }), [filteredDepts]);
 
-  const isFiltered = selectedDepts.size < allDeptNames.length;
+  const headerLabel = selected === "__all__"
+    ? "All Departments — Role Mapping Progress"
+    : `${selected} — Role Mapping Progress`;
 
   return (
     <>
-      {/* Scoped Summary + Filter */}
-      <Card className={isFiltered ? "border-primary/20 bg-primary/[0.02]" : ""}>
+      <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-medium">
-              {isFiltered ? "Filtered View" : "All Departments"}
-              {assignedDepartments && isFiltered && (
-                <Badge variant="secondary" className="ml-2 text-xs">
-                  {userRole === "mapper" ? "My Mapping Scope" : userRole === "approver" ? "My Approval Scope" : "Filtered"}
-                </Badge>
-              )}
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              {assignedDepartments && (
-                <button
-                  onClick={selectAssigned}
-                  className={`text-xs px-2 py-1 rounded ${isFiltered ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-                >
-                  My Scope
-                </button>
-              )}
-              <button
-                onClick={selectAll}
-                className={`text-xs px-2 py-1 rounded ${!isFiltered ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-              >
-                All
-              </button>
-            </div>
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="text-sm font-medium">{headerLabel}</CardTitle>
+            <Select value={selected} onValueChange={setSelected}>
+              <SelectTrigger className="w-[220px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All Departments</SelectItem>
+                {assignedDepartments && (
+                  <SelectItem value="__assigned__" disabled className="text-xs text-muted-foreground font-medium">
+                    — My Assigned —
+                  </SelectItem>
+                )}
+                {allDeptNames.map((dept) => (
+                  <SelectItem key={dept} value={dept}>
+                    {dept}
+                    {assignedDepartments?.includes(dept) ? " ★" : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Department chips */}
-          <div className="flex flex-wrap gap-1.5 mb-4">
-            {allDeptNames.map((dept) => (
-              <button
-                key={dept}
-                onClick={() => toggleDept(dept)}
-                className={`text-xs px-2 py-1 rounded-full border transition-colors ${
-                  selectedDepts.has(dept)
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "text-muted-foreground border-muted hover:border-foreground/20"
-                }`}
-              >
-                {dept}
-              </button>
-            ))}
-          </div>
-
           {/* Scoped KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <div className="rounded-md border bg-background p-3">

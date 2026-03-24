@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 
 const pageTitles: Record<string, string> = {
-  "/dashboard": "Migration Dashboard",
+  "/dashboard": "Status Dashboard",
   "/upload": "Data Upload",
   "/personas": "Personas",
   "/mapping": "Role Mapping Workspace",
