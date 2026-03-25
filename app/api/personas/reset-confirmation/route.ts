@@ -17,8 +17,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
-  const body = await req.json();
-  const { orgUnitId } = body as { orgUnitId: number };
+  let body: { orgUnitId: number };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const { orgUnitId } = body;
 
   if (!orgUnitId) {
     return NextResponse.json({ error: "orgUnitId is required" }, { status: 400 });

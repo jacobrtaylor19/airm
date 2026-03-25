@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/setup", "/api/auth/login", "/api/auth/setup", "/api/auth/logout"];
+const PUBLIC_PATHS = ["/", "/login", "/setup", "/api/auth/login", "/api/auth/setup", "/api/auth/logout"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+  if (pathname === "/" || PUBLIC_PATHS.some((p) => p !== "/" && pathname.startsWith(p))) {
     return NextResponse.next();
   }
 

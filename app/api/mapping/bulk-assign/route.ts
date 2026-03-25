@@ -11,12 +11,18 @@ export async function POST(req: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (user.role === "viewer") {
-    return NextResponse.json({ error: "Viewers cannot assign roles" }, { status: 403 });
+  const allowedRoles = ["mapper", "admin", "system_admin"];
+  if (!allowedRoles.includes(user.role)) {
+    return NextResponse.json({ error: "Only mappers and admins can bulk assign roles" }, { status: 403 });
   }
 
-  const body = await req.json();
-  const { personaIds, targetRoleId } = body as { personaIds: number[]; targetRoleId: number };
+  let body: { personaIds: number[]; targetRoleId: number };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+  const { personaIds, targetRoleId } = body;
 
   if (!Array.isArray(personaIds) || personaIds.length === 0 || !targetRoleId) {
     return NextResponse.json({ error: "personaIds (array) and targetRoleId are required" }, { status: 400 });
