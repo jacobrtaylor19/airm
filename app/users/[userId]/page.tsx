@@ -178,13 +178,37 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
             <div className="rounded-md border p-3 min-w-[140px]">
               <p className="text-xs text-muted-foreground mb-1">Target Roles</p>
               {user.targetRoleAssignments.length > 0 ? (
-                <div className="space-y-1">
-                  {user.targetRoleAssignments.map((a) => (
-                    <div key={a.id} className="flex items-center gap-1.5">
-                      <Badge variant="outline" className="text-xs">{a.roleName}</Badge>
-                      <StatusBadge status={a.status} />
+                <div className="space-y-2">
+                  {/* Existing Production Access */}
+                  {user.targetRoleAssignments.filter(a => a.releasePhase === "existing").length > 0 && (
+                    <div>
+                      <p className="text-[10px] font-medium text-muted-foreground mb-0.5">Existing Production Access</p>
+                      <div className="space-y-1">
+                        {user.targetRoleAssignments.filter(a => a.releasePhase === "existing").map((a) => (
+                          <div key={a.id} className="flex items-center gap-1.5">
+                            <Badge variant="secondary" className="text-xs opacity-70">{a.roleName}</Badge>
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 text-muted-foreground">Wave 1</Badge>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  ))}
+                  )}
+                  {/* Current Wave Mapping */}
+                  {user.targetRoleAssignments.filter(a => a.releasePhase !== "existing").length > 0 && (
+                    <div>
+                      {user.targetRoleAssignments.filter(a => a.releasePhase === "existing").length > 0 && (
+                        <p className="text-[10px] font-medium text-muted-foreground mb-0.5">Current Wave</p>
+                      )}
+                      <div className="space-y-1">
+                        {user.targetRoleAssignments.filter(a => a.releasePhase !== "existing").map((a) => (
+                          <div key={a.id} className="flex items-center gap-1.5">
+                            <Badge variant="outline" className="text-xs">{a.roleName}</Badge>
+                            <StatusBadge status={a.status} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <span className="text-muted-foreground text-xs">Not yet mapped</span>

@@ -90,6 +90,21 @@ export function getDashboardStats() {
     .where(sql`${schema.userPersonaAssignments.confidenceScore} < 65`)
     .get()!.count;
 
+  // Existing production access (from previous waves)
+  const existingAccessCount = db
+    .select({ count: count() })
+    .from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
+    .get()!.count;
+
+  const existingAccessUserCount = existingAccessCount > 0
+    ? db
+        .select({ count: sql<number>`count(distinct ${schema.userTargetRoleAssignments.userId})` })
+        .from(schema.userTargetRoleAssignments)
+        .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
+        .get()!.count
+    : 0;
+
   return {
     totalUsers,
     totalPersonas,
@@ -110,6 +125,8 @@ export function getDashboardStats() {
     departmentStats,
     deptPersonaCounts,
     lowConfidence,
+    existingAccessCount,
+    existingAccessUserCount,
   };
 }
 
@@ -201,6 +218,7 @@ export interface UserDetail {
     status: string;
     assignmentType: string;
     domain: string | null;
+    releasePhase: string;
   }[];
   sodConflicts: {
     id: number;
@@ -263,6 +281,7 @@ export function getUserDetail(id: number): UserDetail | null {
       status: schema.userTargetRoleAssignments.status,
       assignmentType: schema.userTargetRoleAssignments.assignmentType,
       domain: schema.targetRoles.domain,
+      releasePhase: schema.userTargetRoleAssignments.releasePhase,
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
@@ -1546,8 +1565,9 @@ export interface UserRefinementDetail {
   personaName: string | null;
   personaId: number | null;
   personaDefaultRoles: { targetRoleId: number; roleName: string; roleId: string }[];
-  individualOverrides: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string }[];
-  allAssignments: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string }[];
+  individualOverrides: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string; releasePhase: string }[];
+  allAssignments: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string; releasePhase: string }[];
+  existingAccessRoles: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string }[];
 }
 
 /**
@@ -1567,6 +1587,7 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
       assignmentType: schema.userTargetRoleAssignments.assignmentType,
       status: schema.userTargetRoleAssignments.status,
       derivedFromPersonaId: schema.userTargetRoleAssignments.derivedFromPersonaId,
+      releasePhase: schema.userTargetRoleAssignments.releasePhase,
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
@@ -1616,6 +1637,10 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
     const persona = personaByUser.get(userId);
     const personaDefaults = persona?.personaId ? (defaultRolesByPersona.get(persona.personaId) ?? []) : [];
 
+    // Separate existing (previous wave) from current assignments
+    const currentAssignments = userAssignments.filter(a => a.releasePhase !== "existing");
+    const existingRoles = userAssignments.filter(a => a.releasePhase === "existing");
+
     result.push({
       userId,
       userName: first.userName,
@@ -1623,10 +1648,11 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
       personaName: persona?.personaName ?? null,
       personaId: persona?.personaId ?? null,
       personaDefaultRoles: personaDefaults,
-      individualOverrides: userAssignments
+      individualOverrides: currentAssignments
         .filter(a => a.assignmentType !== "persona_default")
-        .map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status })),
-      allAssignments: userAssignments.map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status })),
+        .map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status, releasePhase: a.releasePhase })),
+      allAssignments: currentAssignments.map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status, releasePhase: a.releasePhase })),
+      existingAccessRoles: existingRoles.map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId })),
     });
   }
 

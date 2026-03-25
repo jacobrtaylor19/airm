@@ -3,7 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { getUserScopeDepartments } from "@/lib/scope";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
-import { Upload, UserCircle, Route, ShieldAlert, CheckCircle, Database } from "lucide-react";
+import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Database } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DashboardFiltered } from "./dashboard-filtered";
@@ -80,6 +80,18 @@ export default function DashboardPage() {
           subtitle={stats.totalAssignments > 0 ? `${stats.approvedAssignments}/${stats.totalAssignments} assignments` : "No assignments yet"}
         />
       </div>
+
+      {/* Existing Production Access Summary */}
+      {stats.existingAccessCount > 0 && (
+        <Card className="border-blue-200 bg-blue-50/30">
+          <CardContent className="flex items-center gap-3 py-3">
+            <Shield className="h-4 w-4 text-blue-600 shrink-0" />
+            <p className="text-sm text-blue-800">
+              <strong>{stats.existingAccessUserCount}</strong> user{stats.existingAccessUserCount !== 1 ? "s" : ""} with existing production access loaded ({stats.existingAccessCount} assignment{stats.existingAccessCount !== 1 ? "s" : ""} from previous waves). These are included in SOD analysis.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Source Systems Summary */}
       {sourceSystemStats.length > 0 && (

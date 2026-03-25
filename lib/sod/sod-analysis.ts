@@ -29,16 +29,32 @@ export function runSodAnalysis(): SodAnalysisResult {
     };
   }
 
-  // 2. Load all user target role assignments in draft status
-  const assignments = db.select().from(schema.userTargetRoleAssignments)
+  // 2. Load ALL user target role assignments — both "current" (draft) and "existing" (approved from previous waves)
+  //    SOD must check the complete picture: existing + current together
+  const draftAssignments = db.select().from(schema.userTargetRoleAssignments)
     .where(eq(schema.userTargetRoleAssignments.status, "draft"))
     .all();
 
-  // 3. Group assignments by user
-  const userAssignments = new Map<number, number[]>();
-  for (const a of assignments) {
-    if (!userAssignments.has(a.userId)) userAssignments.set(a.userId, []);
-    userAssignments.get(a.userId)!.push(a.targetRoleId);
+  const existingAssignments = db.select().from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
+    .all();
+
+  // 3. Group ALL assignments by user (both existing and current draft)
+  const userAllRoles = new Map<number, Set<number>>();
+  const userDraftRoles = new Map<number, number[]>();
+
+  // Add draft assignments
+  for (const a of draftAssignments) {
+    if (!userAllRoles.has(a.userId)) userAllRoles.set(a.userId, new Set());
+    userAllRoles.get(a.userId)!.add(a.targetRoleId);
+    if (!userDraftRoles.has(a.userId)) userDraftRoles.set(a.userId, []);
+    userDraftRoles.get(a.userId)!.push(a.targetRoleId);
+  }
+
+  // Add existing assignments (for SOD checking, but we won't change their status)
+  for (const a of existingAssignments) {
+    if (!userAllRoles.has(a.userId)) userAllRoles.set(a.userId, new Set());
+    userAllRoles.get(a.userId)!.add(a.targetRoleId);
   }
 
   // 4. For each target role, expand to its permissions
@@ -58,18 +74,20 @@ export function runSodAnalysis(): SodAnalysisResult {
   // 5. Clear previous conflicts
   db.delete(schema.sodConflicts).run();
 
-  // 6. For each user, check all SOD rules
+  // 6. For each user with draft assignments, check all SOD rules against their FULL role set
   let conflictsFound = 0;
   const usersWithConflictsSet = new Set<number>();
 
-  const userEntries = Array.from(userAssignments.entries());
-  for (const entry of userEntries) {
-    const userId = entry[0];
-    const roleIds = entry[1];
-    // Compile user's full permission set
+  // Only analyze users who have draft assignments (they're being mapped in current wave)
+  const userEntries = Array.from(userDraftRoles.entries());
+  for (const [userId, draftRoleIds] of userEntries) {
+    // Get ALL roles for this user (existing + current)
+    const allRoleIds = Array.from(userAllRoles.get(userId) || new Set<number>());
+
+    // Compile user's full permission set from ALL roles
     const userPerms = new Set<string>();
     const permToRole = new Map<string, number>();
-    for (const roleId of roleIds) {
+    for (const roleId of allRoleIds) {
       const perms = rolePerms.get(roleId) || new Set();
       const permArr = Array.from(perms);
       for (const p of permArr) {
@@ -107,9 +125,10 @@ export function runSodAnalysis(): SodAnalysisResult {
       }
     }
 
-    // Update assignment statuses for this user
+    // Update assignment statuses for this user's DRAFT assignments only
+    // (existing/approved assignments keep their status)
     const newStatus = userConflictCount > 0 ? "sod_rejected" : "compliance_approved";
-    for (const roleId of roleIds) {
+    for (const roleId of draftRoleIds) {
       db.update(schema.userTargetRoleAssignments)
         .set({
           status: newStatus,
@@ -128,9 +147,9 @@ export function runSodAnalysis(): SodAnalysisResult {
   }
 
   return {
-    usersAnalyzed: userAssignments.size,
+    usersAnalyzed: userDraftRoles.size,
     conflictsFound,
     usersWithConflicts: usersWithConflictsSet.size,
-    usersClean: userAssignments.size - usersWithConflictsSet.size,
+    usersClean: userDraftRoles.size - usersWithConflictsSet.size,
   };
 }

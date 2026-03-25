@@ -17,7 +17,8 @@ type UploadType =
   | "target-permissions"
   | "sod-rules"
   | "personas"
-  | "app-users";
+  | "app-users"
+  | "existing-access";
 
 const REQUIRED_COLUMNS: Record<UploadType, string[]> = {
   users: ["source_user_id", "display_name"],
@@ -29,6 +30,7 @@ const REQUIRED_COLUMNS: Record<UploadType, string[]> = {
   "sod-rules": ["rule_id", "rule_name", "permission_a", "permission_b", "severity"],
   personas: ["name", "description", "business_function"],
   "app-users": ["username", "password", "display_name", "role"],
+  "existing-access": ["source_user_id", "target_role_id"],
 };
 
 function validateColumns(headers: string[], required: string[]): string[] {
@@ -339,6 +341,45 @@ async function commitUpload(
         } catch (e: any) {
           if (e.message?.includes("UNIQUE")) skipped++;
           else errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+        }
+      }
+      break;
+    }
+
+    case "existing-access": {
+      // Upload existing production access (from previous waves/releases)
+      // Does NOT clear existing — appends with releasePhase="existing"
+      for (const row of records) {
+        const user = db
+          .select()
+          .from(schema.users)
+          .where(eq(schema.users.sourceUserId, row.source_user_id))
+          .get();
+        const role = db
+          .select()
+          .from(schema.targetRoles)
+          .where(eq(schema.targetRoles.roleId, row.target_role_id))
+          .get();
+        if (user && role) {
+          try {
+            db.insert(schema.userTargetRoleAssignments)
+              .values({
+                userId: user.id,
+                targetRoleId: role.id,
+                assignmentType: "existing_access",
+                status: "approved",
+                releasePhase: "existing",
+              })
+              .run();
+            inserted++;
+          } catch (e: any) {
+            errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+            skipped++;
+          }
+        } else {
+          skipped++;
+          if (!user) errors.push(`Row ${inserted + skipped}: source_user_id "${row.source_user_id}" not found`);
+          if (!role) errors.push(`Row ${inserted + skipped}: target_role_id "${row.target_role_id}" not found`);
         }
       }
       break;

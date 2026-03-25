@@ -245,6 +245,7 @@ export const userTargetRoleAssignments = sqliteTable("user_target_role_assignmen
   derivedFromPersonaId: integer("derived_from_persona_id").references(() => personas.id),
   assignmentType: text("assignment_type").notNull().default("persona_default"),
   status: text("status").notNull().default("draft"),
+  releasePhase: text("release_phase").notNull().default("current"), // "existing" = previous wave (locked), "current" = this wave (editable)
   sodConflictCount: integer("sod_conflict_count").default(0),
   riskAcceptedBy: text("risk_accepted_by"),
   riskAcceptedAt: text("risk_accepted_at"),

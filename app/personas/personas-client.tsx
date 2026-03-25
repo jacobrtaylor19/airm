@@ -98,7 +98,7 @@ export function PersonasPageClient({
           searchKey="name"
           searchPlaceholder="Search personas..."
           onRowClick={(row) => router.push(`/personas/${(row as PersonaRow).id}`)}
-          emptyMessage="No personas found. Generate personas from the Jobs page."
+          emptyMessage="No personas generated yet. Go to the Jobs page to generate personas from your user data."
           selectable={isAdmin}
           onBulkDelete={isAdmin ? handleBulkDelete : undefined}
           entityLabel="personas"

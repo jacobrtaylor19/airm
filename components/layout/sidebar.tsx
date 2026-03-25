@@ -94,13 +94,26 @@ export function Sidebar({ userRole }: { userRole: string }) {
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r bg-muted/40">
+      {/* Brand header */}
       <div className="flex h-14 items-center border-b px-4">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
           <AIRMLogo size="sm" />
-          <span>AIRM</span>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold tracking-tight leading-none">
+              AIRM
+            </span>
+            <span className="text-[10px] font-medium text-muted-foreground leading-tight">
+              AI Role Mapping
+            </span>
+          </div>
         </Link>
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
+
+      {/* Separator */}
+      <div className="mx-3 border-b" />
+
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3">
         {navSections
           .filter((section) => {
             if (section.sysadminOnly) return userRole === "system_admin";
@@ -108,9 +121,9 @@ export function Sidebar({ userRole }: { userRole: string }) {
             return true;
           })
           .map((section, si) => (
-            <div key={si} className="mb-4">
+            <div key={si} className="mb-3">
               {section.label && (
-                <p className="mb-1 px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
                   {section.label}
                 </p>
               )}
@@ -137,6 +150,13 @@ export function Sidebar({ userRole }: { userRole: string }) {
             </div>
           ))}
       </nav>
+
+      {/* Footer */}
+      <div className="border-t px-4 py-3">
+        <p className="text-[10px] text-muted-foreground/60 text-center">
+          AIRM v1.0 &middot; AI Role Mapping
+        </p>
+      </div>
     </aside>
   );
 }

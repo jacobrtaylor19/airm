@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 import * as schema from "./schema";
 import { parse } from "csv-parse/sync";
 import { readFileSync, existsSync } from "fs";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import path from "path";
 
 // ─── Parse --demo flag ───
@@ -166,45 +166,57 @@ function seed() {
   }
   console.log(`  ✓ ${usersData.length} users`);
 
-  // ─── 2. Consolidated Groups ───
+  // ─── 2. Consolidated Groups (skip if file not in demo pack) ───
   const groupsData = readCsv<any>("consolidated-groups.csv");
-  for (const row of groupsData) {
-    db.insert(schema.consolidatedGroups).values({
-      name: row.name,
-      accessLevel: row.access_level,
-      description: row.description,
-    }).run();
+  if (groupsData.length > 0) {
+    for (const row of groupsData) {
+      db.insert(schema.consolidatedGroups).values({
+        name: row.name,
+        accessLevel: row.access_level,
+        description: row.description,
+      }).run();
+    }
+    console.log(`  ✓ ${groupsData.length} consolidated groups`);
+  } else {
+    console.log("  ⊘ consolidated-groups.csv not found or empty, skipping (personas not pre-loaded for this pack)");
   }
-  console.log(`  ✓ ${groupsData.length} consolidated groups`);
 
-  // ─── 3. Personas ───
+  // ─── 3. Personas (skip if file not in demo pack) ───
   const personasData = readCsv<any>("personas.csv");
-  for (const row of personasData) {
-    db.insert(schema.personas).values({
-      name: row.name,
-      description: row.description,
-      businessFunction: row.business_function,
-      source: "ai",
-    }).run();
+  if (personasData.length > 0) {
+    for (const row of personasData) {
+      db.insert(schema.personas).values({
+        name: row.name,
+        description: row.description,
+        businessFunction: row.business_function,
+        source: "ai",
+      }).run();
+    }
+    console.log(`  ✓ ${personasData.length} personas`);
+  } else {
+    console.log("  ⊘ personas.csv not found or empty, skipping (generate personas via Jobs page)");
   }
-  console.log(`  ✓ ${personasData.length} personas`);
 
-  // ─── 4. Persona → Group Mappings ───
+  // ─── 4. Persona → Group Mappings (skip if file not in demo pack) ───
   const pgMappings = readCsv<any>("persona-group-mappings.csv");
   let pgCount = 0;
-  for (const row of pgMappings) {
-    const group = db.select().from(schema.consolidatedGroups)
-      .where(eq(schema.consolidatedGroups.name, row.consolidated_group_name))
-      .get();
-    if (group) {
-      db.update(schema.personas)
-        .set({ consolidatedGroupId: group.id })
-        .where(eq(schema.personas.name, row.persona_name))
-        .run();
-      pgCount++;
+  if (pgMappings.length > 0) {
+    for (const row of pgMappings) {
+      const group = db.select().from(schema.consolidatedGroups)
+        .where(eq(schema.consolidatedGroups.name, row.consolidated_group_name))
+        .get();
+      if (group) {
+        db.update(schema.personas)
+          .set({ consolidatedGroupId: group.id })
+          .where(eq(schema.personas.name, row.persona_name))
+          .run();
+        pgCount++;
+      }
     }
+    console.log(`  ✓ ${pgCount} persona-group mappings`);
+  } else {
+    console.log("  ⊘ persona-group-mappings.csv not found or empty, skipping");
   }
-  console.log(`  ✓ ${pgCount} persona-group mappings`);
 
   // ─── 5. Source Roles ───
   const rolesData = readCsv<any>("source-roles.csv");
@@ -305,26 +317,30 @@ function seed() {
     console.log("  ⊘ target-role-permissions.csv not found or empty, skipping");
   }
 
-  // ─── 10. User-Persona Assignments ───
+  // ─── 10. User-Persona Assignments (skip if file not in demo pack) ───
   const upaData = readCsv<any>("user-persona-assignments.csv");
   let upaCount = 0;
-  for (const row of upaData) {
-    const user = db.select().from(schema.users)
-      .where(eq(schema.users.sourceUserId, row.source_user_id)).get();
-    const persona = db.select().from(schema.personas)
-      .where(eq(schema.personas.name, row.persona_name)).get();
-    if (user && persona) {
-      db.insert(schema.userPersonaAssignments).values({
-        userId: user.id,
-        personaId: persona.id,
-        consolidatedGroupId: persona.consolidatedGroupId,
-        confidenceScore: parseFloat(row.confidence_score) || null,
-        assignmentMethod: row.assignment_method || "ai",
-      }).run();
-      upaCount++;
+  if (upaData.length > 0) {
+    for (const row of upaData) {
+      const user = db.select().from(schema.users)
+        .where(eq(schema.users.sourceUserId, row.source_user_id)).get();
+      const persona = db.select().from(schema.personas)
+        .where(eq(schema.personas.name, row.persona_name)).get();
+      if (user && persona) {
+        db.insert(schema.userPersonaAssignments).values({
+          userId: user.id,
+          personaId: persona.id,
+          consolidatedGroupId: persona.consolidatedGroupId,
+          confidenceScore: parseFloat(row.confidence_score) || null,
+          assignmentMethod: row.assignment_method || "ai",
+        }).run();
+        upaCount++;
+      }
     }
+    console.log(`  ✓ ${upaCount} user-persona assignments`);
+  } else {
+    console.log("  ⊘ user-persona-assignments.csv not found or empty, skipping (generate personas first)");
   }
-  console.log(`  ✓ ${upaCount} user-persona assignments`);
 
   // ─── 10b. User-Source Role Assignments (optional) ───
   const usraData = readCsv<any>("user-source-role-assignments.csv");
@@ -387,11 +403,14 @@ function seed() {
     const userInfo = userLookup.get(row.user_id);
     const targetRoleDbId = targetRoleLookup.get(row.role_id);
     if (userInfo && targetRoleDbId) {
+      const phase = row.release_phase?.trim() || "current";
+      const isExisting = phase === "existing";
       db.insert(schema.userTargetRoleAssignments).values({
         userId: userInfo.id,
         targetRoleId: targetRoleDbId,
-        assignmentType: "seed_demo",
-        status: "draft",
+        assignmentType: isExisting ? "existing_access" : "seed_demo",
+        status: isExisting ? "approved" : "draft",
+        releasePhase: phase,
       }).run();
       utraCount++;
     }
@@ -515,23 +534,36 @@ function seed() {
   // Load all active SOD rules (including the target-system ones we just inserted)
   const activeRules = db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true)).all();
 
-  // Group assignments by user
+  // Group assignments by user — include both draft (current) and existing (previous wave) for SOD
   const seedAssignments = db.select().from(schema.userTargetRoleAssignments)
     .where(eq(schema.userTargetRoleAssignments.status, "draft")).all();
-  const seedUserAssignments = new Map<number, number[]>();
+  const seedExistingAssignments = db.select().from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing")).all();
+
+  const seedUserAssignments = new Map<number, number[]>(); // draft only
+  const seedUserAllRoles = new Map<number, Set<number>>(); // all roles for SOD
+
   for (const a of seedAssignments) {
     if (!seedUserAssignments.has(a.userId)) seedUserAssignments.set(a.userId, []);
     seedUserAssignments.get(a.userId)!.push(a.targetRoleId);
+    if (!seedUserAllRoles.has(a.userId)) seedUserAllRoles.set(a.userId, new Set());
+    seedUserAllRoles.get(a.userId)!.add(a.targetRoleId);
+  }
+  for (const a of seedExistingAssignments) {
+    if (!seedUserAllRoles.has(a.userId)) seedUserAllRoles.set(a.userId, new Set());
+    seedUserAllRoles.get(a.userId)!.add(a.targetRoleId);
   }
 
   let seedConflictsFound = 0;
   const seedUsersWithConflicts = new Set<number>();
 
   const seedUserEntries = Array.from(seedUserAssignments.entries());
-  for (const [userId, roleIds] of seedUserEntries) {
+  for (const [userId, draftRoleIds] of seedUserEntries) {
+    // Use ALL roles (existing + current) for SOD checking
+    const allRoleIds = Array.from(seedUserAllRoles.get(userId) || new Set<number>());
     const userPerms = new Set<string>();
     const permToRole = new Map<string, number>();
-    for (const roleId of roleIds) {
+    for (const roleId of allRoleIds) {
       const perms = seedRolePerms.get(roleId) || new Set();
       const permArr = Array.from(perms);
       for (const p of permArr) {
@@ -588,15 +620,19 @@ function seed() {
       }
     }
 
-    // Update assignment statuses
+    // Update assignment statuses for DRAFT assignments only (existing keep their approved status)
     const newStatus = userConflictCount > 0 ? "sod_rejected" : "compliance_approved";
-    for (const roleId of roleIds) {
+    for (const roleId of draftRoleIds) {
       db.update(schema.userTargetRoleAssignments).set({
         status: newStatus,
         sodConflictCount: userConflictCount,
         updatedAt: new Date().toISOString(),
       }).where(
-        eq(schema.userTargetRoleAssignments.userId, userId),
+        and(
+          eq(schema.userTargetRoleAssignments.userId, userId),
+          eq(schema.userTargetRoleAssignments.targetRoleId, roleId),
+          eq(schema.userTargetRoleAssignments.status, "draft"),
+        )
       ).run();
     }
   }

@@ -493,6 +493,23 @@ function RefinementsTab({
                   <p><span className="text-muted-foreground">Department:</span> {selectedUser.department ?? "—"}</p>
                 </div>
 
+                {/* Existing Production Access (locked, from previous waves) */}
+                {selectedUser.existingAccessRoles.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-medium text-muted-foreground mb-1.5">Existing Production Access (Wave 1)</h4>
+                    <div className="space-y-1">
+                      {selectedUser.existingAccessRoles.map(r => (
+                        <div key={r.targetRoleId} className="flex items-center gap-2 text-xs rounded-md border bg-muted/30 px-2 py-1.5 opacity-70">
+                          <Badge variant="secondary" className="text-xs">{r.roleName}</Badge>
+                          <span className="text-muted-foreground font-mono">{r.roleId}</span>
+                          <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 ml-auto">locked</Badge>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">Existing access from previous releases cannot be modified by mappers.</p>
+                  </div>
+                )}
+
                 {/* Persona Default Roles */}
                 {selectedUser.personaDefaultRoles.length > 0 && (
                   <div>
@@ -508,7 +525,7 @@ function RefinementsTab({
                   </div>
                 )}
 
-                {/* Editable Role Assignments */}
+                {/* Editable Role Assignments (Current Wave) */}
                 <div>
                   <h4 className="text-xs font-medium text-muted-foreground mb-1.5">Assigned Target Roles</h4>
                   <div className="space-y-1">

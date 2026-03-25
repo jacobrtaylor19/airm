@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { count, ne } from "drizzle-orm";
+import { count, ne, eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
 import { getSourceSystemStats } from "@/lib/queries";
 
@@ -27,6 +27,10 @@ export default function DataUploadPage() {
     .where(ne(schema.appUsers.role, "system_admin"))
     .get()!.count;
 
+  const existingAccessCount = db.select({ count: count() }).from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
+    .get()!.count;
+
   const counts = {
     users: getCount(schema.users),
     sourceRoles: getCount(schema.sourceRoles),
@@ -37,6 +41,7 @@ export default function DataUploadPage() {
     sodRules: getCount(schema.sodRules),
     personas: getCount(schema.personas),
     appUsers: appUserCount,
+    existingAccess: existingAccessCount,
   };
 
   const requiredUploaded = [counts.users, counts.sourceRoles, counts.targetRoles].filter(
@@ -147,6 +152,15 @@ export default function DataUploadPage() {
           required={false}
           existingCount={counts.sodRules}
           templateUrl="/templates/sod-rules-template.csv"
+        />
+        <UploadCard
+          type="existing-access"
+          label="Existing Production Access"
+          description="Upload approved target role assignments from previous releases/waves. These are locked and included in SOD analysis."
+          expectedColumns="source_user_id, target_role_id, release_phase"
+          required={false}
+          existingCount={counts.existingAccess}
+          templateUrl="/templates/existing-access-template.csv"
         />
         <UploadCard
           type="personas"
