@@ -17,3 +17,12 @@ sqlite.pragma("foreign_keys = ON");
 sqlite.pragma("busy_timeout = 10000");
 
 export const db = drizzle(sqlite, { schema });
+
+// Migrate plaintext sensitive settings to encrypted form on startup
+// Lazy import to avoid circular dependency (settings.ts imports db)
+try {
+  const { migrateSettings } = require("@/lib/settings");
+  migrateSettings();
+} catch {
+  // Settings migration is best-effort on startup — may fail on first run before tables exist
+}
