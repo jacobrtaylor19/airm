@@ -93,6 +93,7 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
     }
   }
 
+  const [roleSearch, setRoleSearch] = useState("");
   const selectedDetail = selectedPersonaId ? personaDetails[selectedPersonaId] : null;
   const selectedPersona = personas.find(p => p.personaId === selectedPersonaId);
 
@@ -222,7 +223,7 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                     <div
                       key={p.personaId}
                       className={`flex items-center justify-between px-4 py-2.5 cursor-pointer border-b text-sm ${
-                        isSelected ? "bg-primary/5 border-l-2 border-l-primary" : "hover:bg-muted/50"
+                        isSelected ? "bg-indigo-50 border-l-2 border-l-indigo-500" : "hover:bg-muted/50"
                       }`}
                       onClick={() => setSelectedPersonaId(p.personaId)}
                     >
@@ -431,7 +432,9 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                                     </span>
                                   )}
                                   {!isOverProvisioned && dbInfo?.confidence && dbInfo.confidence !== "manual" && (
-                                    <span className="text-[9px] text-muted-foreground ml-0.5">({dbInfo.confidence})</span>
+                                    <span className={`text-[9px] ml-0.5 font-medium ${dbInfo.confidence === "high" ? "text-teal-600" : dbInfo.confidence === "medium" ? "text-blue-500" : "text-muted-foreground"}`}>
+                                      ({dbInfo.confidence})
+                                    </span>
                                   )}
                                   <button
                                     onClick={() => removeRole(roleId)}
@@ -450,9 +453,20 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
 
                     {/* Available Roles drop zone */}
                     <div>
-                      <h4 className="text-sm font-medium mb-1.5 text-muted-foreground">
-                        Available Target Roles ({targetRoles.filter((r) => !localMappedIds.includes(r.id)).length})
-                      </h4>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Available Target Roles ({targetRoles.filter((r) => !localMappedIds.includes(r.id)).length})
+                        </h4>
+                        <div className="relative w-48">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-slate-400" />
+                          <Input
+                            placeholder="Filter roles..."
+                            value={roleSearch}
+                            onChange={(e) => setRoleSearch(e.target.value)}
+                            className="h-7 text-xs pl-7"
+                          />
+                        </div>
+                      </div>
                       <div
                         className={`min-h-[60px] rounded-md border-2 border-dashed p-2 transition-colors ${
                           dropZoneActive === "available"
@@ -472,6 +486,7 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                         <div className="flex flex-wrap gap-1.5">
                           {targetRoles
                             .filter((r) => !localMappedIds.includes(r.id))
+                            .filter((r) => !roleSearch || r.roleName.toLowerCase().includes(roleSearch.toLowerCase()))
                             .map((r) => (
                               <div
                                 key={r.id}
