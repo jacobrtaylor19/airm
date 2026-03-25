@@ -1,10 +1,13 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { requireRole } from "@/lib/auth";
 import { ReleasesClient } from "./releases-client";
 
 export const dynamic = "force-dynamic";
 
 export default function ReleasesPage() {
+  requireRole(["admin", "system_admin"]);
+
   const releases = db.select().from(schema.releases).orderBy(schema.releases.createdAt).all();
 
   const allAssignments = db.select().from(schema.userTargetRoleAssignments).all();

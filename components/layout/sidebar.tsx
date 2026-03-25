@@ -43,7 +43,6 @@ const navSections: NavSection[] = [
     label: "WORKFLOW",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { href: "/releases", label: "Releases", icon: Layers },
       { href: "/upload", label: "Data Upload", icon: Upload },
       { href: "/personas", label: "Personas", icon: UserCircle },
       { href: "/mapping", label: "Role Mapping", icon: Route },
@@ -72,6 +71,7 @@ const navSections: NavSection[] = [
     label: "ADMIN",
     adminOnly: true,
     items: [
+      { href: "/releases", label: "Releases", icon: Layers },
       { href: "/admin/users", label: "App Users", icon: UserCog },
       { href: "/admin/assignments", label: "Assignments", icon: GitBranch },
     ],

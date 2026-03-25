@@ -4,6 +4,13 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 
+const ADMIN_ROLES = ["admin", "system_admin"];
+
+function isAdmin(): boolean {
+  const user = getSessionUser();
+  return user !== null && ADMIN_ROLES.includes(user.role);
+}
+
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -28,6 +35,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isAdmin()) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
   try {
     const user = getSessionUser();
     const body = await req.json();
@@ -65,6 +73,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!isAdmin()) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
   try {
     const body = await req.json();
     const { id, name, description, status, releaseType, targetSystem, targetDate, completedDate, isActive } = body;
@@ -101,6 +110,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  if (!isAdmin()) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
   try {
     const { searchParams } = new URL(req.url);
     const id = parseInt(searchParams.get("id") ?? "");
