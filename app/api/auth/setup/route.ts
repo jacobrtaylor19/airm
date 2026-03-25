@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { hashPassword } from "@/lib/auth";
+import { validatePassword } from "@/lib/password-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,14 @@ export async function POST(req: NextRequest) {
     if (!username || !displayName || !password) {
       return NextResponse.json({ error: "All fields required" }, { status: 400 });
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+
+    // Validate password strength
+    const validation = validatePassword(password);
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: "Password does not meet requirements", details: validation.errors },
+        { status: 400 }
+      );
     }
 
     const passwordHash = await hashPassword(password);
@@ -32,7 +39,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Setup failed";
+    const message =
+      process.env.NODE_ENV === "development" && err instanceof Error
+        ? err.message
+        : "Setup failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

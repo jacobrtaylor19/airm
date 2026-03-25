@@ -520,6 +520,8 @@ export const appUsers = sqliteTable("app_users", {
   role: text("role").notNull().default("viewer"),
   assignedOrgUnitId: integer("assigned_org_unit_id"),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
+  failedLoginAttempts: integer("failed_login_attempts").default(0),
+  lockedUntil: integer("locked_until"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
