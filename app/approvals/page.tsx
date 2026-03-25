@@ -1,5 +1,6 @@
-import { getApprovalQueue, getApprovalQueueScoped } from "@/lib/queries";
+import { getApprovalQueue } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
+import { getUserScope } from "@/lib/scope";
 import { ApprovalsClient } from "./approvals-client";
 
 export const dynamic = "force-dynamic";
@@ -7,10 +8,15 @@ export const dynamic = "force-dynamic";
 export default function ApprovalsPage() {
   const user = requireAuth();
 
-  // Approvers see only their assigned scope; admins see everything
-  const queue = user.role === "approver"
-    ? getApprovalQueueScoped(user.id)
-    : getApprovalQueue();
+  // Get full queue, then filter by org scope
+  let queue = getApprovalQueue();
+  if (user.role === "approver") {
+    const scopedUserIds = getUserScope(user);
+    if (scopedUserIds !== null) {
+      const idSet = new Set(scopedUserIds);
+      queue = queue.filter((a) => idSet.has(a.userId));
+    }
+  }
 
   const readyForApproval = queue.filter(a => a.status === "ready_for_approval");
   const approved = queue.filter(a => a.status === "approved");

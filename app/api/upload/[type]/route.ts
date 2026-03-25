@@ -4,6 +4,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { parse } from "csv-parse/sync";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 type UploadType =
   | "users"
@@ -13,7 +14,8 @@ type UploadType =
   | "target-roles"
   | "target-permissions"
   | "sod-rules"
-  | "personas";
+  | "personas"
+  | "app-users";
 
 const REQUIRED_COLUMNS: Record<UploadType, string[]> = {
   users: ["source_user_id", "display_name"],
@@ -24,6 +26,7 @@ const REQUIRED_COLUMNS: Record<UploadType, string[]> = {
   "target-permissions": ["permission_id", "permission_name"],
   "sod-rules": ["rule_id", "rule_name", "permission_a", "permission_b", "severity"],
   personas: ["name", "description", "business_function"],
+  "app-users": ["username", "password", "display_name", "role"],
 };
 
 function validateColumns(headers: string[], required: string[]): string[] {
@@ -330,6 +333,58 @@ async function commitUpload(
               source: "manual_upload",
             })
             .run();
+          inserted++;
+        } catch (e: any) {
+          if (e.message?.includes("UNIQUE")) skipped++;
+          else errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+        }
+      }
+      break;
+    }
+
+    case "app-users": {
+      for (const row of records) {
+        try {
+          const validRoles = ["mapper", "approver", "admin", "viewer"];
+          const role = row.role?.toLowerCase().trim();
+          if (!validRoles.includes(role)) {
+            errors.push(`Row ${inserted + skipped + 1}: invalid role "${row.role}" — must be one of ${validRoles.join(", ")}`);
+            skipped++;
+            continue;
+          }
+
+          // Check if username already exists
+          const existing = db.select().from(schema.appUsers)
+            .where(eq(schema.appUsers.username, row.username.trim()))
+            .get();
+          if (existing) {
+            skipped++;
+            continue;
+          }
+
+          // Resolve org unit by name
+          let assignedOrgUnitId: number | null = null;
+          if (row.org_unit_name?.trim()) {
+            const orgUnit = db.select().from(schema.orgUnits)
+              .where(eq(schema.orgUnits.name, row.org_unit_name.trim()))
+              .get();
+            if (orgUnit) {
+              assignedOrgUnitId = orgUnit.id;
+            } else {
+              errors.push(`Row ${inserted + skipped + 1}: org_unit_name "${row.org_unit_name}" not found`);
+            }
+          }
+
+          const passwordHash = bcrypt.hashSync(row.password, 10);
+
+          db.insert(schema.appUsers).values({
+            username: row.username.trim(),
+            displayName: row.display_name.trim(),
+            email: row.email?.trim() || null,
+            passwordHash,
+            role,
+            assignedOrgUnitId,
+          }).run();
           inserted++;
         } catch (e: any) {
           if (e.message?.includes("UNIQUE")) skipped++;

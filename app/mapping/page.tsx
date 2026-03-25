@@ -4,14 +4,13 @@ import {
   getGapAnalysis,
   getTargetRoles,
   getPersonaDetail,
-  getAssignedScope,
-  getSourceUserIdsInScope,
   getPersonaIdsForUsers,
   getOpenSodConflictsByPersona,
   getPersonaSourceSystems,
 } from "@/lib/queries";
 import type { PersonaSodConflict } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
+import { getUserScope } from "@/lib/scope";
 import { MappingClient } from "./mapping-client";
 
 export const dynamic = "force-dynamic";
@@ -26,14 +25,14 @@ export default function MappingPage() {
 
   // Filter for mappers — only show personas containing their assigned users
   if (user.role === "mapper") {
-    const scope = getAssignedScope(user.id, "mapper");
-    if (scope.departments.length > 0 || scope.userIds.length > 0) {
-      const scopedUserIds = getSourceUserIdsInScope(scope);
+    const scopedUserIds = getUserScope(user);
+    if (scopedUserIds && scopedUserIds.length > 0) {
       const scopedPersonaIds = new Set(getPersonaIdsForUsers(scopedUserIds));
       personas = personas.filter((p) => scopedPersonaIds.has(p.personaId));
       refinements = refinements.filter((r) => scopedUserIds.includes(r.userId));
       gaps = gaps.filter((g) => scopedPersonaIds.has(g.personaId));
-    } else {
+    } else if (scopedUserIds !== null) {
+      // Empty scope (not null = restricted but no users)
       personas = [];
       refinements = [];
       gaps = [];

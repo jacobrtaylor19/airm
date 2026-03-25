@@ -1,5 +1,6 @@
-import { getDashboardStats, getDepartmentMappingStatus, getAssignedScope, getSourceSystemStats } from "@/lib/queries";
+import { getDashboardStats, getDepartmentMappingStatus, getSourceSystemStats } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
+import { getUserScopeDepartments } from "@/lib/scope";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
 import { Upload, UserCircle, Route, ShieldAlert, CheckCircle, Database } from "lucide-react";
@@ -20,15 +21,9 @@ export default function DashboardPage() {
   const approvedPercent = stats.totalAssignments > 0
     ? Math.round((stats.approvedAssignments / stats.totalAssignments) * 100) : 0;
 
-  // Determine assigned departments for mapper/approver
-  const assignmentType = user.role === "mapper" ? "mapper" : user.role === "approver" ? "approver" : null;
-  let assignedDepartments: string[] | null = null;
-  if (assignmentType) {
-    const scope = getAssignedScope(user.id, assignmentType);
-    if (scope.departments.length > 0) {
-      assignedDepartments = scope.departments;
-    }
-  }
+  // Determine assigned departments for mapper/approver via org hierarchy
+  const scopeDepts = getUserScopeDepartments(user);
+  const assignedDepartments = scopeDepts && scopeDepts.length > 0 ? scopeDepts : null;
 
   // Workflow stages
   const hasData = stats.totalUsers > 0 && stats.totalSourceRoles > 0;

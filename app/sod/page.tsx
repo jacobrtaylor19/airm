@@ -1,12 +1,22 @@
 import { getSodConflictsDetailed } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
+import { getUserScope } from "@/lib/scope";
 import { SodPageClient } from "./sod-client";
 
 export const dynamic = "force-dynamic";
 
 export default function SodConflictAnalysisPage() {
   const currentUser = getSessionUser();
-  const conflicts = getSodConflictsDetailed();
+  let conflicts = getSodConflictsDetailed();
+
+  // Filter by org scope for mappers/approvers
+  if (currentUser && ["mapper", "approver"].includes(currentUser.role)) {
+    const scopedUserIds = getUserScope(currentUser);
+    if (scopedUserIds !== null) {
+      const idSet = new Set(scopedUserIds);
+      conflicts = conflicts.filter(c => idSet.has(c.userId));
+    }
+  }
 
   const summary = {
     critical: conflicts.filter(c => c.severity === "critical").length,

@@ -15,6 +15,7 @@ export interface AppUser {
   displayName: string;
   email: string | null;
   role: string;
+  assignedOrgUnitId: number | null;
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -60,6 +61,7 @@ export function getSessionUser(): AppUser | null {
     displayName: schema.appUsers.displayName,
     email: schema.appUsers.email,
     role: schema.appUsers.role,
+    assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
     expiresAt: schema.appUserSessions.expiresAt,
   })
     .from(schema.appUserSessions)
@@ -81,6 +83,7 @@ export function getSessionUser(): AppUser | null {
     displayName: session.displayName,
     email: session.email,
     role: session.role,
+    assignedOrgUnitId: session.assignedOrgUnitId,
   };
 }
 
@@ -125,6 +128,7 @@ export function getSessionUserFromToken(token: string): AppUser | null {
     displayName: schema.appUsers.displayName,
     email: schema.appUsers.email,
     role: schema.appUsers.role,
+    assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
     expiresAt: schema.appUserSessions.expiresAt,
   })
     .from(schema.appUserSessions)
@@ -140,5 +144,6 @@ export function getSessionUserFromToken(token: string): AppUser | null {
     displayName: session.displayName,
     email: session.email,
     role: session.role,
+    assignedOrgUnitId: session.assignedOrgUnitId,
   };
 }

@@ -59,7 +59,8 @@ function DeptProgressBar({ depts }: { depts: DepartmentMappingStatus[] }) {
   );
 }
 
-export function DashboardFiltered({ allDepts, assignedDepartments, sodConflicts, lowConfidence, sodRulesCount, personasWithMapping, totalPersonas }: Props) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sodConflicts, lowConfidence, sodRulesCount, personasWithMapping, totalPersonas }: Props) {
   const allDeptNames = allDepts.map((d) => d.department).sort();
 
   // Default: assigned departments for mapper/approver, "all" for admin/viewer

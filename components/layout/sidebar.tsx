@@ -20,6 +20,7 @@ import {
   UserCog,
   GitBranch,
 } from "lucide-react";
+import { AIRMLogo } from "@/components/layout/airm-logo";
 
 interface NavItem {
   href: string;
@@ -84,7 +85,7 @@ export function Sidebar({ userRole }: { userRole: string }) {
     <aside className="flex h-screen w-64 flex-col border-r bg-muted/40">
       <div className="flex h-14 items-center border-b px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <ShieldAlert className="h-5 w-5" />
+          <AIRMLogo variant={1} size="sm" />
           <span>AIRM</span>
         </Link>
       </div>

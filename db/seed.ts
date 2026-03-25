@@ -81,16 +81,87 @@ function seed() {
   db.delete(schema.targetPermissions).run();
   db.delete(schema.targetRoles).run();
   db.delete(schema.users).run();
+  db.delete(schema.orgUnits).run();
+
+  // ─── 0. Org Hierarchy ───
+  const orgHierarchy: { name: string; level: string; parentName?: string; description?: string }[] = [
+    // L1
+    { name: "Operations", level: "L1", description: "Core operational functions" },
+    { name: "Corporate Services", level: "L1", description: "Corporate support functions" },
+    { name: "Technology", level: "L1", description: "Technology and engineering" },
+    // L2 under Operations
+    { name: "Maintenance", level: "L2", parentName: "Operations", description: "Asset maintenance and reliability" },
+    { name: "Facilities", level: "L2", parentName: "Operations", description: "Facilities management" },
+    { name: "Supply Chain", level: "L2", parentName: "Operations", description: "Supply chain and logistics" },
+    { name: "Warehouse", level: "L2", parentName: "Operations", description: "Warehouse and inventory management" },
+    { name: "Quality", level: "L2", parentName: "Operations", description: "Quality assurance and control" },
+    // L2 under Corporate Services
+    { name: "Finance", level: "L2", parentName: "Corporate Services", description: "Financial management and reporting" },
+    { name: "Procurement", level: "L2", parentName: "Corporate Services", description: "Procurement and vendor management" },
+    { name: "Market Research", level: "L2", parentName: "Corporate Services", description: "Market research and analysis" },
+    // L2 under Technology
+    { name: "Product Development", level: "L2", parentName: "Technology", description: "Product development and engineering" },
+    { name: "Product", level: "L2", parentName: "Technology", description: "Product management" },
+    { name: "Research & Development", level: "L2", parentName: "Technology", description: "Research and development" },
+    // L3 under Maintenance
+    { name: "Rotating Equipment", level: "L3", parentName: "Maintenance", description: "Rotating equipment maintenance" },
+    { name: "Instrumentation", level: "L3", parentName: "Maintenance", description: "Instrumentation and controls" },
+    { name: "Electrical", level: "L3", parentName: "Maintenance", description: "Electrical systems maintenance" },
+    { name: "Civil", level: "L3", parentName: "Maintenance", description: "Civil and structural maintenance" },
+    // L3 under Finance
+    { name: "Accounts Payable", level: "L3", parentName: "Finance", description: "Accounts payable processing" },
+    { name: "Accounts Receivable", level: "L3", parentName: "Finance", description: "Accounts receivable and collections" },
+    { name: "General Ledger", level: "L3", parentName: "Finance", description: "General ledger and financial reporting" },
+    { name: "Treasury", level: "L3", parentName: "Finance", description: "Treasury and cash management" },
+    // L3 under Supply Chain
+    { name: "Logistics", level: "L3", parentName: "Supply Chain", description: "Transportation and logistics" },
+    { name: "Demand Planning", level: "L3", parentName: "Supply Chain", description: "Demand forecasting and planning" },
+    { name: "Distribution", level: "L3", parentName: "Supply Chain", description: "Distribution operations" },
+    // L3 under Warehouse
+    { name: "Receiving", level: "L3", parentName: "Warehouse", description: "Goods receiving" },
+    { name: "Inventory Control", level: "L3", parentName: "Warehouse", description: "Inventory control and counting" },
+    // L3 under Procurement
+    { name: "Strategic Sourcing", level: "L3", parentName: "Procurement", description: "Strategic sourcing and contracts" },
+    { name: "Vendor Management", level: "L3", parentName: "Procurement", description: "Vendor onboarding and management" },
+    // L3 under Product Development
+    { name: "Design Engineering", level: "L3", parentName: "Product Development", description: "Product design and engineering" },
+    { name: "Testing", level: "L3", parentName: "Product Development", description: "Testing and validation" },
+  ];
+
+  // Insert L1 first, then L2, then L3 to respect parent ordering
+  const orgUnitIdMap = new Map<string, number>();
+  for (const level of ["L1", "L2", "L3"]) {
+    for (const ou of orgHierarchy.filter(o => o.level === level)) {
+      const parentId = ou.parentName ? orgUnitIdMap.get(ou.parentName) ?? null : null;
+      const result = db.insert(schema.orgUnits).values({
+        name: ou.name,
+        level: ou.level,
+        parentId,
+        description: ou.description,
+      }).run();
+      orgUnitIdMap.set(ou.name, Number(result.lastInsertRowid));
+    }
+  }
+  console.log(`  ✓ ${orgHierarchy.length} org units (L1/L2/L3 hierarchy)`);
+
+  // ─── Department → OrgUnit mapping (L2 departments match directly) ───
+  const deptToOrgUnit = new Map<string, number>();
+  orgUnitIdMap.forEach((id, name) => {
+    deptToOrgUnit.set(name, id);
+  });
 
   // ─── 1. Users ───
   const usersData = readCsv<any>("users.csv");
   for (const row of usersData) {
+    const dept = row.department?.trim();
+    const ouId = dept ? (deptToOrgUnit.get(dept) ?? null) : null;
     db.insert(schema.users).values({
       sourceUserId: row.source_user_id,
       displayName: row.display_name,
       email: row.email,
       jobTitle: row.job_title,
       department: row.department,
+      orgUnitId: ouId,
     }).run();
   }
   console.log(`  ✓ ${usersData.length} users`);
@@ -607,22 +678,24 @@ function seed() {
   const testPassword = bcrypt.hashSync("test123", 10);
 
   const testUsers = [
-    { username: "sysadmin", displayName: "System Administrator", role: "system_admin", hash: sysadminHash },
-    { username: "admin", displayName: "Administrator", role: "admin", hash: adminHash },
-    { username: "mapper.finance", displayName: "Jane Chen (Finance Mapper)", role: "mapper", hash: testPassword },
-    { username: "mapper.maintenance", displayName: "Mike Torres (Maintenance Mapper)", role: "mapper", hash: testPassword },
-    { username: "mapper.procurement", displayName: "Sarah Kim (Procurement Mapper)", role: "mapper", hash: testPassword },
-    { username: "approver.finance", displayName: "David Okafor (Finance Approver)", role: "approver", hash: testPassword },
-    { username: "approver.operations", displayName: "Lisa Park (Operations Approver)", role: "approver", hash: testPassword },
-    { username: "viewer", displayName: "Chris Reed (Viewer)", role: "viewer", hash: testPassword },
+    { username: "sysadmin", displayName: "System Administrator", role: "system_admin", hash: sysadminHash, orgUnit: null as string | null },
+    { username: "admin", displayName: "Administrator", role: "admin", hash: adminHash, orgUnit: null as string | null },
+    { username: "mapper.finance", displayName: "Jane Chen (Finance Mapper)", role: "mapper", hash: testPassword, orgUnit: "Finance" },
+    { username: "mapper.maintenance", displayName: "Mike Torres (Maintenance Mapper)", role: "mapper", hash: testPassword, orgUnit: "Maintenance" },
+    { username: "mapper.procurement", displayName: "Sarah Kim (Procurement Mapper)", role: "mapper", hash: testPassword, orgUnit: "Procurement" },
+    { username: "approver.finance", displayName: "David Okafor (Finance Approver)", role: "approver", hash: testPassword, orgUnit: "Corporate Services" },
+    { username: "approver.operations", displayName: "Lisa Park (Operations Approver)", role: "approver", hash: testPassword, orgUnit: "Operations" },
+    { username: "viewer", displayName: "Chris Reed (Viewer)", role: "viewer", hash: testPassword, orgUnit: null as string | null },
   ];
 
   for (const u of testUsers) {
+    const ouId = u.orgUnit ? (orgUnitIdMap.get(u.orgUnit) ?? null) : null;
     db.insert(schema.appUsers).values({
       username: u.username,
       displayName: u.displayName,
       passwordHash: u.hash,
       role: u.role,
+      assignedOrgUnitId: ouId,
     }).run();
   }
 

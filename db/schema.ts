@@ -2,6 +2,18 @@ import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
 // ─────────────────────────────────────────────
+// ORG UNITS (organizational hierarchy L1/L2/L3)
+// ─────────────────────────────────────────────
+
+export const orgUnits = sqliteTable("org_units", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  level: text("level").notNull(), // "L1", "L2", "L3"
+  parentId: integer("parent_id"),
+  description: text("description"),
+});
+
+// ─────────────────────────────────────────────
 // USERS (source system users, normalized)
 // ─────────────────────────────────────────────
 
@@ -13,6 +25,7 @@ export const users = sqliteTable("users", {
   department: text("department"),
   jobTitle: text("job_title"),
   orgUnit: text("org_unit"),
+  orgUnitId: integer("org_unit_id"),
   costCenter: text("cost_center"),
   userType: text("user_type").default("standard"),
   metadata: text("metadata"),
@@ -352,6 +365,7 @@ export const appUsers = sqliteTable("app_users", {
   email: text("email"),
   passwordHash: text("password_hash").notNull(),
   role: text("role").notNull().default("viewer"),
+  assignedOrgUnitId: integer("assigned_org_unit_id"),
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -387,7 +401,15 @@ export const workAssignments = sqliteTable("work_assignments", {
 // RELATIONS (for Drizzle query builder)
 // ═══════════════════════════════════════════════
 
-export const usersRelations = relations(users, ({ many }) => ({
+export const orgUnitsRelations = relations(orgUnits, ({ one, many }) => ({
+  parent: one(orgUnits, { fields: [orgUnits.parentId], references: [orgUnits.id], relationName: "parentChild" }),
+  children: many(orgUnits, { relationName: "parentChild" }),
+  users: many(users),
+  assignedAppUsers: many(appUsers),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  orgUnitRef: one(orgUnits, { fields: [users.orgUnitId], references: [orgUnits.id] }),
   sourceRoleAssignments: many(userSourceRoleAssignments),
   personaAssignments: many(userPersonaAssignments),
   targetRoleAssignments: many(userTargetRoleAssignments),
@@ -499,7 +521,8 @@ export const permissionGapsRelations = relations(permissionGaps, ({ one }) => ({
   sourcePermission: one(sourcePermissions, { fields: [permissionGaps.sourcePermissionId], references: [sourcePermissions.id] }),
 }));
 
-export const appUsersRelations = relations(appUsers, ({ many }) => ({
+export const appUsersRelations = relations(appUsers, ({ one, many }) => ({
+  assignedOrgUnit: one(orgUnits, { fields: [appUsers.assignedOrgUnitId], references: [orgUnits.id] }),
   sessions: many(appUserSessions),
   workAssignments: many(workAssignments),
 }));

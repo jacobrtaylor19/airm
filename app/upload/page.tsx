@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { count } from "drizzle-orm";
+import { count, ne } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
 import { getSourceSystemStats } from "@/lib/queries";
 
@@ -23,6 +23,10 @@ export default function DataUploadPage() {
   const user = requireAuth();
   const isAdmin = user.role === "admin";
   const sourceSystemStats = getSourceSystemStats();
+  const appUserCount = db.select({ count: count() }).from(schema.appUsers)
+    .where(ne(schema.appUsers.role, "system_admin"))
+    .get()!.count;
+
   const counts = {
     users: getCount(schema.users),
     sourceRoles: getCount(schema.sourceRoles),
@@ -32,6 +36,7 @@ export default function DataUploadPage() {
     targetPermissions: getCount(schema.targetPermissions),
     sodRules: getCount(schema.sodRules),
     personas: getCount(schema.personas),
+    appUsers: appUserCount,
   };
 
   const requiredUploaded = [counts.users, counts.sourceRoles, counts.targetRoles].filter(
@@ -150,6 +155,15 @@ export default function DataUploadPage() {
           expectedColumns="name, description, business_function"
           required={false}
           existingCount={counts.personas}
+        />
+        <UploadCard
+          type="app-users"
+          label="Mappers & Approvers"
+          description="Upload mapper, approver, admin, and viewer definitions with org unit assignments"
+          expectedColumns="username, password, display_name, role, email, org_unit_name"
+          required={false}
+          existingCount={counts.appUsers}
+          templateUrl="/templates/app-users-template.csv"
         />
       </div>
 
