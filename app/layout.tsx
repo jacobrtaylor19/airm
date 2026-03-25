@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { getSessionUser } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
+import { ChatWidget } from "@/components/chat/chat-widget";
 import { cookies } from "next/headers";
 import { getReleasesForAppUser } from "@/lib/releases";
 
@@ -47,6 +48,7 @@ export default function RootLayout({
             <main className="flex-1 overflow-y-auto p-6">{children}</main>
           </div>
         </div>
+        <ChatWidget userRole={user.role} userName={user.displayName} />
         <Toaster />
       </body>
     </html>
