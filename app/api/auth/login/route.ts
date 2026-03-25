@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { verifyPassword, createSession } from "@/lib/auth";
+import { checkLoginRate } from "@/lib/rate-limit-middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,10 @@ function getClientIP(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Rate limit: 5 login attempts per 15 min per IP
+  const rateLimited = checkLoginRate(req);
+  if (rateLimited) return rateLimited;
+
   try {
     const { username, password } = await req.json();
     const ip = getClientIP(req);

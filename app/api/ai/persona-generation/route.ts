@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -6,10 +6,11 @@ import { runPersonaGeneration } from "@/lib/ai/persona-generation";
 import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { notifyUsersWithRoles } from "@/lib/notifications";
+import { checkAIRate } from "@/lib/rate-limit-middleware";
 
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   const user = getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -17,6 +18,9 @@ export async function POST() {
   if (user.role === "viewer") {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
+
+  const rateLimited = checkAIRate(req, String(user.id));
+  if (rateLimited) return rateLimited;
 
   // Capture user scope at enqueue time for job isolation (WORKFLOW.md Note 6)
   const scopedUserIds = getUserScope(user);

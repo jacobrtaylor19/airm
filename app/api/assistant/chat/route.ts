@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getSetting } from "@/lib/settings";
+import { checkAIRate } from "@/lib/rate-limit-middleware";
 import { getDashboardStats } from "@/lib/queries";
 import { getUserScope, getUserScopeDepartments } from "@/lib/scope";
 import { db } from "@/db";
@@ -101,6 +102,10 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
     });
   }
+
+  // Rate limit: 10 AI requests per minute per user
+  const rateLimited = checkAIRate(req, String(user.id));
+  if (rateLimited) return rateLimited;
 
   let body: ChatRequestBody;
   try {

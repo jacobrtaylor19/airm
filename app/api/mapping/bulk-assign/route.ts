@@ -4,6 +4,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notifyUsersWithRoles } from "@/lib/notifications";
+import { checkBulkRate } from "@/lib/rate-limit-middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,9 @@ export async function POST(req: NextRequest) {
   if (!allowedRoles.includes(user.role)) {
     return NextResponse.json({ error: "Only mappers and admins can bulk assign roles" }, { status: 403 });
   }
+
+  const rateLimited = checkBulkRate(req, String(user.id));
+  if (rateLimited) return rateLimited;
 
   let body: { personaIds: number[]; targetRoleId: number };
   try {

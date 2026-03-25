@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { inArray } from "drizzle-orm";
 import { getSessionUserFromToken } from "@/lib/auth";
 import { cookies } from "next/headers";
+import { checkBulkRate } from "@/lib/rate-limit-middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ const ALLOWED_ENTITIES = {
 type EntityType = keyof typeof ALLOWED_ENTITIES;
 
 export async function POST(request: NextRequest) {
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   const sessionCookie = cookieStore.get("airm_session");
   if (!sessionCookie?.value) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -28,6 +29,9 @@ export async function POST(request: NextRequest) {
   if (!user || !["admin", "system_admin"].includes(user.role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
+
+  const rateLimited = checkBulkRate(request, String(user.id));
+  if (rateLimited) return rateLimited;
 
   const body = await request.json();
   const { entityType, ids } = body as { entityType: string; ids: number[] };
