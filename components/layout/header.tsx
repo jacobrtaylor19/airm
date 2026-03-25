@@ -36,7 +36,8 @@ const pageInfo: Record<string, { title: string; description?: string }> = {
   "/admin/users": { title: "Manage App Users", description: "Create and manage platform user accounts" },
   "/admin/assignments": { title: "Work Assignments", description: "Mapper and approver org unit assignments" },
   "/admin": { title: "System Settings", description: "Project configuration and AI settings" },
-  "/notifications": { title: "Notifications", description: "Send reminders to mappers and approvers" },
+  "/inbox": { title: "Inbox", description: "Your notifications and workflow updates" },
+  "/notifications": { title: "Send Reminders", description: "Send reminders to mappers and approvers" },
   "/least-access": { title: "Provisioning Alerts", description: "Over-provisioning analysis" },
 };
 
@@ -50,9 +51,10 @@ interface HeaderProps {
   user?: HeaderUser;
   releases?: ReleaseInfo[];
   selectedReleaseId?: number | null;
+  unreadNotificationCount?: number;
 }
 
-export function Header({ user, releases, selectedReleaseId }: HeaderProps) {
+export function Header({ user, releases, selectedReleaseId, unreadNotificationCount = 0 }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const basePath = "/" + (pathname.split("/").slice(1, pathname.startsWith("/admin") ? 3 : 2).join("/") || "dashboard");
@@ -99,11 +101,16 @@ export function Header({ user, releases, selectedReleaseId }: HeaderProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
-            onClick={() => router.push("/notifications")}
-            title="Notifications"
+            className="relative h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
+            onClick={() => router.push("/inbox")}
+            title="Inbox"
           >
             <Bell className="h-4 w-4" />
+            {unreadNotificationCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white">
+                {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
+              </span>
+            )}
           </Button>
 
           {/* User dropdown */}

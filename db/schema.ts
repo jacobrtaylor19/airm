@@ -405,6 +405,7 @@ export const notifications = sqliteTable("notifications", {
   message: text("message").notNull(),
   relatedEntityType: text("related_entity_type"), // "mapping" | "approval" | null
   relatedEntityId: integer("related_entity_id"),
+  actionUrl: text("action_url"), // link to the page where the user can take action
   status: text("status").notNull().default("sent"), // sent | read
   readAt: text("read_at"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),

@@ -25,6 +25,7 @@ export async function GET(req: NextRequest) {
       message: schema.notifications.message,
       relatedEntityType: schema.notifications.relatedEntityType,
       relatedEntityId: schema.notifications.relatedEntityId,
+      actionUrl: schema.notifications.actionUrl,
       status: schema.notifications.status,
       readAt: schema.notifications.readAt,
       createdAt: schema.notifications.createdAt,

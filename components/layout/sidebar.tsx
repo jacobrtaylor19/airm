@@ -23,6 +23,7 @@ import {
   Wrench,
   Layers,
   Bell,
+  Inbox,
   ShieldCheck,
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ const navSections: NavSection[] = [
       { href: "/mapping", label: "Role Mapping", icon: Route },
       { href: "/sod", label: "SOD Analysis", icon: ShieldAlert },
       { href: "/approvals", label: "Approvals", icon: CheckCircle },
+      { href: "/inbox", label: "Inbox", icon: Inbox },
       { href: "/notifications", label: "Send Reminders", icon: Bell, minRole: ["admin", "system_admin", "coordinator"] },
     ],
   },

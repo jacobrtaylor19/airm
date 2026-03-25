@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { runPersonaGeneration } from "@/lib/ai/persona-generation";
 import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
+import { notifyUsersWithRoles } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,15 @@ export async function POST() {
       action: "persona_generation_completed",
       newValue: JSON.stringify(result),
     }).run();
+
+    // Notify coordinators and admins that persona generation is complete
+    notifyUsersWithRoles({
+      roles: ["coordinator", "admin", "system_admin"],
+      notificationType: "workflow_event",
+      subject: "Persona generation complete",
+      message: `Persona generation finished: ${result.personasCreated ?? 0} personas created, ${result.usersAssigned ?? 0} users assigned.`,
+      actionUrl: "/personas",
+    });
 
     return NextResponse.json({ jobId: job.id, ...result });
   } catch (err: unknown) {

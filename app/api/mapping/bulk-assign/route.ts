@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { notifyUsersWithRoles } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,17 @@ export async function POST(req: NextRequest) {
       })
       .run();
     created++;
+  }
+
+  // Notify approvers that new mappings are ready for review
+  if (created > 0) {
+    notifyUsersWithRoles({
+      roles: ["approver", "admin", "system_admin"],
+      notificationType: "workflow_event",
+      subject: "New role mappings ready for review",
+      message: `${created} new mapping(s) assigned to target role "${targetRole.roleName}". Please review in the Approvals queue.`,
+      actionUrl: "/approvals",
+    });
   }
 
   return NextResponse.json({ created, skipped, total: personaIds.length });

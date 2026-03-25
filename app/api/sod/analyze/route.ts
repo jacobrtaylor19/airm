@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { runSodAnalysis } from "@/lib/sod/sod-analysis";
 import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
+import { notifyUsersWithRoles } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -47,6 +48,18 @@ export async function POST() {
       action: "sod_analysis_completed",
       newValue: JSON.stringify(result),
     }).run();
+
+    // Notify coordinators and admins about SOD analysis results
+    const conflictCount = result.conflictsFound ?? 0;
+    if (conflictCount > 0) {
+      notifyUsersWithRoles({
+        roles: ["coordinator", "admin", "system_admin"],
+        notificationType: "workflow_event",
+        subject: "SOD conflicts detected",
+        message: `SOD analysis found ${conflictCount} conflict(s) across ${result.usersAnalyzed ?? 0} users analyzed. Review and resolve these conflicts.`,
+        actionUrl: "/sod",
+      });
+    }
 
     return NextResponse.json({ jobId: job.id, ...result });
   } catch (err: unknown) {
