@@ -501,6 +501,20 @@ export const workAssignments = sqliteTable("work_assignments", {
 });
 
 
+// ─────────────────────────────────────────────
+// PERSONA CONFIRMATIONS (gate before target role mapping)
+// ─────────────────────────────────────────────
+
+export const personaConfirmations = sqliteTable("persona_confirmations", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  orgUnitId: integer("org_unit_id").notNull().references(() => orgUnits.id, { onDelete: "cascade" }),
+  confirmedAt: text("confirmed_at"),
+  confirmedBy: integer("confirmed_by").references(() => appUsers.id),
+  resetAt: text("reset_at"),
+  resetBy: integer("reset_by").references(() => appUsers.id),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 // ═══════════════════════════════════════════════
 // RELATIONS (for Drizzle query builder)
 // ═══════════════════════════════════════════════
@@ -510,6 +524,7 @@ export const orgUnitsRelations = relations(orgUnits, ({ one, many }) => ({
   children: many(orgUnits, { relationName: "parentChild" }),
   users: many(users),
   assignedAppUsers: many(appUsers),
+  personaConfirmations: many(personaConfirmations),
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -659,4 +674,10 @@ export const workAssignmentsRelations = relations(workAssignments, ({ one }) => 
 
 export const securityDesignChangesRelations = relations(securityDesignChanges, ({ one }) => ({
   targetRole: one(targetRoles, { fields: [securityDesignChanges.targetRoleId], references: [targetRoles.id] }),
+}));
+
+export const personaConfirmationsRelations = relations(personaConfirmations, ({ one }) => ({
+  orgUnit: one(orgUnits, { fields: [personaConfirmations.orgUnitId], references: [orgUnits.id] }),
+  confirmer: one(appUsers, { fields: [personaConfirmations.confirmedBy], references: [appUsers.id], relationName: "confirmer" }),
+  resetter: one(appUsers, { fields: [personaConfirmations.resetBy], references: [appUsers.id], relationName: "resetter" }),
 }));
