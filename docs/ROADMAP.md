@@ -153,3 +153,13 @@ These are valuable features that are not prioritised for the current sprint. The
 | **UX overhaul: upload accordion, audit log improvements, teal AI buttons** | v0.5.0 |
 | **UX overhaul: export card accents, empty states, status badges, mapping refinements** | v0.5.0 |
 | **Seed data: 3 demo environments (Default, Energy & Chemicals, Financial Services)** | v0.5.0 |
+| **Sprint 3: Release scoping schema (4 junction tables, context provider, selector)** | v0.6.0 |
+| **Sprint 3: Multi-release seed data (Wave 1 + Wave 2)** | v0.6.0 |
+| **Sprint 3: Release assignment admin UI (CRUD on Assignments page)** | v0.6.0 |
+| **Sprint 3: Upload auto-association with active release** | v0.6.0 |
+| **Sprint 3: Notification inbox (/inbox) with read/unread, dismiss all, action links** | v0.6.0 |
+| **Sprint 3: Workflow event notifications (persona gen, mapping, SOD analysis)** | v0.6.0 |
+| **Sprint 3: Unread notification badge on header bell icon** | v0.6.0 |
+| **Evening: Role-aware strapline, persona page redesign, QRG page** | v0.6.0 |
+| **Evening: Dashboard scoping, Send Reminders visibility, Lumen data context** | v0.6.0 |
+| **Evening: Auto-approve rework (routes to approver), empty states, status badges** | v0.6.0 |
