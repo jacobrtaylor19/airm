@@ -2,14 +2,16 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { count } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
+import { getSourceSystemStats } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 import { UploadCard } from "@/components/upload/upload-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
-import { Upload, UserCircle, Route, ShieldAlert, CheckCircle } from "lucide-react";
+import { Upload, UserCircle, Route, ShieldAlert, CheckCircle, Database } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Eye } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,6 +22,7 @@ function getCount(table: any) {
 export default function DataUploadPage() {
   const user = requireAuth();
   const isAdmin = user.role === "admin";
+  const sourceSystemStats = getSourceSystemStats();
   const counts = {
     users: getCount(schema.users),
     sourceRoles: getCount(schema.sourceRoles),
@@ -86,29 +89,32 @@ export default function DataUploadPage() {
         <UploadCard
           type="source-roles"
           label="Legacy Role Definitions"
-          description="Legacy system roles (SAP AGRs, AD groups, etc.)"
+          description="Source system roles — upload multiple files for different systems (SAP ECC, JDE, Legacy HR, etc.). Include a 'system' column to identify each source."
           expectedColumns="role_id, role_name, description, system, domain"
           required={true}
           existingCount={counts.sourceRoles}
           templateUrl="/templates/source-roles-template.csv"
+          systemTag="Multi-System"
         />
         <UploadCard
           type="role-assignments"
           label="Legacy Role Assignments"
-          description="Which users have which legacy roles"
+          description="Which users have which legacy roles (across all source systems)"
           expectedColumns="user_id, role_id"
           required={false}
           existingCount={counts.roleAssignments}
           templateUrl="/templates/user-source-role-assignments-template.csv"
+          systemTag="Multi-System"
         />
         <UploadCard
           type="role-permissions"
           label="Role-Permission Mapping"
-          description="Maps roles to their individual permissions (T-codes, etc.)"
+          description="Maps roles to their individual permissions (T-codes, etc.) — system is derived from associated roles"
           expectedColumns="role_id, permission_id"
           required={false}
           existingCount={counts.rolePermissions}
           templateUrl="/templates/source-role-permissions-template.csv"
+          systemTag="Multi-System"
         />
         <UploadCard
           type="target-roles"
@@ -146,6 +152,36 @@ export default function DataUploadPage() {
           existingCount={counts.personas}
         />
       </div>
+
+      {/* Source Systems Summary */}
+      {sourceSystemStats.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Source Systems Uploaded
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              {sourceSystemStats.map((s) => (
+                <div
+                  key={s.system}
+                  className="flex items-center gap-2 rounded-md border bg-background px-3 py-2"
+                >
+                  <Badge variant="secondary" className="text-xs font-medium">
+                    {s.system}
+                  </Badge>
+                  <span className="text-sm text-muted-foreground">
+                    {s.roleCount} role{s.roleCount !== 1 ? "s" : ""}
+                    {s.userCount > 0 && <>, {s.userCount} user{s.userCount !== 1 ? "s" : ""}</>}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {isAdmin && (
         <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">

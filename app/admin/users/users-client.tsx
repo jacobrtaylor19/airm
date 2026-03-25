@@ -21,6 +21,7 @@ interface AppUser {
 }
 
 const roleColors: Record<string, string> = {
+  system_admin: "bg-red-100 text-red-800",
   admin: "bg-purple-100 text-purple-800",
   mapper: "bg-blue-100 text-blue-800",
   approver: "bg-green-100 text-green-800",
@@ -158,6 +159,7 @@ export function AdminUsersClient() {
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="system_admin">System Admin</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="mapper">Mapper</SelectItem>
                   <SelectItem value="approver">Approver</SelectItem>

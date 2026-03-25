@@ -4,7 +4,7 @@ import { AdminUsersClient } from "./users-client";
 export const dynamic = "force-dynamic";
 
 export default function AdminUsersPage() {
-  requireRole(["admin"]);
+  requireRole(["admin", "system_admin"]);
 
   return (
     <div className="space-y-4">

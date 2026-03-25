@@ -23,9 +23,10 @@ interface MappingClientProps {
   gaps: GapRow[];
   targetRoles: TargetRoleRow[];
   sodConflictsByPersona?: Record<number, PersonaSodConflict[]>;
+  personaSourceSystems?: Record<number, string[]>;
 }
 
-export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {} }: MappingClientProps) {
+export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {} }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const router = useRouter();
@@ -115,6 +116,15 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                               </span>
                             )}
                           </p>
+                          {personaSourceSystems[p.personaId] && personaSourceSystems[p.personaId].length > 0 && (
+                            <div className="flex gap-1 mt-0.5">
+                              {personaSourceSystems[p.personaId].map((sys) => (
+                                <Badge key={sys} variant="outline" className="text-[9px] px-1 py-0 h-3.5 font-normal">
+                                  {sys}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                       <Badge variant="outline" className="text-xs shrink-0">
@@ -137,10 +147,10 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
             <CardContent>
               {selectedPersona && selectedDetail ? (
                 <div className="space-y-4">
-                  <div className="flex gap-4 text-sm">
+                  <div className="flex flex-wrap gap-4 text-sm">
                     <div>
                       <span className="text-muted-foreground">Group:</span>{" "}
-                      <span className="font-medium">{selectedPersona.groupName ?? "—"}</span>
+                      <span className="font-medium">{selectedPersona.groupName ?? "\u2014"}</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Users:</span>{" "}
@@ -150,6 +160,18 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                       <span className="text-muted-foreground">Source Permissions:</span>{" "}
                       <span className="font-medium">{selectedDetail.sourcePermissionCount}</span>
                     </div>
+                    {selectedPersonaId && personaSourceSystems[selectedPersonaId] && personaSourceSystems[selectedPersonaId].length > 0 && (
+                      <div>
+                        <span className="text-muted-foreground">Source Systems:</span>{" "}
+                        <span className="inline-flex gap-1 ml-1">
+                          {personaSourceSystems[selectedPersonaId].map((sys) => (
+                            <Badge key={sys} variant="outline" className="text-xs">
+                              {sys}
+                            </Badge>
+                          ))}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* SOD Conflict Warning Banner */}

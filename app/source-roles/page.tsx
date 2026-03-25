@@ -1,10 +1,11 @@
-import { getSourceRoles, getSourceRoleDetail } from "@/lib/queries";
+import { getSourceRoles, getSourceRoleDetail, getDistinctSourceSystems } from "@/lib/queries";
 import { SourceRolesClient } from "./source-roles-client";
 
 export const dynamic = "force-dynamic";
 
 export default function SourceRolesPage() {
   const roles = getSourceRoles();
+  const systems = getDistinctSourceSystems();
 
   // Pre-fetch permission details for all roles (expandable rows need them)
   const rolePermissions: Record<number, { id: number; permissionId: string; permissionName: string | null; permissionType: string | null; riskLevel: string | null }[]> = {};
@@ -20,10 +21,10 @@ export default function SourceRolesPage() {
       <div>
         <h2 className="text-xl font-semibold">Source Roles</h2>
         <p className="text-sm text-muted-foreground">
-          Browse legacy system roles and their permissions.
+          Browse legacy system roles and their permissions across all source systems.
         </p>
       </div>
-      <SourceRolesClient roles={roles} rolePermissions={rolePermissions} />
+      <SourceRolesClient roles={roles} rolePermissions={rolePermissions} systems={systems} />
     </div>
   );
 }

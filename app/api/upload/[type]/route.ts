@@ -207,11 +207,17 @@ async function commitUpload(
           .where(eq(schema.sourcePermissions.permissionId, row.permission_id))
           .get();
         if (!perm) {
+          // Derive system from the associated source role, or use CSV value, or default
+          const assocRole = db
+            .select({ system: schema.sourceRoles.system })
+            .from(schema.sourceRoles)
+            .where(eq(schema.sourceRoles.roleId, row.role_id))
+            .get();
           db.insert(schema.sourcePermissions)
             .values({
               permissionId: row.permission_id,
               permissionName: row.permission_name || null,
-              system: "SAP ECC",
+              system: row.system || assocRole?.system || "SAP ECC",
             })
             .run();
           perm = db

@@ -21,9 +21,11 @@ const pageTitles: Record<string, string> = {
   "/jobs": "Processing Jobs",
   "/admin/users": "Manage App Users",
   "/admin/assignments": "Work Assignments",
+  "/admin": "System Settings",
 };
 
 const roleColors: Record<string, string> = {
+  system_admin: "bg-red-100 text-red-800",
   admin: "bg-purple-100 text-purple-800",
   mapper: "bg-blue-100 text-blue-800",
   approver: "bg-green-100 text-green-800",

@@ -6,7 +6,7 @@ import { getSessionUser, hashPassword } from "@/lib/auth";
 
 export async function GET() {
   const user = getSessionUser();
-  if (!user || user.role !== "admin") {
+  if (!user || (user.role !== "admin" && user.role !== "system_admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
@@ -25,7 +25,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = getSessionUser();
-  if (!user || user.role !== "admin") {
+  if (!user || (user.role !== "admin" && user.role !== "system_admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 

@@ -329,6 +329,18 @@ export const auditLog = sqliteTable("audit_log", {
 });
 
 // ─────────────────────────────────────────────
+// SYSTEM SETTINGS (key-value configuration store)
+// ─────────────────────────────────────────────
+
+export const systemSettings = sqliteTable("system_settings", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  key: text("key").notNull().unique(),
+  value: text("value").notNull(),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedBy: text("updated_by"),
+});
+
+// ─────────────────────────────────────────────
 // APP USERS (tool users — mappers, approvers, admins)
 // ─────────────────────────────────────────────
 

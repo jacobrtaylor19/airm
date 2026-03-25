@@ -96,6 +96,23 @@ export function requireRole(allowedRoles: string[]): AppUser {
   return user;
 }
 
+/** Role hierarchy: system_admin > admin > approver > mapper > viewer */
+export const ROLE_HIERARCHY: Record<string, number> = {
+  system_admin: 100,
+  admin: 80,
+  approver: 60,
+  mapper: 40,
+  viewer: 20,
+};
+
+export function isSystemAdmin(user: AppUser): boolean {
+  return user.role === "system_admin";
+}
+
+export function isAdminOrAbove(user: AppUser): boolean {
+  return user.role === "admin" || user.role === "system_admin";
+}
+
 export function hasAppUsers(): boolean {
   const count = db.select().from(schema.appUsers).limit(1).all();
   return count.length > 0;

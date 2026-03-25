@@ -60,15 +60,29 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            {/* Source Roles */}
+            {/* Source Roles — grouped by system */}
             <div className="rounded-md border p-3 min-w-[140px]">
               <p className="text-xs text-muted-foreground mb-1">Source Roles</p>
               {user.sourceRoles.length > 0 ? (
-                <div className="space-y-1">
-                  {user.sourceRoles.map((r) => (
-                    <Badge key={r.id} variant="outline" className="text-xs mr-1">
-                      {r.roleName}
-                    </Badge>
+                <div className="space-y-2">
+                  {Object.entries(
+                    user.sourceRoles.reduce<Record<string, typeof user.sourceRoles>>((acc, r) => {
+                      const sys = r.system ?? "Unknown";
+                      if (!acc[sys]) acc[sys] = [];
+                      acc[sys].push(r);
+                      return acc;
+                    }, {})
+                  ).map(([system, roles]) => (
+                    <div key={system}>
+                      <p className="text-[10px] font-medium text-muted-foreground mb-0.5">{system}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {roles.map((r) => (
+                          <Badge key={r.id} variant="outline" className="text-xs">
+                            {r.roleName}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (

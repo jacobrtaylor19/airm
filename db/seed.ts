@@ -305,9 +305,11 @@ function seed() {
   const bcrypt = require("bcryptjs");
   const adminHash = bcrypt.hashSync("admin123", 10);
 
+  const sysadminHash = bcrypt.hashSync("sysadmin123", 10);
   const testPassword = bcrypt.hashSync("test123", 10);
 
   const testUsers = [
+    { username: "sysadmin", displayName: "System Administrator", role: "system_admin", hash: sysadminHash },
     { username: "admin", displayName: "Administrator", role: "admin", hash: adminHash },
     { username: "mapper.finance", displayName: "Jane Chen (Finance Mapper)", role: "mapper", hash: testPassword },
     { username: "mapper.maintenance", displayName: "Mike Torres (Maintenance Mapper)", role: "mapper", hash: testPassword },
@@ -352,8 +354,36 @@ function seed() {
     db.insert(schema.workAssignments).values(a).run();
   }
 
+  // ─── 13. Default System Settings ───
+  db.delete(schema.systemSettings).run();
+  const defaultSettings = [
+    { key: "project.name", value: "SAP S/4HANA Migration" },
+    { key: "project.sourceSystem", value: "SAP ECC" },
+    { key: "project.targetSystem", value: "SAP S/4HANA" },
+    { key: "project.organization", value: "" },
+    { key: "ai.provider", value: "claude" },
+    { key: "ai.apiKey", value: "" },
+    { key: "ai.model", value: "claude-sonnet-4-20250514" },
+    { key: "ai.confidenceThreshold", value: "85" },
+    { key: "workflow.autoApprove", value: "false" },
+    { key: "workflow.approvalLevels", value: "single" },
+    { key: "workflow.sodSeverity.critical", value: "never" },
+    { key: "workflow.sodSeverity.high", value: "allowed" },
+    { key: "workflow.sodSeverity.medium", value: "allowed" },
+    { key: "workflow.sodSeverity.low", value: "allowed" },
+  ];
+  for (const s of defaultSettings) {
+    db.insert(schema.systemSettings).values({
+      key: s.key,
+      value: s.value,
+      updatedBy: "system",
+    }).run();
+  }
+  console.log(`  ✓ ${defaultSettings.length} default system settings`);
+
   console.log(`  ✓ ${testUsers.length} app users + ${assignments.length} work assignments`);
   console.log("    Credentials:");
+  console.log("    sysadmin / sysadmin123 (system_admin — system settings + full access)");
   console.log("    admin / admin123 (admin — full access)");
   console.log("    mapper.finance / test123 (mapper — Finance dept)");
   console.log("    mapper.maintenance / test123 (mapper — Maintenance + Facilities)");

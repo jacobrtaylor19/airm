@@ -29,6 +29,7 @@ export function UploadCard({
   required,
   existingCount,
   templateUrl,
+  systemTag,
 }: {
   type: string;
   label: string;
@@ -37,6 +38,7 @@ export function UploadCard({
   required: boolean;
   existingCount: number;
   templateUrl?: string;
+  systemTag?: string;
 }) {
   const [status, setStatus] = useState<UploadStatus>(existingCount > 0 ? "done" : "idle");
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -109,6 +111,11 @@ export function UploadCard({
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               {required && <span className="text-red-500">*</span>}
               {label}
+              {systemTag && (
+                <Badge variant="outline" className="text-[10px] font-normal border-blue-200 text-blue-700 bg-blue-50">
+                  {systemTag}
+                </Badge>
+              )}
               {status === "done" && <CheckCircle className="h-4 w-4 text-emerald-600" />}
             </CardTitle>
             <p className="text-xs text-muted-foreground">{description}</p>

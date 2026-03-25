@@ -8,6 +8,7 @@ import {
   getSourceUserIdsInScope,
   getPersonaIdsForUsers,
   getOpenSodConflictsByPersona,
+  getPersonaSourceSystems,
 } from "@/lib/queries";
 import type { PersonaSodConflict } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
@@ -54,6 +55,15 @@ export default function MappingPage() {
     }
   }
 
+  // Get source systems per persona for multi-system visibility
+  const personaSourceSystemsMap = getPersonaSourceSystems();
+  const personaSourceSystemsObj: Record<number, string[]> = {};
+  personaSourceSystemsMap.forEach((systems, personaId) => {
+    if (personas.some(p => p.personaId === personaId)) {
+      personaSourceSystemsObj[personaId] = systems;
+    }
+  });
+
   // Get open SOD conflicts grouped by persona for warning banners
   const sodConflictMap = getOpenSodConflictsByPersona();
   const sodConflictsByPersona: Record<number, PersonaSodConflict[]> = {};
@@ -76,6 +86,7 @@ export default function MappingPage() {
         gaps={gaps}
         targetRoles={targetRoles}
         sodConflictsByPersona={sodConflictsByPersona}
+        personaSourceSystems={personaSourceSystemsObj}
       />
     </div>
   );

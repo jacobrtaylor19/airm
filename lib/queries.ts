@@ -190,6 +190,7 @@ export interface UserDetail {
     roleId: string;
     roleName: string;
     domain: string | null;
+    system: string | null;
   }[];
   targetRoleAssignments: {
     id: number;
@@ -239,6 +240,7 @@ export function getUserDetail(id: number): UserDetail | null {
       roleId: schema.sourceRoles.roleId,
       roleName: schema.sourceRoles.roleName,
       domain: schema.sourceRoles.domain,
+      system: schema.sourceRoles.system,
     })
     .from(schema.userSourceRoleAssignments)
     .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
@@ -1074,4 +1076,68 @@ export function getPersonaIdsForUsers(userIds: number[]): number[] {
     if (a.personaId && idSet.has(a.userId)) personaIds.add(a.personaId);
   }
   return Array.from(personaIds);
+}
+
+// ─────────────────────────────────────────────
+// SOURCE SYSTEM STATS (multi-system support)
+// ─────────────────────────────────────────────
+
+export interface SourceSystemStat {
+  system: string;
+  roleCount: number;
+  userCount: number;
+}
+
+export function getSourceSystemStats(): SourceSystemStat[] {
+  return db
+    .select({
+      system: sql<string>`coalesce(${schema.sourceRoles.system}, 'Unknown')`,
+      roleCount: count(),
+      userCount: sql<number>`(
+        SELECT count(DISTINCT usra.user_id)
+        FROM user_source_role_assignments usra
+        INNER JOIN source_roles sr2 ON sr2.id = usra.source_role_id
+        WHERE coalesce(sr2.system, 'Unknown') = coalesce(${schema.sourceRoles.system}, 'Unknown')
+      )`,
+    })
+    .from(schema.sourceRoles)
+    .groupBy(schema.sourceRoles.system)
+    .all();
+}
+
+export function getDistinctSourceSystems(): string[] {
+  const rows = db
+    .select({ system: sql<string>`coalesce(${schema.sourceRoles.system}, 'Unknown')` })
+    .from(schema.sourceRoles)
+    .groupBy(schema.sourceRoles.system)
+    .all();
+  return rows.map((r) => r.system);
+}
+
+export interface PersonaSourceSystemInfo {
+  personaId: number;
+  systems: string[];
+}
+
+export function getPersonaSourceSystems(): Map<number, string[]> {
+  const rows = db
+    .select({
+      personaId: schema.personaSourcePermissions.personaId,
+      system: sql<string>`coalesce(${schema.sourcePermissions.system}, 'Unknown')`,
+    })
+    .from(schema.personaSourcePermissions)
+    .innerJoin(
+      schema.sourcePermissions,
+      eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId)
+    )
+    .groupBy(schema.personaSourcePermissions.personaId, schema.sourcePermissions.system)
+    .all();
+
+  const map = new Map<number, string[]>();
+  for (const row of rows) {
+    const existing = map.get(row.personaId) ?? [];
+    if (!existing.includes(row.system)) existing.push(row.system);
+    map.set(row.personaId, existing);
+  }
+  return map;
 }

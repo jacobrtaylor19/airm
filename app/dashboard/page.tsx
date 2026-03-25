@@ -1,8 +1,10 @@
-import { getDashboardStats, getDepartmentMappingStatus, getAssignedScope } from "@/lib/queries";
+import { getDashboardStats, getDepartmentMappingStatus, getAssignedScope, getSourceSystemStats } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
-import { Upload, UserCircle, Route, ShieldAlert, CheckCircle } from "lucide-react";
+import { Upload, UserCircle, Route, ShieldAlert, CheckCircle, Database } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { DashboardFiltered } from "./dashboard-filtered";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +13,7 @@ export default function DashboardPage() {
   const user = requireAuth();
   const stats = getDashboardStats();
   const allDeptStatus = getDepartmentMappingStatus();
+  const sourceSystemStats = getSourceSystemStats();
 
   const mappedPercent = stats.totalPersonas > 0
     ? Math.round((stats.personasWithMapping / stats.totalPersonas) * 100) : 0;
@@ -82,6 +85,34 @@ export default function DashboardPage() {
           subtitle={stats.totalAssignments > 0 ? `${stats.approvedAssignments}/${stats.totalAssignments} assignments` : "No assignments yet"}
         />
       </div>
+
+      {/* Source Systems Summary */}
+      {sourceSystemStats.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Source Systems
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {sourceSystemStats.map((s) => (
+                <div key={s.system} className="rounded-md border bg-background p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="secondary" className="text-xs">{s.system}</Badge>
+                  </div>
+                  <p className="text-lg font-bold tabular-nums">{s.roleCount}</p>
+                  <p className="text-xs text-muted-foreground">
+                    role{s.roleCount !== 1 ? "s" : ""}
+                    {s.userCount > 0 && <> &middot; {s.userCount} user{s.userCount !== 1 ? "s" : ""}</>}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filtered Department View — interactive client component */}
       <DashboardFiltered
