@@ -733,6 +733,19 @@ function seed() {
   }
   console.log(`  ✓ ${defaultSettings.length} default system settings`);
 
+  // ─── 14. Default Release ───
+  db.delete(schema.releases).run();
+  db.insert(schema.releases).values({
+    name: "Wave 1 — Initial Migration",
+    description: "First migration wave covering all departments. Established from source system extraction.",
+    status: "in_progress",
+    releaseType: "initial",
+    targetSystem: "SAP S/4HANA",
+    isActive: true,
+    createdBy: "system",
+  }).run();
+  console.log("  ✓ Default release: 'Wave 1 — Initial Migration' (active)");
+
   console.log(`  ✓ ${testUsers.length} app users + ${assignments.length} work assignments`);
   console.log("    Credentials:");
   console.log("    sysadmin / sysadmin123 (system_admin — system settings + full access)");

@@ -235,6 +235,25 @@ export const personaTargetRoleMappings = sqliteTable("persona_target_role_mappin
 });
 
 // ─────────────────────────────────────────────
+// RELEASES (top-level migration wave/project)
+// ─────────────────────────────────────────────
+
+export const releases = sqliteTable("releases", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),                                     // e.g. "Wave 1 — Finance Go-Live"
+  description: text("description"),
+  status: text("status").notNull().default("planning"),              // planning | in_progress | approved | completed | archived
+  releaseType: text("release_type").notNull().default("initial"),    // initial | incremental | remediation
+  targetSystem: text("target_system"),                               // SAP S/4HANA | Oracle Cloud | Workday | etc.
+  targetDate: text("target_date"),                                   // ISO date string
+  completedDate: text("completed_date"),
+  isActive: integer("is_active", { mode: "boolean" }).default(true), // the currently "open" wave new assignments belong to
+  createdBy: text("created_by"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
 // USER ↔ TARGET ROLE ASSIGNMENTS
 // ─────────────────────────────────────────────
 
@@ -242,6 +261,7 @@ export const userTargetRoleAssignments = sqliteTable("user_target_role_assignmen
   id: integer("id").primaryKey({ autoIncrement: true }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id),
+  releaseId: integer("release_id").references(() => releases.id),   // null = legacy / pre-release tracking
   derivedFromPersonaId: integer("derived_from_persona_id").references(() => personas.id),
   assignmentType: text("assignment_type").notNull().default("persona_default"),
   status: text("status").notNull().default("draft"),
@@ -501,10 +521,15 @@ export const personaTargetRoleMappingsRelations = relations(personaTargetRoleMap
   targetRole: one(targetRoles, { fields: [personaTargetRoleMappings.targetRoleId], references: [targetRoles.id] }),
 }));
 
+export const releasesRelations = relations(releases, ({ many }) => ({
+  assignments: many(userTargetRoleAssignments),
+}));
+
 export const userTargetRoleAssignmentsRelations = relations(userTargetRoleAssignments, ({ one }) => ({
   user: one(users, { fields: [userTargetRoleAssignments.userId], references: [users.id] }),
   targetRole: one(targetRoles, { fields: [userTargetRoleAssignments.targetRoleId], references: [targetRoles.id] }),
   derivedFromPersona: one(personas, { fields: [userTargetRoleAssignments.derivedFromPersonaId], references: [personas.id] }),
+  release: one(releases, { fields: [userTargetRoleAssignments.releaseId], references: [releases.id] }),
 }));
 
 export const sodRulesRelations = relations(sodRules, ({ many }) => ({

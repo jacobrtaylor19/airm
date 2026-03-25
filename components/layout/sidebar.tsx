@@ -21,6 +21,7 @@ import {
   GitBranch,
   Database,
   Wrench,
+  Layers,
 } from "lucide-react";
 import { AIRMLogo } from "@/components/layout/airm-logo";
 
@@ -42,6 +43,7 @@ const navSections: NavSection[] = [
     label: "WORKFLOW",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/releases", label: "Releases", icon: Layers },
       { href: "/upload", label: "Data Upload", icon: Upload },
       { href: "/personas", label: "Personas", icon: UserCircle },
       { href: "/mapping", label: "Role Mapping", icon: Route },
