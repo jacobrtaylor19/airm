@@ -23,6 +23,8 @@ const pageTitles: Record<string, string> = {
   "/exports": "Exports",
   "/audit-log": "Audit Log",
   "/jobs": "Processing Jobs",
+  "/methodology": "How Provisum Works",
+  "/overview": "Platform Overview",
   "/admin/users": "Manage App Users",
   "/admin/assignments": "Work Assignments",
   "/admin": "System Settings",
