@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { CheckCircle, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, CheckCircle2, XCircle, Loader2, Filter } from "lucide-react";
+import { toast } from "sonner";
 import type { ApprovalRow } from "@/lib/queries";
 
 interface ApprovalsProps {
@@ -32,10 +33,14 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
   const [submitting, setSubmitting] = useState(false);
   const [bulkApproving, setBulkApproving] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [deptFilter, setDeptFilter] = useState<string>("all");
   const router = useRouter();
 
   const isViewer = userRole === "viewer";
   const canApprove = !isViewer;
+
+  // Get unique departments
+  const departments = Array.from(new Set(queue.map(a => a.department).filter((d): d is string => d !== null))).sort();
 
   async function approveMapping(assignmentId: number) {
     try {
@@ -46,10 +51,10 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Approval failed");
+        toast.error(data.error || "Approval failed");
       }
     } catch (err) {
-      alert(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
       router.refresh();
     }
@@ -66,10 +71,10 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
       });
       if (!res.ok) {
         const data = await res.json();
-        alert(data.error || "Send back failed");
+        toast.error(data.error || "Send back failed");
       }
     } catch (err) {
-      alert(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
       setSubmitting(false);
       setSendBackDialog(false);
@@ -85,12 +90,12 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
       const res = await fetch("/api/approvals/bulk-approve", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || "Bulk approve failed");
+        toast.error(data.error || "Bulk approve failed");
       } else {
-        alert(`Approved ${data.count} assignments.`);
+        toast.success(`Approved ${data.count} assignments.`);
       }
     } catch (err) {
-      alert(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
       setBulkApproving(false);
       setSelectedIds([]);
@@ -114,7 +119,7 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
     }
     setSubmitting(false);
     setSelectedIds([]);
-    alert(`Approved ${approved} of ${selectedIds.length} selected assignments.`);
+    toast.success(`Approved ${approved} of ${selectedIds.length} selected assignments.`);
     router.refresh();
   }
 
@@ -131,12 +136,13 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
     }
   }
 
-  // Filter to show actionable items
+  // Filter to show actionable items, optionally by department
   const actionable = queue.filter(a =>
-    a.status === "ready_for_approval" ||
+    (a.status === "ready_for_approval" ||
     a.status === "compliance_approved" ||
     a.status === "sod_risk_accepted" ||
-    a.status === "approved"
+    a.status === "approved") &&
+    (deptFilter === "all" || a.department === deptFilter)
   );
 
   return (
@@ -169,30 +175,47 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
         </Card>
       </div>
 
-      {/* Actions */}
-      {canApprove && (
-        <div className="flex items-center gap-3 flex-wrap">
-          <Button onClick={bulkApprove} disabled={bulkApproving || counts.readyForApproval === 0}>
-            {bulkApproving ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Approving...</>
-            ) : (
-              <><CheckCircle className="h-4 w-4 mr-2" /> Bulk Approve (High Confidence)</>
-            )}
-          </Button>
-          {selectedIds.length > 0 && (
-            <Button onClick={approveSelected} disabled={submitting} variant="outline">
-              {submitting ? (
+      {/* Filters & Actions */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {departments.length > 1 && (
+          <div className="flex items-center gap-2">
+            <Filter className="h-4 w-4 text-slate-400" />
+            <select
+              value={deptFilter}
+              onChange={(e) => { setDeptFilter(e.target.value); setSelectedIds([]); }}
+              className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600"
+            >
+              <option value="all">All departments</option>
+              {departments.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {canApprove && (
+          <>
+            <Button onClick={bulkApprove} disabled={bulkApproving || counts.readyForApproval === 0}>
+              {bulkApproving ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Approving...</>
               ) : (
-                <><CheckCircle className="h-4 w-4 mr-2" /> Approve Selected ({selectedIds.length})</>
+                <><CheckCircle className="h-4 w-4 mr-2" /> Bulk Approve (High Confidence)</>
               )}
             </Button>
-          )}
-          <span className="text-xs text-muted-foreground">
-            Bulk approves ready_for_approval assignments with confidence &ge; 85%
-          </span>
-        </div>
-      )}
+            {selectedIds.length > 0 && (
+              <Button onClick={approveSelected} disabled={submitting} variant="outline">
+                {submitting ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Approving...</>
+                ) : (
+                  <><CheckCircle className="h-4 w-4 mr-2" /> Approve Selected ({selectedIds.length})</>
+                )}
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground">
+              Bulk approves ready_for_approval assignments with confidence &ge; 85%
+            </span>
+          </>
+        )}
+      </div>
 
       {/* Queue Table */}
       {actionable.length === 0 ? (
