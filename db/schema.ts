@@ -280,6 +280,54 @@ export const releaseOrgUnits = sqliteTable("release_org_units", {
 });
 
 // ─────────────────────────────────────────────
+// RELEASE ↔ SOURCE ROLE SCOPE (many-to-many)
+// A source role can apply to one or more releases
+// ─────────────────────────────────────────────
+
+export const releaseSourceRoles = sqliteTable("release_source_roles", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
+  sourceRoleId: integer("source_role_id").notNull().references(() => sourceRoles.id, { onDelete: "cascade" }),
+  addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// RELEASE ↔ TARGET ROLE SCOPE (many-to-many)
+// A target role can apply to one or more releases
+// ─────────────────────────────────────────────
+
+export const releaseTargetRoles = sqliteTable("release_target_roles", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
+  targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
+  addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// RELEASE ↔ SOD RULE SCOPE (many-to-many)
+// A SOD rule can apply to one or more releases
+// ─────────────────────────────────────────────
+
+export const releaseSodRules = sqliteTable("release_sod_rules", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
+  sodRuleId: integer("sod_rule_id").notNull().references(() => sodRules.id, { onDelete: "cascade" }),
+  addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// APP USER ↔ RELEASE ASSIGNMENTS (many-to-many)
+// Which releases each platform user (mapper/approver/coordinator) can see
+// ─────────────────────────────────────────────
+
+export const appUserReleases = sqliteTable("app_user_releases", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  appUserId: integer("app_user_id").notNull().references(() => appUsers.id, { onDelete: "cascade" }),
+  releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
+  assignedAt: text("assigned_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
 // USER ↔ TARGET ROLE ASSIGNMENTS
 // ─────────────────────────────────────────────
 
@@ -623,6 +671,10 @@ export const releasesRelations = relations(releases, ({ many }) => ({
   assignments: many(userTargetRoleAssignments),
   releaseUsers: many(releaseUsers),
   releaseOrgUnits: many(releaseOrgUnits),
+  releaseSourceRoles: many(releaseSourceRoles),
+  releaseTargetRoles: many(releaseTargetRoles),
+  releaseSodRules: many(releaseSodRules),
+  appUserReleases: many(appUserReleases),
 }));
 
 export const releaseUsersRelations = relations(releaseUsers, ({ one }) => ({
@@ -633,6 +685,26 @@ export const releaseUsersRelations = relations(releaseUsers, ({ one }) => ({
 export const releaseOrgUnitsRelations = relations(releaseOrgUnits, ({ one }) => ({
   release: one(releases, { fields: [releaseOrgUnits.releaseId], references: [releases.id] }),
   orgUnit: one(orgUnits, { fields: [releaseOrgUnits.orgUnitId], references: [orgUnits.id] }),
+}));
+
+export const releaseSourceRolesRelations = relations(releaseSourceRoles, ({ one }) => ({
+  release: one(releases, { fields: [releaseSourceRoles.releaseId], references: [releases.id] }),
+  sourceRole: one(sourceRoles, { fields: [releaseSourceRoles.sourceRoleId], references: [sourceRoles.id] }),
+}));
+
+export const releaseTargetRolesRelations = relations(releaseTargetRoles, ({ one }) => ({
+  release: one(releases, { fields: [releaseTargetRoles.releaseId], references: [releases.id] }),
+  targetRole: one(targetRoles, { fields: [releaseTargetRoles.targetRoleId], references: [targetRoles.id] }),
+}));
+
+export const releaseSodRulesRelations = relations(releaseSodRules, ({ one }) => ({
+  release: one(releases, { fields: [releaseSodRules.releaseId], references: [releases.id] }),
+  sodRule: one(sodRules, { fields: [releaseSodRules.sodRuleId], references: [sodRules.id] }),
+}));
+
+export const appUserReleasesRelations = relations(appUserReleases, ({ one }) => ({
+  appUser: one(appUsers, { fields: [appUserReleases.appUserId], references: [appUsers.id] }),
+  release: one(releases, { fields: [appUserReleases.releaseId], references: [releases.id] }),
 }));
 
 export const userTargetRoleAssignmentsRelations = relations(userTargetRoleAssignments, ({ one }) => ({

@@ -90,7 +90,7 @@ export function Header({ user, releases, selectedReleaseId }: HeaderProps) {
           )}
         </div>
         {releases && releases.length > 0 && (
-          <ReleaseSelector releases={releases} selectedId={selectedReleaseId ?? null} />
+          <ReleaseSelector releases={releases} selectedId={selectedReleaseId ?? null} isAdmin={["admin", "system_admin"].includes(user?.role ?? "")} />
         )}
       </div>
       {user && (
