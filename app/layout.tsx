@@ -4,7 +4,6 @@ import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { getSessionUser } from "@/lib/auth";
-import { getProjectName } from "@/lib/settings";
 import { Toaster } from "@/components/ui/sonner";
 import { cookies } from "next/headers";
 import { getReleasesForAppUser } from "@/lib/releases";
@@ -12,8 +11,8 @@ import { getReleasesForAppUser } from "@/lib/releases";
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "AIRM — AI Role Mapping Tool",
-  description: "Enterprise security role mapping for system migrations",
+  title: "Provisum — Intelligent Role Mapping for Enterprise Migrations",
+  description: "Intelligent role mapping for enterprise migrations",
 };
 
 export default function RootLayout({
@@ -42,7 +41,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
         <div className="flex h-screen overflow-hidden">
-          <Sidebar userRole={user.role} projectName={getProjectName()} />
+          <Sidebar userRole={user.role} />
           <div className="flex flex-1 flex-col overflow-hidden">
             <Header user={user} releases={releases} selectedReleaseId={selectedReleaseId} />
             <main className="flex-1 overflow-y-auto p-6">{children}</main>

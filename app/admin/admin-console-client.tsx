@@ -645,7 +645,7 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
                         id="project-name"
                         value={settings["project.name"] || ""}
                         onChange={(e) => updateSetting("project.name", e.target.value)}
-                        placeholder="AIRM"
+                        placeholder="Provisum"
                       />
                       <p className="text-xs text-muted-foreground">Displayed in the sidebar header</p>
                     </div>

@@ -52,7 +52,7 @@ export function getSettingsBatch(keys: string[]): Record<string, string> {
 
 /** Get project display name — used in sidebar and titles */
 export function getProjectName(): string {
-  return getSetting("project.name") || "AIRM";
+  return getSetting("project.name") || "Provisum";
 }
 
 /** Get source system name */

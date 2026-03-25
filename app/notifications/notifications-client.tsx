@@ -313,7 +313,7 @@ export function NotificationsClient({ inbox, sent, recipients, canSend }: Notifi
 
                 <div className="flex items-center justify-between pt-1">
                   <p className="text-xs text-muted-foreground">
-                    Demo mode — no emails will be sent. Recipients will see this in their AIRM inbox.
+                    Demo mode — no emails will be sent. Recipients will see this in their Provisum inbox.
                   </p>
                   <Button
                     onClick={handleSend}

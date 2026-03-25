@@ -19,23 +19,35 @@ export default function LoginPage() {
   if (!hasUsers) redirect("/setup");
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50">
-      <div className="w-full max-w-sm space-y-6 p-6">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-            <AIRMLogo size="md" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">AIRM</h1>
-            <p className="text-sm font-medium text-muted-foreground">
-              AI Role Mapping
-            </p>
-          </div>
-          <p className="text-xs text-muted-foreground/80">
-            Intelligent security role migration and compliance
+    <div className="flex min-h-screen">
+      {/* Left panel — dark slate brand */}
+      <div className="hidden md:flex md:w-1/2 flex-col items-center justify-center bg-slate-900 px-8">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <AIRMLogo size="lg" className="text-teal-400 !h-16 !w-16" />
+          <h1 className="text-2xl font-bold text-white">Provisum</h1>
+          <p className="text-sm text-slate-300 max-w-xs">
+            Intelligent Role Mapping for Enterprise Migrations
           </p>
         </div>
-        <LoginForm />
+      </div>
+
+      {/* Right panel — white form */}
+      <div className="flex w-full md:w-1/2 items-center justify-center bg-white px-6">
+        <div className="w-full max-w-sm space-y-6">
+          {/* Mobile-only brand header */}
+          <div className="flex flex-col items-center gap-3 text-center md:hidden">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900">
+              <AIRMLogo size="md" className="text-teal-400" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Provisum</h1>
+              <p className="text-sm font-medium text-slate-500">
+                Intelligent Role Mapping for Enterprise Migrations
+              </p>
+            </div>
+          </div>
+          <LoginForm />
+        </div>
       </div>
     </div>
   );

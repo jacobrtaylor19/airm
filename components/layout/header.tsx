@@ -33,7 +33,7 @@ const roleColors: Record<string, string> = {
   admin: "bg-purple-100 text-purple-800",
   mapper: "bg-blue-100 text-blue-800",
   approver: "bg-green-100 text-green-800",
-  viewer: "bg-zinc-100 text-zinc-700",
+  viewer: "bg-slate-100 text-slate-700",
 };
 
 interface HeaderUser {
@@ -52,7 +52,7 @@ export function Header({ user, releases, selectedReleaseId }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const basePath = "/" + (pathname.split("/").slice(1, pathname.startsWith("/admin") ? 3 : 2).join("/") || "dashboard");
-  const title = pageTitles[basePath] || "AIRM";
+  const title = pageTitles[basePath] || "Provisum";
 
   async function handleLogout() {
     await fetch("/api/auth/logout", { method: "POST" });

@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 export async function generateExcelReport(): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "AIRM";
+  workbook.creator = "Provisum";
   workbook.created = new Date();
 
   // Sheet 1: User-Persona Mapping

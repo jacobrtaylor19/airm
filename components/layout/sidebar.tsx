@@ -91,28 +91,25 @@ const navSections: NavSection[] = [
   },
 ];
 
-export function Sidebar({ userRole, projectName }: { userRole: string; projectName?: string }) {
+export function Sidebar({ userRole }: { userRole: string }) {
   const pathname = usePathname();
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-muted/40">
+    <aside className="flex h-screen w-64 flex-col bg-slate-900">
       {/* Brand header */}
-      <div className="flex h-14 items-center border-b px-4">
+      <div className="flex h-14 items-center border-b border-slate-700 px-4">
         <Link href="/dashboard" className="flex items-center gap-2.5">
-          <AIRMLogo size="sm" />
+          <AIRMLogo size="sm" className="text-teal-400" />
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight leading-none">
-              {projectName || "AIRM"}
+            <span className="text-sm font-bold tracking-tight leading-none text-white">
+              Provisum
             </span>
-            <span className="text-[10px] font-medium text-muted-foreground leading-tight">
-              AI Role Mapping
+            <span className="text-[10px] font-medium text-slate-400 leading-tight">
+              Intelligent Role Mapping for Enterprise Migrations
             </span>
           </div>
         </Link>
       </div>
-
-      {/* Separator */}
-      <div className="mx-3 border-b" />
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-3">
@@ -125,7 +122,7 @@ export function Sidebar({ userRole, projectName }: { userRole: string; projectNa
           .map((section, si) => (
             <div key={si} className="mb-3">
               {section.label && (
-                <p className="mb-1 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+                <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
                   {section.label}
                 </p>
               )}
@@ -140,11 +137,11 @@ export function Sidebar({ userRole, projectName }: { userRole: string; projectNa
                     className={cn(
                       "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-slate-800 text-white border-l-2 border-indigo-500"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-white"
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className={cn("h-4 w-4", isActive ? "text-white" : "text-slate-400")} />
                     {item.label}
                   </Link>
                 );
@@ -154,9 +151,9 @@ export function Sidebar({ userRole, projectName }: { userRole: string; projectNa
       </nav>
 
       {/* Footer */}
-      <div className="border-t px-4 py-3">
-        <p className="text-[10px] text-muted-foreground/60 text-center">
-          AIRM v1.0 &middot; AI Role Mapping
+      <div className="border-t border-slate-700 px-4 py-3">
+        <p className="text-xs text-slate-500 text-center">
+          Provisum &middot; Intelligent Role Mapping for Enterprise Migrations
         </p>
       </div>
     </aside>

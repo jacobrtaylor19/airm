@@ -35,7 +35,7 @@ interface Props {
 }
 
 const STAGES = [
-  { key: "noPersona",   label: "No Persona",    color: "bg-zinc-200 text-zinc-600",        dot: "bg-zinc-400"   },
+  { key: "noPersona",   label: "No Persona",    color: "bg-slate-200 text-slate-600",      dot: "bg-slate-400"  },
   { key: "persona",     label: "Persona",       color: "bg-slate-100 text-slate-600",      dot: "bg-slate-400"  },
   { key: "mapped",      label: "Mapped",        color: "bg-yellow-50 text-yellow-700",     dot: "bg-yellow-500" },
   { key: "sodRejected", label: "SOD Conflict",  color: "bg-red-50 text-red-700",           dot: "bg-red-500"    },

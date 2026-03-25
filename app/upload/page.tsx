@@ -230,8 +230,8 @@ export default function DataUploadPage() {
         />
         <UploadCard
           type="app-users"
-          label="AIRM Users"
-          description="Upload AIRM application users (admins, mappers, approvers, viewers) with org unit assignments"
+          label="Provisum Users"
+          description="Upload Provisum application users (admins, mappers, approvers, viewers) with org unit assignments"
           expectedColumns="username, password, display_name, role, email, org_unit_name"
           required={false}
           existingCount={counts.appUsers}

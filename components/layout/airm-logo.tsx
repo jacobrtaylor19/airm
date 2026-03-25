@@ -10,7 +10,7 @@ interface AIRMLogoProps {
 export function AIRMLogo({ size = "sm", className }: AIRMLogoProps) {
   const sizeClass =
     size === "lg" ? "h-10 w-10" :
-    size === "md" ? "h-8 w-8" : "h-5 w-5";
+    size === "md" ? "h-8 w-8" : "h-7 w-7";
 
   return (
     <ShieldCheck
