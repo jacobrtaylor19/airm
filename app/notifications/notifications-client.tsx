@@ -16,20 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Bell, Send, Inbox, CheckCircle, Loader2, AlertTriangle, Info, Clock } from "lucide-react";
+import { Send, CheckCircle, Loader2, AlertTriangle, Info, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-
-interface NotificationInboxItem {
-  id: number;
-  fromUserId: number;
-  fromDisplayName: string;
-  notificationType: string;
-  subject: string;
-  message: string;
-  status: string;
-  createdAt: string;
-}
 
 interface NotificationSentItem {
   id: number;
@@ -50,7 +39,6 @@ interface Recipient {
 }
 
 interface NotificationsClientProps {
-  inbox: NotificationInboxItem[];
   sent: NotificationSentItem[];
   recipients: Recipient[];
   canSend: boolean;
@@ -92,7 +80,7 @@ function typeVariant(type: string): "destructive" | "secondary" | "outline" {
   return "outline";
 }
 
-export function NotificationsClient({ inbox, sent, recipients, canSend }: NotificationsClientProps) {
+export function NotificationsClient({ sent, recipients, canSend }: NotificationsClientProps) {
   const router = useRouter();
   const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
   const [notificationType, setNotificationType] = useState("reminder");
@@ -100,9 +88,6 @@ export function NotificationsClient({ inbox, sent, recipients, canSend }: Notifi
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
-  const [markingRead, setMarkingRead] = useState<number | null>(null);
-
-  const unreadCount = inbox.filter(n => n.status !== "read").length;
 
   function applyQuickMessage(key: string) {
     setQuickMessage(key);
@@ -163,44 +148,17 @@ export function NotificationsClient({ inbox, sent, recipients, canSend }: Notifi
     }
   }
 
-  async function markRead(id: number) {
-    setMarkingRead(id);
-    try {
-      await fetch("/api/notifications", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      router.refresh();
-    } finally {
-      setMarkingRead(null);
-    }
-  }
-
   return (
-    <Tabs defaultValue={canSend ? "compose" : "inbox"}>
+    <Tabs defaultValue="compose">
       <TabsList>
-        {canSend && (
-          <TabsTrigger value="compose" className="flex items-center gap-1.5">
-            <Send className="h-3.5 w-3.5" />
-            Compose
-          </TabsTrigger>
-        )}
-        <TabsTrigger value="inbox" className="flex items-center gap-1.5">
-          <Inbox className="h-3.5 w-3.5" />
-          Inbox
-          {unreadCount > 0 && (
-            <Badge variant="destructive" className="h-4 min-w-[16px] px-1 text-[10px] ml-0.5">
-              {unreadCount}
-            </Badge>
-          )}
+        <TabsTrigger value="compose" className="flex items-center gap-1.5">
+          <Send className="h-3.5 w-3.5" />
+          Compose
         </TabsTrigger>
-        {canSend && (
-          <TabsTrigger value="sent" className="flex items-center gap-1.5">
-            <CheckCircle className="h-3.5 w-3.5" />
-            Sent ({sent.length})
-          </TabsTrigger>
-        )}
+        <TabsTrigger value="sent" className="flex items-center gap-1.5">
+          <CheckCircle className="h-3.5 w-3.5" />
+          Sent ({sent.length})
+        </TabsTrigger>
       </TabsList>
 
       {/* ── COMPOSE TAB ── */}
@@ -330,68 +288,6 @@ export function NotificationsClient({ inbox, sent, recipients, canSend }: Notifi
           </div>
         </TabsContent>
       )}
-
-      {/* ── INBOX TAB ── */}
-      <TabsContent value="inbox" className="mt-4">
-        {inbox.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <Bell className="h-8 w-8 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No notifications yet.</p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-2">
-            {inbox.map(n => (
-              <Card key={n.id} className={n.status !== "read" ? "border-primary/30 bg-primary/5" : ""}>
-                <CardContent className="py-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2 flex-1 min-w-0">
-                      {typeIcon(n.notificationType)}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-sm font-medium ${n.status !== "read" ? "" : "text-muted-foreground"}`}>
-                            {n.subject}
-                          </span>
-                          <Badge variant={typeVariant(n.notificationType)} className="text-[10px]">
-                            {n.notificationType}
-                          </Badge>
-                          {n.status !== "read" && (
-                            <Badge variant="secondary" className="text-[10px] bg-primary/10 text-primary">
-                              New
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          From <strong>{n.fromDisplayName}</strong> &middot;{" "}
-                          {formatDistanceToNow(new Date(n.createdAt), { addSuffix: true })}
-                        </p>
-                        <p className="text-sm mt-1.5 whitespace-pre-line text-muted-foreground">{n.message}</p>
-                      </div>
-                    </div>
-                    {n.status !== "read" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs shrink-0"
-                        onClick={() => markRead(n.id)}
-                        disabled={markingRead === n.id}
-                      >
-                        {markingRead === n.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <CheckCircle className="h-3 w-3" />
-                        )}
-                        Mark read
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </TabsContent>
 
       {/* ── SENT TAB ── */}
       {canSend && (

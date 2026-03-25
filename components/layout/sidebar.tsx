@@ -50,7 +50,7 @@ const navSections: NavSection[] = [
       { href: "/mapping", label: "Role Mapping", icon: Route },
       { href: "/sod", label: "SOD Analysis", icon: ShieldAlert },
       { href: "/approvals", label: "Approvals", icon: CheckCircle },
-      { href: "/notifications", label: "Notifications", icon: Bell },
+      { href: "/notifications", label: "Send Reminders", icon: Bell },
     ],
   },
   {

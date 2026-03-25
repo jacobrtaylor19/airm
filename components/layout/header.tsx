@@ -35,7 +35,7 @@ const pageInfo: Record<string, { title: string; description?: string }> = {
   "/admin/users": { title: "Manage App Users", description: "Create and manage platform user accounts" },
   "/admin/assignments": { title: "Work Assignments", description: "Mapper and approver org unit assignments" },
   "/admin": { title: "System Settings", description: "Project configuration and AI settings" },
-  "/notifications": { title: "Notifications", description: "Inbox and sent messages" },
+  "/notifications": { title: "Send Reminders", description: "Send reminders to mappers and approvers" },
   "/least-access": { title: "Provisioning Alerts", description: "Over-provisioning analysis" },
 };
 

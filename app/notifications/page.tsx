@@ -9,25 +9,6 @@ export const dynamic = "force-dynamic";
 export default function NotificationsPage() {
   const user = requireAuth();
 
-  // Load sent + received notifications
-  const inbox = db
-    .select({
-      id: schema.notifications.id,
-      fromUserId: schema.notifications.fromUserId,
-      toUserId: schema.notifications.toUserId,
-      notificationType: schema.notifications.notificationType,
-      subject: schema.notifications.subject,
-      message: schema.notifications.message,
-      status: schema.notifications.status,
-      createdAt: schema.notifications.createdAt,
-      fromDisplayName: schema.appUsers.displayName,
-    })
-    .from(schema.notifications)
-    .innerJoin(schema.appUsers, eq(schema.appUsers.id, schema.notifications.fromUserId))
-    .where(eq(schema.notifications.toUserId, user.id))
-    .all()
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-
   // For coordinators/admins: load app users who can receive notifications (mappers + approvers)
   const recipients = ["coordinator", "admin", "system_admin"].includes(user.role)
     ? db
@@ -72,12 +53,9 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        {canSend
-          ? "Send reminders and escalations to mappers and approvers. No emails are sent in this demo — notifications appear in each user's inbox."
-          : "View notifications sent to you by coordinators and admins."}
+        Send reminders and escalations to mappers and approvers. No emails are sent in this demo — reminders are logged in the Sent tab.
       </p>
       <NotificationsClient
-        inbox={inbox}
         sent={sent}
         recipients={recipients}
         canSend={canSend}
