@@ -266,7 +266,7 @@ export function PersonasPageClient({
                     ) : canConfirm ? (
                       <Button
                         size="sm"
-                        className="ml-2 h-7 text-xs"
+                        className="ml-2 h-7 text-xs bg-teal-500 hover:bg-teal-600 text-white"
                         disabled={confirmingId === ou.id}
                         onClick={() => handleConfirm(ou.id)}
                       >

@@ -172,7 +172,7 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
       <TabsContent value="persona-mapping" className="mt-4">
         {userRole !== "viewer" && (
           <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <Button onClick={autoMapAll} disabled={autoMapping || bulkMode}>
+            <Button onClick={autoMapAll} disabled={autoMapping || bulkMode} className="bg-teal-500 hover:bg-teal-600 text-white">
               {autoMapping ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Auto-Mapping...</>
               ) : (

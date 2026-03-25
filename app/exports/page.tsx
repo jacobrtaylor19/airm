@@ -12,6 +12,7 @@ const exports = [
     icon: FileSpreadsheet,
     href: "/api/exports/excel",
     format: ".xlsx",
+    accent: "border-l-4 border-l-indigo-500",
   },
   {
     title: "PDF Audit Report",
@@ -19,6 +20,7 @@ const exports = [
     icon: FileText,
     href: "/api/exports/pdf",
     format: ".pdf",
+    accent: "border-l-4 border-l-slate-500",
   },
   {
     title: "Provisioning CSV",
@@ -26,6 +28,7 @@ const exports = [
     icon: Download,
     href: "/api/exports/provisioning",
     format: ".csv",
+    accent: "border-l-4 border-l-emerald-500",
   },
   {
     title: "SOD Exception Report",
@@ -33,6 +36,7 @@ const exports = [
     icon: AlertTriangle,
     href: "/api/exports/sod-exceptions",
     format: ".csv",
+    accent: "border-l-4 border-l-amber-500",
   },
 ];
 
@@ -47,7 +51,7 @@ export default function ExportsPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {exports.map((exp) => (
-          <Card key={exp.title}>
+          <Card key={exp.title} className={exp.accent}>
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <exp.icon className="h-4 w-4" />
