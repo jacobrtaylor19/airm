@@ -91,23 +91,90 @@ export async function POST(
       );
     }
 
-    // Validate picklist values and generate warnings
+    // Validate picklist values and generate warnings (static + dynamic from DB)
     const warnings: string[] = [];
-    const PICKLIST_VALIDATIONS: Partial<Record<UploadType, Record<string, string[]>>> = {
+
+    // Static picklists
+    const STATIC_PICKLISTS: Partial<Record<UploadType, Record<string, string[]>>> = {
       "app-users": { role: ["admin", "mapper", "approver", "coordinator", "viewer"] },
       "sod-rules": { severity: ["critical", "high", "medium", "low"] },
       "org-units": { level: ["L1", "L2", "L3"] },
       releases: { status: ["planning", "active", "completed", "paused"] },
     };
-    const validations = PICKLIST_VALIDATIONS[uploadType];
-    if (validations) {
-      for (const [field, allowed] of Object.entries(validations)) {
+
+    // Dynamic picklists from existing DB data
+    const DYNAMIC_PICKLISTS: Partial<Record<UploadType, Record<string, () => string[]>>> = {
+      users: {
+        department: () => {
+          const orgUnits = db.select({ name: schema.orgUnits.name }).from(schema.orgUnits).all();
+          return orgUnits.map(o => o.name.toLowerCase());
+        },
+      },
+      "role-assignments": {
+        role_id: () => {
+          const roles = db.select({ roleId: schema.sourceRoles.roleId }).from(schema.sourceRoles).all();
+          return roles.map(r => r.roleId.toLowerCase());
+        },
+        user_id: () => {
+          const users = db.select({ sourceUserId: schema.users.sourceUserId }).from(schema.users).all();
+          return users.map(u => u.sourceUserId.toLowerCase());
+        },
+      },
+      "role-permissions": {
+        role_id: () => {
+          const roles = db.select({ roleId: schema.sourceRoles.roleId }).from(schema.sourceRoles).all();
+          return roles.map(r => r.roleId.toLowerCase());
+        },
+      },
+      "app-users": {
+        org_unit_name: () => {
+          const orgUnits = db.select({ name: schema.orgUnits.name }).from(schema.orgUnits).all();
+          return orgUnits.map(o => o.name.toLowerCase());
+        },
+      },
+      "release-scope": {
+        release_name: () => {
+          const releases = db.select({ name: schema.releases.name }).from(schema.releases).all();
+          return releases.map(r => r.name.toLowerCase());
+        },
+        org_unit_name: () => {
+          const orgUnits = db.select({ name: schema.orgUnits.name }).from(schema.orgUnits).all();
+          return orgUnits.map(o => o.name.toLowerCase());
+        },
+      },
+    };
+
+    // Run static validations
+    const staticValidations = STATIC_PICKLISTS[uploadType];
+    if (staticValidations) {
+      for (const [field, allowed] of Object.entries(staticValidations)) {
         const invalidRows = records
           .map((r, i) => ({ row: i + 2, value: r[field] }))
           .filter((r) => r.value && !allowed.includes(r.value.toLowerCase()));
         if (invalidRows.length > 0) {
           const sample = invalidRows.slice(0, 3).map((r) => `row ${r.row}: "${r.value}"`).join(", ");
           warnings.push(`${field}: invalid values (${sample}). Expected: ${allowed.join(", ")}`);
+        }
+      }
+    }
+
+    // Run dynamic validations (only warn, don't block — new values may be intentional)
+    const dynamicValidations = DYNAMIC_PICKLISTS[uploadType];
+    if (dynamicValidations) {
+      for (const [field, getAllowed] of Object.entries(dynamicValidations)) {
+        if (!headers.includes(field)) continue;
+        try {
+          const allowed = getAllowed();
+          if (allowed.length === 0) continue; // No existing data to validate against
+          const invalidRows = records
+            .map((r, i) => ({ row: i + 2, value: r[field] }))
+            .filter((r) => r.value && !allowed.includes(r.value.toLowerCase()));
+          if (invalidRows.length > 0) {
+            const sample = invalidRows.slice(0, 3).map((r) => `row ${r.row}: "${r.value}"`).join(", ");
+            warnings.push(`${field}: ${invalidRows.length} value(s) not found in existing data (${sample}). These will be created as new entries.`);
+          }
+        } catch {
+          // Dynamic validation failure is non-fatal
         }
       }
     }
