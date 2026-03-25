@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle, Circle, Loader2, Zap, Search, ChevronRight, X, Save, GripVertical, TrendingUp } from "lucide-react";
+import { AlertTriangle, CheckCircle, Circle, Loader2, Zap, Search, ChevronRight, X, Save, GripVertical, TrendingUp, ListChecks } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, PersonaSodConflict, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
@@ -34,6 +34,10 @@ interface MappingClientProps {
 export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30, userRole }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set());
+  const [bulkTargetRoleId, setBulkTargetRoleId] = useState<number | null>(null);
+  const [bulkAssigning, setBulkAssigning] = useState(false);
   const router = useRouter();
 
   // Drag-and-drop mapping state
@@ -108,6 +112,42 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
     }
   }
 
+  async function bulkAssign() {
+    if (!bulkTargetRoleId || bulkSelected.size === 0) return;
+    setBulkAssigning(true);
+    try {
+      const res = await fetch("/api/mapping/bulk-assign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ personaIds: Array.from(bulkSelected), targetRoleId: bulkTargetRoleId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Bulk assign failed");
+      } else {
+        const data = await res.json();
+        toast.success(`Assigned ${data.created} persona(s). ${data.skipped} already mapped.`);
+        setBulkMode(false);
+        setBulkSelected(new Set());
+        setBulkTargetRoleId(null);
+        router.refresh();
+      }
+    } catch {
+      toast.error("Bulk assign failed");
+    } finally {
+      setBulkAssigning(false);
+    }
+  }
+
+  function toggleBulkSelect(personaId: number) {
+    setBulkSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(personaId)) next.delete(personaId);
+      else next.add(personaId);
+      return next;
+    });
+  }
+
   // Group gaps by persona
   const gapsByPersona = new Map<string, GapRow[]>();
   for (const gap of gaps) {
@@ -131,14 +171,38 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
       {/* Tab A: Persona Mapping */}
       <TabsContent value="persona-mapping" className="mt-4">
         {userRole !== "viewer" && (
-          <div className="flex items-center gap-3 mb-4">
-            <Button onClick={autoMapAll} disabled={autoMapping}>
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
+            <Button onClick={autoMapAll} disabled={autoMapping || bulkMode}>
               {autoMapping ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Auto-Mapping...</>
               ) : (
                 <><Zap className="h-4 w-4 mr-2" /> Auto-Map All (Least Access)</>
               )}
             </Button>
+            <Button variant={bulkMode ? "default" : "outline"} onClick={() => { setBulkMode(!bulkMode); setBulkSelected(new Set()); setBulkTargetRoleId(null); }} disabled={autoMapping}>
+              <ListChecks className="h-4 w-4 mr-2" /> {bulkMode ? "Exit Bulk Mode" : "Bulk Assign"}
+            </Button>
+            {bulkMode && (
+              <>
+                <span className="text-sm text-muted-foreground">{bulkSelected.size} selected</span>
+                <Button variant="ghost" size="sm" onClick={() => setBulkSelected(new Set(personas.map(p => p.personaId)))}>Select All</Button>
+                <Button variant="ghost" size="sm" onClick={() => setBulkSelected(new Set())}>Clear</Button>
+                <select
+                  value={bulkTargetRoleId ?? ""}
+                  onChange={(e) => setBulkTargetRoleId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+                >
+                  <option value="">Select target role...</option>
+                  {targetRoles.map(r => (
+                    <option key={r.id} value={r.id}>{r.roleName}</option>
+                  ))}
+                </select>
+                <Button onClick={bulkAssign} disabled={bulkAssigning || !bulkTargetRoleId || bulkSelected.size === 0}>
+                  {bulkAssigning ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  Assign to Selected
+                </Button>
+              </>
+            )}
           </div>
         )}
 
@@ -163,6 +227,15 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                       onClick={() => setSelectedPersonaId(p.personaId)}
                     >
                       <div className="flex items-center gap-2 min-w-0">
+                        {bulkMode && (
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-primary shrink-0"
+                            checked={bulkSelected.has(p.personaId)}
+                            onChange={(e) => { e.stopPropagation(); toggleBulkSelect(p.personaId); }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        )}
                         {hasSodConflicts ? (
                           <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
                         ) : isMapped ? (
