@@ -51,7 +51,7 @@ export default function OverviewPage() {
   // Public page — no auth required
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900">Platform Overview</h1>
