@@ -23,8 +23,8 @@ import {
   Wrench,
   Layers,
   Bell,
+  ShieldCheck,
 } from "lucide-react";
-import { AIRMLogo } from "@/components/layout/airm-logo";
 
 interface NavItem {
   href: string;
@@ -125,14 +125,14 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
     <aside className="flex h-screen w-64 flex-col bg-slate-900">
       {/* Brand header */}
       <div className="flex h-14 items-center border-b border-slate-700 px-4">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <AIRMLogo size="sm" className="text-teal-400" />
-          <div className="flex flex-col">
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <ShieldCheck className="h-5 w-5 text-teal-400 flex-shrink-0" strokeWidth={2} />
+          <div className="flex flex-col min-w-0">
             <span className="text-sm font-bold tracking-tight leading-none text-white">
               Provisum
             </span>
-            <span className="text-[10px] font-medium text-slate-400 leading-tight">
-              Intelligent Role Mapping for Enterprise Migrations
+            <span className="text-[10px] text-slate-400 leading-tight">
+              Intelligent Role Mapping
             </span>
           </div>
         </Link>
