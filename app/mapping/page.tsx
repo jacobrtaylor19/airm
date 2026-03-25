@@ -51,12 +51,9 @@ export default function MappingPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Role Mapping Workspace</h2>
-        <p className="text-sm text-muted-foreground">
-          Map personas to target security roles using least-access principles.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Map personas to target security roles using least-access principles.
+      </p>
       <MappingClient
         personas={personas}
         personaDetails={personaDetails}

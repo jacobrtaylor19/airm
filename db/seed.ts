@@ -182,6 +182,28 @@ function seed() {
     console.log("  ⊘ target-permissions.csv not found or empty, skipping");
   }
 
+  // ─── 9b. Target Role-Permission Assignments ───
+  const trpData = readCsv<any>("target-role-permissions.csv");
+  let trpCount = 0;
+  for (const row of trpData) {
+    const role = db.select().from(schema.targetRoles)
+      .where(eq(schema.targetRoles.roleId, row.target_role_id)).get();
+    const perm = db.select().from(schema.targetPermissions)
+      .where(eq(schema.targetPermissions.permissionId, row.permission_id)).get();
+    if (role && perm) {
+      db.insert(schema.targetRolePermissions).values({
+        targetRoleId: role.id,
+        targetPermissionId: perm.id,
+      }).run();
+      trpCount++;
+    }
+  }
+  if (trpCount > 0) {
+    console.log(`  ✓ ${trpCount} target role-permission assignments`);
+  } else {
+    console.log("  ⊘ target-role-permissions.csv not found or empty, skipping");
+  }
+
   // ─── 10. User-Persona Assignments ───
   const upaData = readCsv<any>("user-persona-assignments.csv");
   let upaCount = 0;
@@ -320,6 +342,8 @@ function seed() {
     sourcePermissions: db.select().from(schema.sourcePermissions).all().length,
     rolePermissions: db.select().from(schema.sourceRolePermissions).all().length,
     targetRoles: db.select().from(schema.targetRoles).all().length,
+    targetPermissions: db.select().from(schema.targetPermissions).all().length,
+    targetRolePermissions: db.select().from(schema.targetRolePermissions).all().length,
     userPersonaAssignments: db.select().from(schema.userPersonaAssignments).all().length,
     sodRules: db.select().from(schema.sodRules).all().length,
   };

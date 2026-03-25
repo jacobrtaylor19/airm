@@ -9,11 +9,11 @@ SAP_PAY_PROC,Payment Processor,Process payment runs,SAP ECC,Finance
 SAP_AP_REPORT,AP Reporter,View AP reports and analytics,SAP ECC,Finance
 SAP_GL_POST,GL Poster,Post journal entries to general ledger,SAP ECC,Finance
 SAP_AP_MGR,AP Manager,Full AP management access,SAP ECC,Finance
-SAP_PM_PLANNER,Maintenance Planner,Plan and schedule maintenance orders and task lists,SAP ECC,Plant Maintenance
-SAP_PM_TECH,Maintenance Technician,Execute maintenance orders and confirm work,SAP ECC,Plant Maintenance
-SAP_PM_SUPV,Maintenance Supervisor,Oversee maintenance operations with order management,SAP ECC,Plant Maintenance
-SAP_PM_ENGINEER,Maintenance Engineer,Create equipment masters and configure maintenance plans,SAP ECC,Plant Maintenance
-SAP_PM_MANAGER,Plant Maintenance Manager,Full PM access including scheduling and reporting,SAP ECC,Plant Maintenance
+SAP_PM_PLANNER,Maintenance Planner,Plan and schedule maintenance orders and task lists,SAP ECC,EAM
+SAP_PM_TECH,Maintenance Technician,Execute maintenance orders and confirm work,SAP ECC,EAM
+SAP_PM_SUPV,Maintenance Supervisor,Oversee maintenance operations with order management,SAP ECC,EAM
+SAP_PM_ENGINEER,Maintenance Engineer,Create equipment masters and configure maintenance plans,SAP ECC,EAM
+SAP_PM_MANAGER,EAM Manager,Full PM access including scheduling and reporting,SAP ECC,EAM
 SAP_MM_BUYER,Procurement Buyer,Create and manage purchase orders,SAP ECC,Materials Management
 SAP_MM_PLANNER,Material Planner,Manage material masters and procurement requisitions,SAP ECC,Materials Management
 SAP_MM_WH_CLERK,Warehouse Clerk,Process goods receipts and warehouse movements,SAP ECC,Materials Management
