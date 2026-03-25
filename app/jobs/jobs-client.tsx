@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Loader2,
   Play,
-  Zap,
+  Sparkles,
   Upload,
   Users,
   Target,
@@ -242,9 +242,9 @@ export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; ha
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="h-4 w-4" /> Pipeline
+              <Sparkles className="h-4 w-4 text-teal-500" /> Pipeline
             </CardTitle>
-            <Button onClick={runFullPipeline} disabled={pipelineRunning || !!runningJob} size="sm">
+            <Button onClick={runFullPipeline} disabled={pipelineRunning || !!runningJob} size="sm" className="bg-teal-500 hover:bg-teal-600 text-white">
               {pipelineRunning ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -252,7 +252,7 @@ export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; ha
                 </>
               ) : (
                 <>
-                  <Play className="h-4 w-4 mr-2" />
+                  <Sparkles className="h-4 w-4 mr-2" />
                   Run Full Pipeline
                 </>
               )}

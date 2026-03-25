@@ -35,7 +35,7 @@ const pageInfo: Record<string, { title: string; description?: string }> = {
   "/admin/users": { title: "Manage App Users", description: "Create and manage platform user accounts" },
   "/admin/assignments": { title: "Work Assignments", description: "Mapper and approver org unit assignments" },
   "/admin": { title: "System Settings", description: "Project configuration and AI settings" },
-  "/notifications": { title: "Send Reminders", description: "Send reminders to mappers and approvers" },
+  "/notifications": { title: "Notifications", description: "Send reminders to mappers and approvers" },
   "/least-access": { title: "Provisioning Alerts", description: "Over-provisioning analysis" },
 };
 
@@ -55,7 +55,7 @@ export function Header({ user, releases, selectedReleaseId }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const basePath = "/" + (pathname.split("/").slice(1, pathname.startsWith("/admin") ? 3 : 2).join("/") || "dashboard");
-  const page = pageInfo[basePath] || { title: "Provisum" };
+  const page = pageInfo[basePath] || { title: "Dashboard" };
 
   const roleLabel =
     user?.role === "system_admin"

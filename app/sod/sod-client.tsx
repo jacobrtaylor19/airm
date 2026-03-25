@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Loader2,
-  Play,
+  Sparkles,
   CheckCircle,
   ChevronDown,
   ChevronRight,
@@ -234,7 +234,8 @@ export function SodPageClient({
           {running ? (
             <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
           ) : (
-            <><Play className="h-4 w-4 mr-2" /> Run SOD Analysis</>
+            <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
+
           )}
         </Button>
       </div>

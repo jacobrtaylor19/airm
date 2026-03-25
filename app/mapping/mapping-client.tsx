@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle, Circle, Loader2, Zap, Search, ChevronRight, X, Save, GripVertical, TrendingUp, ListChecks } from "lucide-react";
+import { AlertTriangle, CheckCircle, Circle, Loader2, Sparkles, Search, ChevronRight, X, Save, GripVertical, TrendingUp, ListChecks } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, PersonaSodConflict, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
@@ -211,7 +211,7 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                 {autoMapping ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Auto-Mapping...</>
                 ) : (
-                  <><Zap className="h-4 w-4 mr-2" /> Auto-Map All (Least Access)</>
+                  <><Sparkles className="h-4 w-4 mr-2" /> Auto-Map All (Least Access)</>
                 )}
               </Button>
               {autoMapping && autoMapProgress && autoMapProgress.total > 0 && (
