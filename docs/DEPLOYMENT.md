@@ -45,9 +45,24 @@ In Render dashboard, go to **Settings** → **Environment** and add:
 NODE_ENV=production
 ANTHROPIC_API_KEY=sk-ant-v4-...
 DATABASE_URL=file:///data/airm.db
+ENCRYPTION_KEY=<base64-encoded-32-byte-key>
+BACKUP_ENCRYPTION_KEY=<passphrase-for-backup-encryption>
+SENTRY_DSN=<your-sentry-dsn>
+AUDIT_DATABASE_URL=/data/audit.db
 ```
 
-AIRM uses custom cookie-based sessions rather than NextAuth, so no `NEXTAUTH_SECRET` is needed.
+**Generating encryption keys:**
+```bash
+# ENCRYPTION_KEY (AES-256-GCM for settings at rest)
+node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+
+# BACKUP_ENCRYPTION_KEY (OpenSSL passphrase for backup files)
+# Use a strong passphrase and store securely
+```
+
+Provisum uses custom cookie-based sessions rather than NextAuth, so no `NEXTAUTH_SECRET` is needed.
+
+> **Security note:** Render uses encrypted EBS volumes by default. Combined with field-level encryption for sensitive settings (AES-256-GCM via `ENCRYPTION_KEY`), this provides encryption at rest for all data. See `docs/SECURITY_CONTROLS.md` for details.
 
 ### Step 3: Set Up Persistent Storage
 
