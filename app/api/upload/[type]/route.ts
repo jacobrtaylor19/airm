@@ -91,6 +91,27 @@ export async function POST(
       );
     }
 
+    // Validate picklist values and generate warnings
+    const warnings: string[] = [];
+    const PICKLIST_VALIDATIONS: Partial<Record<UploadType, Record<string, string[]>>> = {
+      "app-users": { role: ["admin", "mapper", "approver", "coordinator", "viewer"] },
+      "sod-rules": { severity: ["critical", "high", "medium", "low"] },
+      "org-units": { level: ["L1", "L2", "L3"] },
+      releases: { status: ["planning", "active", "completed", "paused"] },
+    };
+    const validations = PICKLIST_VALIDATIONS[uploadType];
+    if (validations) {
+      for (const [field, allowed] of Object.entries(validations)) {
+        const invalidRows = records
+          .map((r, i) => ({ row: i + 2, value: r[field] }))
+          .filter((r) => r.value && !allowed.includes(r.value.toLowerCase()));
+        if (invalidRows.length > 0) {
+          const sample = invalidRows.slice(0, 3).map((r) => `row ${r.row}: "${r.value}"`).join(", ");
+          warnings.push(`${field}: invalid values (${sample}). Expected: ${allowed.join(", ")}`);
+        }
+      }
+    }
+
     // Preview mode: return first 5 rows + summary
     if (action !== "commit") {
       return NextResponse.json({
@@ -99,6 +120,7 @@ export async function POST(
         headers,
         preview: records.slice(0, 5),
         uploadType,
+        warnings,
       });
     }
 

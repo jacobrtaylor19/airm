@@ -1,1 +1,4 @@
-rule_id (required),rule_name (required),permission_a (required),permission_b (required),severity (required),risk_description
+rule_id (required),rule_name (required),permission_a (required),permission_b (required),severity (required: critical|high|medium|low),risk_description
+SOD-001,Create and Approve PO,CREATE_PO,APPROVE_PO,critical,Same user can create and approve purchase orders — fraud risk
+SOD-002,Vendor Create and Pay,CREATE_VENDOR,PROCESS_PAYMENT,high,Same user can create vendors and process payments
+SOD-003,GL Post and Reconcile,GL_POST,GL_RECONCILE,medium,Same user can post and reconcile general ledger entries

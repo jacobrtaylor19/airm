@@ -1,1 +1,5 @@
-username (required),password (required),display_name (required),role (required),email,org_unit_name
+username (required),password (required),display_name (required),role (required: admin|mapper|approver|coordinator|viewer),email,org_unit_name
+jane.doe,changeme123,Jane Doe,mapper,jane.doe@company.com,Finance
+john.smith,changeme123,John Smith,approver,john.smith@company.com,Finance
+sarah.lee,changeme123,Sarah Lee,coordinator,sarah.lee@company.com,Operations
+bob.wilson,changeme123,Bob Wilson,viewer,bob.wilson@company.com,

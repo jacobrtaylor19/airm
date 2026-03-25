@@ -19,6 +19,7 @@ type PreviewData = {
   totalRows: number;
   headers: string[];
   preview: Record<string, string>[];
+  warnings?: string[];
 };
 
 export function UploadCard({
@@ -189,6 +190,14 @@ export function UploadCard({
               <p className="text-sm text-muted-foreground">
                 {preview.totalRows} rows found. Showing first {Math.min(5, preview.totalRows)}.
               </p>
+              {preview.warnings && preview.warnings.length > 0 && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-1">
+                  <p className="text-xs font-medium text-amber-800">Validation warnings:</p>
+                  {preview.warnings.map((w, i) => (
+                    <p key={i} className="text-xs text-amber-700">• {w}</p>
+                  ))}
+                </div>
+              )}
               <div className="overflow-x-auto rounded border">
                 <table className="w-full text-xs">
                   <thead>
