@@ -411,6 +411,7 @@ export interface PersonaDetail {
     roleName: string;
     roleId: string;
     coveragePercent: number | null;
+    excessPercent: number | null;
     confidence: string | null;
     roleOwner: string | null;
   }[];
@@ -468,6 +469,7 @@ export function getPersonaDetail(id: number): PersonaDetail | null {
       roleId: schema.targetRoles.roleId,
       roleOwner: schema.targetRoles.roleOwner,
       coveragePercent: schema.personaTargetRoleMappings.coveragePercent,
+      excessPercent: schema.personaTargetRoleMappings.excessPercent,
       confidence: schema.personaTargetRoleMappings.confidence,
     })
     .from(schema.personaTargetRoleMappings)
@@ -1657,4 +1659,78 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
   }
 
   return result;
+}
+
+// ─────────────────────────────────────────────
+// LEAST ACCESS ANALYSIS
+// ─────────────────────────────────────────────
+
+export interface LeastAccessRow {
+  personaId: number;
+  personaName: string;
+  groupName: string | null;
+  userCount: number;
+  mappingId: number;
+  targetRoleId: number;
+  roleName: string;
+  roleId: string;
+  coveragePercent: number | null;
+  excessPercent: number;
+  exceptionId: number | null;
+  exceptionStatus: string | null;
+  exceptionJustification: string | null;
+  exceptionAcceptedBy: string | null;
+  exceptionAcceptedAt: string | null;
+}
+
+export function getLeastAccessAnalysis(threshold: number): LeastAccessRow[] {
+  const rows = db
+    .select({
+      personaId: schema.personaTargetRoleMappings.personaId,
+      personaName: schema.personas.name,
+      groupName: schema.consolidatedGroups.name,
+      mappingId: schema.personaTargetRoleMappings.id,
+      targetRoleId: schema.personaTargetRoleMappings.targetRoleId,
+      roleName: schema.targetRoles.roleName,
+      roleId: schema.targetRoles.roleId,
+      coveragePercent: schema.personaTargetRoleMappings.coveragePercent,
+      excessPercent: schema.personaTargetRoleMappings.excessPercent,
+      exceptionId: schema.leastAccessExceptions.id,
+      exceptionStatus: schema.leastAccessExceptions.status,
+      exceptionJustification: schema.leastAccessExceptions.justification,
+      exceptionAcceptedBy: schema.leastAccessExceptions.acceptedBy,
+      exceptionAcceptedAt: schema.leastAccessExceptions.acceptedAt,
+    })
+    .from(schema.personaTargetRoleMappings)
+    .innerJoin(schema.personas, eq(schema.personas.id, schema.personaTargetRoleMappings.personaId))
+    .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId))
+    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.personaTargetRoleMappings.targetRoleId))
+    .leftJoin(
+      schema.leastAccessExceptions,
+      and(
+        eq(schema.leastAccessExceptions.personaId, schema.personaTargetRoleMappings.personaId),
+        eq(schema.leastAccessExceptions.targetRoleId, schema.personaTargetRoleMappings.targetRoleId),
+        eq(schema.leastAccessExceptions.status, "accepted"),
+      )
+    )
+    .where(sql`${schema.personaTargetRoleMappings.excessPercent} >= ${threshold}`)
+    .all();
+
+  const userCounts = db
+    .select({
+      personaId: schema.userPersonaAssignments.personaId,
+      count: count(),
+    })
+    .from(schema.userPersonaAssignments)
+    .groupBy(schema.userPersonaAssignments.personaId)
+    .all();
+  const userCountMap = new Map(userCounts.map(u => [u.personaId, u.count]));
+
+  return rows
+    .filter(r => r.excessPercent !== null)
+    .map(r => ({
+      ...r,
+      excessPercent: r.excessPercent!,
+      userCount: userCountMap.get(r.personaId) ?? 0,
+    }));
 }

@@ -19,9 +19,9 @@ import {
   Activity,
   UserCog,
   GitBranch,
-  Database,
   Wrench,
   Layers,
+  Bell,
 } from "lucide-react";
 import { AIRMLogo } from "@/components/layout/airm-logo";
 
@@ -43,11 +43,13 @@ const navSections: NavSection[] = [
     label: "WORKFLOW",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/releases", label: "Releases", icon: Layers },
       { href: "/upload", label: "Data Upload", icon: Upload },
       { href: "/personas", label: "Personas", icon: UserCircle },
       { href: "/mapping", label: "Role Mapping", icon: Route },
       { href: "/sod", label: "SOD Analysis", icon: ShieldAlert },
       { href: "/approvals", label: "Approvals", icon: CheckCircle },
+      { href: "/notifications", label: "Notifications", icon: Bell },
     ],
   },
   {
@@ -57,7 +59,6 @@ const navSections: NavSection[] = [
       { href: "/source-roles", label: "Source Roles", icon: FolderOpen },
       { href: "/target-roles", label: "Target Roles", icon: Target },
       { href: "/sod-rules", label: "SOD Rules", icon: BookOpen },
-      { href: "/data", label: "Data Explorer", icon: Database },
     ],
   },
   {
@@ -71,7 +72,6 @@ const navSections: NavSection[] = [
     label: "ADMIN",
     adminOnly: true,
     items: [
-      { href: "/releases", label: "Releases", icon: Layers },
       { href: "/admin/users", label: "App Users", icon: UserCog },
       { href: "/admin/assignments", label: "Assignments", icon: GitBranch },
     ],

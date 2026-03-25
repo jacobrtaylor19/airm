@@ -1,0 +1,10 @@
+name,level,parent_name,description
+Operations,L1,,Top-level operations division
+Finance,L2,Operations,Finance and accounting
+Accounts Payable,L3,Finance,Accounts payable team
+Accounts Receivable,L3,Finance,Accounts receivable team
+Human Resources,L2,Operations,HR division
+Recruiting,L3,Human Resources,Talent acquisition
+IT,L2,Operations,Information technology
+Manufacturing,L2,Operations,Manufacturing and production
+Procurement,L3,Manufacturing,Sourcing and procurement

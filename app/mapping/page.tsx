@@ -10,9 +10,12 @@ import {
   getGapAnalysisSummary,
   getUserRefinementDetails,
 } from "@/lib/queries";
+import { getSetting } from "@/lib/settings";
 import type { PersonaSodConflict } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
+import { getReleasesForAppUser, getReleaseUserIds } from "@/lib/releases";
+import { cookies } from "next/headers";
 import { MappingClient } from "./mapping-client";
 
 export const dynamic = "force-dynamic";
@@ -45,8 +48,31 @@ export default function MappingPage() {
     }
   }
 
+  // Release filter — applied on top of org-scope filter
+  const userReleases = getReleasesForAppUser(user);
+  const cookieReleaseId = parseInt(cookies().get("airm_release_id")?.value ?? "") || null;
+  const activeReleaseId = userReleases.some((r) => r.id === cookieReleaseId)
+    ? cookieReleaseId
+    : userReleases.length === 1
+    ? userReleases[0].id  // single-release users are always scoped to their one release
+    : (userReleases.find((r) => r.isActive)?.id ?? null);
+
+  if (activeReleaseId) {
+    const releaseUserIds = getReleaseUserIds(activeReleaseId);
+    if (releaseUserIds !== null) {
+      const releaseSet = new Set(releaseUserIds);
+      const releasePersonaIds = new Set(getPersonaIdsForUsers(Array.from(releaseSet)));
+      personas = personas.filter((p) => releasePersonaIds.has(p.personaId));
+      refinements = refinements.filter((r) => releaseSet.has(r.userId));
+      gaps = gaps.filter((g) => releasePersonaIds.has(g.personaId));
+      refinementDetails = refinementDetails.filter((r) => releaseSet.has(r.userId));
+    }
+  }
+
+  const excessThreshold = parseInt(getSetting("least_access_threshold") ?? "30", 10);
+
   // Pre-fetch persona details for the workspace
-  const personaDetails: Record<number, { sourcePermissionCount: number; mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; confidence: string | null; roleOwner: string | null }[] }> = {};
+  const personaDetails: Record<number, { sourcePermissionCount: number; mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; excessPercent: number | null; confidence: string | null; roleOwner: string | null }[] }> = {};
   for (const p of personas) {
     const detail = getPersonaDetail(p.personaId);
     if (detail) {
@@ -94,6 +120,7 @@ export default function MappingPage() {
         personaSourceSystems={personaSourceSystemsObj}
         gapSummary={gapSummary}
         refinementDetails={refinementDetails}
+        excessThreshold={excessThreshold}
       />
     </div>
   );

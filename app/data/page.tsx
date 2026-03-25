@@ -15,7 +15,7 @@ export default function DataExplorerPage() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Browse uploaded data: user-role assignments, source permissions, and target permissions.
+        Browse legacy source system access: user-role assignments from the source system, source permissions, and target permissions.
       </p>
       <DataExplorerClient
         userRoleAssignments={userRoleAssignments}

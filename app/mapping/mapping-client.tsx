@@ -7,14 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle, Circle, Loader2, Zap, Search, ChevronRight, X, Save, GripVertical } from "lucide-react";
+import { AlertTriangle, CheckCircle, Circle, Loader2, Zap, Search, ChevronRight, X, Save, GripVertical, TrendingUp } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, PersonaSodConflict, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
 
 interface PersonaDetailInfo {
   sourcePermissionCount: number;
-  mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; confidence: string | null; roleOwner: string | null }[];
+  mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; excessPercent: number | null; confidence: string | null; roleOwner: string | null }[];
 }
 
 interface MappingClientProps {
@@ -27,9 +27,10 @@ interface MappingClientProps {
   personaSourceSystems?: Record<number, string[]>;
   gapSummary?: GapAnalysisSummary;
   refinementDetails?: UserRefinementDetail[];
+  excessThreshold?: number;
 }
 
-export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [] }: MappingClientProps) {
+export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30 }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const router = useRouter();
@@ -268,6 +269,26 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                     </div>
                   )}
 
+                  {/* Least Access Warning Banner */}
+                  {selectedPersonaId && selectedDetail.mappedRoles.some(r => r.excessPercent != null && r.excessPercent >= excessThreshold) && (
+                    <div className="rounded-md border border-orange-200 bg-orange-50 p-3">
+                      <div className="flex items-start gap-2">
+                        <TrendingUp className="h-4 w-4 text-orange-600 mt-0.5 shrink-0" />
+                        <div className="text-sm">
+                          <p className="font-medium text-orange-800">
+                            Over-Provisioning Detected
+                          </p>
+                          <p className="text-orange-700 mt-1">
+                            {selectedDetail.mappedRoles.filter(r => r.excessPercent != null && r.excessPercent >= excessThreshold).length} role{selectedDetail.mappedRoles.filter(r => r.excessPercent != null && r.excessPercent >= excessThreshold).length !== 1 ? "s" : ""} exceed the {excessThreshold}% excess threshold. Remove roles or accept exceptions in the Provisioning Alerts section on the dashboard.
+                          </p>
+                          <a href="/dashboard" className="inline-block mt-2 text-xs font-medium text-orange-700 underline hover:text-orange-900">
+                            View Provisioning Alerts on dashboard &rarr;
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Drag-and-drop mapping */}
                   <div className="space-y-3">
                     {/* Mapped Roles drop zone */}
@@ -307,17 +328,33 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                               const roleInfo = targetRoles.find((r) => r.id === roleId);
                               const dbInfo = selectedDetail.mappedRoles.find((m) => m.targetRoleId === roleId);
                               if (!roleInfo) return null;
+                              const isOverProvisioned = dbInfo?.excessPercent != null && dbInfo.excessPercent >= excessThreshold;
                               return (
                                 <div
                                   key={roleId}
                                   draggable
                                   onDragStart={() => { dragRoleIdRef.current = roleId; dragSourceRef.current = "mapped"; }}
                                   onDragEnd={() => { dragRoleIdRef.current = null; dragSourceRef.current = null; }}
-                                  className="flex items-center gap-1 rounded-full border bg-primary/10 border-primary/30 px-2 py-1 text-xs cursor-grab active:cursor-grabbing group"
+                                  className={`flex items-center gap-1 rounded-full border px-2 py-1 text-xs cursor-grab active:cursor-grabbing group ${
+                                    isOverProvisioned
+                                      ? "bg-orange-50 border-orange-300"
+                                      : "bg-primary/10 border-primary/30"
+                                  }`}
+                                  title={isOverProvisioned ? `Over-provisioned: ${dbInfo!.excessPercent!.toFixed(0)}% excess permissions` : undefined}
                                 >
                                   <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                                  <span className="font-medium text-primary">{roleInfo.roleName}</span>
-                                  {dbInfo?.confidence && dbInfo.confidence !== "manual" && (
+                                  {isOverProvisioned && (
+                                    <TrendingUp className="h-3 w-3 text-orange-500 shrink-0" />
+                                  )}
+                                  <span className={`font-medium ${isOverProvisioned ? "text-orange-700" : "text-primary"}`}>
+                                    {roleInfo.roleName}
+                                  </span>
+                                  {isOverProvisioned && (
+                                    <span className="text-[9px] text-orange-500 font-medium">
+                                      +{dbInfo!.excessPercent!.toFixed(0)}%
+                                    </span>
+                                  )}
+                                  {!isOverProvisioned && dbInfo?.confidence && dbInfo.confidence !== "manual" && (
                                     <span className="text-[9px] text-muted-foreground ml-0.5">({dbInfo.confidence})</span>
                                   )}
                                   <button

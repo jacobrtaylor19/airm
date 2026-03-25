@@ -32,6 +32,9 @@ export default function DataUploadPage() {
     .get()!.count;
 
   const counts = {
+    orgUnits: getCount(schema.orgUnits),
+    releases: getCount(schema.releases),
+    releaseScope: getCount(schema.releaseOrgUnits),
     users: getCount(schema.users),
     sourceRoles: getCount(schema.sourceRoles),
     roleAssignments: getCount(schema.userSourceRoleAssignments),
@@ -86,7 +89,53 @@ export default function DataUploadPage() {
         </p>
       </div>
 
-      <div className={`grid gap-4 md:grid-cols-2 ${!isAdmin ? "pointer-events-none opacity-75" : ""}`}>
+      {/* Project Structure */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 mb-3">
+          Project Structure
+        </p>
+        <div className={`grid gap-4 md:grid-cols-2 ${!isAdmin ? "opacity-75" : ""}`}>
+          <UploadCard
+            type="org-units"
+            label="Org Units / Business Units"
+            description="Organizational hierarchy (L1 division → L2 department → L3 team). Load before users and release scope."
+            expectedColumns="name, level, parent_name, description"
+            required={false}
+            existingCount={counts.orgUnits}
+            templateUrl="/templates/org-units-template.csv"
+            isAdmin={isAdmin}
+          />
+          <UploadCard
+            type="releases"
+            label="Releases / Waves"
+            description="Migration releases or project waves. One release can span multiple org units."
+            expectedColumns="name, description, status, release_type, target_system, target_date, is_active"
+            required={false}
+            existingCount={counts.releases}
+            templateUrl="/templates/releases-template.csv"
+            isAdmin={isAdmin}
+          />
+          <UploadCard
+            type="release-scope"
+            label="Release Scope"
+            description="Maps org units to releases — defines which business units are in each wave. Load org units and releases first."
+            expectedColumns="release_name, org_unit_name"
+            required={false}
+            existingCount={counts.releaseScope}
+            templateUrl="/templates/release-scope-template.csv"
+            isAdmin={isAdmin}
+          />
+        </div>
+      </div>
+
+      {/* Source Data */}
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/70 mb-3">
+          Source &amp; Target Data
+        </p>
+      </div>
+
+      <div className={`grid gap-4 md:grid-cols-2 ${!isAdmin ? "opacity-75" : ""}`}>
         <UploadCard
           type="users"
           label="User List"
@@ -95,6 +144,7 @@ export default function DataUploadPage() {
           required={true}
           existingCount={counts.users}
           templateUrl="/templates/users-template.csv"
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="source-roles"
@@ -105,6 +155,7 @@ export default function DataUploadPage() {
           existingCount={counts.sourceRoles}
           templateUrl="/templates/source-roles-template.csv"
           systemTag="Multi-System"
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="role-assignments"
@@ -115,6 +166,7 @@ export default function DataUploadPage() {
           existingCount={counts.roleAssignments}
           templateUrl="/templates/user-source-role-assignments-template.csv"
           systemTag="Multi-System"
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="role-permissions"
@@ -125,6 +177,7 @@ export default function DataUploadPage() {
           existingCount={counts.rolePermissions}
           templateUrl="/templates/source-role-permissions-template.csv"
           systemTag="Multi-System"
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="target-roles"
@@ -134,6 +187,7 @@ export default function DataUploadPage() {
           required={true}
           existingCount={counts.targetRoles}
           templateUrl="/templates/target-roles-template.csv"
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="target-permissions"
@@ -143,6 +197,7 @@ export default function DataUploadPage() {
           required={false}
           existingCount={counts.targetPermissions}
           templateUrl="/templates/target-permissions-template.csv"
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="sod-rules"
@@ -152,6 +207,7 @@ export default function DataUploadPage() {
           required={false}
           existingCount={counts.sodRules}
           templateUrl="/templates/sod-rules-template.csv"
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="existing-access"
@@ -161,6 +217,7 @@ export default function DataUploadPage() {
           required={false}
           existingCount={counts.existingAccess}
           templateUrl="/templates/existing-access-template.csv"
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="personas"
@@ -169,6 +226,7 @@ export default function DataUploadPage() {
           expectedColumns="name, description, business_function"
           required={false}
           existingCount={counts.personas}
+          isAdmin={isAdmin}
         />
         <UploadCard
           type="app-users"
@@ -178,6 +236,7 @@ export default function DataUploadPage() {
           required={false}
           existingCount={counts.appUsers}
           templateUrl="/templates/app-users-template.csv"
+          isAdmin={isAdmin}
         />
       </div>
 

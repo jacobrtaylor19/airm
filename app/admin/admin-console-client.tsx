@@ -917,6 +917,25 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
                     </div>
                   </div>
 
+                  {/* Least Access Threshold */}
+                  <div className="space-y-2">
+                    <Label>Least Access Excess Threshold (%)</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={100}
+                        className="w-24 h-8 text-sm"
+                        value={settings["least_access_threshold"] ?? "30"}
+                        onChange={(e) => updateSetting("least_access_threshold", e.target.value)}
+                      />
+                      <span className="text-xs text-muted-foreground">%</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Persona-to-role mappings where excess permissions exceed this percentage will appear in Least Access analysis and trigger inline warnings in Role Mapping. Default: 30%.
+                    </p>
+                  </div>
+
                   <div className="flex items-center gap-2">
                     <Button
                       onClick={() =>
@@ -927,6 +946,7 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
                           "workflow.sodHighRiskAcceptable",
                           "workflow.sodMediumRiskAcceptable",
                           "workflow.sodLowRiskAcceptable",
+                          "least_access_threshold",
                         ])
                       }
                       disabled={settingsSaving}

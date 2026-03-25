@@ -99,11 +99,12 @@ export function requireRole(allowedRoles: string[]): AppUser {
   return user;
 }
 
-/** Role hierarchy: system_admin > admin > approver > mapper > viewer */
+/** Role hierarchy: system_admin > admin > approver > coordinator > mapper > viewer */
 export const ROLE_HIERARCHY: Record<string, number> = {
   system_admin: 100,
   admin: 80,
   approver: 60,
+  coordinator: 50,
   mapper: 40,
   viewer: 20,
 };

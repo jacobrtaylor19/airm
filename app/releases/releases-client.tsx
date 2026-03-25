@@ -23,7 +23,7 @@ import {
 import { Plus, CheckCircle, Clock, Archive, Zap, Trash2, Pencil, Star } from "lucide-react";
 import { toast } from "sonner";
 
-type ReleaseStats = { total: number; approved: number; sodFlagged: number; pending: number; pct: number };
+type ReleaseStats = { total: number; approved: number; sodFlagged: number; pending: number; pct: number; userCount: number; orgUnitCount: number };
 
 type ReleaseRow = {
   id: number;
@@ -44,6 +44,7 @@ type ReleaseRow = {
 interface Props {
   releases: ReleaseRow[];
   unlinkedCount: number;
+  isAdmin: boolean;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -70,7 +71,7 @@ const EMPTY_FORM = {
   isActive: false,
 };
 
-export function ReleasesClient({ releases, unlinkedCount }: Props) {
+export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
   const [editRelease, setEditRelease] = useState<ReleaseRow | null>(null);
@@ -168,9 +169,11 @@ export function ReleasesClient({ releases, unlinkedCount }: Props) {
             Migration waves — each release tracks a set of user role assignments through the approval workflow.
           </p>
         </div>
-        <Button onClick={openCreate} className="gap-2">
-          <Plus className="h-4 w-4" /> New Release
-        </Button>
+        {isAdmin && (
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" /> New Release
+          </Button>
+        )}
       </div>
 
       {/* Active release banner */}
@@ -201,8 +204,8 @@ export function ReleasesClient({ releases, unlinkedCount }: Props) {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <Zap className="h-8 w-8 text-muted-foreground/40" />
-            <p className="text-muted-foreground">No releases yet. Create your first migration wave.</p>
-            <Button variant="outline" onClick={openCreate}>Create Release</Button>
+            <p className="text-muted-foreground">{isAdmin ? "No releases yet. Create your first migration wave." : "No releases are currently in scope for your assignment."}</p>
+            {isAdmin && <Button variant="outline" onClick={openCreate}>Create Release</Button>}
           </CardContent>
         </Card>
       ) : (
@@ -273,26 +276,41 @@ export function ReleasesClient({ releases, unlinkedCount }: Props) {
                     </div>
                   )}
 
-                  {/* Actions */}
-                  <div className="flex gap-2 mt-3 pt-3 border-t">
-                    {!r.isActive && r.status !== "archived" && (
-                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setActive(r)}>
-                        <Star className="h-3 w-3" /> Set Active
-                      </Button>
+                  {/* Scope info */}
+                  <div className="flex gap-3 mt-2 text-xs text-muted-foreground">
+                    {r.stats.orgUnitCount > 0 && (
+                      <span><strong className="text-foreground">{r.stats.orgUnitCount}</strong> business unit{r.stats.orgUnitCount !== 1 ? "s" : ""} in scope</span>
                     )}
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openEdit(r)}>
-                      <Pencil className="h-3 w-3" /> Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-7 text-xs gap-1 text-destructive hover:text-destructive ml-auto"
-                      onClick={() => deleteRelease(r)}
-                      disabled={deletingId === r.id}
-                    >
-                      <Trash2 className="h-3 w-3" /> Delete
-                    </Button>
+                    {r.stats.userCount > 0 && (
+                      <span><strong className="text-foreground">{r.stats.userCount}</strong> user{r.stats.userCount !== 1 ? "s" : ""} in scope</span>
+                    )}
+                    {r.stats.orgUnitCount === 0 && r.stats.userCount === 0 && isAdmin && (
+                      <span className="text-yellow-600">No scope defined yet — add business units or users</span>
+                    )}
                   </div>
+
+                  {/* Actions (admin only) */}
+                  {isAdmin && (
+                    <div className="flex gap-2 mt-3 pt-3 border-t">
+                      {!r.isActive && r.status !== "archived" && (
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setActive(r)}>
+                          <Star className="h-3 w-3" /> Set Active
+                        </Button>
+                      )}
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openEdit(r)}>
+                        <Pencil className="h-3 w-3" /> Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs gap-1 text-destructive hover:text-destructive ml-auto"
+                        onClick={() => deleteRelease(r)}
+                        disabled={deletingId === r.id}
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );

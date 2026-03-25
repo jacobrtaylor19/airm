@@ -15,6 +15,9 @@ export function getUserScope(appUser: AppUser & { assignedOrgUnitId?: number | n
     return null; // null means "all users"
   }
 
+  // Coordinator sees their org unit scope (same as mapper/approver)
+  // Falls through to org unit resolution below
+
   // Get assignedOrgUnitId from the database if not provided
   let orgUnitId = appUser.assignedOrgUnitId;
   if (orgUnitId === undefined) {
@@ -61,7 +64,8 @@ export function getUserScopeDepartments(appUser: AppUser & { assignedOrgUnitId?:
   }
 
   if (!orgUnitId) {
-    // Fall back to legacy work assignments
+    // Coordinator has no legacy work assignment support — return empty scope
+    if (appUser.role === "coordinator") return [];
     return getLegacyScopeDepartments(appUser);
   }
 

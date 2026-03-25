@@ -1,0 +1,4 @@
+name,description,status,release_type,target_system,target_date,is_active
+Release 1 — Finance Go-Live,Initial finance and accounting module migration,planning,initial,SAP S/4HANA,2025-06-30,true
+Release 2 — Operations Wave,Operations division migration including manufacturing and procurement,planning,incremental,SAP S/4HANA,2025-09-30,false
+Release 3 — HR and IT,Human resources and information technology migration,planning,incremental,SAP S/4HANA,2025-12-31,false

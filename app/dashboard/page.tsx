@@ -1,12 +1,17 @@
-import { getDashboardStats, getDepartmentMappingStatus, getSourceSystemStats } from "@/lib/queries";
+import { getDashboardStats, getDepartmentMappingStatus, getSourceSystemStats, getLeastAccessAnalysis, getPersonaIdsForUsers } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
-import { getUserScopeDepartments } from "@/lib/scope";
+import { getUserScopeDepartments, getUserScope } from "@/lib/scope";
+import { getSetting } from "@/lib/settings";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
-import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Database } from "lucide-react";
+import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Database, Info, AlertTriangle, CheckCircle2, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DashboardFiltered } from "./dashboard-filtered";
+import { generateStrapline } from "@/lib/strapline";
+import { db } from "@/db";
+import * as schema from "@/db/schema";
+import { eq, inArray, count, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +29,56 @@ export default function DashboardPage() {
   // Determine assigned departments for mapper/approver via org hierarchy
   const scopeDepts = getUserScopeDepartments(user);
   const assignedDepartments = scopeDepts && scopeDepts.length > 0 ? scopeDepts : null;
+
+  // Build scoped stats for strapline (mapper/approver/coordinator)
+  const needsScopeStats = ["mapper", "approver", "coordinator"].includes(user.role);
+  let scopedStats = null;
+  if (needsScopeStats) {
+    const scopedUserIds = getUserScope(user);
+    if (scopedUserIds !== null && scopedUserIds.length > 0) {
+      const depts = scopeDepts ?? [];
+      // Count personas mapped in this scope
+      const scopedPersonaRows = scopedUserIds.length > 0
+        ? db.select({ personaId: schema.userPersonaAssignments.personaId })
+            .from(schema.userPersonaAssignments)
+            .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds))
+            .all()
+        : [];
+      const scopedPersonaIds = Array.from(new Set(scopedPersonaRows.map(r => r.personaId).filter((id): id is number => id !== null)));
+      const mappedPersonaCount = scopedPersonaIds.length > 0
+        ? db.select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
+            .from(schema.personaTargetRoleMappings)
+            .where(inArray(schema.personaTargetRoleMappings.personaId, scopedPersonaIds))
+            .get()?.count ?? 0
+        : 0;
+      const pendingApprovals = scopedUserIds.length > 0
+        ? db.select({ count: count() })
+            .from(schema.userTargetRoleAssignments)
+            .where(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds))
+            .get()?.count ?? 0
+        : 0;
+      scopedStats = {
+        deptCount: depts.length,
+        userCount: scopedUserIds.length,
+        mappedPersonaCount,
+        totalPersonaCount: scopedPersonaIds.length,
+        pendingApprovals,
+      };
+    }
+  }
+
+  const strapline = generateStrapline(stats, user.role, scopedStats, user.displayName);
+
+  // Provisioning alerts — scoped to user's area
+  const overprovisioningThreshold = parseInt(getSetting("least_access_threshold") ?? "30", 10);
+  let overprovisioningAlerts = getLeastAccessAnalysis(overprovisioningThreshold);
+  if (["mapper", "approver", "coordinator"].includes(user.role)) {
+    const scopedUserIds = getUserScope(user);
+    if (scopedUserIds !== null) {
+      const scopedPersonaIds = new Set(getPersonaIdsForUsers(scopedUserIds));
+      overprovisioningAlerts = overprovisioningAlerts.filter(r => scopedPersonaIds.has(r.personaId));
+    }
+  }
 
   // Workflow stages
   const hasData = stats.totalUsers > 0 && stats.totalSourceRoles > 0;
@@ -59,9 +114,41 @@ export default function DashboardPage() {
     },
   ];
 
+  const straplineIcon = strapline.tone === "positive"
+    ? <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+    : strapline.tone === "action"
+    ? <Zap className="h-4 w-4 text-orange-500 shrink-0" />
+    : strapline.tone === "warning"
+    ? <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
+    : <Info className="h-4 w-4 text-blue-500 shrink-0" />;
+
+  const straplineBg = strapline.tone === "positive"
+    ? "border-emerald-200 bg-emerald-50/50"
+    : strapline.tone === "action"
+    ? "border-orange-200 bg-orange-50/50"
+    : strapline.tone === "warning"
+    ? "border-yellow-200 bg-yellow-50/50"
+    : "border-blue-200 bg-blue-50/30";
+
   return (
     <div className="space-y-6">
       <WorkflowStepper stages={stages} />
+
+      {/* Status Strapline */}
+      <div className={`rounded-lg border px-4 py-3 ${straplineBg}`}>
+        <div className="flex items-start gap-2.5">
+          {straplineIcon}
+          <div className="text-sm leading-relaxed">
+            <span className="text-foreground">{strapline.project}</span>
+            {strapline.area && (
+              <>
+                <span className="mx-2 text-muted-foreground/40">·</span>
+                <span className="text-muted-foreground italic">{strapline.area}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Global KPI Cards */}
       <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Project Role Mapping Progress</h3>
@@ -131,6 +218,7 @@ export default function DashboardPage() {
         sodRulesCount={stats.sodRulesCount}
         personasWithMapping={stats.personasWithMapping}
         totalPersonas={stats.totalPersonas}
+        overprovisioningAlerts={overprovisioningAlerts}
       />
     </div>
   );

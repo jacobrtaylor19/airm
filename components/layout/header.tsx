@@ -4,6 +4,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
+import { ReleaseSelector } from "@/components/layout/release-selector";
+import type { ReleaseInfo } from "@/lib/releases";
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Status Dashboard",
@@ -16,6 +18,8 @@ const pageTitles: Record<string, string> = {
   "/source-roles": "Source Roles",
   "/target-roles": "Target Roles",
   "/sod-rules": "SOD Rules",
+  "/data": "Legacy Access Browser",
+  "/releases": "Releases",
   "/exports": "Exports",
   "/audit-log": "Audit Log",
   "/jobs": "Processing Jobs",
@@ -38,7 +42,13 @@ interface HeaderUser {
   role: string;
 }
 
-export function Header({ user }: { user?: HeaderUser }) {
+interface HeaderProps {
+  user?: HeaderUser;
+  releases?: ReleaseInfo[];
+  selectedReleaseId?: number | null;
+}
+
+export function Header({ user, releases, selectedReleaseId }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const basePath = "/" + (pathname.split("/").slice(1, pathname.startsWith("/admin") ? 3 : 2).join("/") || "dashboard");
@@ -52,7 +62,12 @@ export function Header({ user }: { user?: HeaderUser }) {
 
   return (
     <header className="flex h-14 items-center justify-between border-b px-6">
-      <h1 className="text-lg font-semibold">{title}</h1>
+      <div className="flex items-center gap-3">
+        <h1 className="text-lg font-semibold">{title}</h1>
+        {releases && releases.length > 0 && (
+          <ReleaseSelector releases={releases} selectedId={selectedReleaseId ?? null} />
+        )}
+      </div>
       {user && (
         <div className="flex items-center gap-3">
           <div className="text-right">

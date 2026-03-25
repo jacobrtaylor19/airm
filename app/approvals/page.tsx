@@ -1,6 +1,8 @@
 import { getApprovalQueue } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
+import { getReleasesForAppUser, getReleaseUserIds } from "@/lib/releases";
+import { cookies } from "next/headers";
 import { ApprovalsClient } from "./approvals-client";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +17,23 @@ export default function ApprovalsPage() {
     if (scopedUserIds !== null) {
       const idSet = new Set(scopedUserIds);
       queue = queue.filter((a) => idSet.has(a.userId));
+    }
+  }
+
+  // Release filter
+  const userReleases = getReleasesForAppUser(user);
+  const cookieReleaseId = parseInt(cookies().get("airm_release_id")?.value ?? "") || null;
+  const activeReleaseId = userReleases.some((r) => r.id === cookieReleaseId)
+    ? cookieReleaseId
+    : userReleases.length === 1
+    ? userReleases[0].id
+    : (userReleases.find((r) => r.isActive)?.id ?? null);
+
+  if (activeReleaseId) {
+    const releaseUserIds = getReleaseUserIds(activeReleaseId);
+    if (releaseUserIds !== null) {
+      const releaseSet = new Set(releaseUserIds);
+      queue = queue.filter((a) => releaseSet.has(a.userId));
     }
   }
 

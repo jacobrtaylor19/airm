@@ -18,7 +18,10 @@ type UploadType =
   | "sod-rules"
   | "personas"
   | "app-users"
-  | "existing-access";
+  | "existing-access"
+  | "org-units"
+  | "releases"
+  | "release-scope";
 
 const REQUIRED_COLUMNS: Record<UploadType, string[]> = {
   users: ["source_user_id", "display_name"],
@@ -31,6 +34,9 @@ const REQUIRED_COLUMNS: Record<UploadType, string[]> = {
   personas: ["name", "description", "business_function"],
   "app-users": ["username", "password", "display_name", "role"],
   "existing-access": ["source_user_id", "target_role_id"],
+  "org-units": ["name", "level"],
+  releases: ["name"],
+  "release-scope": ["release_name", "org_unit_name"],
 };
 
 function validateColumns(headers: string[], required: string[]): string[] {
@@ -125,6 +131,16 @@ async function commitUpload(
       db.delete(schema.users).run();
       for (const row of records) {
         try {
+          // Resolve orgUnitId by name if org units have been loaded
+          let orgUnitId: number | null = null;
+          const orgUnitName = (row.org_unit || row.org_unit_name)?.trim();
+          if (orgUnitName) {
+            const ou = db.select({ id: schema.orgUnits.id })
+              .from(schema.orgUnits)
+              .where(eq(schema.orgUnits.name, orgUnitName))
+              .get();
+            orgUnitId = ou?.id ?? null;
+          }
           db.insert(schema.users)
             .values({
               sourceUserId: row.source_user_id,
@@ -132,7 +148,8 @@ async function commitUpload(
               email: row.email || null,
               jobTitle: row.job_title || null,
               department: row.department || null,
-              orgUnit: row.org_unit || null,
+              orgUnit: orgUnitName || null,
+              orgUnitId,
               costCenter: row.cost_center || null,
             })
             .run();
@@ -380,6 +397,128 @@ async function commitUpload(
           skipped++;
           if (!user) errors.push(`Row ${inserted + skipped}: source_user_id "${row.source_user_id}" not found`);
           if (!role) errors.push(`Row ${inserted + skipped}: target_role_id "${row.target_role_id}" not found`);
+        }
+      }
+      break;
+    }
+
+    case "org-units": {
+      // Two-pass: insert L1 first, then L2, then L3, resolving parent_name → parent_id
+      const levels = ["L1", "L2", "L3"];
+      for (const level of levels) {
+        for (const row of records) {
+          if (row.level?.toUpperCase() !== level) continue;
+          try {
+            let parentId: number | null = null;
+            if (row.parent_name?.trim()) {
+              const parent = db
+                .select({ id: schema.orgUnits.id })
+                .from(schema.orgUnits)
+                .where(eq(schema.orgUnits.name, row.parent_name.trim()))
+                .get();
+              parentId = parent?.id ?? null;
+            }
+            // Upsert by name: skip if already exists
+            const existing = db
+              .select({ id: schema.orgUnits.id })
+              .from(schema.orgUnits)
+              .where(eq(schema.orgUnits.name, row.name.trim()))
+              .get();
+            if (!existing) {
+              db.insert(schema.orgUnits)
+                .values({
+                  name: row.name.trim(),
+                  level: level,
+                  parentId,
+                  description: row.description || null,
+                })
+                .run();
+              inserted++;
+            } else {
+              skipped++;
+            }
+          } catch (e: any) {
+            errors.push(`Row (${row.name}): ${e.message}`);
+          }
+        }
+      }
+      break;
+    }
+
+    case "releases": {
+      for (const row of records) {
+        try {
+          const name = row.name?.trim();
+          if (!name) { skipped++; continue; }
+          const existing = db
+            .select({ id: schema.releases.id })
+            .from(schema.releases)
+            .where(eq(schema.releases.name, name))
+            .get();
+          if (existing) { skipped++; continue; }
+          const isActive = row.is_active?.toLowerCase() === "true";
+          // If this release is active, deactivate all others first
+          if (isActive) {
+            db.update(schema.releases).set({ isActive: false }).run();
+          }
+          db.insert(schema.releases)
+            .values({
+              name,
+              description: row.description || null,
+              status: row.status || "planning",
+              releaseType: row.release_type || "initial",
+              targetSystem: row.target_system || null,
+              targetDate: row.target_date || null,
+              isActive,
+              createdBy: "data_upload",
+            })
+            .run();
+          inserted++;
+        } catch (e: any) {
+          errors.push(`Row (${row.name}): ${e.message}`);
+        }
+      }
+      break;
+    }
+
+    case "release-scope": {
+      // Links org units to releases — appends, does not clear existing
+      for (const row of records) {
+        try {
+          const release = db
+            .select({ id: schema.releases.id })
+            .from(schema.releases)
+            .where(eq(schema.releases.name, row.release_name?.trim()))
+            .get();
+          const orgUnit = db
+            .select({ id: schema.orgUnits.id })
+            .from(schema.orgUnits)
+            .where(eq(schema.orgUnits.name, row.org_unit_name?.trim()))
+            .get();
+          if (!release) {
+            errors.push(`release_name "${row.release_name}" not found — upload releases first`);
+            skipped++;
+            continue;
+          }
+          if (!orgUnit) {
+            errors.push(`org_unit_name "${row.org_unit_name}" not found — upload org units first`);
+            skipped++;
+            continue;
+          }
+          // Skip if already linked
+          const exists = db
+            .select()
+            .from(schema.releaseOrgUnits)
+            .where(eq(schema.releaseOrgUnits.releaseId, release.id))
+            .all()
+            .find((r) => r.orgUnitId === orgUnit.id);
+          if (exists) { skipped++; continue; }
+          db.insert(schema.releaseOrgUnits)
+            .values({ releaseId: release.id, orgUnitId: orgUnit.id, addedBy: "data_upload" })
+            .run();
+          inserted++;
+        } catch (e: any) {
+          errors.push(`Row (${row.release_name} / ${row.org_unit_name}): ${e.message}`);
         }
       }
       break;

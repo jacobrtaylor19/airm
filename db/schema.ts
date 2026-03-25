@@ -254,6 +254,32 @@ export const releases = sqliteTable("releases", {
 });
 
 // ─────────────────────────────────────────────
+// RELEASE ↔ USER SCOPE (many-to-many)
+// A user may be in-scope for multiple releases
+// ─────────────────────────────────────────────
+
+export const releaseUsers = sqliteTable("release_users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
+  addedBy: text("added_by"),
+});
+
+// ─────────────────────────────────────────────
+// RELEASE ↔ ORG UNIT SCOPE (many-to-many)
+// A business unit / department may span multiple releases
+// ─────────────────────────────────────────────
+
+export const releaseOrgUnits = sqliteTable("release_org_units", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
+  orgUnitId: integer("org_unit_id").notNull().references(() => orgUnits.id, { onDelete: "cascade" }),
+  addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
+  addedBy: text("added_by"),
+});
+
+// ─────────────────────────────────────────────
 // USER ↔ TARGET ROLE ASSIGNMENTS
 // ─────────────────────────────────────────────
 
@@ -315,6 +341,42 @@ export const sodConflicts = sqliteTable("sod_conflicts", {
   resolutionNotes: text("resolution_notes"),
   riskExplanation: text("risk_explanation"),
   analysisJobId: integer("analysis_job_id").references(() => processingJobs.id),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS (demo — no email sent)
+// ─────────────────────────────────────────────
+
+export const notifications = sqliteTable("notifications", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  fromUserId: integer("from_user_id").notNull().references(() => appUsers.id),
+  toUserId: integer("to_user_id").notNull().references(() => appUsers.id),
+  notificationType: text("notification_type").notNull().default("reminder"), // reminder | escalation | info
+  subject: text("subject").notNull(),
+  message: text("message").notNull(),
+  relatedEntityType: text("related_entity_type"), // "mapping" | "approval" | null
+  relatedEntityId: integer("related_entity_id"),
+  status: text("status").notNull().default("sent"), // sent | read
+  readAt: text("read_at"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// LEAST ACCESS EXCEPTIONS
+// ─────────────────────────────────────────────
+
+export const leastAccessExceptions = sqliteTable("least_access_exceptions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  personaId: integer("persona_id").notNull().references(() => personas.id, { onDelete: "cascade" }),
+  targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
+  excessPercent: real("excess_percent"),
+  justification: text("justification").notNull(),
+  acceptedBy: text("accepted_by").notNull(),
+  acceptedAt: text("accepted_at").notNull(),
+  status: text("status").notNull().default("accepted"), // "accepted" | "revoked"
+  revokedBy: text("revoked_by"),
+  revokedAt: text("revoked_at"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
@@ -523,6 +585,18 @@ export const personaTargetRoleMappingsRelations = relations(personaTargetRoleMap
 
 export const releasesRelations = relations(releases, ({ many }) => ({
   assignments: many(userTargetRoleAssignments),
+  releaseUsers: many(releaseUsers),
+  releaseOrgUnits: many(releaseOrgUnits),
+}));
+
+export const releaseUsersRelations = relations(releaseUsers, ({ one }) => ({
+  release: one(releases, { fields: [releaseUsers.releaseId], references: [releases.id] }),
+  user: one(users, { fields: [releaseUsers.userId], references: [users.id] }),
+}));
+
+export const releaseOrgUnitsRelations = relations(releaseOrgUnits, ({ one }) => ({
+  release: one(releases, { fields: [releaseOrgUnits.releaseId], references: [releases.id] }),
+  orgUnit: one(orgUnits, { fields: [releaseOrgUnits.orgUnitId], references: [orgUnits.id] }),
 }));
 
 export const userTargetRoleAssignmentsRelations = relations(userTargetRoleAssignments, ({ one }) => ({

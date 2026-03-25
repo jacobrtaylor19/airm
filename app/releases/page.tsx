@@ -1,18 +1,51 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { requireRole } from "@/lib/auth";
+import { eq } from "drizzle-orm";
+import { requireAuth } from "@/lib/auth";
 import { ReleasesClient } from "./releases-client";
 
 export const dynamic = "force-dynamic";
 
+const ADMIN_ROLES = ["admin", "system_admin"];
+
 export default function ReleasesPage() {
-  requireRole(["admin", "system_admin"]);
+  const currentUser = requireAuth();
+  const isAdmin = ADMIN_ROLES.includes(currentUser.role);
 
-  const releases = db.select().from(schema.releases).orderBy(schema.releases.createdAt).all();
-
+  // Get all releases + their org unit scope memberships
+  const allReleases = db.select().from(schema.releases).orderBy(schema.releases.createdAt).all();
+  const allReleaseOrgUnits = db.select().from(schema.releaseOrgUnits).all();
+  const allReleaseUsers = db.select().from(schema.releaseUsers).all();
   const allAssignments = db.select().from(schema.userTargetRoleAssignments).all();
 
-  const releasesWithStats = releases.map((r) => {
+  // For non-admins: filter releases to those that include their assigned org unit
+  let visibleReleases = allReleases;
+  if (!isAdmin && currentUser.assignedOrgUnitId) {
+    // Find release IDs that include this user's org unit
+    const matchingReleaseIds = new Set(
+      allReleaseOrgUnits
+        .filter((ru) => ru.orgUnitId === currentUser.assignedOrgUnitId)
+        .map((ru) => ru.releaseId)
+    );
+    // Also check work assignments for additional org unit scope
+    const workAssignments = db
+      .select()
+      .from(schema.workAssignments)
+      .where(eq(schema.workAssignments.appUserId, currentUser.id))
+      .all();
+    for (const wa of workAssignments) {
+      if (wa.scopeType === "org_unit" && wa.scopeValue) {
+        const orgUnitId = parseInt(wa.scopeValue);
+        allReleaseOrgUnits
+          .filter((ru) => ru.orgUnitId === orgUnitId)
+          .forEach((ru) => matchingReleaseIds.add(ru.releaseId));
+      }
+    }
+    visibleReleases = allReleases.filter((r) => matchingReleaseIds.has(r.id));
+  }
+
+  // Attach stats + scope info to each visible release
+  const releasesWithStats = visibleReleases.map((r) => {
     const assignments = allAssignments.filter((a) => a.releaseId === r.id);
     const total = assignments.length;
     const approved = assignments.filter((a) => a.status === "approved").length;
@@ -21,11 +54,20 @@ export default function ReleasesPage() {
       (a) => a.status === "draft" || a.status === "pending_approval"
     ).length;
     const pct = total > 0 ? Math.round((approved / total) * 100) : 0;
-    return { ...r, stats: { total, approved, sodFlagged, pending, pct } };
+    const userCount = allReleaseUsers.filter((ru) => ru.releaseId === r.id).length;
+    const orgUnitCount = allReleaseOrgUnits.filter((ru) => ru.releaseId === r.id).length;
+    return { ...r, stats: { total, approved, sodFlagged, pending, pct, userCount, orgUnitCount } };
   });
 
-  // Also count unlinked assignments
-  const unlinked = allAssignments.filter((a) => a.releaseId === null).length;
+  const unlinked = isAdmin
+    ? allAssignments.filter((a) => a.releaseId === null).length
+    : 0;
 
-  return <ReleasesClient releases={releasesWithStats} unlinkedCount={unlinked} />;
+  return (
+    <ReleasesClient
+      releases={releasesWithStats}
+      unlinkedCount={unlinked}
+      isAdmin={isAdmin}
+    />
+  );
 }

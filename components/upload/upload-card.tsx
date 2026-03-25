@@ -30,6 +30,7 @@ export function UploadCard({
   existingCount,
   templateUrl,
   systemTag,
+  isAdmin = true,
 }: {
   type: string;
   label: string;
@@ -39,6 +40,7 @@ export function UploadCard({
   existingCount: number;
   templateUrl?: string;
   systemTag?: string;
+  isAdmin?: boolean;
 }) {
   const [status, setStatus] = useState<UploadStatus>(existingCount > 0 ? "done" : "idle");
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -153,15 +155,17 @@ export function UploadCard({
             }}
           />
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fileRef.current?.click()}
-              disabled={status === "uploading" || status === "committing"}
-            >
-              <FileUp className="mr-1 h-3 w-3" />
-              {status === "done" ? "Replace" : "Upload CSV"}
-            </Button>
+            {isAdmin && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+                disabled={status === "uploading" || status === "committing"}
+              >
+                <FileUp className="mr-1 h-3 w-3" />
+                {status === "done" ? "Replace" : "Upload CSV"}
+              </Button>
+            )}
             {templateUrl && (
               <a href={templateUrl} download>
                 <Button variant="ghost" size="sm" type="button" className="text-muted-foreground hover:text-foreground">
