@@ -1,4 +1,4 @@
-# CLAUDE.md — AIRM Developer Context
+# CLAUDE.md — Provisum Developer Context
 
 This file gives Claude Code the context needed to work effectively in this codebase. Read before making changes.
 
@@ -9,7 +9,7 @@ This file gives Claude Code the context needed to work effectively in this codeb
 
 ## What this project is
 
-AIRM is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It has cookie-based auth with 6 roles and org-unit-based scoping.
+Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It has cookie-based auth with 6 roles and org-unit-based scoping. The `airm/` directory name is retained for now — display strings use "Provisum" everywhere.
 
 ---
 
