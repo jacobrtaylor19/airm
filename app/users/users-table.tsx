@@ -30,13 +30,23 @@ const columns: Column<UserRow>[] = [
       row.assignmentStatus ? (
         <StatusBadge status={row.assignmentStatus} />
       ) : (
-        <span className="text-xs text-muted-foreground">—</span>
+        <span className="text-xs text-muted-foreground">{"\u2014"}</span>
       ),
   },
 ];
 
-export function UsersTable({ data }: { data: UserRow[] }) {
+export function UsersTable({ data, isAdmin = false }: { data: UserRow[]; isAdmin?: boolean }) {
   const router = useRouter();
+
+  async function handleBulkDelete(ids: number[]) {
+    const res = await fetch("/api/admin/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entityType: "users", ids }),
+    });
+    if (res.ok) router.refresh();
+    else alert("Delete failed");
+  }
 
   return (
     <DataTable
@@ -46,6 +56,9 @@ export function UsersTable({ data }: { data: UserRow[] }) {
       searchPlaceholder="Search by name..."
       onRowClick={(row) => router.push(`/users/${row.id}`)}
       emptyMessage="No users found."
+      selectable={isAdmin}
+      onBulkDelete={isAdmin ? handleBulkDelete : undefined}
+      entityLabel="users"
     />
   );
 }

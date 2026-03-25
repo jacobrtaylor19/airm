@@ -554,13 +554,23 @@ function seed() {
         const permAName = permNameLookup.get(rule.permissionA) ?? null;
         const permBName = permNameLookup.get(rule.permissionB) ?? null;
 
+        // Determine conflict type: if both permissions come from the same role, it's within_role
+        const conflictType = (roleIdA !== null && roleIdB !== null && roleIdA === roleIdB)
+          ? "within_role"
+          : "between_role";
+
         // Build risk explanation
         const risk = rule.riskDescription
           ? rule.riskDescription
           : `Conflicting access: "${permAName ?? rule.permissionA}" and "${permBName ?? rule.permissionB}" should be held by separate individuals.`;
-        const resolution = rule.severity === "critical"
-          ? `Resolution required: Remove "${roleAName ?? "one role"}" or "${roleBName ?? "the other role"}". Risk acceptance is NOT permitted for critical conflicts.`
-          : `Resolution options: Remove "${roleAName ?? "one role"}" or "${roleBName ?? "the other role"}", or submit a risk acceptance request with business justification.`;
+        let resolution: string;
+        if (conflictType === "within_role") {
+          resolution = `This is a within-role conflict: the role "${roleAName ?? "this role"}" contains both conflicting permissions. This role needs to be reviewed and potentially split by the Security/GRC team.`;
+        } else {
+          resolution = rule.severity === "critical"
+            ? `Resolution required: Remove "${roleAName ?? "one role"}" or "${roleBName ?? "the other role"}". Risk acceptance is NOT permitted for critical conflicts.`
+            : `Resolution options: Remove "${roleAName ?? "one role"}" or "${roleBName ?? "the other role"}", or submit a risk acceptance request with business justification.`;
+        }
         const riskExplanation = `${risk}\n\n${resolution}`;
 
         db.insert(schema.sodConflicts).values({
@@ -571,6 +581,7 @@ function seed() {
           permissionIdA: rule.permissionA,
           permissionIdB: rule.permissionB,
           severity: rule.severity,
+          conflictType,
           resolutionStatus: "open",
           riskExplanation,
         }).run();
@@ -604,6 +615,9 @@ function seed() {
 
   const sysadminHash = bcrypt.hashSync("sysadmin123", 10);
   const testPassword = bcrypt.hashSync("test123", 10);
+  const securityHash = bcrypt.hashSync("security123", 10);
+  const complianceHash = bcrypt.hashSync("compliance123", 10);
+  const grcHash = bcrypt.hashSync("grc123", 10);
 
   const testUsers = [
     { username: "sysadmin", displayName: "System Administrator", role: "system_admin", hash: sysadminHash, orgUnit: null as string | null },
@@ -614,6 +628,9 @@ function seed() {
     { username: "approver.finance", displayName: "David Okafor (Finance Approver)", role: "approver", hash: testPassword, orgUnit: "Corporate Services" },
     { username: "approver.operations", displayName: "Lisa Park (Operations Approver)", role: "approver", hash: testPassword, orgUnit: "Operations" },
     { username: "viewer", displayName: "Chris Reed (Viewer)", role: "viewer", hash: testPassword, orgUnit: null as string | null },
+    { username: "security.lead", displayName: "Security Lead", role: "mapper", hash: securityHash, orgUnit: null as string | null },
+    { username: "compliance.officer", displayName: "Compliance Officer", role: "approver", hash: complianceHash, orgUnit: null as string | null },
+    { username: "grc.analyst", displayName: "GRC Analyst", role: "viewer", hash: grcHash, orgUnit: null as string | null },
   ];
 
   for (const u of testUsers) {
@@ -690,6 +707,9 @@ function seed() {
   console.log("    approver.finance / test123 (approver — Finance dept)");
   console.log("    approver.operations / test123 (approver — Maintenance + Facilities + Procurement + Supply Chain + Warehouse)");
   console.log("    viewer / test123 (viewer — read-only)");
+  console.log("    security.lead / security123 (mapper — all depts, handles within-role conflicts & role design)");
+  console.log("    compliance.officer / compliance123 (approver — all depts, approves risk acceptances & reviews escalated conflicts)");
+  console.log("    grc.analyst / grc123 (viewer — all depts, read-only audit & reporting)");
 
   // ─── Verification ───
   console.log("\n📊 Verification:");

@@ -287,6 +287,7 @@ export const sodConflicts = sqliteTable("sod_conflicts", {
   permissionIdA: text("permission_id_a"),
   permissionIdB: text("permission_id_b"),
   severity: text("severity").notNull(),
+  conflictType: text("conflict_type").notNull().default("between_role"), // "between_role" or "within_role"
   resolutionStatus: text("resolution_status").notNull().default("open"),
   resolvedBy: text("resolved_by"),
   resolvedAt: text("resolved_at"),

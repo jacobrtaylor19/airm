@@ -1,10 +1,13 @@
 import { getTargetRoles, getTargetRolePermissions } from "@/lib/queries";
+import { getSessionUser } from "@/lib/auth";
 import { TargetRolesClient } from "./target-roles-client";
 
 export const dynamic = "force-dynamic";
 
 export default function TargetRolesPage() {
   const roles = getTargetRoles();
+  const currentUser = getSessionUser();
+  const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
 
   // Pre-fetch permission details for all roles (expandable rows need them)
   const rolePermissions: Record<number, { id: number; permissionId: string; permissionName: string | null; permissionType: string | null; riskLevel: string | null }[]> = {};
@@ -24,7 +27,7 @@ export default function TargetRolesPage() {
           <a href="/upload" className="text-primary hover:underline">Data Upload</a> page.
         </div>
       ) : (
-        <TargetRolesClient roles={roles} rolePermissions={rolePermissions} />
+        <TargetRolesClient roles={roles} rolePermissions={rolePermissions} isAdmin={isAdmin} />
       )}
     </div>
   );

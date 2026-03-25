@@ -1,4 +1,5 @@
 import { getPersonas, getConsolidatedGroups } from "@/lib/queries";
+import { getSessionUser } from "@/lib/auth";
 import { PersonasPageClient } from "./personas-client";
 
 export const dynamic = "force-dynamic";
@@ -6,6 +7,8 @@ export const dynamic = "force-dynamic";
 export default function PersonasPage() {
   const personas = getPersonas();
   const groups = getConsolidatedGroups();
+  const currentUser = getSessionUser();
+  const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
 
   return (
     <div className="space-y-4">
@@ -15,6 +18,7 @@ export default function PersonasPage() {
       <PersonasPageClient
         personas={personas}
         groups={groups}
+        isAdmin={isAdmin}
       />
     </div>
   );

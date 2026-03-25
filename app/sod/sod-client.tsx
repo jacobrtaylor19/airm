@@ -20,6 +20,7 @@ import {
   XCircle,
   Clock,
   Filter,
+  Send,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -73,6 +74,7 @@ export function SodPageClient({
   const [submitting, setSubmitting] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [conflictTypeFilter, setConflictTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const router = useRouter();
 
@@ -86,6 +88,7 @@ export function SodPageClient({
   const filtered = conflicts.filter((c) => {
     if (severityFilter !== "all" && c.severity !== severityFilter) return false;
     if (statusFilter !== "all" && c.resolutionStatus !== statusFilter) return false;
+    if (conflictTypeFilter !== "all" && c.conflictType !== conflictTypeFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       return (
@@ -198,6 +201,29 @@ export function SodPageClient({
     }
   }
 
+  async function escalateToSecurity(conflictId: number) {
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/sod/escalate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conflictId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to escalate conflict");
+      } else {
+        toast.success("Conflict escalated to Security/GRC team for review");
+      }
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+    } finally {
+      setSubmitting(false);
+      setExpandedId(null);
+      router.refresh();
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Action Bar */}
@@ -291,6 +317,16 @@ export function SodPageClient({
             <SelectItem value="escalated">Escalated</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={conflictTypeFilter} onValueChange={setConflictTypeFilter}>
+          <SelectTrigger className="w-[160px] h-8 text-xs">
+            <SelectValue placeholder="Conflict Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="between_role">Between Roles</SelectItem>
+            <SelectItem value="within_role">Within Role</SelectItem>
+          </SelectContent>
+        </Select>
         <Input
           placeholder="Search user, department, rule..."
           value={searchQuery}
@@ -352,6 +388,16 @@ export function SodPageClient({
                     {sev.label}
                   </Badge>
 
+                  {c.conflictType === "within_role" ? (
+                    <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 border-purple-200">
+                      Within Role
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs bg-slate-100 text-slate-700 border-slate-200">
+                      Between Roles
+                    </Badge>
+                  )}
+
                   <span className="text-xs text-muted-foreground hidden md:block max-w-[160px] truncate">
                     {c.ruleName}
                   </span>
@@ -383,7 +429,94 @@ export function SodPageClient({
                     </div>
 
                     {/* Resolution Options — only for open conflicts */}
-                    {c.resolutionStatus === "open" && (
+                    {c.resolutionStatus === "open" && c.conflictType === "within_role" && (
+                      <div>
+                        <h4 className="text-sm font-semibold mb-3">Within-Role Conflict</h4>
+                        <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-4 mb-3">
+                          <p className="text-sm text-purple-900/80">
+                            This role contains conflicting permissions and needs to be reviewed by the Security/GRC team.
+                            The role <strong>{c.roleNameA ?? "this role"}</strong> includes both{" "}
+                            <strong>{c.permissionNameA ?? c.permissionIdA}</strong> and{" "}
+                            <strong>{c.permissionNameB ?? c.permissionIdB}</strong>, which violate segregation of duties.
+                            The role itself must be redesigned or split — removing the role from one user does not fix the underlying issue.
+                          </p>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                          {/* Escalate to Security Team */}
+                          <Card className="border-purple-200">
+                            <CardHeader className="py-3 px-4">
+                              <CardTitle className="text-xs font-semibold text-purple-800">
+                                Escalate to Security Team
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="px-4 pb-3 space-y-2">
+                              <p className="text-xs text-muted-foreground">
+                                Send this conflict to the Security/GRC team for role redesign. They will review
+                                and split the role to eliminate the inherent conflict.
+                              </p>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-full text-xs h-7 mt-1 border-purple-300 text-purple-700 hover:bg-purple-50"
+                                disabled={submitting}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  escalateToSecurity(c.id);
+                                }}
+                              >
+                                {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : (
+                                  <><Send className="h-3 w-3 mr-1" /> Escalate to Security Team</>
+                                )}
+                              </Button>
+                            </CardContent>
+                          </Card>
+
+                          {/* Request Risk Acceptance */}
+                          <Card className={`border-amber-200 ${c.severity === "critical" ? "opacity-60" : ""}`}>
+                            <CardHeader className="py-3 px-4">
+                              <CardTitle className="text-xs font-semibold text-amber-800">
+                                Request Risk Acceptance
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className="px-4 pb-3 space-y-2">
+                              {c.severity === "critical" ? (
+                                <div className="rounded border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                                  Critical conflicts cannot be risk-accepted.
+                                </div>
+                              ) : (
+                                <>
+                                  <p className="text-xs text-muted-foreground">
+                                    Submit a justification for approver review while the role is being redesigned.
+                                  </p>
+                                  <Input
+                                    placeholder="Business justification (required)..."
+                                    value={expandedId === c.id ? justification : ""}
+                                    onChange={(e) => setJustification(e.target.value)}
+                                    className="text-xs h-7"
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full text-xs h-7 mt-1 border-amber-300 text-amber-700 hover:bg-amber-50"
+                                    disabled={!justification.trim() || submitting}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      requestRiskAcceptance(c.id);
+                                    }}
+                                  >
+                                    {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : "Submit for Approval"}
+                                  </Button>
+                                </>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Between-role resolution options — only for open between-role conflicts */}
+                    {c.resolutionStatus === "open" && c.conflictType !== "within_role" && (
                       <div>
                         <h4 className="text-sm font-semibold mb-3">Resolution Options</h4>
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">

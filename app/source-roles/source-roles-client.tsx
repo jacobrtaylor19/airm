@@ -1,10 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { BulkDeleteBar } from "@/components/shared/bulk-delete-bar";
 import type { SourceRoleRow } from "@/lib/queries";
 
 interface PermissionInfo {
@@ -33,16 +35,29 @@ export function SourceRolesClient({
   roles,
   rolePermissions,
   systems,
+  isAdmin = false,
 }: {
   roles: SourceRoleRow[];
   rolePermissions: Record<number, PermissionInfo[]>;
   systems: string[];
+  isAdmin?: boolean;
 }) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [selectedSystem, setSelectedSystem] = useState("__all__");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   function toggleRow(id: number) {
     setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelect(id: number) {
+    setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -55,7 +70,6 @@ export function SourceRolesClient({
     return roles.filter((r) => (r.system ?? "Unknown") === selectedSystem);
   }, [roles, selectedSystem]);
 
-  // Group roles by system for display
   const groupedRoles = useMemo(() => {
     const groups = new Map<string, SourceRoleRow[]>();
     for (const role of filteredRoles) {
@@ -75,6 +89,31 @@ export function SourceRolesClient({
     }
     return counts;
   }, [roles]);
+
+  const allVisibleIds = filteredRoles.map((r) => r.id);
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allVisibleIds));
+    }
+  }
+
+  async function handleBulkDelete() {
+    const res = await fetch("/api/admin/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entityType: "sourceRoles", ids: Array.from(selectedIds) }),
+    });
+    if (res.ok) {
+      setSelectedIds(new Set());
+      router.refresh();
+    } else {
+      alert("Delete failed");
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -114,6 +153,16 @@ export function SourceRolesClient({
         <Table>
           <TableHeader>
             <TableRow>
+              {isAdmin && (
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded"
+                  />
+                </TableHead>
+              )}
               <TableHead className="w-8"></TableHead>
               <TableHead>Role ID</TableHead>
               <TableHead>Name</TableHead>
@@ -127,17 +176,16 @@ export function SourceRolesClient({
           <TableBody>
             {filteredRoles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={isAdmin ? 10 : 9} className="h-24 text-center text-muted-foreground">
                   No source roles found.
                 </TableCell>
               </TableRow>
             ) : (
               Array.from(groupedRoles.entries()).map(([system, sysRoles]) => (
                 <React.Fragment key={system}>
-                  {/* System group header when showing all systems */}
                   {selectedSystem === "__all__" && systems.length > 1 && (
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
-                      <TableCell colSpan={8} className="py-1.5">
+                      <TableCell colSpan={isAdmin ? 10 : 9} className="py-1.5">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className={`text-xs ${getSystemColor(system)}`}>
                             {system}
@@ -151,32 +199,40 @@ export function SourceRolesClient({
                   )}
                   {sysRoles.map((role) => (
                     <React.Fragment key={role.id}>
-                      <TableRow
-                        className="cursor-pointer"
-                        onClick={() => toggleRow(role.id)}
-                      >
-                        <TableCell>
+                      <TableRow className="cursor-pointer">
+                        {isAdmin && (
+                          <TableCell>
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(role.id)}
+                              onChange={() => toggleSelect(role.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="rounded"
+                            />
+                          </TableCell>
+                        )}
+                        <TableCell onClick={() => toggleRow(role.id)}>
                           {expanded.has(role.id) ? (
                             <ChevronDown className="h-4 w-4" />
                           ) : (
                             <ChevronRight className="h-4 w-4" />
                           )}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{role.roleId}</TableCell>
-                        <TableCell className="font-medium text-sm">{role.roleName}</TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => toggleRow(role.id)} className="font-mono text-xs">{role.roleId}</TableCell>
+                        <TableCell onClick={() => toggleRow(role.id)} className="font-medium text-sm">{role.roleName}</TableCell>
+                        <TableCell onClick={() => toggleRow(role.id)}>
                           <Badge variant="outline" className={`text-[10px] ${getSystemColor(role.system)}`}>
                             {role.system ?? "Unknown"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{role.domain ?? "\u2014"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{role.roleOwner ?? "\u2014"}</TableCell>
-                        <TableCell className="text-right text-sm">{role.permissionCount}</TableCell>
-                        <TableCell className="text-right text-sm">{role.userCount}</TableCell>
+                        <TableCell onClick={() => toggleRow(role.id)} className="text-sm">{role.domain ?? "\u2014"}</TableCell>
+                        <TableCell onClick={() => toggleRow(role.id)} className="text-sm text-muted-foreground">{role.roleOwner ?? "\u2014"}</TableCell>
+                        <TableCell onClick={() => toggleRow(role.id)} className="text-right text-sm">{role.permissionCount}</TableCell>
+                        <TableCell onClick={() => toggleRow(role.id)} className="text-right text-sm">{role.userCount}</TableCell>
                       </TableRow>
                       {expanded.has(role.id) && (
                         <TableRow>
-                          <TableCell colSpan={8} className="bg-muted/30 p-0">
+                          <TableCell colSpan={isAdmin ? 10 : 9} className="bg-muted/30 p-0">
                             <div className="p-4">
                               <p className="text-xs font-medium text-muted-foreground mb-2">
                                 Permissions ({rolePermissions[role.id]?.length ?? 0})
@@ -218,6 +274,15 @@ export function SourceRolesClient({
           </TableBody>
         </Table>
       </div>
+
+      {isAdmin && (
+        <BulkDeleteBar
+          selectedCount={selectedIds.size}
+          entityLabel="source roles"
+          onDelete={handleBulkDelete}
+          onClear={() => setSelectedIds(new Set())}
+        />
+      )}
     </div>
   );
 }

@@ -18,12 +18,14 @@ export default function UsersPage() {
     }
   }
 
+  const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
         Browse the user population and their role mapping status.
       </p>
-      <UsersTable data={users} />
+      <UsersTable data={users} isAdmin={isAdmin} />
     </div>
   );
 }

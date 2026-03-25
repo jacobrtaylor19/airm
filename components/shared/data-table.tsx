@@ -10,7 +10,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface Column<T> {
@@ -28,6 +29,9 @@ interface DataTableProps<T> {
   searchPlaceholder?: string;
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
+  selectable?: boolean;
+  onBulkDelete?: (ids: number[]) => void;
+  entityLabel?: string;
 }
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -37,10 +41,15 @@ export function DataTable<T extends Record<string, unknown>>({
   searchPlaceholder = "Search...",
   onRowClick,
   emptyMessage = "No data found.",
+  selectable = false,
+  onBulkDelete,
+  entityLabel = "items",
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const filtered = useMemo(() => {
     if (!search || !searchKey) return data;
@@ -81,6 +90,34 @@ export function DataTable<T extends Record<string, unknown>>({
     }
   }
 
+  const allVisibleIds = sorted.map((r) => r.id as number);
+  const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
+
+  function toggleSelectAll() {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(allVisibleIds));
+    }
+  }
+
+  function toggleSelect(id: number) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function handleDelete() {
+    if (onBulkDelete) {
+      onBulkDelete(Array.from(selectedIds));
+      setSelectedIds(new Set());
+      setShowConfirm(false);
+    }
+  }
+
   return (
     <div className="space-y-3">
       {searchKey && (
@@ -95,6 +132,16 @@ export function DataTable<T extends Record<string, unknown>>({
         <Table>
           <TableHeader>
             <TableRow>
+              {selectable && (
+                <TableHead className="w-10">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded"
+                  />
+                </TableHead>
+              )}
               {columns.map((col) => (
                 <TableHead
                   key={col.key}
@@ -125,7 +172,7 @@ export function DataTable<T extends Record<string, unknown>>({
             {sorted.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={columns.length}
+                  colSpan={columns.length + (selectable ? 1 : 0)}
                   className="h-24 text-center text-muted-foreground"
                 >
                   {emptyMessage}
@@ -135,14 +182,31 @@ export function DataTable<T extends Record<string, unknown>>({
               sorted.map((row, i) => (
                 <TableRow
                   key={i}
-                  className={onRowClick ? "cursor-pointer" : undefined}
-                  onClick={onRowClick ? () => onRowClick(row) : undefined}
+                  className={cn(
+                    onRowClick && "cursor-pointer",
+                    selectable && selectedIds.has(row.id as number) && "bg-primary/5"
+                  )}
                 >
+                  {selectable && (
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(row.id as number)}
+                        onChange={() => toggleSelect(row.id as number)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="rounded"
+                      />
+                    </TableCell>
+                  )}
                   {columns.map((col) => (
-                    <TableCell key={col.key} className={col.className}>
+                    <TableCell
+                      key={col.key}
+                      className={col.className}
+                      onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    >
                       {col.render
                         ? col.render(row)
-                        : (row[col.key] as React.ReactNode) ?? "—"}
+                        : (row[col.key] as React.ReactNode) ?? "\u2014"}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -154,6 +218,38 @@ export function DataTable<T extends Record<string, unknown>>({
       <p className="text-xs text-muted-foreground">
         {sorted.length} of {data.length} records
       </p>
+
+      {/* Floating action bar for bulk delete */}
+      {selectable && selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+          {showConfirm ? (
+            <div className="bg-background border-2 border-destructive rounded-lg shadow-xl px-6 py-4 flex items-center gap-4">
+              <p className="text-sm font-medium">
+                Are you sure you want to delete {selectedIds.size} {entityLabel}? This cannot be undone.
+              </p>
+              <Button variant="outline" size="sm" onClick={() => setShowConfirm(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleDelete}>
+                <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+              </Button>
+            </div>
+          ) : (
+            <div className="bg-foreground text-background rounded-lg shadow-xl px-6 py-3 flex items-center gap-4">
+              <span className="text-sm font-medium">
+                {selectedIds.size} selected
+              </span>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowConfirm(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -86,14 +86,22 @@ export function runSodAnalysis(): SodAnalysisResult {
         userConflictCount++;
         usersWithConflictsSet.add(userId);
 
+        const roleIdA = permToRole.get(rule.permissionA) ?? null;
+        const roleIdB = permToRole.get(rule.permissionB) ?? null;
+        // Determine conflict type: if both permissions come from the same role, it's within_role
+        const conflictType = (roleIdA !== null && roleIdB !== null && roleIdA === roleIdB)
+          ? "within_role"
+          : "between_role";
+
         db.insert(schema.sodConflicts).values({
           userId,
           sodRuleId: rule.id,
-          roleIdA: permToRole.get(rule.permissionA) ?? null,
-          roleIdB: permToRole.get(rule.permissionB) ?? null,
+          roleIdA,
+          roleIdB,
           permissionIdA: rule.permissionA,
           permissionIdB: rule.permissionB,
           severity: rule.severity,
+          conflictType,
           resolutionStatus: "open",
         }).run();
       }

@@ -19,6 +19,7 @@ import {
   Activity,
   UserCog,
   GitBranch,
+  Database,
 } from "lucide-react";
 import { AIRMLogo } from "@/components/layout/airm-logo";
 
@@ -53,6 +54,7 @@ const navSections: NavSection[] = [
       { href: "/source-roles", label: "Source Roles", icon: FolderOpen },
       { href: "/target-roles", label: "Target Roles", icon: Target },
       { href: "/sod-rules", label: "SOD Rules", icon: BookOpen },
+      { href: "/data", label: "Data Explorer", icon: Database },
     ],
   },
   {

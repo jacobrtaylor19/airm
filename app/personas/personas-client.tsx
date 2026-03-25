@@ -13,7 +13,7 @@ const personaColumns: Column<PersonaRow & Record<string, unknown>>[] = [
     key: "groupName",
     header: "Group",
     sortable: true,
-    render: (row) => (row as PersonaRow).groupName ?? <span className="text-muted-foreground">—</span>,
+    render: (row) => (row as PersonaRow).groupName ?? <span className="text-muted-foreground">{"\u2014"}</span>,
   },
   {
     key: "userCount",
@@ -42,13 +42,13 @@ const groupColumns: Column<GroupRow & Record<string, unknown>>[] = [
     key: "accessLevel",
     header: "Access Level",
     sortable: true,
-    render: (row) => (row as GroupRow).accessLevel ?? "—",
+    render: (row) => (row as GroupRow).accessLevel ?? "\u2014",
   },
   {
     key: "domain",
     header: "Domain",
     sortable: true,
-    render: (row) => (row as GroupRow).domain ?? "—",
+    render: (row) => (row as GroupRow).domain ?? "\u2014",
   },
   {
     key: "personaCount",
@@ -67,11 +67,23 @@ const groupColumns: Column<GroupRow & Record<string, unknown>>[] = [
 export function PersonasPageClient({
   personas,
   groups,
+  isAdmin = false,
 }: {
   personas: PersonaRow[];
   groups: GroupRow[];
+  isAdmin?: boolean;
 }) {
   const router = useRouter();
+
+  async function handleBulkDelete(ids: number[]) {
+    const res = await fetch("/api/admin/bulk-delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entityType: "personas", ids }),
+    });
+    if (res.ok) router.refresh();
+    else alert("Delete failed");
+  }
 
   return (
     <Tabs defaultValue="personas">
@@ -87,6 +99,9 @@ export function PersonasPageClient({
           searchPlaceholder="Search personas..."
           onRowClick={(row) => router.push(`/personas/${(row as PersonaRow).id}`)}
           emptyMessage="No personas found. Generate personas from the Jobs page."
+          selectable={isAdmin}
+          onBulkDelete={isAdmin ? handleBulkDelete : undefined}
+          entityLabel="personas"
         />
       </TabsContent>
       <TabsContent value="groups" className="mt-4">

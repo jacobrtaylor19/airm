@@ -637,6 +637,7 @@ export interface SodConflictRow {
   userName: string;
   department: string | null;
   severity: string;
+  conflictType: string;
   ruleName: string;
   ruleDescription: string | null;
   permissionIdA: string | null;
@@ -661,6 +662,7 @@ export function getSodConflicts(): SodConflictRow[] {
       userName: schema.users.displayName,
       department: schema.users.department,
       severity: schema.sodConflicts.severity,
+      conflictType: schema.sodConflicts.conflictType,
       ruleName: schema.sodRules.ruleName,
       ruleDescription: schema.sodRules.riskDescription,
       permissionIdA: schema.sodConflicts.permissionIdA,
@@ -697,6 +699,7 @@ export function getSodConflicts(): SodConflictRow[] {
       userName: c.userName,
       department: c.department,
       severity: c.severity,
+      conflictType: c.conflictType,
       ruleName: c.ruleName,
       ruleDescription: c.ruleDescription,
       permissionIdA: c.permissionIdA,
@@ -808,6 +811,101 @@ export function getAuditLog(): AuditLogRow[] {
     .from(schema.auditLog)
     .orderBy(desc(schema.auditLog.createdAt))
     .all();
+}
+
+// ─────────────────────────────────────────────
+// SIMPLE LOOKUPS (for select lists)
+// ─────────────────────────────────────────────
+
+export interface SimpleUser {
+  id: number;
+  displayName: string;
+  department: string | null;
+}
+
+export function getAllSimpleUsers(): SimpleUser[] {
+  return db
+    .select({
+      id: schema.users.id,
+      displayName: schema.users.displayName,
+      department: schema.users.department,
+    })
+    .from(schema.users)
+    .all();
+}
+
+export interface SimpleTargetRole {
+  id: number;
+  roleId: string;
+  roleName: string;
+  domain: string | null;
+}
+
+export function getAllSimpleTargetRoles(): SimpleTargetRole[] {
+  return db
+    .select({
+      id: schema.targetRoles.id,
+      roleId: schema.targetRoles.roleId,
+      roleName: schema.targetRoles.roleName,
+      domain: schema.targetRoles.domain,
+    })
+    .from(schema.targetRoles)
+    .all();
+}
+
+// ─────────────────────────────────────────────
+// DATA EXPLORER QUERIES
+// ─────────────────────────────────────────────
+
+export interface UserRoleAssignmentRow {
+  id: number;
+  userName: string;
+  roleName: string;
+  system: string | null;
+  assignedDate: string | null;
+}
+
+export function getUserSourceRoleAssignments(): UserRoleAssignmentRow[] {
+  return db
+    .select({
+      id: schema.userSourceRoleAssignments.id,
+      userName: schema.users.displayName,
+      roleName: schema.sourceRoles.roleName,
+      system: schema.sourceRoles.system,
+      assignedDate: schema.userSourceRoleAssignments.assignedDate,
+    })
+    .from(schema.userSourceRoleAssignments)
+    .innerJoin(schema.users, eq(schema.users.id, schema.userSourceRoleAssignments.userId))
+    .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
+    .all();
+}
+
+export interface SourcePermissionRow {
+  id: number;
+  permissionId: string;
+  permissionName: string | null;
+  description: string | null;
+  system: string | null;
+  permissionType: string | null;
+  riskLevel: string | null;
+}
+
+export function getAllSourcePermissions(): SourcePermissionRow[] {
+  return db.select().from(schema.sourcePermissions).all();
+}
+
+export interface TargetPermissionRow {
+  id: number;
+  permissionId: string;
+  permissionName: string | null;
+  description: string | null;
+  system: string | null;
+  permissionType: string | null;
+  riskLevel: string | null;
+}
+
+export function getAllTargetPermissions(): TargetPermissionRow[] {
+  return db.select().from(schema.targetPermissions).all();
 }
 
 // ─────────────────────────────────────────────
