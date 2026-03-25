@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import type { ApprovalRow } from "@/lib/queries";
 
 interface ApprovalsProps {
@@ -196,13 +196,13 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
 
       {/* Queue Table */}
       {actionable.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-12">
-            <p className="text-muted-foreground text-center">
-              No assignments in the approval queue. Run the pipeline to generate target role mappings first.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 px-6 text-center">
+          <CheckCircle2 className="h-12 w-12 text-slate-300 mb-4" />
+          <h3 className="text-sm font-semibold text-slate-700 mb-1">No pending approvals</h3>
+          <p className="text-sm text-slate-500 max-w-sm">
+            Run the mapping pipeline to generate target role assignments, then they will appear here for review.
+          </p>
+        </div>
       ) : (
         <Card>
           <CardHeader>
