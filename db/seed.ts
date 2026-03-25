@@ -733,18 +733,80 @@ function seed() {
   }
   console.log(`  ✓ ${defaultSettings.length} default system settings`);
 
-  // ─── 14. Default Release ───
+  // ─── 14. Releases + Release Scoping ───
+  db.delete(schema.releaseUsers).run();
+  db.delete(schema.releaseSourceRoles).run();
+  db.delete(schema.releaseTargetRoles).run();
+  db.delete(schema.releaseSodRules).run();
+  db.delete(schema.appUserReleases).run();
   db.delete(schema.releases).run();
-  db.insert(schema.releases).values({
-    name: "Wave 1 — Initial Migration",
-    description: "First migration wave covering all departments. Established from source system extraction.",
+
+  const wave1 = db.insert(schema.releases).values({
+    name: "Wave 1 — Finance & Operations",
+    description: "First migration wave covering Finance, Procurement, and Operations departments.",
     status: "in_progress",
     releaseType: "initial",
     targetSystem: "SAP S/4HANA",
     isActive: true,
     createdBy: "system",
-  }).run();
-  console.log("  ✓ Default release: 'Wave 1 — Initial Migration' (active)");
+  }).returning().get();
+
+  const wave2 = db.insert(schema.releases).values({
+    name: "Wave 2 — Maintenance & IT",
+    description: "Second wave covering Maintenance, Facilities, IT, and remaining departments.",
+    status: "planning",
+    releaseType: "incremental",
+    targetSystem: "SAP S/4HANA",
+    isActive: false,
+    createdBy: "system",
+  }).returning().get();
+
+  console.log(`  ✓ 2 releases: Wave 1 (active), Wave 2 (planning)`);
+
+  // Associate ALL users with Wave 1 (initial migration covers everyone)
+  // Associate a subset with Wave 2
+  const seedAllUsers = db.select({ id: schema.users.id, department: schema.users.department }).from(schema.users).all();
+  const wave2Depts = new Set(["Maintenance", "Facilities Management", "IT", "Quality Control"]);
+
+  for (const u of seedAllUsers) {
+    db.insert(schema.releaseUsers).values({ releaseId: wave1.id, userId: u.id }).run();
+    if (wave2Depts.has(u.department || "")) {
+      db.insert(schema.releaseUsers).values({ releaseId: wave2.id, userId: u.id }).run();
+    }
+  }
+  const wave2UserCount = seedAllUsers.filter(u => wave2Depts.has(u.department || "")).length;
+  console.log(`  ✓ Release users: ${seedAllUsers.length} in Wave 1, ${wave2UserCount} in Wave 2`);
+
+  // Associate all source roles, target roles, and SOD rules with Wave 1
+  const seedSourceRoles = db.select({ id: schema.sourceRoles.id }).from(schema.sourceRoles).all();
+  const seedTargetRoles = db.select({ id: schema.targetRoles.id }).from(schema.targetRoles).all();
+  const seedSodRules = db.select({ id: schema.sodRules.id }).from(schema.sodRules).all();
+
+  for (const sr of seedSourceRoles) {
+    db.insert(schema.releaseSourceRoles).values({ releaseId: wave1.id, sourceRoleId: sr.id }).run();
+  }
+  for (const tr of seedTargetRoles) {
+    db.insert(schema.releaseTargetRoles).values({ releaseId: wave1.id, targetRoleId: tr.id }).run();
+    // Wave 2 also gets all target roles (same target system)
+    db.insert(schema.releaseTargetRoles).values({ releaseId: wave2.id, targetRoleId: tr.id }).run();
+  }
+  for (const sr of seedSodRules) {
+    db.insert(schema.releaseSodRules).values({ releaseId: wave1.id, sodRuleId: sr.id }).run();
+    db.insert(schema.releaseSodRules).values({ releaseId: wave2.id, sodRuleId: sr.id }).run();
+  }
+  console.log(`  ✓ Release associations: ${seedSourceRoles.length} source roles, ${seedTargetRoles.length} target roles, ${seedSodRules.length} SOD rules`);
+
+  // Assign app users to releases
+  const appUserRows = db.select({ id: schema.appUsers.id, role: schema.appUsers.role, username: schema.appUsers.username }).from(schema.appUsers).all();
+  for (const au of appUserRows) {
+    // All app users get Wave 1
+    db.insert(schema.appUserReleases).values({ appUserId: au.id, releaseId: wave1.id }).run();
+    // Admins + maintenance/operations-scoped users also get Wave 2
+    if (["admin", "system_admin"].includes(au.role) || au.username.includes("maintenance") || au.username.includes("operations")) {
+      db.insert(schema.appUserReleases).values({ appUserId: au.id, releaseId: wave2.id }).run();
+    }
+  }
+  console.log(`  ✓ App user release assignments`);
 
   console.log(`  ✓ ${testUsers.length} app users + ${assignments.length} work assignments`);
   console.log("    Credentials:");
