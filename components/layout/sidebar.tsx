@@ -99,8 +99,27 @@ const navSections: NavSection[] = [
   },
 ];
 
-export function Sidebar({ userRole }: { userRole: string }) {
+interface SidebarProps {
+  userRole: string;
+  userName?: string;
+}
+
+export function Sidebar({ userRole, userName }: SidebarProps) {
   const pathname = usePathname();
+
+  const initials = userName
+    ? userName
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : "??";
+
+  const roleLabel =
+    userRole === "system_admin"
+      ? "System Admin"
+      : userRole.charAt(0).toUpperCase() + userRole.slice(1);
 
   return (
     <aside className="flex h-screen w-64 flex-col bg-slate-900">
@@ -130,9 +149,12 @@ export function Sidebar({ userRole }: { userRole: string }) {
           .map((section, si) => (
             <div key={si} className="mb-3">
               {section.label && (
-                <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  {section.label}
-                </p>
+                <>
+                  {si > 0 && <div className="border-t border-slate-700/50 my-2" />}
+                  <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    {section.label}
+                  </p>
+                </>
               )}
               {section.items.map((item) => {
                 const isActive =
@@ -158,10 +180,21 @@ export function Sidebar({ userRole }: { userRole: string }) {
           ))}
       </nav>
 
-      {/* Footer */}
+      {/* User section */}
       <div className="border-t border-slate-700 px-4 py-3">
-        <p className="text-xs text-slate-500 text-center">
-          Provisum &middot; Intelligent Role Mapping for Enterprise Migrations
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-medium text-white">
+            {initials}
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-medium text-white truncate">
+              {userName || "User"}
+            </span>
+            <span className="text-xs text-slate-400">{roleLabel}</span>
+          </div>
+        </div>
+        <p className="mt-2 text-[10px] text-slate-600 text-center">
+          Provisum v0.4.0
         </p>
       </div>
     </aside>

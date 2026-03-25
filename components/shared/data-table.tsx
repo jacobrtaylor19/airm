@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown, Trash2, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface Column<T> {
@@ -32,6 +32,7 @@ interface DataTableProps<T> {
   selectable?: boolean;
   onBulkDelete?: (ids: number[]) => void;
   entityLabel?: string;
+  pageSize?: number;
 }
 
 export function DataTable<T extends Record<string, unknown>>({
@@ -44,12 +45,15 @@ export function DataTable<T extends Record<string, unknown>>({
   selectable = false,
   onBulkDelete,
   entityLabel = "items",
+  pageSize: initialPageSize = 25,
 }: DataTableProps<T>) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showConfirm, setShowConfirm] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(initialPageSize);
 
   const filtered = useMemo(() => {
     if (!search || !searchKey) return data;
@@ -81,6 +85,12 @@ export function DataTable<T extends Record<string, unknown>>({
     });
   }, [filtered, sortKey, sortDir]);
 
+  // Reset to page 1 when search or sort changes
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const safePage = Math.min(currentPage, totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+  const paged = sorted.slice(startIdx, startIdx + pageSize);
+
   function handleSort(key: string) {
     if (sortKey === key) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -88,9 +98,10 @@ export function DataTable<T extends Record<string, unknown>>({
       setSortKey(key);
       setSortDir("asc");
     }
+    setCurrentPage(1);
   }
 
-  const allVisibleIds = sorted.map((r) => r.id as number);
+  const allVisibleIds = paged.map((r) => r.id as number);
   const allSelected = allVisibleIds.length > 0 && allVisibleIds.every((id) => selectedIds.has(id));
 
   function toggleSelectAll() {
@@ -121,12 +132,15 @@ export function DataTable<T extends Record<string, unknown>>({
   return (
     <div className="space-y-3">
       {searchKey && (
-        <Input
-          placeholder={searchPlaceholder}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="max-w-sm"
-        />
+        <div className="relative max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder={searchPlaceholder}
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+            className="pl-9"
+          />
+        </div>
       )}
       <div className="rounded-md border">
         <Table>
@@ -169,7 +183,7 @@ export function DataTable<T extends Record<string, unknown>>({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sorted.length === 0 ? (
+            {paged.length === 0 ? (
               <TableRow>
                 <TableCell
                   colSpan={columns.length + (selectable ? 1 : 0)}
@@ -179,7 +193,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 </TableCell>
               </TableRow>
             ) : (
-              sorted.map((row, i) => (
+              paged.map((row, i) => (
                 <TableRow
                   key={i}
                   className={cn(
@@ -215,9 +229,44 @@ export function DataTable<T extends Record<string, unknown>>({
           </TableBody>
         </Table>
       </div>
-      <p className="text-xs text-muted-foreground">
-        {sorted.length} of {data.length} records
-      </p>
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Showing {sorted.length === 0 ? 0 : startIdx + 1}–{Math.min(startIdx + pageSize, sorted.length)} of {sorted.length}{sorted.length !== data.length ? ` (filtered from ${data.length})` : ""}
+        </p>
+        <div className="flex items-center gap-2">
+          <select
+            value={pageSize}
+            onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+            className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs text-slate-600"
+          >
+            {[10, 25, 50, 100].map((size) => (
+              <option key={size} value={size}>{size} / page</option>
+            ))}
+          </select>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            disabled={safePage <= 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {safePage} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            disabled={safePage >= totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
 
       {/* Floating action bar for bulk delete */}
       {selectable && selectedIds.size > 0 && (

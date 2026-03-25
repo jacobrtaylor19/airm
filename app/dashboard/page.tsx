@@ -180,6 +180,19 @@ export default function DashboardPage() {
         </Card>
       )}
 
+      {/* Filtered Department View — interactive client component */}
+      <DashboardFiltered
+        allDepts={allDeptStatus}
+        assignedDepartments={assignedDepartments}
+        userRole={user.role}
+        sodConflicts={stats.sodConflictsBySeverity}
+        lowConfidence={stats.lowConfidence}
+        sodRulesCount={stats.sodRulesCount}
+        personasWithMapping={stats.personasWithMapping}
+        totalPersonas={stats.totalPersonas}
+        overprovisioningAlerts={overprovisioningAlerts}
+      />
+
       {/* Source Systems Summary */}
       {sourceSystemStats.length > 0 && (
         <Card>
@@ -207,19 +220,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Filtered Department View — interactive client component */}
-      <DashboardFiltered
-        allDepts={allDeptStatus}
-        assignedDepartments={assignedDepartments}
-        userRole={user.role}
-        sodConflicts={stats.sodConflictsBySeverity}
-        lowConfidence={stats.lowConfidence}
-        sodRulesCount={stats.sodRulesCount}
-        personasWithMapping={stats.personasWithMapping}
-        totalPersonas={stats.totalPersonas}
-        overprovisioningAlerts={overprovisioningAlerts}
-      />
     </div>
   );
 }

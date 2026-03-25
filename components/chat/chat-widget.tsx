@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
@@ -69,7 +69,7 @@ function getWelcomeMessage(userName: string, userRole: string): string {
     case "mapper":
       return `Hello ${firstName}! I can help you with role mapping, persona analysis, or understanding target roles. What are you working on?`;
     default:
-      return `Hello ${firstName}! I'm the Provisum Assistant. I can help you navigate the platform and understand role mapping data. How can I help?`;
+      return `Hello ${firstName}! I'm the Lumen. I can help you navigate the platform and understand role mapping data. How can I help?`;
   }
 }
 
@@ -212,7 +212,7 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
           const updated = [...prev];
           updated[updated.length - 1] = {
             role: "assistant",
-            content: "Sorry, I couldn't reach the assistant service. Please try again.",
+            content: "Sorry, I couldn't reach Lumen. Please try again.",
           };
           return updated;
         });
@@ -242,16 +242,16 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
           "focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2",
           isOpen && "scale-0 opacity-0 pointer-events-none"
         )}
-        aria-label="Open Provisum Assistant"
+        aria-label="Open Lumen assistant"
       >
-        <MessageCircle className="h-6 w-6" />
+        <Sparkles className="h-6 w-6" />
       </button>
 
       {/* Chat panel */}
       <div
         className={cn(
           "fixed bottom-0 right-0 z-50 flex flex-col",
-          "w-[400px] bg-white shadow-2xl border-l border-slate-200",
+          "w-[400px] bg-white shadow-2xl border-l-4 border-l-teal-500 border-t border-t-slate-200",
           "transition-all duration-300 ease-in-out",
           isOpen
             ? "translate-x-0 opacity-100"
@@ -263,7 +263,7 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
         <div className="flex items-center justify-between bg-slate-900 px-4 py-3 shrink-0">
           <div className="flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-teal-400" />
-            <h2 className="text-sm font-semibold text-white">Provisum Assistant</h2>
+            <h2 className="text-sm font-semibold text-white">Lumen</h2>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-400 hidden sm:inline">
@@ -320,7 +320,7 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask the assistant..."
+              placeholder="Ask Lumen about this project..."
               disabled={isStreaming}
               className={cn(
                 "flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm",

@@ -1,12 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   ShieldCheck,
   Brain,
   ShieldAlert,
   ClipboardCheck,
 } from "lucide-react";
+import { getSessionUser } from "@/lib/auth";
 
 export default function Home() {
+  const user = getSessionUser();
+  if (user) redirect("/dashboard");
   return (
     <div className="min-h-screen">
       {/* Hero */}

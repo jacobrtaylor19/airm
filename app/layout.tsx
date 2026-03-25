@@ -43,7 +43,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
         <div className="flex h-screen overflow-hidden">
-          <Sidebar userRole={user.role} />
+          <Sidebar userRole={user.role} userName={user.displayName} />
           <div className="flex flex-1 flex-col overflow-hidden">
             <Header user={user} releases={releases} selectedReleaseId={selectedReleaseId} />
             <main className="flex-1 overflow-y-auto p-6">{children}</main>
