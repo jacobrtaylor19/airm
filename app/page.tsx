@@ -81,23 +81,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="bg-slate-50 px-6 py-16">
-        <div className="mx-auto grid max-w-4xl grid-cols-2 gap-8 md:grid-cols-4">
-          {[
-            { value: "6", label: "User Roles" },
-            { value: "94", label: "SOD Rules" },
-            { value: "3", label: "Target Systems" },
-            { value: "100%", label: "Audit Coverage" },
-          ].map((stat) => (
-            <div key={stat.label} className="text-center">
-              <p className="text-3xl font-bold text-slate-900">{stat.value}</p>
-              <p className="mt-1 text-sm text-slate-500">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* CTA Footer */}
       <section className="bg-slate-900 px-6 py-16 text-center">
         <h2 className="text-2xl font-bold text-white">
