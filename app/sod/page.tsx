@@ -1,4 +1,4 @@
-import { getSodConflicts } from "@/lib/queries";
+import { getSodConflictsDetailed } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
 import { SodPageClient } from "./sod-client";
 
@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export default function SodConflictAnalysisPage() {
   const currentUser = getSessionUser();
-  const conflicts = getSodConflicts();
+  const conflicts = getSodConflictsDetailed();
 
   const summary = {
     critical: conflicts.filter(c => c.severity === "critical").length,
@@ -14,18 +14,24 @@ export default function SodConflictAnalysisPage() {
     medium: conflicts.filter(c => c.severity === "medium").length,
     low: conflicts.filter(c => c.severity === "low").length,
     open: conflicts.filter(c => c.resolutionStatus === "open").length,
-    resolved: conflicts.filter(c => c.resolutionStatus !== "open").length,
+    pendingRiskAcceptance: conflicts.filter(c => c.resolutionStatus === "pending_risk_acceptance").length,
+    resolved: conflicts.filter(c => !["open", "pending_risk_acceptance"].includes(c.resolutionStatus)).length,
   };
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-xl font-semibold">SOD Conflict Analysis</h2>
+        <h2 className="text-xl font-semibold">SOD Conflict Resolution Workspace</h2>
         <p className="text-sm text-muted-foreground">
-          Run and review segregation of duties conflict analysis.
+          Review, resolve, and manage segregation of duties conflicts across all user role assignments.
         </p>
       </div>
-      <SodPageClient conflicts={conflicts} summary={summary} userRole={currentUser?.role ?? null} />
+      <SodPageClient
+        conflicts={conflicts}
+        summary={summary}
+        userRole={currentUser?.role ?? null}
+        userName={currentUser?.username ?? null}
+      />
     </div>
   );
 }

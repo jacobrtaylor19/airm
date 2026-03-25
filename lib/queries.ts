@@ -641,6 +641,8 @@ export interface SodConflictRow {
   ruleDescription: string | null;
   permissionIdA: string | null;
   permissionIdB: string | null;
+  permissionNameA: string | null;
+  permissionNameB: string | null;
   roleIdA: number | null;
   roleIdB: number | null;
   roleNameA: string | null;
@@ -648,6 +650,7 @@ export interface SodConflictRow {
   resolutionStatus: string;
   resolvedBy: string | null;
   resolutionNotes: string | null;
+  riskExplanation: string | null;
 }
 
 export function getSodConflicts(): SodConflictRow[] {
@@ -667,19 +670,26 @@ export function getSodConflicts(): SodConflictRow[] {
       resolutionStatus: schema.sodConflicts.resolutionStatus,
       resolvedBy: schema.sodConflicts.resolvedBy,
       resolutionNotes: schema.sodConflicts.resolutionNotes,
+      riskExplanation: schema.sodConflicts.riskExplanation,
     })
     .from(schema.sodConflicts)
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
     .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
     .all();
 
-  // Resolve role names manually (roleB can't use Drizzle relation)
+  // Resolve role names and permission names
   return conflicts.map((c) => {
     const roleA = c.roleIdA
       ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdA)).get()
       : null;
     const roleB = c.roleIdB
       ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdB)).get()
+      : null;
+    const permA = c.permissionIdA
+      ? db.select({ permissionName: schema.targetPermissions.permissionName }).from(schema.targetPermissions).where(eq(schema.targetPermissions.permissionId, c.permissionIdA)).get()
+      : null;
+    const permB = c.permissionIdB
+      ? db.select({ permissionName: schema.targetPermissions.permissionName }).from(schema.targetPermissions).where(eq(schema.targetPermissions.permissionId, c.permissionIdB)).get()
       : null;
     return {
       id: c.id,
@@ -691,6 +701,8 @@ export function getSodConflicts(): SodConflictRow[] {
       ruleDescription: c.ruleDescription,
       permissionIdA: c.permissionIdA,
       permissionIdB: c.permissionIdB,
+      permissionNameA: permA?.permissionName ?? null,
+      permissionNameB: permB?.permissionName ?? null,
       roleIdA: c.roleIdA,
       roleIdB: c.roleIdB,
       roleNameA: roleA?.roleName ?? null,
@@ -698,6 +710,7 @@ export function getSodConflicts(): SodConflictRow[] {
       resolutionStatus: c.resolutionStatus,
       resolvedBy: c.resolvedBy,
       resolutionNotes: c.resolutionNotes,
+      riskExplanation: c.riskExplanation,
     };
   });
 }
@@ -1166,4 +1179,55 @@ export function getPersonaSourceSystems(): Map<number, string[]> {
     map.set(row.personaId, existing);
   }
   return map;
+}
+
+// ─────────────────────────────────────────────
+// SOD CONFLICTS — DETAILED (for resolution workspace)
+// ─────────────────────────────────────────────
+
+export interface RolePermissionImpact {
+  roleId: number;
+  roleName: string;
+  roleCode: string;
+  permissions: { permissionId: string; permissionName: string | null }[];
+}
+
+export interface SodConflictDetailed extends SodConflictRow {
+  roleAPermissions: { permissionId: string; permissionName: string | null }[];
+  roleBPermissions: { permissionId: string; permissionName: string | null }[];
+}
+
+export function getSodConflictsDetailed(): SodConflictDetailed[] {
+  const base = getSodConflicts();
+
+  return base.map((c) => {
+    const roleAPermissions = c.roleIdA
+      ? db.select({
+          permissionId: schema.targetPermissions.permissionId,
+          permissionName: schema.targetPermissions.permissionName,
+        })
+        .from(schema.targetRolePermissions)
+        .innerJoin(schema.targetPermissions, eq(schema.targetPermissions.id, schema.targetRolePermissions.targetPermissionId))
+        .where(eq(schema.targetRolePermissions.targetRoleId, c.roleIdA))
+        .all()
+      : [];
+
+    const roleBPermissions = c.roleIdB
+      ? db.select({
+          permissionId: schema.targetPermissions.permissionId,
+          permissionName: schema.targetPermissions.permissionName,
+        })
+        .from(schema.targetRolePermissions)
+        .innerJoin(schema.targetPermissions, eq(schema.targetPermissions.id, schema.targetRolePermissions.targetPermissionId))
+        .where(eq(schema.targetRolePermissions.targetRoleId, c.roleIdB))
+        .all()
+      : [];
+
+    return { ...c, roleAPermissions, roleBPermissions };
+  });
+}
+
+export function getSodConflictDetail(conflictId: number): SodConflictDetailed | null {
+  const all = getSodConflictsDetailed();
+  return all.find(c => c.id === conflictId) ?? null;
 }

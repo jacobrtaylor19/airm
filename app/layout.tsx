@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { getSessionUser } from "@/lib/auth";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -40,6 +41,7 @@ export default function RootLayout({
             <main className="flex-1 overflow-y-auto p-6">{children}</main>
           </div>
         </div>
+        <Toaster />
       </body>
     </html>
   );

@@ -296,6 +296,304 @@ function seed() {
     console.log("  ⊘ sod-rules.csv not found or empty, skipping");
   }
 
+  // ─── 11c. Pre-seed User-Target-Role Assignments (with deliberate SOD conflicts) ───
+  // Assign conflicting target roles to ~40 users to generate realistic SOD conflict data
+
+  // Lookup helpers
+  const targetRoleLookup = new Map<string, number>();
+  const allTargetRoles = db.select().from(schema.targetRoles).all();
+  for (const tr of allTargetRoles) {
+    targetRoleLookup.set(tr.roleId, tr.id);
+  }
+
+  const userLookup = new Map<string, { id: number; department: string | null }>();
+  const allUsers = db.select().from(schema.users).all();
+  for (const u of allUsers) {
+    userLookup.set(u.sourceUserId, { id: u.id, department: u.department });
+  }
+
+  // Define conflicting role assignments by department pattern
+  // Format: [sourceUserId, [...targetRoleIds]]
+  const conflictingAssignments: [string, string[]][] = [
+    // ── Finance users: AP Processor + AP Approver → triggers invoice create/approve conflict ──
+    ["U096", ["S4_AP_INV_PROC", "S4_AP_APPR_BASIC"]],           // Nkechi Obi — AP Clerk
+    ["U017", ["S4_AP_INV_PROC", "S4_AP_APPR_ADV"]],             // Bridget Okonkwo — AP Specialist
+    ["U044", ["S4_AP_INV_PROC", "S4_AP_PAY_SPEC"]],             // Chen Wei — AP Coordinator (invoice + payment)
+
+    // ── Finance users: Vendor Master + Payment → critical conflict ──
+    ["U068", ["S4_VEND_SPEC", "S4_AP_PAY_SPEC"]],               // Ahmed Ibrahim — Staff Accountant
+
+    // ── Finance users: GL + AP conflicts ──
+    ["U008", ["S4_GL_ACCT", "S4_AP_PAY_SPEC"]],                 // Derek Patel — Sr Financial Analyst (GL + payment)
+
+    // ── Finance users: clean assignments (no conflicts) ──
+    ["U011", ["S4_AP_INV_PROC"]],                                // Tanya Ivanova — AR Specialist
+    ["U012", ["S4_GL_ACCT"]],                                     // William Foster — FP&A Analyst
+    ["U022", ["S4_AP_APPR_BASIC"]],                               // Nathan Goldberg — Finance Coord
+    ["U036", ["S4_AP_INV_PROC"]],                                 // Keiko Yamamoto — Payroll Specialist
+    ["U039", ["S4_GL_ACCT"]],                                     // Sienna Castellano — Treasury Analyst
+    ["U053", ["S4_AP_INV_PROC"]],                                 // Claudia Reyes — Tax Associate
+    ["U057", ["S4_GL_ACCT"]],                                     // Anastasia Kuznetsova — Budget Analyst
+    ["U062", ["S4_AP_APPR_BASIC"]],                               // Henrik Larsen — Corporate Finance
+    ["U072", ["S4_AP_SUPERVISOR"]],                               // Thomas Beaumont — FP&A Manager
+    ["U076", ["S4_GL_ACCT"]],                                     // Daniel Mwangi — Accounting Specialist
+    ["U089", ["S4_AP_INV_PROC"]],                                 // Camille Fontaine — Payroll Admin
+    ["U070", ["S4_AP_APPR_ADV"]],                                 // Aleksander Nowak — Finance Business Partner
+    ["U090", ["S4_GL_ACCT"]],                                     // Olamide Adebisi — Finance Data Analyst
+    ["U091", ["S4_AP_PAY_SPEC"]],                                 // Viktor Kovalenko — Cash Mgmt Specialist
+    ["U097", ["S4_GL_ACCT"]],                                     // Agnieszka Kowalczyk — Treasury Operations
+    ["U100", ["S4_AP_INV_PROC"]],                                 // Ozlem Yilmaz — AR Analyst
+    ["U021", ["S4_AP_APPR_BASIC"]],                               // Aisha Mohammed — Collections Analyst
+
+    // ── Procurement users: Buyer + Warehouse → triggers procurement segregation ──
+    ["U001", ["S4_MM_BUYER", "S4_MM_WH_MGMT"]],                 // Sarah Bennett — Vendor Mgmt (buy + receive)
+    ["U028", ["S4_MM_BUYER"]],                                    // Yuki Tanaka — Junior Buyer (clean)
+
+    // ── Maintenance users: PM roles + MM roles → cross-domain conflicts ──
+    ["U032", ["S4_PM_PLANNER", "S4_MM_BUYER"]],                  // Fatima Al-Hassan — Maint Tech + Buyer
+    ["U055", ["S4_PM_PLANNER", "S4_PM_TECHNICIAN"]],             // Ekaterina Morozova — PM Planner (create+confirm order)
+    ["U041", ["S4_PM_ENGINEER", "S4_MM_PLANNER"]],               // Nina Johansson — Maint Sys Admin (equip+material)
+
+    // ── Maintenance users: clean assignments ──
+    ["U074", ["S4_PM_TECHNICIAN"]],                               // Oluwafemi Abiodun — Field Service Tech
+    ["U083", ["S4_PM_TECHNICIAN"]],                               // Elena Vasquez — Maint Technician
+    ["U051", ["S4_PM_TECHNICIAN"]],                               // Yolanda Ferreira — Maint Technician
+    ["U047", ["S4_PM_ENGINEER"]],                                 // Annika Bergstrom — Reliability Engineer
+    ["U077", ["S4_PM_TECHNICIAN"]],                               // Astrid Lindqvist — Equipment Technician
+    ["U098", ["S4_PM_PLANNER"]],                                  // Takeshi Kimura — Work Order Coordinator
+    ["U016", ["S4_PM_ENGINEER"]],                                 // Colin Hughes — Asset Performance Analyst
+    ["U071", ["S4_PM_PLANNER"]],                                  // Priyanka Rao — Equip Performance Analyst
+    ["U038", ["S4_PM_TECHNICIAN"]],                               // Mikhail Sokolov — Equipment Technician
+
+    // ── Supply Chain / Warehouse users: some with cross-conflicts ──
+    ["U010", ["S4_MM_WH_MGMT"]],                                  // Jose Ramirez — Warehouse Assoc (clean now)
+    ["U023", ["S4_MM_WH_MGMT"]],                                  // Carlos Mendez — Warehouse Tech (clean)
+    ["U061", ["S4_MM_WH_MGMT"]],                                  // Grace Okonkwo — Warehouse Operative (clean)
+    ["U018", ["S4_MM_PLANNER"]],                                  // Alexei Volkov — SC Coordinator (clean)
+    ["U020", ["S4_MM_PLANNER"]],                                  // Tobias Mayer — Demand Planner (clean)
+    ["U030", ["S4_MM_PLANNER"]],                                  // Zara Ahmed — Inventory Planner (clean)
+    ["U050", ["S4_MM_WH_MGMT"]],                                  // Dmitri Volkov — Logistics Assoc (clean)
+    ["U043", ["S4_MM_WH_MGMT"]],                                  // Amara Diallo — Operations Supervisor (clean)
+    ["U054", ["S4_MM_WH_MGMT"]],                                  // Rashid Hassan — Distribution Coordinator (clean)
+    ["U075", ["S4_MM_PLANNER"]],                                  // Marina Popova — SC Associate (clean)
+
+    // ── Facilities users: PM roles only ──
+    ["U086", ["S4_PM_SUPERVISOR"]],                               // Emeka Nwosu — Building Services Mgr
+    ["U063", ["S4_PM_PLANNER"]],                                  // Amelia Kovacs — Facilities Coordinator
+    ["U033", ["S4_PM_SUPERVISOR"]],                               // Andre Dubois — Facilities Manager
+    ["U003", ["S4_PM_TECHNICIAN"]],                               // Priya Sharma — Facilities Maint Tech
+    ["U035", ["S4_PM_TECHNICIAN"]],                               // Ivan Petrov — Facilities Associate
+  ];
+
+  let utraCount = 0;
+  for (const [sourceUserId, roleIds] of conflictingAssignments) {
+    const userInfo = userLookup.get(sourceUserId);
+    if (!userInfo) continue;
+    for (const roleId of roleIds) {
+      const targetRoleDbId = targetRoleLookup.get(roleId);
+      if (!targetRoleDbId) continue;
+      db.insert(schema.userTargetRoleAssignments).values({
+        userId: userInfo.id,
+        targetRoleId: targetRoleDbId,
+        assignmentType: "seed_demo",
+        status: "draft",
+      }).run();
+      utraCount++;
+    }
+  }
+  console.log(`  ✓ ${utraCount} user-target-role assignments (pre-seeded for SOD demo)`);
+
+  // ─── 11d. Run SOD analysis on seeded assignments ───
+  // The SOD rules reference SAP ECC t-codes (XK01, FB60, etc.) but target roles use
+  // S/4HANA Fiori app IDs (F0717, F0859, etc.). We need target-permission-level SOD rules.
+  // Create target-system SOD rules that reference the actual target permission IDs.
+
+  const targetSodRules: { ruleId: string; ruleName: string; permA: string; permB: string; severity: string; riskDesc: string }[] = [
+    // Finance: Invoice creation vs approval
+    { ruleId: "T-SOD-AP-001", ruleName: "Create & Approve Invoice", permA: "F0717", permB: "F0859",
+      severity: "critical", riskDesc: "A user who can both create supplier invoices (F0717) and approve them (F0859) can post fraudulent invoices and approve their own entries, bypassing the dual-control requirement for accounts payable." },
+    // Finance: Invoice creation vs payment execution
+    { ruleId: "T-SOD-AP-002", ruleName: "Invoice Entry & Payment Execution", permA: "F0717", permB: "F1603",
+      severity: "critical", riskDesc: "A user who can post supplier invoices and execute automatic payments has end-to-end control over cash disbursement. This allows posting fraudulent invoices and immediately paying them." },
+    // Finance: Vendor master vs payment
+    { ruleId: "T-SOD-AP-003", ruleName: "Vendor Master & Payment Execution", permA: "F0790", permB: "F1603",
+      severity: "critical", riskDesc: "A user who can create/modify vendor master records and execute payment runs can create fictitious vendors and immediately pay them. This is one of the highest-risk SOD conflicts." },
+    // Finance: Vendor master vs invoice
+    { ruleId: "T-SOD-AP-004", ruleName: "Vendor Master & Invoice Entry", permA: "F0790", permB: "F0717",
+      severity: "high", riskDesc: "A user who can maintain vendor master data and post invoices can create fictitious vendors and record fraudulent invoices without a purchase order control point." },
+    // Finance: Invoice approval vs payment
+    { ruleId: "T-SOD-AP-005", ruleName: "Invoice Approval & Payment Execution", permA: "F0859", permB: "F1603",
+      severity: "high", riskDesc: "A user who can approve invoices and run payment programs controls both the approval gate and cash disbursement, weakening the procure-to-pay control framework." },
+    // Finance: GL posting vs invoice
+    { ruleId: "T-SOD-GL-001", ruleName: "GL Posting & Invoice Processing", permA: "F0400", permB: "F0717",
+      severity: "high", riskDesc: "A user who can post journal entries and process invoices can manipulate both the sub-ledger and general ledger, making it difficult to detect financial statement fraud." },
+    // Finance: GL posting vs payment
+    { ruleId: "T-SOD-GL-002", ruleName: "GL Posting & Payment Execution", permA: "F0400", permB: "F1603",
+      severity: "high", riskDesc: "A user who can post journal entries and execute payments can create manual adjustments to cover fraudulent payment activity." },
+    // Finance: Vendor master + invoice approval
+    { ruleId: "T-SOD-AP-006", ruleName: "Vendor Master & Invoice Approval", permA: "F0790", permB: "F0859",
+      severity: "high", riskDesc: "A user who can maintain vendor master records and approve invoices can modify vendor bank details and then approve invoices that route payments to unauthorized accounts." },
+    // Procurement: PO creation vs goods receipt
+    { ruleId: "T-SOD-MM-001", ruleName: "Purchase Order & Goods Receipt", permA: "F2439", permB: "F3002",
+      severity: "critical", riskDesc: "A user who can create purchase orders and post goods receipts can fabricate procurement commitments and falsely confirm delivery. This is among the most significant procurement SOD conflicts." },
+    // Procurement: PO creation vs PO release
+    { ruleId: "T-SOD-MM-002", ruleName: "Create & Release Purchase Order", permA: "F2439", permB: "F2441",
+      severity: "high", riskDesc: "A user who can create and approve purchase orders circumvents the purchasing authorization control. This is a foundational procurement segregation requirement." },
+    // Procurement: PO creation vs inventory management
+    { ruleId: "T-SOD-MM-003", ruleName: "Purchase Order & Inventory Adjustment", permA: "F2439", permB: "F3737",
+      severity: "high", riskDesc: "A user who can create purchase orders and manage physical inventory can manipulate both procurement records and inventory counts to conceal misappropriation." },
+    // Procurement: Goods receipt vs inventory differences
+    { ruleId: "T-SOD-MM-004", ruleName: "Goods Receipt & Inventory Differences", permA: "F3002", permB: "F3738",
+      severity: "high", riskDesc: "A user who can post goods receipts and adjust inventory differences can inflate delivery quantities and then write off the discrepancies, concealing theft." },
+    // Procurement: Buyer + Material master
+    { ruleId: "T-SOD-MM-005", ruleName: "Purchase Order & Material Master", permA: "F2439", permB: "F3814",
+      severity: "medium", riskDesc: "A user who can create purchase orders and maintain material master records controls both what can be procured and the actual procurement transaction." },
+    // Maintenance: Create order vs confirm order
+    { ruleId: "T-SOD-PM-001", ruleName: "Create & Confirm Maintenance Order", permA: "F4580", permB: "F4583",
+      severity: "medium", riskDesc: "A user who can create maintenance orders and confirm their completion can report false work completion, enabling labor fraud and false productivity reporting." },
+    // Maintenance: Equipment master vs maintenance order
+    { ruleId: "T-SOD-PM-002", ruleName: "Equipment Master & Maintenance Order", permA: "F4590", permB: "F4580",
+      severity: "medium", riskDesc: "A user who can manage equipment records and create maintenance orders bypasses independent technical review of asset setup before work is authorized." },
+    // Maintenance: Schedule plans vs confirm order
+    { ruleId: "T-SOD-PM-003", ruleName: "Schedule Plans & Confirm Order", permA: "F4600", permB: "F4583",
+      severity: "medium", riskDesc: "A user who can schedule preventive maintenance and confirm its completion can falsify preventive maintenance records without independent verification." },
+    // Cross-domain: Maintenance order + goods receipt
+    { ruleId: "T-SOD-XM-001", ruleName: "Maintenance Order & Goods Receipt", permA: "F4580", permB: "F3002",
+      severity: "high", riskDesc: "A user who can create maintenance orders and receive goods can authorize work and receive materials without independent oversight, enabling material diversion." },
+    // Cross-domain: Maintenance order + purchase order
+    { ruleId: "T-SOD-XM-002", ruleName: "Maintenance Order & Purchase Order", permA: "F4581", permB: "F2439",
+      severity: "high", riskDesc: "A user who can manage maintenance orders and create purchase orders controls both the work scope and procurement commitment, enabling inflated maintenance costs." },
+    // Cross-domain: Equipment + Material master
+    { ruleId: "T-SOD-XM-003", ruleName: "Equipment Master & Material Master", permA: "F4590", permB: "F3814",
+      severity: "medium", riskDesc: "A user who can manage both equipment and material master records controls the registration of assets and their associated spare parts without separation between technical and procurement master data." },
+    // Warehouse: Goods receipt + goods issue
+    { ruleId: "T-SOD-WH-001", ruleName: "Goods Receipt & Goods Issue", permA: "F3002", permB: "F3003",
+      severity: "medium", riskDesc: "A user who can process both goods receipts and goods issues can manipulate inventory levels without independent confirmation of inbound and outbound material flows." },
+    // Inventory: Physical inventory + posting differences
+    { ruleId: "T-SOD-INV-001", ruleName: "Physical Inventory & Post Differences", permA: "F3737", permB: "F3738",
+      severity: "critical", riskDesc: "A user who can conduct physical inventory counts and post the resulting adjustments has full control over inventory variance recognition, enabling concealment of theft." },
+  ];
+
+  // Insert target-system SOD rules
+  for (const r of targetSodRules) {
+    db.insert(schema.sodRules).values({
+      ruleId: r.ruleId,
+      ruleName: r.ruleName,
+      permissionA: r.permA,
+      permissionB: r.permB,
+      severity: r.severity,
+      riskDescription: r.riskDesc,
+    }).run();
+  }
+  console.log(`  ✓ ${targetSodRules.length} target-system SOD rules (S/4HANA Fiori permissions)`);
+
+  // Build permission map for target roles
+  const seedRolePerms = new Map<number, Set<string>>();
+  const seedTrps = db.select({
+    roleId: schema.targetRolePermissions.targetRoleId,
+    permId: schema.targetPermissions.permissionId,
+  }).from(schema.targetRolePermissions)
+    .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
+    .all();
+  for (const row of seedTrps) {
+    if (!seedRolePerms.has(row.roleId)) seedRolePerms.set(row.roleId, new Set());
+    seedRolePerms.get(row.roleId)!.add(row.permId);
+  }
+
+  // Load target permission name lookup
+  const permNameLookup = new Map<string, string | null>();
+  const allTargetPerms = db.select().from(schema.targetPermissions).all();
+  for (const tp of allTargetPerms) {
+    permNameLookup.set(tp.permissionId, tp.permissionName);
+  }
+
+  // Load target role name lookup
+  const roleNameLookup = new Map<number, string>();
+  for (const tr of allTargetRoles) {
+    roleNameLookup.set(tr.id, tr.roleName);
+  }
+
+  // Load all active SOD rules (including the target-system ones we just inserted)
+  const activeRules = db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true)).all();
+
+  // Group assignments by user
+  const seedAssignments = db.select().from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.status, "draft")).all();
+  const seedUserAssignments = new Map<number, number[]>();
+  for (const a of seedAssignments) {
+    if (!seedUserAssignments.has(a.userId)) seedUserAssignments.set(a.userId, []);
+    seedUserAssignments.get(a.userId)!.push(a.targetRoleId);
+  }
+
+  let seedConflictsFound = 0;
+  const seedUsersWithConflicts = new Set<number>();
+
+  const seedUserEntries = Array.from(seedUserAssignments.entries());
+  for (const [userId, roleIds] of seedUserEntries) {
+    const userPerms = new Set<string>();
+    const permToRole = new Map<string, number>();
+    for (const roleId of roleIds) {
+      const perms = seedRolePerms.get(roleId) || new Set();
+      const permArr = Array.from(perms);
+      for (const p of permArr) {
+        userPerms.add(p);
+        permToRole.set(p, roleId);
+      }
+    }
+
+    let userConflictCount = 0;
+    for (const rule of activeRules) {
+      if (userPerms.has(rule.permissionA) && userPerms.has(rule.permissionB)) {
+        seedConflictsFound++;
+        userConflictCount++;
+        seedUsersWithConflicts.add(userId);
+
+        const roleIdA = permToRole.get(rule.permissionA) ?? null;
+        const roleIdB = permToRole.get(rule.permissionB) ?? null;
+        const roleAName = roleIdA ? (roleNameLookup.get(roleIdA) ?? null) : null;
+        const roleBName = roleIdB ? (roleNameLookup.get(roleIdB) ?? null) : null;
+        const permAName = permNameLookup.get(rule.permissionA) ?? null;
+        const permBName = permNameLookup.get(rule.permissionB) ?? null;
+
+        // Build risk explanation
+        const risk = rule.riskDescription
+          ? rule.riskDescription
+          : `Conflicting access: "${permAName ?? rule.permissionA}" and "${permBName ?? rule.permissionB}" should be held by separate individuals.`;
+        const resolution = rule.severity === "critical"
+          ? `Resolution required: Remove "${roleAName ?? "one role"}" or "${roleBName ?? "the other role"}". Risk acceptance is NOT permitted for critical conflicts.`
+          : `Resolution options: Remove "${roleAName ?? "one role"}" or "${roleBName ?? "the other role"}", or submit a risk acceptance request with business justification.`;
+        const riskExplanation = `${risk}\n\n${resolution}`;
+
+        db.insert(schema.sodConflicts).values({
+          userId,
+          sodRuleId: rule.id,
+          roleIdA,
+          roleIdB,
+          permissionIdA: rule.permissionA,
+          permissionIdB: rule.permissionB,
+          severity: rule.severity,
+          resolutionStatus: "open",
+          riskExplanation,
+        }).run();
+      }
+    }
+
+    // Update assignment statuses
+    const newStatus = userConflictCount > 0 ? "sod_rejected" : "compliance_approved";
+    for (const roleId of roleIds) {
+      db.update(schema.userTargetRoleAssignments).set({
+        status: newStatus,
+        sodConflictCount: userConflictCount,
+        updatedAt: new Date().toISOString(),
+      }).where(
+        eq(schema.userTargetRoleAssignments.userId, userId),
+      ).run();
+    }
+  }
+
+  console.log(`  ✓ ${seedConflictsFound} SOD conflicts detected across ${seedUsersWithConflicts.size} users`);
+  console.log(`    (${seedUserAssignments.size - seedUsersWithConflicts.size} users clean, ${seedUsersWithConflicts.size} users with conflicts)`);
+
   // ─── 12. Default Admin User ───
   db.delete(schema.workAssignments).run();
   db.delete(schema.appUserSessions).run();
@@ -406,6 +704,8 @@ function seed() {
     targetRolePermissions: db.select().from(schema.targetRolePermissions).all().length,
     userPersonaAssignments: db.select().from(schema.userPersonaAssignments).all().length,
     sodRules: db.select().from(schema.sodRules).all().length,
+    userTargetRoleAssignments: db.select().from(schema.userTargetRoleAssignments).all().length,
+    sodConflicts: db.select().from(schema.sodConflicts).all().length,
   };
   console.log(counts);
   console.log("\n✅ Seed complete!");

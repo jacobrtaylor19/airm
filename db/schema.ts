@@ -278,6 +278,7 @@ export const sodConflicts = sqliteTable("sod_conflicts", {
   resolvedBy: text("resolved_by"),
   resolvedAt: text("resolved_at"),
   resolutionNotes: text("resolution_notes"),
+  riskExplanation: text("risk_explanation"),
   analysisJobId: integer("analysis_job_id").references(() => processingJobs.id),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });

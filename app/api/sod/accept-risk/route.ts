@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
@@ -11,14 +11,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Only approvers and admins can accept risk — mappers must fix mappings instead
+    // Only approvers and admins can accept risk
     if (user.role !== "approver" && user.role !== "admin") {
-      return NextResponse.json({ error: "Only approvers can accept SOD risk. Mappers should fix the mapping instead." }, { status: 403 });
+      return NextResponse.json({ error: "Only approvers can accept SOD risk." }, { status: 403 });
     }
 
-    const { conflictId, justification } = await req.json();
-    if (!conflictId || !justification) {
-      return NextResponse.json({ error: "conflictId and justification required" }, { status: 400 });
+    const { conflictId, justification, action } = await req.json();
+    if (!conflictId) {
+      return NextResponse.json({ error: "conflictId required" }, { status: 400 });
     }
 
     const conflict = db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).get();
@@ -27,29 +27,51 @@ export async function POST(req: NextRequest) {
     }
 
     if (conflict.severity === "critical") {
-      return NextResponse.json({ error: "Critical severity conflicts cannot be risk-accepted. They must be resolved by fixing the mapping." }, { status: 400 });
+      return NextResponse.json({ error: "Critical severity conflicts cannot be risk-accepted." }, { status: 400 });
     }
 
-    // Update conflict resolution
+    // Handle reject action
+    if (action === "reject") {
+      db.update(schema.sodConflicts).set({
+        resolutionStatus: "open",
+        resolutionNotes: conflict.resolutionNotes
+          ? `${conflict.resolutionNotes}\n\n[REJECTED by ${user.username}]: ${justification ?? "No reason provided"}`
+          : `[REJECTED by ${user.username}]: ${justification ?? "No reason provided"}`,
+      }).where(eq(schema.sodConflicts.id, conflictId)).run();
+
+      db.insert(schema.auditLog).values({
+        entityType: "sodConflict",
+        entityId: conflictId,
+        action: "risk_acceptance_rejected",
+        actorEmail: user.email ?? user.username,
+        oldValue: JSON.stringify({ resolutionStatus: conflict.resolutionStatus }),
+        newValue: JSON.stringify({ resolutionStatus: "open" }),
+      }).run();
+
+      return NextResponse.json({ success: true, action: "rejected" });
+    }
+
+    // Default: approve risk acceptance
+    const finalJustification = justification ?? conflict.resolutionNotes ?? "";
+
     db.update(schema.sodConflicts).set({
       resolutionStatus: "risk_accepted",
       resolvedBy: user.username,
       resolvedAt: new Date().toISOString(),
-      resolutionNotes: justification,
+      resolutionNotes: finalJustification,
     }).where(eq(schema.sodConflicts.id, conflictId)).run();
 
-    // Check if all conflicts for this user are resolved
-    const remainingOpen = db.select().from(schema.sodConflicts)
+    // Check if all conflicts for this user are resolved (not open or pending)
+    const remainingUnresolved = db.select().from(schema.sodConflicts)
       .where(and(
         eq(schema.sodConflicts.userId, conflict.userId),
-        eq(schema.sodConflicts.resolutionStatus, "open")
+        inArray(schema.sodConflicts.resolutionStatus, ["open", "pending_risk_acceptance"])
       )).all();
 
-    if (remainingOpen.length === 0) {
-      // All conflicts resolved — transition user assignments to sod_risk_accepted
+    if (remainingUnresolved.length === 0) {
       db.update(schema.userTargetRoleAssignments).set({
         status: "sod_risk_accepted",
-        riskAcceptedBy: "system_user",
+        riskAcceptedBy: user.username,
         riskAcceptedAt: new Date().toISOString(),
         riskJustification: "All SOD conflicts resolved via risk acceptance",
         updatedAt: new Date().toISOString(),
@@ -59,16 +81,16 @@ export async function POST(req: NextRequest) {
       )).run();
     }
 
-    // Audit log
     db.insert(schema.auditLog).values({
       entityType: "sodConflict",
       entityId: conflictId,
       action: "risk_accepted",
-      oldValue: JSON.stringify({ resolutionStatus: "open" }),
-      newValue: JSON.stringify({ resolutionStatus: "risk_accepted", justification }),
+      actorEmail: user.email ?? user.username,
+      oldValue: JSON.stringify({ resolutionStatus: conflict.resolutionStatus }),
+      newValue: JSON.stringify({ resolutionStatus: "risk_accepted", justification: finalJustification }),
     }).run();
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, action: "approved" });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: message }, { status: 500 });
