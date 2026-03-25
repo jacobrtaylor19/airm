@@ -109,7 +109,7 @@ const pipelineSteps: PipelineStep[] = [
 ];
 
 const statusColors: Record<string, string> = {
-  queued: "bg-zinc-100 text-zinc-700",
+  queued: "bg-slate-100 text-slate-700",
   running: "bg-blue-100 text-blue-700",
   completed: "bg-green-100 text-green-700",
   failed: "bg-red-100 text-red-700",
@@ -119,6 +119,7 @@ export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; ha
   const [jobs] = useState(initialJobs);
   const [runningJob, setRunningJob] = useState<string | null>(null);
   const [pipelineRunning, setPipelineRunning] = useState(false);
+  const [jobProgress, setJobProgress] = useState<{ processed: number; total: number } | null>(null);
   const router = useRouter();
 
   // Determine last run per job type
@@ -137,18 +138,39 @@ export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; ha
     return lastRun.status as "completed" | "failed" | "pending";
   }
 
+  function startProgressPolling(jobId: number): ReturnType<typeof setInterval> {
+    return setInterval(async () => {
+      try {
+        const statusRes = await fetch(`/api/jobs/${jobId}`);
+        if (statusRes.ok) {
+          const status = await statusRes.json();
+          setJobProgress({
+            processed: status.processed || 0,
+            total: status.totalRecords || 0,
+          });
+        }
+      } catch { /* ignore polling errors */ }
+    }, 1500);
+  }
+
   async function runJob(endpoint: string, type: string) {
     setRunningJob(type);
+    setJobProgress(null);
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
     try {
       const res = await fetch(endpoint, { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
         alert(`Job failed: ${data.error}`);
+      } else if (data.jobId) {
+        pollTimer = startProgressPolling(data.jobId);
       }
     } catch (err) {
       alert(`Job failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
+      if (pollTimer) clearInterval(pollTimer);
       setRunningJob(null);
+      setJobProgress(null);
       router.refresh();
     }
   }
@@ -159,17 +181,28 @@ export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; ha
     try {
       for (const step of actionSteps) {
         setRunningJob(step.jobType!);
+        setJobProgress(null);
+        let pollTimer: ReturnType<typeof setInterval> | null = null;
+
         const res = await fetch(step.endpoint!, { method: "POST" });
         const data = await res.json();
+
+        if (data.jobId) {
+          pollTimer = startProgressPolling(data.jobId);
+        }
+
         if (!res.ok) {
+          if (pollTimer) clearInterval(pollTimer);
           alert(`Pipeline failed at ${step.label}: ${data.error}`);
           break;
         }
+        if (pollTimer) clearInterval(pollTimer);
       }
     } catch (err) {
       alert(`Pipeline failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setRunningJob(null);
+      setJobProgress(null);
       setPipelineRunning(false);
       router.refresh();
     }
@@ -254,6 +287,19 @@ export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; ha
                       <span className="text-sm font-medium">{step.label}</span>
                     </div>
                     <p className="text-xs text-muted-foreground">{step.description}</p>
+                    {status === "running" && jobProgress && jobProgress.total > 0 && (
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden max-w-[200px]">
+                          <div
+                            className="h-full bg-blue-500 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.round((jobProgress.processed / jobProgress.total) * 100)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-blue-600 font-medium">
+                          {jobProgress.processed}/{jobProgress.total}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Last run info */}

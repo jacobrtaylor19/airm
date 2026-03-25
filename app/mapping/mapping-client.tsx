@@ -34,6 +34,7 @@ interface MappingClientProps {
 export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30, userRole }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
+  const [autoMapProgress, setAutoMapProgress] = useState<{ processed: number; total: number } | null>(null);
   const [bulkMode, setBulkMode] = useState(false);
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set());
   const [bulkTargetRoleId, setBulkTargetRoleId] = useState<number | null>(null);
@@ -99,16 +100,48 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
 
   async function autoMapAll() {
     setAutoMapping(true);
+    setAutoMapProgress(null);
+    let jobId: number | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+
     try {
+      // Start the job — this returns immediately with jobId
       const res = await fetch("/api/ai/target-role-mapping", { method: "POST" });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
-        alert(`Auto-map failed: ${data.error}`);
+        toast.error(`Auto-map failed: ${data.error}`);
+        return;
       }
+      jobId = data.jobId;
+
+      // Poll for progress every 1.5s
+      if (jobId) {
+        pollTimer = setInterval(async () => {
+          try {
+            const statusRes = await fetch(`/api/jobs/${jobId}`);
+            if (statusRes.ok) {
+              const status = await statusRes.json();
+              setAutoMapProgress({
+                processed: status.processed || 0,
+                total: status.totalRecords || 0,
+              });
+              if (status.status === "completed" || status.status === "failed") {
+                if (pollTimer) clearInterval(pollTimer);
+              }
+            }
+          } catch { /* ignore polling errors */ }
+        }, 1500);
+      }
+
+      // Wait for the actual result (the POST blocks until done)
+      // Since we already have the response, just show success
+      toast.success(`Mapped ${data.personasMapped} personas with ${data.totalMappings} role assignments`);
     } catch (err) {
-      alert(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
+      if (pollTimer) clearInterval(pollTimer);
       setAutoMapping(false);
+      setAutoMapProgress(null);
       router.refresh();
     }
   }
@@ -173,13 +206,28 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
       <TabsContent value="persona-mapping" className="mt-4">
         {userRole !== "viewer" && (
           <div className="flex items-center gap-3 mb-4 flex-wrap">
-            <Button onClick={autoMapAll} disabled={autoMapping || bulkMode} className="bg-teal-500 hover:bg-teal-600 text-white">
-              {autoMapping ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Auto-Mapping...</>
-              ) : (
-                <><Zap className="h-4 w-4 mr-2" /> Auto-Map All (Least Access)</>
+            <div className="flex items-center gap-3">
+              <Button onClick={autoMapAll} disabled={autoMapping || bulkMode} className="bg-teal-500 hover:bg-teal-600 text-white">
+                {autoMapping ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Auto-Mapping...</>
+                ) : (
+                  <><Zap className="h-4 w-4 mr-2" /> Auto-Map All (Least Access)</>
+                )}
+              </Button>
+              {autoMapping && autoMapProgress && autoMapProgress.total > 0 && (
+                <div className="flex items-center gap-2 min-w-[200px]">
+                  <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-teal-500 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.round((autoMapProgress.processed / autoMapProgress.total) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs text-slate-500 whitespace-nowrap">
+                    {autoMapProgress.processed}/{autoMapProgress.total}
+                  </span>
+                </div>
               )}
-            </Button>
+            </div>
             <Button variant={bulkMode ? "default" : "outline"} onClick={() => { setBulkMode(!bulkMode); setBulkSelected(new Set()); setBulkTargetRoleId(null); }} disabled={autoMapping}>
               <ListChecks className="h-4 w-4 mr-2" /> {bulkMode ? "Exit Bulk Mode" : "Bulk Assign"}
             </Button>

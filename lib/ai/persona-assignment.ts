@@ -127,6 +127,8 @@ interface AssignmentResult {
   flags: string[];
 }
 
+const BATCH_SIZE = 5; // Process 5 users concurrently
+
 export async function runPersonaAssignment(jobId: number): Promise<{ usersAssigned: number; failed: number }> {
   const provider = getAIProvider();
   const personas = getAvailablePersonas();
@@ -141,41 +143,62 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
   // Clear existing assignments
   db.delete(schema.userPersonaAssignments).run();
 
-  for (const user of users) {
-    try {
-      const profile = getUserProfile(user.id);
-      if (!profile) { failed++; continue; }
+  // Update total records for progress tracking
+  db.update(schema.processingJobs).set({
+    totalRecords: users.length,
+  }).where(eq(schema.processingJobs.id, jobId)).run();
 
-      const prompt = buildPrompt(profile, personas);
-      const text = await provider.generateText(prompt);
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) { failed++; continue; }
+  // Process users in parallel batches
+  for (let i = 0; i < users.length; i += BATCH_SIZE) {
+    const batch = users.slice(i, i + BATCH_SIZE);
 
-      const result: AssignmentResult = JSON.parse(jsonMatch[0]);
-      // Use configured confidence threshold (minimum 40 to avoid null assignments for borderline matches)
-      const minConfidence = Math.max(40, Number(getSetting("ai.confidenceThreshold") || "85") * 0.5);
-      const personaId = result.confidence >= minConfidence ? result.persona_id : null;
-      const groupId = personaId
-        ? db.select({ gid: schema.personas.consolidatedGroupId }).from(schema.personas).where(eq(schema.personas.id, personaId)).get()?.gid ?? null
-        : null;
+    const results = await Promise.allSettled(
+      batch.map(async (user) => {
+        const profile = getUserProfile(user.id);
+        if (!profile) throw new Error("no_profile");
 
-      db.insert(schema.userPersonaAssignments).values({
-        userId: user.id,
-        personaId,
-        consolidatedGroupId: groupId,
-        confidenceScore: result.confidence,
-        aiReasoning: result.reasoning,
-        aiModel: provider.name,
-        assignmentMethod: "ai_assignment",
-        jobRunId: jobId,
-      }).run();
+        const prompt = buildPrompt(profile, personas);
+        const text = await provider.generateText(prompt);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("no_json");
 
-      usersAssigned++;
-    } catch {
-      failed++;
+        const result: AssignmentResult = JSON.parse(jsonMatch[0]);
+        return { user, result };
+      })
+    );
+
+    // Write results to DB synchronously (SQLite requirement)
+    for (const outcome of results) {
+      if (outcome.status === "fulfilled") {
+        try {
+          const { user, result } = outcome.value;
+          const minConfidence = Math.max(40, Number(getSetting("ai.confidenceThreshold") || "85") * 0.5);
+          const personaId = result.confidence >= minConfidence ? result.persona_id : null;
+          const groupId = personaId
+            ? db.select({ gid: schema.personas.consolidatedGroupId }).from(schema.personas).where(eq(schema.personas.id, personaId)).get()?.gid ?? null
+            : null;
+
+          db.insert(schema.userPersonaAssignments).values({
+            userId: user.id,
+            personaId,
+            consolidatedGroupId: groupId,
+            confidenceScore: result.confidence,
+            aiReasoning: result.reasoning,
+            aiModel: provider.name,
+            assignmentMethod: "ai_assignment",
+            jobRunId: jobId,
+          }).run();
+
+          usersAssigned++;
+        } catch {
+          failed++;
+        }
+      } else {
+        failed++;
+      }
     }
 
-    // Update job progress
+    // Update job progress after each batch
     db.update(schema.processingJobs).set({
       processed: usersAssigned + failed,
     }).where(eq(schema.processingJobs.id, jobId)).run();

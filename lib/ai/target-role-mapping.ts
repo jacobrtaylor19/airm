@@ -40,6 +40,8 @@ interface MappingResult {
   notes: string;
 }
 
+const BATCH_SIZE = 5; // Process 5 personas concurrently
+
 export async function runTargetRoleMapping(jobId: number): Promise<{ personasMapped: number; totalMappings: number }> {
   const provider = getAIProvider();
   const personas = db.select().from(schema.personas).all();
@@ -53,36 +55,51 @@ export async function runTargetRoleMapping(jobId: number): Promise<{ personasMap
   db.delete(schema.personaTargetRoleMappings).run();
   db.delete(schema.userTargetRoleAssignments).run();
 
+  // Update total records for progress tracking
+  db.update(schema.processingJobs).set({
+    totalRecords: personas.length,
+  }).where(eq(schema.processingJobs.id, jobId)).run();
+
   let personasMapped = 0;
   let totalMappings = 0;
 
-  for (const persona of personas) {
-    try {
-      const prompt = buildMappingPrompt(persona, targetRoles);
-      const text = await provider.generateText(prompt);
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) continue;
+  // Process personas in parallel batches
+  for (let i = 0; i < personas.length; i += BATCH_SIZE) {
+    const batch = personas.slice(i, i + BATCH_SIZE);
 
-      const result: MappingResult = JSON.parse(jsonMatch[0]);
+    const results = await Promise.allSettled(
+      batch.map(async (persona) => {
+        const prompt = buildMappingPrompt(persona, targetRoles);
+        const text = await provider.generateText(prompt);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("no_json");
+        const result: MappingResult = JSON.parse(jsonMatch[0]);
+        return { persona, result };
+      })
+    );
 
-      for (const mapping of result.mappings) {
-        const targetRole = targetRoles.find(r => r.roleId === mapping.target_role_id);
-        if (!targetRole) continue;
+    // Write results to DB synchronously (SQLite requirement)
+    for (const outcome of results) {
+      if (outcome.status === "fulfilled") {
+        const { persona, result } = outcome.value;
+        for (const mapping of result.mappings) {
+          const targetRole = targetRoles.find(r => r.roleId === mapping.target_role_id);
+          if (!targetRole) continue;
 
-        db.insert(schema.personaTargetRoleMappings).values({
-          personaId: persona.id,
-          targetRoleId: targetRole.id,
-          mappingReason: mapping.reason,
-          confidence: mapping.confidence,
-        }).run();
-        totalMappings++;
+          db.insert(schema.personaTargetRoleMappings).values({
+            personaId: persona.id,
+            targetRoleId: targetRole.id,
+            mappingReason: mapping.reason,
+            confidence: mapping.confidence,
+          }).run();
+          totalMappings++;
+        }
+        personasMapped++;
       }
-
-      personasMapped++;
-    } catch {
-      // Continue with other personas
+      // Failed personas are silently skipped
     }
 
+    // Update progress after each batch
     db.update(schema.processingJobs).set({
       processed: personasMapped,
     }).where(eq(schema.processingJobs.id, jobId)).run();
