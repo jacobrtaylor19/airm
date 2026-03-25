@@ -20,6 +20,7 @@ import {
   XCircle,
   Clock,
   Filter,
+  Search,
   Send,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -330,12 +331,15 @@ export function SodPageClient({
             <SelectItem value="within_role">Within Role</SelectItem>
           </SelectContent>
         </Select>
-        <Input
-          placeholder="Search user, department, rule..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-[220px] h-8 text-xs"
-        />
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input
+            placeholder="Search user, department, rule..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-[220px] h-8 text-xs pl-9"
+          />
+        </div>
         <span className="text-xs text-muted-foreground ml-auto">
           Showing {filtered.length} of {totalConflicts} conflicts
         </span>
@@ -343,14 +347,20 @@ export function SodPageClient({
 
       {/* Conflicts List */}
       {totalConflicts === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-12">
-            <CheckCircle className="h-10 w-10 text-green-500" />
-            <p className="text-muted-foreground text-center">
-              No SOD conflicts detected. Run the SOD analysis after mapping target roles to check for conflicts.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 px-6 text-center">
+          <ShieldCheck className="h-12 w-12 text-slate-300 mb-4" />
+          <h3 className="text-sm font-semibold text-slate-700 mb-1">No SOD conflicts detected</h3>
+          <p className="text-sm text-slate-500 max-w-sm mb-4">
+            Run SOD Analysis to check for segregation of duties violations.
+          </p>
+          <Button onClick={runAnalysis} disabled={running} className="bg-teal-500 hover:bg-teal-600 text-white">
+            {running ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
+            ) : (
+              <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
+            )}
+          </Button>
+        </div>
       ) : (
         <div className="space-y-2">
           {filtered.map((c) => {

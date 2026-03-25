@@ -3,8 +3,35 @@
 import { useRouter } from "next/navigation";
 import type { UserRow } from "@/lib/queries";
 import { DataTable, type Column } from "@/components/shared/data-table";
+import { Badge } from "@/components/ui/badge";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
-import { StatusBadge } from "@/components/shared/status-badge";
+
+const userStatusConfig: Record<string, { label: string; className: string }> = {
+  persona_assigned: { label: "Persona Assigned", className: "bg-blue-50 text-blue-700 hover:bg-blue-50" },
+  mapped: { label: "Mapped", className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-50" },
+  approved: { label: "Approved", className: "bg-emerald-50 text-emerald-700 hover:bg-emerald-50" },
+  sod_conflict: { label: "SOD Conflict", className: "bg-red-50 text-red-700 hover:bg-red-50" },
+  ready_for_approval: { label: "Ready for Approval", className: "bg-blue-50 text-blue-700 hover:bg-blue-50" },
+  compliance_approved: { label: "Compliance OK", className: "bg-emerald-50 text-emerald-700 hover:bg-emerald-50" },
+  sod_risk_accepted: { label: "Risk Accepted", className: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100" },
+  sod_escalated: { label: "Escalated", className: "bg-purple-100 text-purple-700 hover:bg-purple-100" },
+};
+
+function UserStatusBadge({ status }: { status: string | null }) {
+  if (!status || status === "unmapped" || status === "draft") {
+    return (
+      <Badge variant="secondary" className="text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-100">
+        Not Started
+      </Badge>
+    );
+  }
+  const config = userStatusConfig[status] ?? { label: status, className: "bg-slate-100 text-slate-600" };
+  return (
+    <Badge variant="secondary" className={`text-xs font-medium ${config.className}`}>
+      {config.label}
+    </Badge>
+  );
+}
 
 const columns: Column<UserRow>[] = [
   { key: "sourceUserId", header: "User ID", sortable: true },
@@ -26,12 +53,7 @@ const columns: Column<UserRow>[] = [
   {
     key: "assignmentStatus",
     header: "Status",
-    render: (row) =>
-      row.assignmentStatus ? (
-        <StatusBadge status={row.assignmentStatus} />
-      ) : (
-        <span className="text-xs text-muted-foreground">{"\u2014"}</span>
-      ),
+    render: (row) => <UserStatusBadge status={row.assignmentStatus ?? null} />,
   },
 ];
 

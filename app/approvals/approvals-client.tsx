@@ -219,11 +219,11 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
 
       {/* Queue Table */}
       {actionable.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-12 px-6 text-center">
+        <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 px-6 text-center">
           <CheckCircle2 className="h-12 w-12 text-slate-300 mb-4" />
-          <h3 className="text-sm font-semibold text-slate-700 mb-1">No pending approvals</h3>
+          <h3 className="text-sm font-semibold text-slate-700 mb-1">No assignments pending approval</h3>
           <p className="text-sm text-slate-500 max-w-sm">
-            Run the mapping pipeline to generate target role assignments, then they will appear here for review.
+            Assignments will appear here once mappers complete role mapping.
           </p>
         </div>
       ) : (

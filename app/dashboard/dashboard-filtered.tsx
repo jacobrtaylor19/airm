@@ -166,7 +166,7 @@ export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sod
       const scoreB = b.approved > 0 ? 4 : b.sodClean > 0 ? 3 : b.mapped > 0 ? 2 : b.withPersona > 0 ? 1 : 0;
       return scoreB - scoreA || a.department.localeCompare(b.department);
     });
-  }, [allDepts, selected]);
+  }, [allDepts, selected, isAdmin, assignedDepartments]);
 
   const scopedTotals = useMemo(() => ({
     users: filteredDepts.reduce((s, d) => s + d.totalUsers, 0),

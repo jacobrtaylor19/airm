@@ -6,36 +6,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 import type { AuditLogRow } from "@/lib/queries";
 
 function relativeTime(iso: string): string {
-  const now = Date.now();
-  const then = new Date(iso).getTime();
-  const diffMs = now - then;
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return "just now";
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
-  return new Date(iso).toLocaleDateString();
+  try {
+    return formatDistanceToNow(new Date(iso), { addSuffix: true });
+  } catch {
+    return iso;
+  }
 }
 
-function formatAuditValue(val: string | null): string {
+function formatAuditValue(val: string | null): React.ReactNode {
   if (!val) return "\u2014";
   try {
     const parsed = JSON.parse(val);
     if (typeof parsed === "object" && parsed !== null) {
-      return Object.entries(parsed)
-        .filter(([, v]) => v !== null && v !== undefined)
-        .map(([k, v]) => {
-          const label = k.replace(/([A-Z])/g, " $1").replace(/_/g, " ").replace(/Id$/, "").trim();
-          const capLabel = label.charAt(0).toUpperCase() + label.slice(1);
-          return `${capLabel}: ${v}`;
-        })
-        .join(", ");
+      const entries = Object.entries(parsed).filter(([, v]) => v !== null && v !== undefined);
+      if (entries.length === 0) return "\u2014";
+      return (
+        <span className="inline-flex flex-col gap-0.5">
+          {entries.map(([k, v]) => {
+            const label = k.replace(/([A-Z])/g, " $1").replace(/_/g, " ").replace(/Id$/, "").trim();
+            const capLabel = label.charAt(0).toUpperCase() + label.slice(1);
+            return (
+              <span key={k}>
+                <span className="text-muted-foreground">{capLabel}:</span>{" "}
+                <span className="font-medium">{String(v)}</span>
+              </span>
+            );
+          })}
+        </span>
+      );
     }
     return String(parsed);
   } catch {
@@ -136,12 +138,12 @@ export function AuditLogClient({ logs }: { logs: AuditLogRow[] }) {
                       <span title={`Old: ${log.oldValue}\nNew: ${log.newValue}`}>
                         <span className="text-muted-foreground">{formatAuditValue(log.oldValue)}</span>
                         <span className="mx-1 text-slate-300">{"\u2192"}</span>
-                        <span>{formatAuditValue(log.newValue)}</span>
+                        <span className="font-medium">{formatAuditValue(log.newValue)}</span>
                       </span>
                     ) : log.newValue ? (
-                      <span title={log.newValue}>{formatAuditValue(log.newValue)}</span>
+                      <span title={`${log.newValue}`}>{formatAuditValue(log.newValue)}</span>
                     ) : log.oldValue ? (
-                      <span className="text-muted-foreground line-through" title={log.oldValue}>
+                      <span className="text-muted-foreground line-through" title={`${log.oldValue}`}>
                         {formatAuditValue(log.oldValue)}
                       </span>
                     ) : (
