@@ -1,17 +1,15 @@
 import { NextResponse } from "next/server";
-import { generatePdfReport } from "@/lib/exports/pdf-report";
-import { getSessionUser } from "@/lib/auth";
+import { sailPointAdapter } from "@/lib/exports/grc-adapters";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const user = getSessionUser();
-    const buffer = await generatePdfReport(user?.displayName ?? undefined);
+    const buffer = await sailPointAdapter.generate();
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="provisum-audit-report-${new Date().toISOString().split("T")[0]}.pdf"`,
+        "Content-Type": "text/csv",
+        "Content-Disposition": `attachment; filename="sailpoint-provisioning-${new Date().toISOString().split("T")[0]}.csv"`,
       },
     });
   } catch (err: unknown) {

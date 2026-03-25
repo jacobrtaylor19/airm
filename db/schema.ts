@@ -549,6 +549,18 @@ export const workAssignments = sqliteTable("work_assignments", {
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
+// ─────────────────────────────────────────────
+// REVIEW LINKS (shareable read-only external reviewer snapshots)
+// ─────────────────────────────────────────────
+
+export const reviewLinks = sqliteTable("review_links", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  token: text("token").notNull().unique(),
+  createdBy: integer("created_by").notNull().references(() => appUsers.id),
+  expiresAt: text("expires_at").notNull(),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
 
 // ─────────────────────────────────────────────
 // PERSONA CONFIRMATIONS (gate before target role mapping)

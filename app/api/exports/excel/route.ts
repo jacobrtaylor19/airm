@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { generateExcelReport } from "@/lib/exports/excel-report";
+import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const buffer = await generateExcelReport();
+    const user = getSessionUser();
+    const buffer = await generateExcelReport(user?.displayName ?? undefined);
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

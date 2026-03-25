@@ -39,6 +39,9 @@ const pageInfo: Record<string, { title: string; description?: string }> = {
   "/inbox": { title: "Inbox", description: "Your notifications and workflow updates" },
   "/notifications": { title: "Send Reminders", description: "Send reminders to mappers and approvers" },
   "/least-access": { title: "Provisioning Alerts", description: "Over-provisioning analysis" },
+  "/releases/compare": { title: "Release Comparison", description: "Side-by-side release metrics" },
+  "/releases/timeline": { title: "Project Timeline", description: "Multi-release timeline overview" },
+  "/review": { title: "External Review", description: "Read-only project snapshot" },
 };
 
 interface HeaderUser {

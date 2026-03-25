@@ -14,7 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { AlertTriangle, Plus, Pencil, Power, PowerOff, Loader2 } from "lucide-react";
+import { AlertTriangle, Plus, Pencil, Power, PowerOff, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import type { SodRuleRow } from "@/lib/queries";
@@ -57,6 +57,9 @@ export function SodRulesClient({
   const [form, setForm] = useState<EditForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<SodRuleRow | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   function openCreate() {
     setForm(emptyForm);
@@ -136,6 +139,36 @@ export function SodRulesClient({
     else toast.error("Delete failed");
   }
 
+  function openDeleteConfirm(rule: SodRuleRow) {
+    setDeleteTarget(rule);
+    setDeleteDialog(true);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/sod-rules", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: deleteTarget.id }),
+      });
+      if (res.ok) {
+        toast.success("Rule deleted");
+        setDeleteDialog(false);
+        setDeleteTarget(null);
+        router.refresh();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Delete failed");
+      }
+    } catch {
+      toast.error("Delete failed");
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const columns: Column<SodRuleRow & Record<string, unknown>>[] = [
     { key: "ruleId", header: "Rule ID", sortable: true },
     { key: "ruleName", header: "Name", sortable: true },
@@ -200,6 +233,15 @@ export function SodRulesClient({
                     ) : (
                       <Power className="h-3 w-3" />
                     )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 text-slate-400 hover:text-red-600"
+                    onClick={(e) => { e.stopPropagation(); openDeleteConfirm(r); }}
+                    title="Delete rule"
+                  >
+                    <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               );
@@ -292,6 +334,30 @@ export function SodRulesClient({
     );
   }
 
+  function renderDeleteDialog() {
+    return (
+      <Dialog open={deleteDialog} onOpenChange={(open) => { if (!open) { setDeleteDialog(false); setDeleteTarget(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete SOD Rule</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to permanently delete rule{" "}
+            <span className="font-semibold text-foreground">{deleteTarget?.ruleId}</span> ({deleteTarget?.ruleName})?
+            This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteDialog(false); setDeleteTarget(null); }}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleting}>
+              {deleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Delete Rule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <>
       {isAdmin && (
@@ -315,6 +381,7 @@ export function SodRulesClient({
         entityLabel="SOD rules"
       />
       {renderEditDialog()}
+      {renderDeleteDialog()}
     </>
   );
 }

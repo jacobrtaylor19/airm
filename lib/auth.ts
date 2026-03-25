@@ -103,6 +103,7 @@ export function requireRole(allowedRoles: string[]): AppUser {
 export const ROLE_HIERARCHY: Record<string, number> = {
   system_admin: 100,
   admin: 80,
+  project_manager: 70,
   approver: 60,
   coordinator: 50,
   mapper: 40,

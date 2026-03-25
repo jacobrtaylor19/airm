@@ -25,6 +25,8 @@ import {
   Bell,
   Inbox,
   ShieldCheck,
+  GitCompare,
+  Calendar,
 } from "lucide-react";
 
 interface NavItem {
@@ -69,6 +71,8 @@ const navSections: NavSection[] = [
     label: "REPORTS",
     items: [
       { href: "/exports", label: "Exports", icon: FileText },
+      { href: "/releases/compare", label: "Release Comparison", icon: GitCompare, minRole: ["admin", "system_admin", "project_manager"] },
+      { href: "/releases/timeline", label: "Project Timeline", icon: Calendar, minRole: ["admin", "system_admin", "project_manager"] },
       { href: "/audit-log", label: "Audit Log", icon: Activity },
     ],
   },

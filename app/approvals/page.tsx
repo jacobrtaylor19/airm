@@ -42,6 +42,20 @@ export default function ApprovalsPage() {
   const complianceApproved = queue.filter(a => a.status === "compliance_approved");
   const sodRiskAccepted = queue.filter(a => a.status === "sod_risk_accepted");
 
+  // Compute department-level stats for bulk department approval
+  const approvableStatuses = ["ready_for_approval", "compliance_approved", "sod_risk_accepted"];
+  const deptStatsMap = new Map<string, { total: number; sodFlagged: number }>();
+  for (const a of queue) {
+    if (!a.department || !approvableStatuses.includes(a.status)) continue;
+    const existing = deptStatsMap.get(a.department) ?? { total: 0, sodFlagged: 0 };
+    existing.total++;
+    if ((a.sodConflictCount ?? 0) > 0) existing.sodFlagged++;
+    deptStatsMap.set(a.department, existing);
+  }
+  const departmentStats = Array.from(deptStatsMap.entries())
+    .map(([name, stats]) => ({ name, ...stats }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
@@ -57,6 +71,7 @@ export default function ApprovalsPage() {
           total: queue.length,
         }}
         userRole={user.role}
+        departmentStats={departmentStats}
       />
     </div>
   );

@@ -10,9 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { CheckCircle, CheckCircle2, XCircle, Loader2, Filter } from "lucide-react";
+import { CheckCircle, CheckCircle2, XCircle, Loader2, Filter, ChevronDown, Building2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import type { ApprovalRow } from "@/lib/queries";
+
+interface DepartmentStat {
+  name: string;
+  total: number;
+  sodFlagged: number;
+}
 
 interface ApprovalsProps {
   queue: ApprovalRow[];
@@ -24,9 +30,10 @@ interface ApprovalsProps {
     total: number;
   };
   userRole?: string;
+  departmentStats?: DepartmentStat[];
 }
 
-export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
+export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] }: ApprovalsProps) {
   const [sendBackDialog, setSendBackDialog] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<number | null>(null);
   const [sendBackReason, setSendBackReason] = useState("");
@@ -34,6 +41,10 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
   const [bulkApproving, setBulkApproving] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [deptFilter, setDeptFilter] = useState<string>("all");
+  const [deptDropdownOpen, setDeptDropdownOpen] = useState(false);
+  const [deptConfirmDialog, setDeptConfirmDialog] = useState(false);
+  const [selectedDept, setSelectedDept] = useState<DepartmentStat | null>(null);
+  const [deptApproving, setDeptApproving] = useState(false);
   const router = useRouter();
 
   const isViewer = userRole === "viewer";
@@ -136,6 +147,40 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
     }
   }
 
+  function openDeptConfirm(dept: DepartmentStat) {
+    setSelectedDept(dept);
+    setDeptConfirmDialog(true);
+    setDeptDropdownOpen(false);
+  }
+
+  async function confirmDeptApprove() {
+    if (!selectedDept) return;
+    setDeptApproving(true);
+    try {
+      const res = await fetch("/api/approvals/bulk-approve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ department: selectedDept.name }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Department approval failed");
+      } else {
+        const msg = data.skippedSod > 0
+          ? `Approved ${data.count} assignments for ${selectedDept.name}. ${data.skippedSod} skipped due to unresolved SOD conflicts.`
+          : `Approved ${data.count} assignments for ${selectedDept.name}.`;
+        toast.success(msg);
+      }
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+    } finally {
+      setDeptApproving(false);
+      setDeptConfirmDialog(false);
+      setSelectedDept(null);
+      router.refresh();
+    }
+  }
+
   // Filter to show actionable items, optionally by department
   const actionable = queue.filter(a =>
     (a.status === "ready_for_approval" ||
@@ -201,6 +246,40 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
                 <><CheckCircle className="h-4 w-4 mr-2" /> Bulk Approve (High Confidence)</>
               )}
             </Button>
+            {departmentStats.length > 0 && (
+              <div className="relative">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeptDropdownOpen(!deptDropdownOpen)}
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Approve All for Department
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+                {deptDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setDeptDropdownOpen(false)} />
+                    <div className="absolute top-full left-0 z-50 mt-1 w-72 rounded-md border bg-white shadow-lg py-1">
+                      {departmentStats.map((dept) => (
+                        <button
+                          key={dept.name}
+                          className="flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-slate-50 text-left"
+                          onClick={() => openDeptConfirm(dept)}
+                        >
+                          <span className="font-medium truncate">{dept.name}</span>
+                          <span className="flex items-center gap-2 ml-2 shrink-0">
+                            <Badge variant="secondary" className="text-xs">{dept.total}</Badge>
+                            {dept.sodFlagged > 0 && (
+                              <Badge variant="secondary" className="text-xs bg-red-100 text-red-700">{dept.sodFlagged} SOD</Badge>
+                            )}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
             {selectedIds.length > 0 && (
               <Button onClick={approveSelected} disabled={submitting} variant="outline">
                 {submitting ? (
@@ -341,6 +420,40 @@ export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
             <Button variant="outline" onClick={() => setSendBackDialog(false)}>Cancel</Button>
             <Button onClick={sendBack} disabled={!sendBackReason.trim() || submitting}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Back"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Department Bulk Approve Confirmation Dialog */}
+      <Dialog open={deptConfirmDialog} onOpenChange={(open) => { if (!open) { setDeptConfirmDialog(false); setSelectedDept(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Approve All for {selectedDept?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Approve <span className="font-semibold text-foreground">{selectedDept?.total}</span> assignment{selectedDept?.total !== 1 ? "s" : ""} for{" "}
+              <span className="font-semibold text-foreground">{selectedDept?.name}</span>?
+            </p>
+            {(selectedDept?.sodFlagged ?? 0) > 0 && (
+              <div className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 p-3">
+                <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                <p className="text-sm text-red-700">
+                  <span className="font-semibold">{selectedDept?.sodFlagged}</span> assignment{selectedDept?.sodFlagged !== 1 ? "s have" : " has"} SOD conflict flags.
+                  Assignments with unresolved SOD conflicts (no risk acceptance) will be skipped.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeptConfirmDialog(false); setSelectedDept(null); }}>Cancel</Button>
+            <Button onClick={confirmDeptApprove} disabled={deptApproving}>
+              {deptApproving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Approving...</>
+              ) : (
+                <><CheckCircle className="h-4 w-4 mr-2" /> Approve Department</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
