@@ -1,0 +1,88 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/db";
+import * as schema from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { getSessionUser } from "@/lib/auth";
+
+export async function POST(req: NextRequest) {
+  try {
+    const user = getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    if (user.role !== "mapper" && user.role !== "admin") {
+      return NextResponse.json({ error: "Only mappers can save refinements" }, { status: 403 });
+    }
+
+    const { userId, targetRoleIds, personaId } = await req.json();
+    if (!userId || !Array.isArray(targetRoleIds)) {
+      return NextResponse.json({ error: "userId and targetRoleIds required" }, { status: 400 });
+    }
+
+    // Get current assignments for this user
+    const currentAssignments = db
+      .select()
+      .from(schema.userTargetRoleAssignments)
+      .where(eq(schema.userTargetRoleAssignments.userId, userId))
+      .all();
+
+    const currentRoleIds = new Set(currentAssignments.map(a => a.targetRoleId));
+    const desiredRoleIds = new Set<number>(targetRoleIds);
+
+    // Get persona default role IDs if persona exists
+    const personaDefaultRoleIds = new Set<number>();
+    if (personaId) {
+      const mappings = db
+        .select({ targetRoleId: schema.personaTargetRoleMappings.targetRoleId })
+        .from(schema.personaTargetRoleMappings)
+        .where(eq(schema.personaTargetRoleMappings.personaId, personaId))
+        .all();
+      for (const m of mappings) personaDefaultRoleIds.add(m.targetRoleId);
+    }
+
+    // Roles to add (in desired but not current)
+    const toAdd = targetRoleIds.filter((id: number) => !currentRoleIds.has(id));
+    // Roles to remove (in current but not desired)
+    const toRemove = currentAssignments.filter(a => !desiredRoleIds.has(a.targetRoleId));
+
+    // Add new assignments
+    for (const roleId of toAdd) {
+      const isDefault = personaDefaultRoleIds.has(roleId);
+      db.insert(schema.userTargetRoleAssignments).values({
+        userId,
+        targetRoleId: roleId,
+        derivedFromPersonaId: personaId ?? null,
+        assignmentType: isDefault ? "persona_default" : "individual_override",
+        status: "draft",
+        mappedBy: user.username,
+      }).run();
+    }
+
+    // Remove assignments
+    for (const assignment of toRemove) {
+      db.delete(schema.userTargetRoleAssignments)
+        .where(eq(schema.userTargetRoleAssignments.id, assignment.id))
+        .run();
+    }
+
+    // Audit log
+    db.insert(schema.auditLog).values({
+      entityType: "userRefinement",
+      entityId: userId,
+      action: "refinements_saved",
+      actorEmail: user.email ?? user.username,
+      oldValue: JSON.stringify({ roleIds: Array.from(currentRoleIds) }),
+      newValue: JSON.stringify({ roleIds: targetRoleIds, added: toAdd, removed: toRemove.map(a => a.targetRoleId) }),
+    }).run();
+
+    return NextResponse.json({
+      success: true,
+      added: toAdd.length,
+      removed: toRemove.length,
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

@@ -1,3 +1,1 @@
-username,password,display_name,role,email,org_unit_name
-mapper.logistics,test123,Alex Rivera (Logistics Mapper),mapper,alex.rivera@example.com,Supply Chain
-approver.tech,test123,Pat Morgan (Technology Approver),approver,pat.morgan@example.com,Technology
+username (required),password (required),display_name (required),role (required),email,org_unit_name

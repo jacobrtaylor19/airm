@@ -21,10 +21,11 @@ function DeptProgressBar({ depts }: { depts: DepartmentMappingStatus[] }) {
     <div className="space-y-4">
       {depts.length > 0 && (
         <div className="flex gap-4 text-xs pb-2 border-b">
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Approved</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> SOD Clean</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-400" /> Persona Assigned</span>
           <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-yellow-500" /> Mapped</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-400" /> Persona Only</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> SOD Rejected</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> SOD Clean</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Approved</span>
         </div>
       )}
       {depts.map((dept) => (
@@ -34,22 +35,26 @@ function DeptProgressBar({ depts }: { depts: DepartmentMappingStatus[] }) {
             <span className="text-xs text-muted-foreground">{dept.totalUsers} users</span>
           </div>
           <div className="flex h-2 rounded-full bg-muted overflow-hidden">
-            {dept.approved > 0 && (
-              <div className="h-2 bg-emerald-500" style={{ width: `${(dept.approved / dept.totalUsers) * 100}%` }} />
+            {dept.withPersona - dept.mapped > 0 && (
+              <div className="h-2 bg-zinc-400" style={{ width: `${((dept.withPersona - dept.mapped) / dept.totalUsers) * 100}%` }} />
+            )}
+            {dept.mapped - dept.sodClean - dept.sodRejected > 0 && (
+              <div className="h-2 bg-yellow-500" style={{ width: `${(Math.max(0, dept.mapped - dept.sodClean - dept.sodRejected) / dept.totalUsers) * 100}%` }} />
+            )}
+            {dept.sodRejected > 0 && (
+              <div className="h-2 bg-red-500" style={{ width: `${(dept.sodRejected / dept.totalUsers) * 100}%` }} />
             )}
             {dept.sodClean - dept.approved > 0 && (
               <div className="h-2 bg-blue-500" style={{ width: `${((dept.sodClean - dept.approved) / dept.totalUsers) * 100}%` }} />
             )}
-            {dept.mapped - dept.sodClean > 0 && (
-              <div className="h-2 bg-yellow-500" style={{ width: `${((dept.mapped - dept.sodClean) / dept.totalUsers) * 100}%` }} />
-            )}
-            {dept.withPersona - dept.mapped > 0 && (
-              <div className="h-2 bg-zinc-400" style={{ width: `${((dept.withPersona - dept.mapped) / dept.totalUsers) * 100}%` }} />
+            {dept.approved > 0 && (
+              <div className="h-2 bg-emerald-500" style={{ width: `${(dept.approved / dept.totalUsers) * 100}%` }} />
             )}
           </div>
           <div className="flex gap-3 text-xs text-muted-foreground">
             <span>{dept.withPersona} persona</span>
             <span>{dept.mapped} mapped</span>
+            {dept.sodRejected > 0 && <span className="text-red-600">{dept.sodRejected} SOD rejected</span>}
             <span>{dept.sodClean} SOD ok</span>
             <span>{dept.approved} approved</span>
           </div>
@@ -86,6 +91,7 @@ export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sod
     users: filteredDepts.reduce((s, d) => s + d.totalUsers, 0),
     persona: filteredDepts.reduce((s, d) => s + d.withPersona, 0),
     mapped: filteredDepts.reduce((s, d) => s + d.mapped, 0),
+    sodRejected: filteredDepts.reduce((s, d) => s + d.sodRejected, 0),
     sodClean: filteredDepts.reduce((s, d) => s + d.sodClean, 0),
     approved: filteredDepts.reduce((s, d) => s + d.approved, 0),
   }), [filteredDepts]);
@@ -123,7 +129,7 @@ export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sod
         </CardHeader>
         <CardContent>
           {/* Scoped KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
             <div className="rounded-md border bg-background p-3">
               <p className="text-xs text-muted-foreground">Users</p>
               <p className="text-xl font-bold tabular-nums">{scopedTotals.users}</p>
@@ -137,6 +143,11 @@ export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sod
               <p className="text-xs text-muted-foreground">Mapped</p>
               <p className="text-xl font-bold tabular-nums">{scopedTotals.mapped}</p>
               <p className="text-xs text-muted-foreground">{scopedTotals.users > 0 ? Math.round((scopedTotals.mapped / scopedTotals.users) * 100) : 0}%</p>
+            </div>
+            <div className="rounded-md border bg-background p-3">
+              <p className="text-xs text-muted-foreground text-red-600">SOD Rejected</p>
+              <p className="text-xl font-bold tabular-nums text-red-600">{scopedTotals.sodRejected}</p>
+              <p className="text-xs text-muted-foreground">{scopedTotals.users > 0 ? Math.round((scopedTotals.sodRejected / scopedTotals.users) * 100) : 0}%</p>
             </div>
             <div className="rounded-md border bg-background p-3">
               <p className="text-xs text-muted-foreground">SOD Clean</p>

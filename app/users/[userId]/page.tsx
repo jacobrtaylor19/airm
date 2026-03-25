@@ -1,15 +1,18 @@
-import { getUserDetail } from "@/lib/queries";
+import { getUserDetail, getAssignedMapperApproverForUser } from "@/lib/queries";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { ArrowRight, User, Shield, AlertTriangle } from "lucide-react";
+import { ArrowRight, User, Shield, Users } from "lucide-react";
 import Link from "next/link";
+import { UserSodConflicts } from "./user-sod-conflicts";
 
 export default function UserDetailPage({ params }: { params: { userId: string } }) {
   const user = getUserDetail(Number(params.userId));
   if (!user) return notFound();
+
+  const { mapperName, approverName } = getAssignedMapperApproverForUser(user.orgUnitId);
 
   return (
     <div className="space-y-6">
@@ -48,6 +51,39 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
             <div>
               <span className="text-muted-foreground">User Type</span>
               <p className="font-medium">{user.userType ?? "—"}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Assigned Mapper & Approver */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users className="h-4 w-4" /> Assigned Mapper & Approver
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground">Assigned Mapper</span>
+              <p className="font-medium">
+                {mapperName ? (
+                  mapperName
+                ) : (
+                  <span className="text-amber-600">Unassigned</span>
+                )}
+              </p>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Assigned Approver</span>
+              <p className="font-medium">
+                {approverName ? (
+                  approverName
+                ) : (
+                  <span className="text-amber-600">Unassigned</span>
+                )}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -157,48 +193,8 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
         </Card>
       )}
 
-      {/* SOD Conflicts */}
-      {user.sodConflicts.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-destructive" /> SOD Conflicts ({user.sodConflicts.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {user.sodConflicts.map((c) => (
-                <div key={c.id} className="flex items-center justify-between rounded border p-2 text-sm">
-                  <div>
-                    <span className="font-medium">{c.ruleName}</span>
-                    <span className="text-muted-foreground ml-2">
-                      {c.permissionIdA} &harr; {c.permissionIdB}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <SeverityBadge severity={c.severity} />
-                    <Badge variant="outline" className="text-xs">{c.resolutionStatus}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* SOD Conflicts — actionable */}
+      <UserSodConflicts conflicts={user.sodConflicts} userId={user.id} />
     </div>
-  );
-}
-
-function SeverityBadge({ severity }: { severity: string }) {
-  const colors: Record<string, string> = {
-    critical: "bg-red-100 text-red-800",
-    high: "bg-orange-100 text-orange-800",
-    medium: "bg-yellow-100 text-yellow-700",
-    low: "bg-blue-100 text-blue-700",
-  };
-  return (
-    <Badge variant="secondary" className={`text-xs ${colors[severity] ?? ""}`}>
-      {severity}
-    </Badge>
   );
 }

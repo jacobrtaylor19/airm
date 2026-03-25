@@ -1,5 +1,1 @@
-# Source roles template — role_id must be unique. role_type can be single/composite. is_composite is TRUE/FALSE.
-role_id,role_name,description,domain,system,role_type,is_composite
-SAP_AP_CLERK_01,AP Clerk Basic,Basic accounts payable clerk role for invoice entry,Finance,SAP ECC,single,FALSE
-SAP_PM_PLANNER,Maintenance Planner,Plan and schedule maintenance orders and task lists,EAM,SAP ECC,single,FALSE
-SAP_MM_BUYER,Procurement Buyer,Create and manage purchase orders,Materials Management,SAP ECC,composite,TRUE
+role_id (required),role_name (required),description,domain,system,role_type,is_composite

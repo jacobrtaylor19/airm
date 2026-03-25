@@ -1,5 +1,1 @@
-# Users template — source_user_id must be unique. email/department/job_title/manager_name/location/cost_center are optional.
-source_user_id,display_name,email,department,job_title,manager_name,location,cost_center
-U001,Jane Smith,jane.smith@company.com,Finance,Senior Accountant,David Lee - Finance Director,New York,CC-FIN-100
-U002,Carlos Rivera,carlos.rivera@company.com,Procurement,Procurement Analyst,Maria Lopez - Procurement Manager,Chicago,CC-PROC-200
-U003,Aisha Patel,aisha.patel@company.com,Maintenance,Maintenance Planner,Tom Harris - EAM Manager,Houston,CC-MNT-300
+source_user_id (required),display_name (required),email,department,job_title,manager_name,location,cost_center

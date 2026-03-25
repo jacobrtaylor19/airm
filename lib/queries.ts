@@ -175,6 +175,7 @@ export interface UserDetail {
   department: string | null;
   jobTitle: string | null;
   orgUnit: string | null;
+  orgUnitId: number | null;
   costCenter: string | null;
   userType: string | null;
   persona: {
@@ -205,9 +206,15 @@ export interface UserDetail {
     id: number;
     severity: string;
     ruleName: string;
+    ruleDescription: string | null;
+    riskExplanation: string | null;
     resolutionStatus: string;
     permissionIdA: string | null;
     permissionIdB: string | null;
+    roleIdA: number | null;
+    roleIdB: number | null;
+    roleNameA: string | null;
+    roleNameB: string | null;
   }[];
 }
 
@@ -262,19 +269,37 @@ export function getUserDetail(id: number): UserDetail | null {
     .where(eq(schema.userTargetRoleAssignments.userId, id))
     .all();
 
-  const sodConflicts = db
+  const sodConflictsRaw = db
     .select({
       id: schema.sodConflicts.id,
       severity: schema.sodConflicts.severity,
       ruleName: schema.sodRules.ruleName,
+      ruleDescription: schema.sodRules.riskDescription,
+      riskExplanation: schema.sodConflicts.riskExplanation,
       resolutionStatus: schema.sodConflicts.resolutionStatus,
       permissionIdA: schema.sodConflicts.permissionIdA,
       permissionIdB: schema.sodConflicts.permissionIdB,
+      roleIdA: schema.sodConflicts.roleIdA,
+      roleIdB: schema.sodConflicts.roleIdB,
     })
     .from(schema.sodConflicts)
     .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
     .where(eq(schema.sodConflicts.userId, id))
     .all();
+
+  const sodConflicts = sodConflictsRaw.map((c) => {
+    const roleA = c.roleIdA
+      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdA)).get()
+      : null;
+    const roleB = c.roleIdB
+      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdB)).get()
+      : null;
+    return {
+      ...c,
+      roleNameA: roleA?.roleName ?? null,
+      roleNameB: roleB?.roleName ?? null,
+    };
+  });
 
   return {
     id: user.id,
@@ -284,6 +309,7 @@ export function getUserDetail(id: number): UserDetail | null {
     department: user.department,
     jobTitle: user.jobTitle,
     orgUnit: user.orgUnit,
+    orgUnitId: user.orgUnitId,
     costCenter: user.costCenter,
     userType: user.userType,
     persona: assignment && assignment.personaId
@@ -1012,6 +1038,7 @@ export interface DepartmentMappingStatus {
   totalUsers: number;
   withPersona: number;
   mapped: number;
+  sodRejected: number;
   sodClean: number;
   approved: number;
 }
@@ -1040,6 +1067,15 @@ export function getDepartmentMappingStatus(): DepartmentMappingStatus[] {
       .where(eq(schema.users.department, dept))
       .get()!.count;
 
+    // Users with at least one sod_rejected assignment
+    const sodRejected = db.select({
+      count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
+    })
+      .from(schema.userTargetRoleAssignments)
+      .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'sod_rejected'`)
+      .get()!.count;
+
     // Users whose ALL assignments are compliance_approved or sod_risk_accepted or approved
     const sodClean = db.select({
       count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
@@ -1057,7 +1093,7 @@ export function getDepartmentMappingStatus(): DepartmentMappingStatus[] {
       .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'approved'`)
       .get()!.count;
 
-    return { department: dept, totalUsers: d.totalUsers, withPersona, mapped, sodClean, approved };
+    return { department: dept, totalUsers: d.totalUsers, withPersona, mapped, sodRejected, sodClean, approved };
   });
 }
 
@@ -1328,4 +1364,265 @@ export function getSodConflictsDetailed(): SodConflictDetailed[] {
 export function getSodConflictDetail(conflictId: number): SodConflictDetailed | null {
   const all = getSodConflictsDetailed();
   return all.find(c => c.id === conflictId) ?? null;
+}
+
+// ─────────────────────────────────────────────
+// ASSIGNED MAPPER / APPROVER for a user's org unit
+// ─────────────────────────────────────────────
+
+export interface AssignedMapperApprover {
+  mapperName: string | null;
+  approverName: string | null;
+}
+
+/**
+ * Finds the mapper and approver assigned to a user's org unit.
+ * Walks up the org hierarchy from the user's org unit to find
+ * the closest mapper/approver assignment.
+ */
+export function getAssignedMapperApproverForUser(orgUnitId: number | null): AssignedMapperApprover {
+  if (!orgUnitId) return { mapperName: null, approverName: null };
+
+  // Get all org units to build the ancestry chain
+  const allOrgUnits = db.select().from(schema.orgUnits).all();
+  const orgUnitMap = new Map(allOrgUnits.map(u => [u.id, u]));
+
+  // Get all app user assignments
+  const appUserAssignments = db.select({
+    displayName: schema.appUsers.displayName,
+    role: schema.appUsers.role,
+    assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
+  }).from(schema.appUsers).where(eq(schema.appUsers.isActive, true)).all();
+
+  const mapperByOu = new Map<number, string>();
+  const approverByOu = new Map<number, string>();
+  for (const au of appUserAssignments) {
+    if (au.assignedOrgUnitId) {
+      if (au.role === "mapper") mapperByOu.set(au.assignedOrgUnitId, au.displayName);
+      if (au.role === "approver") approverByOu.set(au.assignedOrgUnitId, au.displayName);
+    }
+  }
+
+  // Walk up the org hierarchy to find the closest assignment
+  let mapperName: string | null = null;
+  let approverName: string | null = null;
+  let currentId: number | null = orgUnitId;
+
+  while (currentId !== null) {
+    if (!mapperName && mapperByOu.has(currentId)) {
+      mapperName = mapperByOu.get(currentId)!;
+    }
+    if (!approverName && approverByOu.has(currentId)) {
+      approverName = approverByOu.get(currentId)!;
+    }
+    if (mapperName && approverName) break;
+
+    const unit = orgUnitMap.get(currentId);
+    currentId = unit?.parentId ?? null;
+  }
+
+  return { mapperName, approverName };
+}
+
+// ─────────────────────────────────────────────
+// GAP ANALYSIS (computed coverage summary)
+// ─────────────────────────────────────────────
+
+export interface GapAnalysisSummary {
+  totalSourcePermissions: number;
+  coveredPermissions: number;
+  coveragePercent: number;
+  gapsByPersona: {
+    personaId: number;
+    personaName: string;
+    totalPermissions: number;
+    uncoveredCount: number;
+    uncoveredPermissions: {
+      permissionId: string;
+      permissionName: string | null;
+      description: string | null;
+    }[];
+  }[];
+}
+
+/**
+ * Computes gap analysis by comparing source permissions (via personas)
+ * against target role permissions to find uncovered permissions.
+ * Uses the permission_gaps table if populated.
+ */
+export function getGapAnalysisSummary(): GapAnalysisSummary {
+  const allPersonaPerms = db
+    .select({
+      personaId: schema.personaSourcePermissions.personaId,
+      sourcePermissionId: schema.personaSourcePermissions.sourcePermissionId,
+      permissionId: schema.sourcePermissions.permissionId,
+      permissionName: schema.sourcePermissions.permissionName,
+      description: schema.sourcePermissions.description,
+    })
+    .from(schema.personaSourcePermissions)
+    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
+    .all();
+
+  const personas = db
+    .select({ id: schema.personas.id, name: schema.personas.name })
+    .from(schema.personas)
+    .all();
+
+  const personaNameMap = new Map(personas.map(p => [p.id, p.name]));
+
+  // Get all gaps from the permission_gaps table
+  const gaps = db
+    .select({
+      personaId: schema.permissionGaps.personaId,
+      sourcePermissionId: schema.permissionGaps.sourcePermissionId,
+    })
+    .from(schema.permissionGaps)
+    .all();
+
+  const gapSet = new Set(gaps.map(g => `${g.personaId}-${g.sourcePermissionId}`));
+
+  // Group by persona
+  const permsByPersona = new Map<number, typeof allPersonaPerms>();
+  for (const p of allPersonaPerms) {
+    const existing = permsByPersona.get(p.personaId) || [];
+    existing.push(p);
+    permsByPersona.set(p.personaId, existing);
+  }
+
+  const totalSourcePermissions = new Set(allPersonaPerms.map(p => p.sourcePermissionId)).size;
+  const allUncoveredPermIds = new Set<number>();
+
+  const gapsByPersona: GapAnalysisSummary["gapsByPersona"] = [];
+
+  for (const [personaId, perms] of Array.from(permsByPersona)) {
+    const uncoveredPermissions: { permissionId: string; permissionName: string | null; description: string | null }[] = [];
+    for (const p of perms) {
+      if (gapSet.has(`${personaId}-${p.sourcePermissionId}`)) {
+        uncoveredPermissions.push({
+          permissionId: p.permissionId,
+          permissionName: p.permissionName,
+          description: p.description,
+        });
+        allUncoveredPermIds.add(p.sourcePermissionId);
+      }
+    }
+
+    if (uncoveredPermissions.length > 0) {
+      gapsByPersona.push({
+        personaId,
+        personaName: personaNameMap.get(personaId) ?? "Unknown",
+        totalPermissions: perms.length,
+        uncoveredCount: uncoveredPermissions.length,
+        uncoveredPermissions,
+      });
+    }
+  }
+
+  const coveredPermissions = totalSourcePermissions - allUncoveredPermIds.size;
+  const coveragePercent = totalSourcePermissions > 0 ? Math.round((coveredPermissions / totalSourcePermissions) * 100) : 100;
+
+  return {
+    totalSourcePermissions,
+    coveredPermissions,
+    coveragePercent,
+    gapsByPersona,
+  };
+}
+
+// ─────────────────────────────────────────────
+// USER REFINEMENTS (enhanced for editing)
+// ─────────────────────────────────────────────
+
+export interface UserRefinementDetail {
+  userId: number;
+  userName: string;
+  department: string | null;
+  personaName: string | null;
+  personaId: number | null;
+  personaDefaultRoles: { targetRoleId: number; roleName: string; roleId: string }[];
+  individualOverrides: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string }[];
+  allAssignments: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string }[];
+}
+
+/**
+ * Gets all users who have target role assignments, including both
+ * persona defaults and individual overrides for the refinements tab.
+ */
+export function getUserRefinementDetails(): UserRefinementDetail[] {
+  const assignments = db
+    .select({
+      assignmentId: schema.userTargetRoleAssignments.id,
+      userId: schema.userTargetRoleAssignments.userId,
+      userName: schema.users.displayName,
+      department: schema.users.department,
+      targetRoleId: schema.userTargetRoleAssignments.targetRoleId,
+      roleName: schema.targetRoles.roleName,
+      roleId: schema.targetRoles.roleId,
+      assignmentType: schema.userTargetRoleAssignments.assignmentType,
+      status: schema.userTargetRoleAssignments.status,
+      derivedFromPersonaId: schema.userTargetRoleAssignments.derivedFromPersonaId,
+    })
+    .from(schema.userTargetRoleAssignments)
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
+    .all();
+
+  const personaAssignments = db
+    .select({
+      userId: schema.userPersonaAssignments.userId,
+      personaId: schema.userPersonaAssignments.personaId,
+      personaName: schema.personas.name,
+    })
+    .from(schema.userPersonaAssignments)
+    .innerJoin(schema.personas, eq(schema.personas.id, schema.userPersonaAssignments.personaId))
+    .all();
+
+  const personaByUser = new Map(personaAssignments.map(pa => [pa.userId, pa]));
+
+  const personaMappings = db
+    .select({
+      personaId: schema.personaTargetRoleMappings.personaId,
+      targetRoleId: schema.personaTargetRoleMappings.targetRoleId,
+      roleName: schema.targetRoles.roleName,
+      roleId: schema.targetRoles.roleId,
+    })
+    .from(schema.personaTargetRoleMappings)
+    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.personaTargetRoleMappings.targetRoleId))
+    .all();
+
+  const defaultRolesByPersona = new Map<number, { targetRoleId: number; roleName: string; roleId: string }[]>();
+  for (const m of personaMappings) {
+    const existing = defaultRolesByPersona.get(m.personaId) || [];
+    existing.push({ targetRoleId: m.targetRoleId, roleName: m.roleName, roleId: m.roleId });
+    defaultRolesByPersona.set(m.personaId, existing);
+  }
+
+  const byUser = new Map<number, typeof assignments>();
+  for (const a of assignments) {
+    const existing = byUser.get(a.userId) || [];
+    existing.push(a);
+    byUser.set(a.userId, existing);
+  }
+
+  const result: UserRefinementDetail[] = [];
+  for (const [userId, userAssignments] of Array.from(byUser)) {
+    const first = userAssignments[0];
+    const persona = personaByUser.get(userId);
+    const personaDefaults = persona?.personaId ? (defaultRolesByPersona.get(persona.personaId) ?? []) : [];
+
+    result.push({
+      userId,
+      userName: first.userName,
+      department: first.department,
+      personaName: persona?.personaName ?? null,
+      personaId: persona?.personaId ?? null,
+      personaDefaultRoles: personaDefaults,
+      individualOverrides: userAssignments
+        .filter(a => a.assignmentType !== "persona_default")
+        .map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status })),
+      allAssignments: userAssignments.map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status })),
+    });
+  }
+
+  return result;
 }

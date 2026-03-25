@@ -7,6 +7,8 @@ import {
   getPersonaIdsForUsers,
   getOpenSodConflictsByPersona,
   getPersonaSourceSystems,
+  getGapAnalysisSummary,
+  getUserRefinementDetails,
 } from "@/lib/queries";
 import type { PersonaSodConflict } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
@@ -22,6 +24,8 @@ export default function MappingPage() {
   let refinements = getUserRefinements();
   let gaps = getGapAnalysis();
   const targetRoles = getTargetRoles();
+  const gapSummary = getGapAnalysisSummary();
+  let refinementDetails = getUserRefinementDetails();
 
   // Filter for mappers — only show personas containing their assigned users
   if (user.role === "mapper") {
@@ -31,11 +35,13 @@ export default function MappingPage() {
       personas = personas.filter((p) => scopedPersonaIds.has(p.personaId));
       refinements = refinements.filter((r) => scopedUserIds.includes(r.userId));
       gaps = gaps.filter((g) => scopedPersonaIds.has(g.personaId));
+      refinementDetails = refinementDetails.filter((r) => scopedUserIds.includes(r.userId));
     } else if (scopedUserIds !== null) {
       // Empty scope (not null = restricted but no users)
       personas = [];
       refinements = [];
       gaps = [];
+      refinementDetails = [];
     }
   }
 
@@ -86,6 +92,8 @@ export default function MappingPage() {
         targetRoles={targetRoles}
         sodConflictsByPersona={sodConflictsByPersona}
         personaSourceSystems={personaSourceSystemsObj}
+        gapSummary={gapSummary}
+        refinementDetails={refinementDetails}
       />
     </div>
   );
