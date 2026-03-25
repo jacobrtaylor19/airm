@@ -32,6 +32,7 @@ const pageInfo: Record<string, { title: string; description?: string }> = {
   "/jobs": { title: "Processing Jobs", description: "Run pipeline stages and monitor progress" },
   "/methodology": { title: "How Provisum Works", description: "Methodology and workflow design" },
   "/overview": { title: "Platform Overview", description: "Capabilities, architecture, and security" },
+  "/quick-reference": { title: "Quick Reference Guide", description: "Step-by-step guide for your role" },
   "/admin/users": { title: "Manage App Users", description: "Create and manage platform user accounts" },
   "/admin/assignments": { title: "Work Assignments", description: "Mapper and approver org unit assignments" },
   "/admin": { title: "System Settings", description: "Project configuration and AI settings" },

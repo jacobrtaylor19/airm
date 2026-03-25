@@ -75,6 +75,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/methodology", label: "How It Works", icon: BookOpen },
       { href: "/overview", label: "Platform Overview", icon: Info },
+      { href: "/quick-reference", label: "Quick Reference", icon: BookOpen },
     ],
   },
   {

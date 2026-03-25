@@ -820,11 +820,11 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
                         className="h-4 w-4 accent-primary"
                       />
                       <Label htmlFor="auto-approve">
-                        Auto-approve mappings above confidence threshold
+                        Auto-recommend SOD-clean mappings for bulk approval
                       </Label>
                     </div>
                     <p className="text-xs text-muted-foreground ml-7">
-                      When enabled, AI-generated mappings with confidence above the threshold will be automatically approved.
+                      When enabled, SOD-clean mappings with confidence above the threshold will be routed to approvers for bulk review. Approvers still review and confirm — this does not skip the approval step.
                     </p>
                   </div>
 

@@ -147,12 +147,13 @@ export function runSodAnalysis(): SodAnalysisResult {
     }
   }
 
-  // Auto-approve clean assignments if workflow.autoApprove is enabled and confidence >= threshold
+  // Auto-recommend: route SOD-clean high-confidence assignments to approver for bulk review
+  // (does NOT skip the approver — sets status to "ready_for_approval" so approver can confirm in bulk)
   const autoApprove = getSetting("workflow.autoApprove") === "true";
   if (autoApprove) {
     const confidenceThreshold = Number(getSetting("ai.confidenceThreshold") || "85");
 
-    // Get all compliance_approved assignments (just set above)
+    // Get all compliance_approved assignments (SOD-clean, just set above)
     const cleanAssignments = db
       .select()
       .from(schema.userTargetRoleAssignments)
@@ -170,12 +171,11 @@ export function runSodAnalysis(): SodAnalysisResult {
 
       const confidence = personaAssignment?.confidenceScore ?? 0;
       if (confidence >= confidenceThreshold) {
-        // Auto-approve: compliance_approved -> approved
+        // Route to approver: compliance_approved -> ready_for_approval
+        // Approver still needs to review and confirm — this just pre-qualifies them
         db.update(schema.userTargetRoleAssignments)
           .set({
-            status: "approved",
-            approvedBy: "auto_approve",
-            approvedAt: new Date().toISOString(),
+            status: "ready_for_approval",
             updatedAt: new Date().toISOString(),
           })
           .where(
