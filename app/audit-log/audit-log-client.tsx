@@ -3,11 +3,68 @@
 import { useState, useMemo } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import type { AuditLogRow } from "@/lib/queries";
+
+function relativeTime(iso: string): string {
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMs = now - then;
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 30) return `${diffDay}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+function formatAuditValue(val: string | null): string {
+  if (!val) return "\u2014";
+  try {
+    const parsed = JSON.parse(val);
+    if (typeof parsed === "object" && parsed !== null) {
+      return Object.entries(parsed)
+        .filter(([, v]) => v !== null && v !== undefined)
+        .map(([k, v]) => {
+          const label = k.replace(/([A-Z])/g, " $1").replace(/_/g, " ").replace(/Id$/, "").trim();
+          const capLabel = label.charAt(0).toUpperCase() + label.slice(1);
+          return `${capLabel}: ${v}`;
+        })
+        .join(", ");
+    }
+    return String(parsed);
+  } catch {
+    return val.length > 100 ? val.slice(0, 100) + "\u2026" : val;
+  }
+}
+
+const actionColors: Record<string, string> = {
+  create: "bg-emerald-50 text-emerald-700",
+  update: "bg-blue-50 text-blue-700",
+  delete: "bg-red-50 text-red-700",
+  confirm: "bg-teal-50 text-teal-700",
+  reset: "bg-orange-50 text-orange-700",
+  approve: "bg-emerald-50 text-emerald-700",
+  reject: "bg-red-50 text-red-700",
+};
+
+function getActionColor(action: string): string {
+  const lower = action.toLowerCase();
+  for (const [key, cls] of Object.entries(actionColors)) {
+    if (lower.includes(key)) return cls;
+  }
+  return "";
+}
 
 export function AuditLogClient({ logs }: { logs: AuditLogRow[] }) {
   const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
 
   const filtered = useMemo(() => {
     if (!search) return logs;
@@ -20,23 +77,22 @@ export function AuditLogClient({ logs }: { logs: AuditLogRow[] }) {
     );
   }, [logs, search]);
 
-  function formatTime(iso: string): string {
-    return new Date(iso).toLocaleString();
-  }
-
-  function truncateJson(val: string | null, max = 80): string {
-    if (!val) return "—";
-    return val.length > max ? val.slice(0, max) + "..." : val;
-  }
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, totalPages);
+  const startIdx = (safePage - 1) * pageSize;
+  const paged = filtered.slice(startIdx, startIdx + pageSize);
 
   return (
     <div className="space-y-3">
-      <Input
-        placeholder="Filter by entity type or action..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="max-w-sm"
-      />
+      <div className="relative max-w-sm">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+        <Input
+          placeholder="Filter by entity, action, or actor..."
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          className="pl-9"
+        />
+      </div>
 
       {filtered.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
@@ -49,34 +105,48 @@ export function AuditLogClient({ logs }: { logs: AuditLogRow[] }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px]">ID</TableHead>
-                <TableHead>Timestamp</TableHead>
+                <TableHead>When</TableHead>
                 <TableHead>Entity</TableHead>
-                <TableHead className="w-[60px]">Entity ID</TableHead>
                 <TableHead>Action</TableHead>
                 <TableHead>Actor</TableHead>
-                <TableHead>Old Value</TableHead>
-                <TableHead>New Value</TableHead>
+                <TableHead>Changes</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((log) => (
+              {paged.map((log) => (
                 <TableRow key={log.id}>
-                  <TableCell className="font-mono text-xs">{log.id}</TableCell>
-                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                    {formatTime(log.createdAt)}
+                  <TableCell
+                    className="text-xs text-muted-foreground whitespace-nowrap"
+                    title={new Date(log.createdAt).toLocaleString()}
+                  >
+                    {relativeTime(log.createdAt)}
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="text-xs">{log.entityType}</Badge>
+                    <span className="ml-1 text-xs text-muted-foreground font-mono">#{log.entityId}</span>
                   </TableCell>
-                  <TableCell className="font-mono text-xs">{log.entityId}</TableCell>
-                  <TableCell className="text-sm">{log.action}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className={`text-xs ${getActionColor(log.action)}`}>
+                      {log.action}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-xs">{log.actorEmail ?? "system"}</TableCell>
-                  <TableCell className="text-xs font-mono max-w-[150px] truncate" title={log.oldValue ?? undefined}>
-                    {truncateJson(log.oldValue)}
-                  </TableCell>
-                  <TableCell className="text-xs font-mono max-w-[150px] truncate" title={log.newValue ?? undefined}>
-                    {truncateJson(log.newValue)}
+                  <TableCell className="text-xs max-w-[300px]">
+                    {log.oldValue && log.newValue ? (
+                      <span title={`Old: ${log.oldValue}\nNew: ${log.newValue}`}>
+                        <span className="text-muted-foreground">{formatAuditValue(log.oldValue)}</span>
+                        <span className="mx-1 text-slate-300">{"\u2192"}</span>
+                        <span>{formatAuditValue(log.newValue)}</span>
+                      </span>
+                    ) : log.newValue ? (
+                      <span title={log.newValue}>{formatAuditValue(log.newValue)}</span>
+                    ) : log.oldValue ? (
+                      <span className="text-muted-foreground line-through" title={log.oldValue}>
+                        {formatAuditValue(log.oldValue)}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">{"\u2014"}</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
@@ -85,9 +155,21 @@ export function AuditLogClient({ logs }: { logs: AuditLogRow[] }) {
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground">
-        {filtered.length} of {logs.length} entries
-      </p>
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Showing {filtered.length === 0 ? 0 : startIdx + 1}–{Math.min(startIdx + pageSize, filtered.length)} of {filtered.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-xs text-muted-foreground tabular-nums">{safePage} / {totalPages}</span>
+          <Button variant="outline" size="sm" className="h-8 w-8 p-0" disabled={safePage >= totalPages} onClick={() => setPage(p => p + 1)}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

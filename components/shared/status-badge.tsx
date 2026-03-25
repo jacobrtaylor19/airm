@@ -2,13 +2,16 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  draft: { label: "Draft", className: "bg-zinc-100 text-zinc-700 hover:bg-zinc-100" },
-  persona_assigned: { label: "Persona Assigned", className: "bg-zinc-200 text-zinc-700 hover:bg-zinc-200" },
+  draft: { label: "Draft", className: "bg-slate-100 text-slate-600 hover:bg-slate-100" },
+  unmapped: { label: "Unmapped", className: "bg-slate-100 text-slate-600 hover:bg-slate-100" },
+  persona_assigned: { label: "Persona Assigned", className: "bg-blue-50 text-blue-700 hover:bg-blue-50" },
+  mapped: { label: "Mapped", className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-50" },
   sod_rejected: { label: "SOD Rejected", className: "bg-red-100 text-red-700 hover:bg-red-100" },
+  sod_conflict: { label: "SOD Conflict", className: "bg-red-50 text-red-700 hover:bg-red-50" },
   compliance_approved: { label: "Compliance OK", className: "bg-green-100 text-green-700 hover:bg-green-100" },
   sod_risk_accepted: { label: "Risk Accepted", className: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100" },
   ready_for_approval: { label: "Ready for Approval", className: "bg-blue-100 text-blue-700 hover:bg-blue-100" },
-  approved: { label: "Approved", className: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100" },
+  approved: { label: "Approved", className: "bg-emerald-50 text-emerald-700 hover:bg-emerald-50" },
   sod_escalated: { label: "Escalated to S/C", className: "bg-purple-100 text-purple-700 hover:bg-purple-100" },
   pending_design_review: { label: "Design Review", className: "bg-orange-100 text-orange-700 hover:bg-orange-100" },
 };

@@ -205,7 +205,23 @@ export function PersonasPageClient({
       {/* Persona Confirmation Status Banner */}
       {orgUnits.length > 0 && (
         <div className="rounded-lg border bg-card p-4 space-y-3 mb-4">
-          <h3 className="text-sm font-semibold">Persona Confirmation Status</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold">Persona Confirmation Status</h3>
+            {!loading && (
+              <span className="text-xs font-medium text-muted-foreground">
+                {confirmedOrgUnitIds.size} of {orgUnits.length} confirmed
+              </span>
+            )}
+          </div>
+          {/* Progress bar */}
+          {!loading && (
+            <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                style={{ width: `${orgUnits.length > 0 ? (confirmedOrgUnitIds.size / orgUnits.length) * 100 : 0}%` }}
+              />
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             Personas must be confirmed per org unit before target role mapping can proceed.
           </p>
