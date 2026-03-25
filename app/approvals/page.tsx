@@ -56,6 +56,7 @@ export default function ApprovalsPage() {
           sodRiskAccepted: sodRiskAccepted.length,
           total: queue.length,
         }}
+        userRole={user.role}
       />
     </div>
   );

@@ -9,8 +9,8 @@ export default function SodConflictAnalysisPage() {
   const currentUser = getSessionUser();
   let conflicts = getSodConflictsDetailed();
 
-  // Filter by org scope for mappers/approvers
-  if (currentUser && ["mapper", "approver"].includes(currentUser.role)) {
+  // Filter by org scope for mappers/approvers/coordinators
+  if (currentUser && ["mapper", "approver", "coordinator"].includes(currentUser.role)) {
     const scopedUserIds = getUserScope(currentUser);
     if (scopedUserIds !== null) {
       const idSet = new Set(scopedUserIds);

@@ -22,15 +22,20 @@ interface ApprovalsProps {
     sodRiskAccepted: number;
     total: number;
   };
+  userRole?: string;
 }
 
-export function ApprovalsClient({ queue, counts }: ApprovalsProps) {
+export function ApprovalsClient({ queue, counts, userRole }: ApprovalsProps) {
   const [sendBackDialog, setSendBackDialog] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState<number | null>(null);
   const [sendBackReason, setSendBackReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [bulkApproving, setBulkApproving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const router = useRouter();
+
+  const isViewer = userRole === "viewer";
+  const canApprove = !isViewer;
 
   async function approveMapping(assignmentId: number) {
     try {
@@ -88,7 +93,41 @@ export function ApprovalsClient({ queue, counts }: ApprovalsProps) {
       alert(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
       setBulkApproving(false);
+      setSelectedIds([]);
       router.refresh();
+    }
+  }
+
+  async function approveSelected() {
+    if (selectedIds.length === 0) return;
+    setSubmitting(true);
+    let approved = 0;
+    for (const id of selectedIds) {
+      try {
+        const res = await fetch("/api/approvals/approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assignmentId: id }),
+        });
+        if (res.ok) approved++;
+      } catch { /* continue */ }
+    }
+    setSubmitting(false);
+    setSelectedIds([]);
+    alert(`Approved ${approved} of ${selectedIds.length} selected assignments.`);
+    router.refresh();
+  }
+
+  function toggleSelect(id: number) {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  function toggleSelectAll() {
+    const approvableIds = actionable.filter(a => a.status !== "approved").map(a => a.assignmentId);
+    if (selectedIds.length === approvableIds.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(approvableIds);
     }
   }
 
@@ -131,18 +170,29 @@ export function ApprovalsClient({ queue, counts }: ApprovalsProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
-        <Button onClick={bulkApprove} disabled={bulkApproving || counts.readyForApproval === 0}>
-          {bulkApproving ? (
-            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Approving...</>
-          ) : (
-            <><CheckCircle className="h-4 w-4 mr-2" /> Bulk Approve (High Confidence)</>
+      {canApprove && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button onClick={bulkApprove} disabled={bulkApproving || counts.readyForApproval === 0}>
+            {bulkApproving ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Approving...</>
+            ) : (
+              <><CheckCircle className="h-4 w-4 mr-2" /> Bulk Approve (High Confidence)</>
+            )}
+          </Button>
+          {selectedIds.length > 0 && (
+            <Button onClick={approveSelected} disabled={submitting} variant="outline">
+              {submitting ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Approving...</>
+              ) : (
+                <><CheckCircle className="h-4 w-4 mr-2" /> Approve Selected ({selectedIds.length})</>
+              )}
+            </Button>
           )}
-        </Button>
-        <span className="text-xs text-muted-foreground">
-          Approves ready_for_approval assignments with confidence &ge; 85%
-        </span>
-      </div>
+          <span className="text-xs text-muted-foreground">
+            Bulk approves ready_for_approval assignments with confidence &ge; 85%
+          </span>
+        </div>
+      )}
 
       {/* Queue Table */}
       {actionable.length === 0 ? (
@@ -162,6 +212,16 @@ export function ApprovalsClient({ queue, counts }: ApprovalsProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {canApprove && (
+                    <TableHead className="w-10">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary"
+                        checked={selectedIds.length > 0 && selectedIds.length === actionable.filter(x => x.status !== "approved").length}
+                        onChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                  )}
                   <TableHead>User</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Persona</TableHead>
@@ -169,12 +229,24 @@ export function ApprovalsClient({ queue, counts }: ApprovalsProps) {
                   <TableHead>Confidence</TableHead>
                   <TableHead>SOD</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  {canApprove && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {actionable.map((a) => (
                   <TableRow key={a.assignmentId}>
+                    {canApprove && (
+                      <TableCell>
+                        {a.status !== "approved" && (
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-primary"
+                            checked={selectedIds.includes(a.assignmentId)}
+                            onChange={() => toggleSelect(a.assignmentId)}
+                          />
+                        )}
+                      </TableCell>
+                    )}
                     <TableCell className="text-sm font-medium">{a.userName}</TableCell>
                     <TableCell className="text-sm">{a.department ?? "—"}</TableCell>
                     <TableCell className="text-sm">{a.personaName ?? "—"}</TableCell>
@@ -192,31 +264,33 @@ export function ApprovalsClient({ queue, counts }: ApprovalsProps) {
                     <TableCell>
                       <StatusBadge status={a.status} />
                     </TableCell>
-                    <TableCell>
-                      {a.status === "ready_for_approval" && (
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => approveMapping(a.assignmentId)}
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" /> Approve
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            onClick={() => {
-                              setSelectedAssignment(a.assignmentId);
-                              setSendBackDialog(true);
-                            }}
-                          >
-                            <XCircle className="h-3 w-3 mr-1" /> Send Back
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
+                    {canApprove && (
+                      <TableCell>
+                        {a.status !== "approved" && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => approveMapping(a.assignmentId)}
+                            >
+                              <CheckCircle className="h-3 w-3 mr-1" /> Approve
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                setSelectedAssignment(a.assignmentId);
+                                setSendBackDialog(true);
+                              }}
+                            >
+                              <XCircle className="h-3 w-3 mr-1" /> Send Back
+                            </Button>
+                          </div>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>

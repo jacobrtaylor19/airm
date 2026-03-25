@@ -427,6 +427,26 @@ export const auditLog = sqliteTable("audit_log", {
 });
 
 // ─────────────────────────────────────────────
+// SECURITY DESIGN CHANGES (target system role diffs)
+// Records when a target role's permissions change after mappings exist.
+// The triggering mechanism (integration adapter) is a roadmap item;
+// this table + the pending_design_review status are the plumbing.
+// ─────────────────────────────────────────────
+
+export const securityDesignChanges = sqliteTable("security_design_changes", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
+  changeType: text("change_type").notNull(), // "permission_added" | "permission_removed" | "role_modified" | "role_deleted"
+  changeDescription: text("change_description"),
+  detectedAt: text("detected_at").notNull().$defaultFn(() => new Date().toISOString()),
+  detectedBy: text("detected_by"), // "integration_adapter" | manual username
+  affectedMappingCount: integer("affected_mapping_count").default(0),
+  acknowledgedBy: text("acknowledged_by"),
+  acknowledgedAt: text("acknowledged_at"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
 // SYSTEM SETTINGS (key-value configuration store)
 // ─────────────────────────────────────────────
 
@@ -551,6 +571,7 @@ export const targetRolesRelations = relations(targetRoles, ({ many }) => ({
   taskRoles: many(targetSecurityRoleTasks),
   personaMappings: many(personaTargetRoleMappings),
   userAssignments: many(userTargetRoleAssignments),
+  designChanges: many(securityDesignChanges),
 }));
 
 export const targetTaskRolesRelations = relations(targetTaskRoles, ({ many }) => ({
@@ -634,4 +655,8 @@ export const appUserSessionsRelations = relations(appUserSessions, ({ one }) => 
 
 export const workAssignmentsRelations = relations(workAssignments, ({ one }) => ({
   appUser: one(appUsers, { fields: [workAssignments.appUserId], references: [appUsers.id] }),
+}));
+
+export const securityDesignChangesRelations = relations(securityDesignChanges, ({ one }) => ({
+  targetRole: one(targetRoles, { fields: [securityDesignChanges.targetRoleId], references: [targetRoles.id] }),
 }));

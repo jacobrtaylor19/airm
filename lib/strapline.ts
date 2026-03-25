@@ -101,7 +101,8 @@ function projectStrapline(stats: StraplineStats): { text: string; tone: "positiv
   };
 }
 
-function areaStrapline(role: string, scopedStats: ScopedStats, _displayName: string): string {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function areaStrapline(role: string, scopedStats: ScopedStats, displayName: string): string {
   const { deptCount, userCount, mappedPersonaCount, totalPersonaCount, pendingApprovals } = scopedStats;
 
   if (userCount === 0) {

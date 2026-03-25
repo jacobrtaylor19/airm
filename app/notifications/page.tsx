@@ -42,7 +42,8 @@ export default function NotificationsPage() {
         .where(ne(schema.appUsers.id, user.id))
         .all()
         .filter(u => u.isActive !== false && ["mapper", "approver"].includes(u.role))
-        .map(({ isActive: _ia, ...rest }) => rest)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        .map(({ isActive, ...rest }) => rest)
     : [];
 
   // Sent notifications (for coordinators to track what they sent)

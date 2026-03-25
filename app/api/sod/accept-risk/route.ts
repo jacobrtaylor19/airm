@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Only approvers and admins can accept risk
-    if (user.role !== "approver" && user.role !== "admin") {
+    if (user.role !== "approver" && user.role !== "admin" && user.role !== "system_admin") {
       return NextResponse.json({ error: "Only approvers can accept SOD risk." }, { status: 403 });
     }
 

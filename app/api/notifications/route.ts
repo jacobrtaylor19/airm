@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, desc, or } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
 // PATCH — mark notification as read
 export async function PATCH(req: NextRequest) {
-  const user = requireAuth();
+  requireAuth();
   const body = await req.json();
   const { id } = body;
 

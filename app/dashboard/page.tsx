@@ -11,7 +11,7 @@ import { DashboardFiltered } from "./dashboard-filtered";
 import { generateStrapline } from "@/lib/strapline";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, inArray, count, sql } from "drizzle-orm";
+import { inArray, count, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 

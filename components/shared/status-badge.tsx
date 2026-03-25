@@ -9,6 +9,8 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   sod_risk_accepted: { label: "Risk Accepted", className: "bg-yellow-100 text-yellow-700 hover:bg-yellow-100" },
   ready_for_approval: { label: "Ready for Approval", className: "bg-blue-100 text-blue-700 hover:bg-blue-100" },
   approved: { label: "Approved", className: "bg-emerald-100 text-emerald-800 hover:bg-emerald-100" },
+  sod_escalated: { label: "Escalated to S/C", className: "bg-purple-100 text-purple-700 hover:bg-purple-100" },
+  pending_design_review: { label: "Design Review", className: "bg-orange-100 text-orange-700 hover:bg-orange-100" },
 };
 
 export function StatusBadge({ status }: { status: string }) {

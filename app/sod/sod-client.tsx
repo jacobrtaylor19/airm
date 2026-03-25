@@ -49,6 +49,7 @@ const statusConfig: Record<string, { color: string; label: string }> = {
   risk_accepted: { color: "bg-green-50 text-green-700 border-green-200", label: "Risk Accepted" },
   mapping_fixed: { color: "bg-green-50 text-green-700 border-green-200", label: "Resolved - Mapping Fixed" },
   escalated: { color: "bg-purple-50 text-purple-700 border-purple-200", label: "Escalated" },
+  sod_escalated: { color: "bg-purple-50 text-purple-700 border-purple-200", label: "Escalated to S/C" },
 };
 
 export function SodPageClient({
@@ -201,13 +202,14 @@ export function SodPageClient({
     }
   }
 
-  async function escalateToSecurity(conflictId: number) {
+  async function escalateToSecurity(conflictId: number, comment: string) {
+    if (!comment.trim()) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/sod/escalate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conflictId }),
+        body: JSON.stringify({ conflictId, comment: comment.trim() }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -454,14 +456,21 @@ export function SodPageClient({
                                 Send this conflict to the Security/GRC team for role redesign. They will review
                                 and split the role to eliminate the inherent conflict.
                               </p>
+                              <Input
+                                placeholder="Explain why you are escalating (required)..."
+                                value={expandedId === c.id ? justification : ""}
+                                onChange={(e) => setJustification(e.target.value)}
+                                className="text-xs h-7"
+                                onClick={(e) => e.stopPropagation()}
+                              />
                               <Button
                                 size="sm"
                                 variant="outline"
                                 className="w-full text-xs h-7 mt-1 border-purple-300 text-purple-700 hover:bg-purple-50"
-                                disabled={submitting}
+                                disabled={!justification.trim() || submitting}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  escalateToSecurity(c.id);
+                                  escalateToSecurity(c.id, justification);
                                 }}
                               >
                                 {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : (

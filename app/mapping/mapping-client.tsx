@@ -28,9 +28,10 @@ interface MappingClientProps {
   gapSummary?: GapAnalysisSummary;
   refinementDetails?: UserRefinementDetail[];
   excessThreshold?: number;
+  userRole?: string;
 }
 
-export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30 }: MappingClientProps) {
+export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30, userRole }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const router = useRouter();
@@ -129,15 +130,17 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
 
       {/* Tab A: Persona Mapping */}
       <TabsContent value="persona-mapping" className="mt-4">
-        <div className="flex items-center gap-3 mb-4">
-          <Button onClick={autoMapAll} disabled={autoMapping}>
-            {autoMapping ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Auto-Mapping...</>
-            ) : (
-              <><Zap className="h-4 w-4 mr-2" /> Auto-Map All (Least Access)</>
-            )}
-          </Button>
-        </div>
+        {userRole !== "viewer" && (
+          <div className="flex items-center gap-3 mb-4">
+            <Button onClick={autoMapAll} disabled={autoMapping}>
+              {autoMapping ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Auto-Mapping...</>
+              ) : (
+                <><Zap className="h-4 w-4 mr-2" /> Auto-Map All (Least Access)</>
+              )}
+            </Button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Left: Persona list */}

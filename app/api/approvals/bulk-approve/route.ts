@@ -2,11 +2,19 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
   try {
+    const user = getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+    if (user.role === "viewer") {
+      return NextResponse.json({ error: "Insufficient permissions. Viewer role cannot approve assignments." }, { status: 403 });
+    }
     // Find all assignments ready for approval where the user has high confidence (>= 85)
     const candidates = db.select({
       assignmentId: schema.userTargetRoleAssignments.id,

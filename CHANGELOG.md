@@ -21,10 +21,23 @@ All notable feature additions and changes are documented here. Most recent first
 - Helper `n()` utility handles pluralisation throughout
 - Area straplines (mapper/approver/coordinator) updated with matching tone
 
+### Sidebar — nav cleanup
+- Removed "Least Access" nav link (analysis moved to dashboard)
+- Removed "Legacy Access Browser" (Data Explorer) from DATA section
+- Sidebar now contains only actively-used routes
+
+### Deployment — Render.com
+- Added `render.yaml` blueprint: Node web service, Oregon region, Starter plan
+- Persistent disk at `/data` (1 GB) for SQLite across deploys and restarts
+- `DATABASE_PATH=/data/airm.db` env var wired through `db/index.ts` and `drizzle.config.ts`
+- `ANTHROPIC_API_KEY` declared with `sync: false` (set manually in Render dashboard)
+- New `scripts/start.sh`: pushes schema on every start, seeds only on first run (checks `app_users` count to detect blank DB)
+
 ### Documentation
 - Replaced default Next.js README with full project documentation (`README.md`)
 - Created `CLAUDE.md` with developer and AI-assistant context, gotchas, and file map
 - Created `docs/PRESENTATION_CONTENT.md` with structured slide content for 5 decks
+- Created `CHANGELOG.md` (this file) and `docs/ROADMAP.md`
 
 ---
 

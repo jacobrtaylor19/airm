@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,7 @@ function excessSeverityLabel(excess: number, threshold: number) {
   return { label: "Low", variant: "outline" as const, color: "text-yellow-700" };
 }
 
-export function LeastAccessClient({ rows, summary, threshold, userRole, userName }: LeastAccessClientProps) {
+export function LeastAccessClient({ rows, summary, threshold, userRole }: LeastAccessClientProps) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "excepted">("all");

@@ -2,6 +2,9 @@
 
 This file gives Claude Code the context needed to work effectively in this codebase. Read before making changes.
 
+> **Documentation index:** For a full map of all project docs (specs, PRDs, testing, deployment, archive), see `DOC_INDEX.md` in the project root (`AI Role Mapping Tool/DOC_INDEX.md`).
+> **Session state:** Check `CLAUDE_CODE_ONGOING_UPDATES.md` for the latest build state, known issues, and recent changes.
+
 ---
 
 ## What this project is

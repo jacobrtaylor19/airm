@@ -92,7 +92,7 @@ function typeVariant(type: string): "destructive" | "secondary" | "outline" {
   return "outline";
 }
 
-export function NotificationsClient({ inbox, sent, recipients, canSend, currentUserId }: NotificationsClientProps) {
+export function NotificationsClient({ inbox, sent, recipients, canSend }: NotificationsClientProps) {
   const router = useRouter();
   const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
   const [notificationType, setNotificationType] = useState("reminder");

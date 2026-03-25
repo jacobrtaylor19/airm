@@ -62,9 +62,11 @@ export async function POST(req: NextRequest) {
       )).all();
 
     if (remainingOpen.length === 0) {
-      // All conflicts resolved — transition sod_rejected assignments back to ready_for_approval
+      // All conflicts resolved — transition sod_rejected assignments back to DRAFT
+      // so they re-enter SOD analysis before reaching compliance_approved.
+      // A fix does NOT skip the SOD gate.
       db.update(schema.userTargetRoleAssignments).set({
-        status: "ready_for_approval",
+        status: "draft",
         updatedAt: new Date().toISOString(),
       }).where(and(
         eq(schema.userTargetRoleAssignments.userId, conflict.userId),

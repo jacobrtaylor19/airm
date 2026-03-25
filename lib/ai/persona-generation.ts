@@ -170,18 +170,6 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
   const profiles = assembleUserProfiles();
   const prompt = buildPrompt(profiles);
 
-  // Clear existing AI-generated data
-  db.delete(schema.userPersonaAssignments).run();
-  db.delete(schema.personaSourcePermissions).run();
-  db.delete(schema.personas).where(eq(schema.personas.source, "ai")).run();
-  // Only delete groups that have no remaining personas
-  const groupsWithPersonas = db.select({ id: schema.consolidatedGroups.id }).from(schema.consolidatedGroups)
-    .innerJoin(schema.personas, eq(schema.personas.consolidatedGroupId, schema.consolidatedGroups.id))
-    .all().map(g => g.id);
-  if (groupsWithPersonas.length === 0) {
-    db.delete(schema.consolidatedGroups).run();
-  }
-
   const text = await provider.generateText(prompt);
   // Extract JSON from response (may be wrapped in markdown code block)
   const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -190,10 +178,14 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
   const result: GenerationResult = JSON.parse(jsonMatch[0]);
 
   // Clear ALL existing data for fresh generation
+  // Order matters: delete children before parents to satisfy FK constraints
+  // (userTargetRoleAssignments.derivedFromPersonaId references personas without CASCADE)
   db.delete(schema.userPersonaAssignments).run();
   db.delete(schema.personaSourcePermissions).run();
   db.delete(schema.personaTargetRoleMappings).run();
   db.delete(schema.userTargetRoleAssignments).run();
+  db.delete(schema.permissionGaps).run();
+  db.delete(schema.leastAccessExceptions).run();
   db.delete(schema.personas).run();
   db.delete(schema.consolidatedGroups).run();
 

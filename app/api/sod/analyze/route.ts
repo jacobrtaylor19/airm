@@ -3,14 +3,32 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { runSodAnalysis } from "@/lib/sod/sod-analysis";
+import { getSessionUser } from "@/lib/auth";
+import { getUserScope } from "@/lib/scope";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
+  const user = getSessionUser();
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  if (user.role === "viewer") {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  }
+
+  // Capture user scope at enqueue time for job isolation (WORKFLOW.md Note 6)
+  const scopedUserIds = getUserScope(user);
+
   const job = db.insert(schema.processingJobs).values({
     jobType: "sod_analysis",
     status: "running",
     startedAt: new Date().toISOString(),
+    config: JSON.stringify({
+      triggeredBy: user.username,
+      triggeredByRole: user.role,
+      scopedUserIds: scopedUserIds,
+    }),
   }).returning().get();
 
   try {

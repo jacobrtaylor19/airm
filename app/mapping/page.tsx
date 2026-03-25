@@ -121,6 +121,7 @@ export default function MappingPage() {
         gapSummary={gapSummary}
         refinementDetails={refinementDetails}
         excessThreshold={excessThreshold}
+        userRole={user.role}
       />
     </div>
   );
