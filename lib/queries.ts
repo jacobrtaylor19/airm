@@ -1372,7 +1372,9 @@ export function getSodConflictDetail(conflictId: number): SodConflictDetailed | 
 
 export interface AssignedMapperApprover {
   mapperName: string | null;
+  mapperOrgUnitName: string | null;
   approverName: string | null;
+  approverOrgUnitName: string | null;
 }
 
 /**
@@ -1381,7 +1383,7 @@ export interface AssignedMapperApprover {
  * the closest mapper/approver assignment.
  */
 export function getAssignedMapperApproverForUser(orgUnitId: number | null): AssignedMapperApprover {
-  if (!orgUnitId) return { mapperName: null, approverName: null };
+  if (!orgUnitId) return { mapperName: null, mapperOrgUnitName: null, approverName: null, approverOrgUnitName: null };
 
   // Get all org units to build the ancestry chain
   const allOrgUnits = db.select().from(schema.orgUnits).all();
@@ -1405,15 +1407,19 @@ export function getAssignedMapperApproverForUser(orgUnitId: number | null): Assi
 
   // Walk up the org hierarchy to find the closest assignment
   let mapperName: string | null = null;
+  let mapperOrgUnitName: string | null = null;
   let approverName: string | null = null;
+  let approverOrgUnitName: string | null = null;
   let currentId: number | null = orgUnitId;
 
   while (currentId !== null) {
     if (!mapperName && mapperByOu.has(currentId)) {
       mapperName = mapperByOu.get(currentId)!;
+      mapperOrgUnitName = orgUnitMap.get(currentId)?.name ?? null;
     }
     if (!approverName && approverByOu.has(currentId)) {
       approverName = approverByOu.get(currentId)!;
+      approverOrgUnitName = orgUnitMap.get(currentId)?.name ?? null;
     }
     if (mapperName && approverName) break;
 
@@ -1421,7 +1427,7 @@ export function getAssignedMapperApproverForUser(orgUnitId: number | null): Assi
     currentId = unit?.parentId ?? null;
   }
 
-  return { mapperName, approverName };
+  return { mapperName, mapperOrgUnitName, approverName, approverOrgUnitName };
 }
 
 // ─────────────────────────────────────────────

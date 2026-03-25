@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { runPersonaAssignment } from "@/lib/ai/persona-assignment";
 
+export const dynamic = "force-dynamic";
+
 export async function POST() {
   const job = db.insert(schema.processingJobs).values({
     jobType: "persona_assignment",

@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { runTargetRoleMapping } from "@/lib/ai/target-role-mapping";
 
+export const dynamic = "force-dynamic";
+
 export async function POST() {
   const job = db.insert(schema.processingJobs).values({
     jobType: "target_role_mapping",

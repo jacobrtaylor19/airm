@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { verifyPassword, createSession } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const { username, password } = await req.json();

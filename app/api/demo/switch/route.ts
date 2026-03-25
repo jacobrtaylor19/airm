@@ -3,6 +3,8 @@ import { execSync } from "child_process";
 import { existsSync } from "fs";
 import path from "path";
 
+export const dynamic = "force-dynamic";
+
 const VALID_DEMOS = ["default", "energy-chemicals-s4hana", "financial-services-s4hana"];
 
 export async function POST(req: NextRequest) {

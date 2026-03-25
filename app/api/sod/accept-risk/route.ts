@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const user = getSessionUser();

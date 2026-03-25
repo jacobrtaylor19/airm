@@ -21,7 +21,7 @@ function getCount(table: any) {
 
 export default function DataUploadPage() {
   const user = requireAuth();
-  const isAdmin = user.role === "admin";
+  const isAdmin = user.role === "admin" || user.role === "system_admin";
   const sourceSystemStats = getSourceSystemStats();
   const appUserCount = db.select({ count: count() }).from(schema.appUsers)
     .where(ne(schema.appUsers.role, "system_admin"))
@@ -158,8 +158,8 @@ export default function DataUploadPage() {
         />
         <UploadCard
           type="app-users"
-          label="Mappers & Approvers"
-          description="Upload mapper, approver, admin, and viewer definitions with org unit assignments"
+          label="AIRM Users"
+          description="Upload AIRM application users (admins, mappers, approvers, viewers) with org unit assignments"
           expectedColumns="username, password, display_name, role, email, org_unit_name"
           required={false}
           existingCount={counts.appUsers}

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getAllSettings, setSetting } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const user = getSessionUser();
   if (!user || user.role !== "system_admin") {

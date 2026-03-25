@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { generateProvisioningCsv } from "@/lib/exports/provisioning-export";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const csv = generateProvisioningCsv();

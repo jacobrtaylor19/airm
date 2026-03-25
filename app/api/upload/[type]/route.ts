@@ -6,6 +6,8 @@ import { parse } from "csv-parse/sync";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
+export const dynamic = "force-dynamic";
+
 type UploadType =
   | "users"
   | "source-roles"
@@ -345,7 +347,7 @@ async function commitUpload(
     case "app-users": {
       for (const row of records) {
         try {
-          const validRoles = ["mapper", "approver", "admin", "viewer"];
+          const validRoles = ["mapper", "approver", "admin", "viewer", "system_admin"];
           const role = row.role?.toLowerCase().trim();
           if (!validRoles.includes(role)) {
             errors.push(`Row ${inserted + skipped + 1}: invalid role "${row.role}" — must be one of ${validRoles.join(", ")}`);

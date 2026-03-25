@@ -15,6 +15,9 @@ import {
   UserCheck,
   ShieldAlert,
   CheckCircle,
+  CheckCircle2,
+  Circle,
+  XCircle,
   Link as LinkIcon,
   ChevronRight,
 } from "lucide-react";
@@ -189,13 +192,13 @@ export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; ha
   const statusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <span className="text-green-600">&#10003;</span>;
+        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
       case "failed":
-        return <span className="text-red-600">&#10007;</span>;
+        return <XCircle className="h-4 w-4 text-red-600" />;
       case "running":
         return <Loader2 className="h-4 w-4 animate-spin text-blue-600" />;
       default:
-        return <span className="text-muted-foreground">\u25CB</span>;
+        return <Circle className="h-4 w-4 text-muted-foreground" />;
     }
   };
 

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { generateSodExceptionCsv } from "@/lib/exports/sod-exception-report";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const csv = generateSodExceptionCsv();

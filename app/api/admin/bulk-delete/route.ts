@@ -5,6 +5,8 @@ import { inArray } from "drizzle-orm";
 import { getSessionUserFromToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 
+export const dynamic = "force-dynamic";
+
 const ALLOWED_ENTITIES = {
   users: schema.users,
   personas: schema.personas,

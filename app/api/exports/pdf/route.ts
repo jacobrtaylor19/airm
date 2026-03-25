@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { generatePdfReport } from "@/lib/exports/pdf-report";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const buffer = await generatePdfReport();

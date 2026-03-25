@@ -20,6 +20,7 @@ import {
   UserCog,
   GitBranch,
   Database,
+  Wrench,
 } from "lucide-react";
 import { AIRMLogo } from "@/components/layout/airm-logo";
 
@@ -33,6 +34,7 @@ interface NavSection {
   label: string;
   items: NavItem[];
   adminOnly?: boolean;
+  sysadminOnly?: boolean;
 }
 
 const navSections: NavSection[] = [
@@ -73,6 +75,13 @@ const navSections: NavSection[] = [
     ],
   },
   {
+    label: "SYSTEM",
+    sysadminOnly: true,
+    items: [
+      { href: "/admin", label: "Config Console", icon: Wrench },
+    ],
+  },
+  {
     label: "",
     items: [
       { href: "/jobs", label: "Jobs", icon: Cog },
@@ -93,7 +102,11 @@ export function Sidebar({ userRole }: { userRole: string }) {
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">
         {navSections
-          .filter((section) => !section.adminOnly || userRole === "admin")
+          .filter((section) => {
+            if (section.sysadminOnly) return userRole === "system_admin";
+            if (section.adminOnly) return userRole === "admin" || userRole === "system_admin";
+            return true;
+          })
           .map((section, si) => (
             <div key={si} className="mb-4">
               {section.label && (

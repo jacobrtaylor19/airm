@@ -8,11 +8,13 @@ import { ArrowRight, User, Shield, Users } from "lucide-react";
 import Link from "next/link";
 import { UserSodConflicts } from "./user-sod-conflicts";
 
+export const dynamic = "force-dynamic";
+
 export default function UserDetailPage({ params }: { params: { userId: string } }) {
   const user = getUserDetail(Number(params.userId));
   if (!user) return notFound();
 
-  const { mapperName, approverName } = getAssignedMapperApproverForUser(user.orgUnitId);
+  const { mapperName, mapperOrgUnitName, approverName, approverOrgUnitName } = getAssignedMapperApproverForUser(user.orgUnitId);
 
   return (
     <div className="space-y-6">
@@ -69,7 +71,12 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
               <span className="text-muted-foreground">Assigned Mapper</span>
               <p className="font-medium">
                 {mapperName ? (
-                  mapperName
+                  <>
+                    {mapperName}
+                    {mapperOrgUnitName && (
+                      <span className="text-muted-foreground font-normal text-xs ml-1">(via {mapperOrgUnitName})</span>
+                    )}
+                  </>
                 ) : (
                   <span className="text-amber-600">Unassigned</span>
                 )}
@@ -79,13 +86,21 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
               <span className="text-muted-foreground">Assigned Approver</span>
               <p className="font-medium">
                 {approverName ? (
-                  approverName
+                  <>
+                    {approverName}
+                    {approverOrgUnitName && (
+                      <span className="text-muted-foreground font-normal text-xs ml-1">(via {approverOrgUnitName})</span>
+                    )}
+                  </>
                 ) : (
                   <span className="text-amber-600">Unassigned</span>
                 )}
               </p>
             </div>
           </div>
+          <p className="text-xs text-muted-foreground mt-3">
+            Mapper and approver assignments are managed at the org hierarchy level in the Config Console.
+          </p>
         </CardContent>
       </Card>
 
