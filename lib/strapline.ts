@@ -92,18 +92,18 @@ function projectStrapline(stats: StraplineStats, role: string): { text: string; 
   if (role === "approver") {
     if (readyForApproval > 0) {
       return {
-        text: `${n(readyForApproval, "assignment")} ${readyForApproval === 1 ? "is" : "are"} waiting for your review. This is the critical path — approve or flag them to keep the project moving.`,
+        text: `${n(readyForApproval, "assignment")} ready for your review. Head to Approvals to review and approve.`,
         tone: "action",
       };
     }
     if (openConflicts > 0) {
       return {
-        text: `Your approval queue is blocked by ${n(openConflicts, "SOD conflict")}. These need resolution before new assignments can reach you.`,
+        text: `${n(openConflicts, "SOD conflict")} need resolution before assignments can reach your queue. Check SOD Analysis for details.`,
         tone: "warning",
       };
     }
     return {
-      text: `Approval queue is clear. ${approvalPercent}% of all assignments approved — watch for new items as mapping completes.`,
+      text: `Approval queue is clear. ${approvalPercent}% of assignments approved.`,
       tone: approvalPercent >= 80 ? "positive" : "neutral",
     };
   }
@@ -113,18 +113,18 @@ function projectStrapline(stats: StraplineStats, role: string): { text: string; 
     if (mappedPercent < 100 && totalPersonas > 0) {
       const unmapped = totalPersonas - personasWithMapping;
       return {
-        text: `${n(unmapped, "persona")} still need${unmapped === 1 ? "s" : ""} target role assignments — that's your priority. ${mappedPercent}% complete.`,
-        tone: unmapped > 5 ? "warning" : "action",
+        text: `${n(unmapped, "persona")} need${unmapped === 1 ? "s" : ""} target role assignments. Head to Role Mapping to continue. ${mappedPercent}% complete.`,
+        tone: "action",
       };
     }
     if (lowConfidence > 0) {
       return {
-        text: `All personas mapped. Review ${n(lowConfidence, "low-confidence assignment")} before handing off to approvers.`,
+        text: `All personas mapped. ${n(lowConfidence, "low-confidence assignment")} to review in Role Mapping before handoff to approvers.`,
         tone: "warning",
       };
     }
     return {
-      text: `All ${n(totalPersonas, "persona")} mapped. Waiting on approvals — ${approvalPercent}% approved so far.`,
+      text: `All ${n(totalPersonas, "persona")} mapped. ${approvalPercent}% approved so far.`,
       tone: "positive",
     };
   }
@@ -132,16 +132,16 @@ function projectStrapline(stats: StraplineStats, role: string): { text: string; 
   // ── Coordinator: workflow oversight ──
   if (role === "coordinator") {
     const parts: string[] = [];
-    if (coveragePercent < 100) parts.push(`${100 - coveragePercent}% of users still need persona assignments`);
+    if (coveragePercent < 100) parts.push(`${100 - coveragePercent}% of users need persona assignments`);
     if (mappedPercent < 100 && totalPersonas > 0) parts.push(`${mappedPercent}% of personas mapped`);
-    if (readyForApproval > 0) parts.push(`${n(readyForApproval, "approval")} pending`);
-    if (openConflicts > 0) parts.push(`${n(openConflicts, "SOD conflict")} blocking`);
+    if (readyForApproval > 0) parts.push(`${n(readyForApproval, "approval")} pending review`);
+    if (openConflicts > 0) parts.push(`${n(openConflicts, "SOD conflict")} to resolve`);
 
     if (parts.length === 0) {
-      return { text: `Workflow on track — ${approvalPercent}% approved. Push for completion.`, tone: "positive" };
+      return { text: `Workflow on track — ${approvalPercent}% approved.`, tone: "positive" };
     }
     return {
-      text: parts.join(". ") + ".",
+      text: `Next steps: ${parts.join(", ")}.`,
       tone: openConflicts > 0 ? "action" : "warning",
     };
   }
@@ -158,31 +158,31 @@ function areaStrapline(role: string, scopedStats: ScopedStats, displayName: stri
   const { deptCount, userCount, mappedPersonaCount, totalPersonaCount, pendingApprovals } = scopedStats;
 
   if (userCount === 0) {
-    return "Your assigned area has no users yet — check your org assignments.";
+    return "Your assigned area has no users yet. Check your org unit assignments in Admin.";
   }
 
   if (role === "approver") {
     if ((pendingApprovals ?? 0) > 0) {
-      return `You have ${n(pendingApprovals!, "approval")} waiting in your queue across ${n(deptCount, "department")} — review and decide to keep this project moving.`;
+      return `${n(pendingApprovals!, "approval")} waiting across ${n(deptCount, "department")}. Head to Approvals to review.`;
     }
-    return `Approval queue is clear across your ${n(deptCount, "department")}. Watch for new assignments as mapping completes.`;
+    return `Approval queue is clear across your ${n(deptCount, "department")}.`;
   }
 
   if (role === "coordinator") {
     const mappedPct = totalPersonaCount > 0 ? Math.round((mappedPersonaCount / totalPersonaCount) * 100) : 0;
     const approvalNote = (pendingApprovals ?? 0) > 0
-      ? ` ${n(pendingApprovals!, "approval")} pending — chase your approvers.`
+      ? ` ${n(pendingApprovals!, "approval")} pending review.`
       : "";
-    return `Your area: ${n(userCount, "user")} across ${n(deptCount, "department")}, ${mappedPct}% mapped.${approvalNote} Follow up with mappers on any gaps.`;
+    return `Your area: ${n(userCount, "user")} across ${n(deptCount, "department")}, ${mappedPct}% mapped.${approvalNote}`;
   }
 
   // mapper
   const mappedPct = totalPersonaCount > 0 ? Math.round((mappedPersonaCount / totalPersonaCount) * 100) : 0;
   if (mappedPct === 100) {
-    return `All ${n(totalPersonaCount, "persona")} in your area ${totalPersonaCount === 1 ? "is" : "are"} mapped — well done. Check for SOD conflicts or low-confidence assignments that need attention.`;
+    return `All ${n(totalPersonaCount, "persona")} in your area mapped. Check for any SOD conflicts or low-confidence items to review.`;
   }
   const remaining = totalPersonaCount - mappedPersonaCount;
-  return `Your area: ${n(remaining, "persona")} still need${remaining === 1 ? "s" : ""} role assignments out of ${totalPersonaCount} total. That's your focus — the release depends on it.`;
+  return `Your area: ${n(remaining, "persona")} of ${totalPersonaCount} need${remaining === 1 ? "s" : ""} role assignments. Head to Role Mapping to continue.`;
 }
 
 export function generateStrapline(
