@@ -8,6 +8,41 @@ export async function generateExcelReport(): Promise<Buffer> {
   workbook.creator = "Provisum";
   workbook.created = new Date();
 
+  // Cover Sheet: Executive Summary
+  const cover = workbook.addWorksheet("Summary");
+  const allUsers = db.select().from(schema.users).all();
+  const allPersonas = db.select().from(schema.personas).all();
+  const allRoles = db.select().from(schema.targetRoles).all();
+  const allSodRules = db.select().from(schema.sodRules).all();
+  const allConflicts = db.select().from(schema.sodConflicts).all();
+
+  cover.getColumn("A").width = 30;
+  cover.getColumn("B").width = 25;
+
+  const titleRow = cover.addRow(["Provisum — Role Mapping Report"]);
+  titleRow.font = { bold: true, size: 16 };
+  cover.addRow([]);
+  cover.addRow(["Generated", new Date().toLocaleString()]);
+  cover.addRow([]);
+  const summaryHeader = cover.addRow(["Metric", "Value"]);
+  summaryHeader.font = { bold: true };
+  summaryHeader.eachCell((cell) => {
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E293B" } };
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
+  });
+  cover.addRow(["Total Users", allUsers.length]);
+  cover.addRow(["Total Personas", allPersonas.length]);
+  cover.addRow(["Target Roles Available", allRoles.length]);
+  cover.addRow(["SOD Rules", allSodRules.length]);
+  cover.addRow(["SOD Conflicts Detected", allConflicts.length]);
+  cover.addRow([]);
+  cover.addRow(["Sheets in this workbook:"]);
+  cover.addRow(["  1. User-Persona Mapping"]);
+  cover.addRow(["  2. Persona-Role Mapping"]);
+  cover.addRow(["  3. Full Mapping Chain"]);
+  cover.addRow(["  4. SOD Conflicts"]);
+  cover.addRow(["  5. Permission Gaps"]);
+
   // Sheet 1: User-Persona Mapping
   const sheet1 = workbook.addWorksheet("User-Persona Mapping");
   sheet1.columns = [

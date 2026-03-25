@@ -9,7 +9,7 @@ export async function GET() {
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="airm-audit-report-${new Date().toISOString().split("T")[0]}.pdf"`,
+        "Content-Disposition": `attachment; filename="provisum-audit-report-${new Date().toISOString().split("T")[0]}.pdf"`,
       },
     });
   } catch (err: unknown) {
