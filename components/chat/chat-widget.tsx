@@ -10,6 +10,47 @@ interface ChatMessage {
   content: string;
 }
 
+/** Lightweight inline markdown: **bold**, *italic*, `code`, and newlines */
+function renderMarkdown(text: string) {
+  // Split into paragraphs on double newlines
+  const paragraphs = text.split(/\n{2,}/);
+  return paragraphs.map((para, pi) => {
+    // Split each paragraph into lines
+    const lines = para.split("\n");
+    return (
+      <p key={pi} className={pi > 0 ? "mt-2" : undefined}>
+        {lines.map((line, li) => (
+          <span key={li}>
+            {li > 0 && <br />}
+            {renderInline(line)}
+          </span>
+        ))}
+      </p>
+    );
+  });
+}
+
+function renderInline(text: string) {
+  // Match **bold**, *italic*, `code`
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith("*") && part.endsWith("*")) {
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    }
+    if (part.startsWith("`") && part.endsWith("`")) {
+      return (
+        <code key={i} className="rounded bg-slate-200 px-1 py-0.5 text-xs font-mono">
+          {part.slice(1, -1)}
+        </code>
+      );
+    }
+    return part;
+  });
+}
+
 interface ChatWidgetProps {
   userRole: string;
   userName: string;
@@ -256,7 +297,9 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
                     : "bg-teal-50 text-slate-700"
                 )}
               >
-                {msg.content || (
+                {msg.content ? (
+                  renderMarkdown(msg.content)
+                ) : (
                   <span className="inline-flex items-center gap-1 text-slate-400">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     Thinking...

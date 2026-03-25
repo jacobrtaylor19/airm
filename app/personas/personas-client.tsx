@@ -114,6 +114,7 @@ export function PersonasPageClient({
   const [loading, setLoading] = useState(true);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
   const [resetDialogOrgUnit, setResetDialogOrgUnit] = useState<OrgUnitInfo | null>(null);
+  const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetting, setResetting] = useState(false);
 
   const fetchConfirmations = useCallback(async () => {
@@ -168,7 +169,7 @@ export function PersonasPageClient({
       });
       if (res.ok) {
         toast.success("Confirmation reset");
-        setResetDialogOrgUnit(null);
+        setShowResetDialog(false);
         await fetchConfirmations();
         router.refresh();
       } else {
@@ -252,7 +253,10 @@ export function PersonasPageClient({
                             variant="ghost"
                             size="sm"
                             className="ml-1 h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
-                            onClick={() => setResetDialogOrgUnit(ou)}
+                            onClick={() => {
+                              setResetDialogOrgUnit(ou);
+                              setShowResetDialog(true);
+                            }}
                           >
                             <RotateCcw className="h-3 w-3 mr-1" />
                             Reset
@@ -278,7 +282,12 @@ export function PersonasPageClient({
       )}
 
       {/* Reset Confirmation Warning Dialog */}
-      <Dialog open={!!resetDialogOrgUnit} onOpenChange={() => setResetDialogOrgUnit(null)}>
+      <Dialog
+        open={showResetDialog}
+        onOpenChange={(open) => {
+          if (!open) setShowResetDialog(false);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reset Persona Confirmation</DialogTitle>
@@ -289,13 +298,15 @@ export function PersonasPageClient({
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResetDialogOrgUnit(null)}>
+            <Button variant="outline" onClick={() => setShowResetDialog(false)}>
               Cancel
             </Button>
             <Button
               variant="destructive"
               disabled={resetting}
-              onClick={() => resetDialogOrgUnit && handleReset(resetDialogOrgUnit.id)}
+              onClick={() => {
+                if (resetDialogOrgUnit) handleReset(resetDialogOrgUnit.id);
+              }}
             >
               {resetting ? "Resetting..." : "Reset Confirmation"}
             </Button>

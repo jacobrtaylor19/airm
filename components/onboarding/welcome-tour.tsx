@@ -157,21 +157,31 @@ export function WelcomeTour({ userRole, userName }: WelcomeTourProps) {
           >
             Skip Tour
           </button>
-          {isLast ? (
-            <button
-              onClick={close}
-              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Get Started
-            </button>
-          ) : (
-            <button
-              onClick={() => setStep((s) => s + 1)}
-              className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-            >
-              Next
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {step > 0 && (
+              <button
+                onClick={() => setStep((s) => s - 1)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Previous
+              </button>
+            )}
+            {isLast ? (
+              <button
+                onClick={close}
+                className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                Get Started
+              </button>
+            ) : (
+              <button
+                onClick={() => setStep((s) => s + 1)}
+                className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              >
+                Next
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
