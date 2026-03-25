@@ -354,6 +354,7 @@ export function getUserDetail(id: number): UserDetail | null {
 export interface PersonaRow {
   id: number;
   name: string;
+  description: string | null;
   businessFunction: string | null;
   groupName: string | null;
   groupId: number | null;
@@ -366,6 +367,7 @@ export function getPersonas(): PersonaRow[] {
     .select({
       id: schema.personas.id,
       name: schema.personas.name,
+      description: schema.personas.description,
       businessFunction: schema.personas.businessFunction,
       groupName: schema.consolidatedGroups.name,
       groupId: schema.personas.consolidatedGroupId,
