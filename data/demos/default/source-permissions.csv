@@ -1,0 +1,111 @@
+permission_id,permission_name,description,system,risk_level
+FB60,Enter Invoice,Post vendor invoices to accounts payable,SAP ECC,Medium
+FBL1N,Vendor Line Items,Display vendor line item details,SAP ECC,Low
+FK10N,Vendor Balance Display,Display vendor account balances,SAP ECC,Low
+XK03,Display Vendor Master,View vendor master records,SAP ECC,Low
+ME23N,Display Purchase Order,View purchase order details,SAP ECC,Low
+FB03,Display Document,Display accounting documents,SAP ECC,Low
+MIRO,Invoice Verification,Verify and post invoices against POs,SAP ECC,Medium
+XK02,Change Vendor Master,Modify vendor master data,SAP ECC,High
+MRBR,Release Blocked Invoices,Release invoices from blocking,SAP ECC,High
+S_ALR_87012172,AP Aging Report,Accounts payable aging analysis,SAP ECC,Low
+FBL3N,GL Account Line Items,Display GL account line items,SAP ECC,Low
+S_ALR_87012197,Vendor Analysis,Vendor payment analysis report,SAP ECC,Low
+FAGLB03,Display GL Balances,Display general ledger balances,SAP ECC,Low
+ME2L,POs by Vendor,List purchase orders by vendor,SAP ECC,Low
+MK03,Display Vendor Account,Display vendor account group info,SAP ECC,Low
+F110,Payment Run,Execute automatic payment run,SAP ECC,High
+FBZP,Payment Parameters,Maintain payment program parameters,SAP ECC,High
+F-53,Post Vendor Payment,Manually post vendor payments,SAP ECC,Medium
+F110E,Payment Run Status,Display payment run execution status,SAP ECC,Low
+FB50,GL Account Posting,Post journal entries to GL,SAP ECC,High
+IW31,Create Maintenance Order,Create plant maintenance work orders,SAP ECC,Medium
+IW32,Change Maintenance Order,Modify existing maintenance orders,SAP ECC,Medium
+IW33,Display Maintenance Order,View maintenance order details,SAP ECC,Low
+IW38,Change Orders List Edit,Mass edit maintenance orders,SAP ECC,High
+IW39,Display Orders List,List display of maintenance orders,SAP ECC,Low
+IW41,Confirm Maintenance Order,Enter time and activity confirmations,SAP ECC,Medium
+IW21,Create Notification,Create maintenance notifications,SAP ECC,Low
+IW22,Change Notification,Modify maintenance notifications,SAP ECC,Low
+IW28,Change Notifications List,Mass edit notifications,SAP ECC,Medium
+IE01,Create Equipment,Create equipment master records,SAP ECC,Medium
+IE02,Change Equipment,Modify equipment master data,SAP ECC,Medium
+IE03,Display Equipment,View equipment master records,SAP ECC,Low
+IL01,Create Functional Location,Create functional location master,SAP ECC,Medium
+IL02,Change Functional Location,Modify functional location data,SAP ECC,Medium
+IL03,Display Functional Location,View functional location details,SAP ECC,Low
+IK01,Create Measuring Point,Create measuring points for condition monitoring,SAP ECC,Low
+IP10,Schedule Maintenance Plans,Schedule and activate maintenance plans,SAP ECC,Medium
+IP30,Deadline Monitoring,Run deadline monitoring for maintenance plans,SAP ECC,Low
+IA01,Create General Task List,Create general maintenance task lists,SAP ECC,Medium
+IA11,Create Equipment Task List,Create equipment-specific task lists,SAP ECC,Medium
+MM01,Create Material,Create material master records,SAP ECC,High
+MM02,Change Material,Modify material master data,SAP ECC,Medium
+MM03,Display Material,View material master records,SAP ECC,Low
+ME21N,Create Purchase Order,Create purchase orders for procurement,SAP ECC,High
+ME22N,Change Purchase Order,Modify existing purchase orders,SAP ECC,Medium
+ME51N,Create Purchase Requisition,Create purchase requisitions,SAP ECC,Medium
+ME52N,Change Purchase Requisition,Modify purchase requisitions,SAP ECC,Low
+ME53N,Display Purchase Requisition,View purchase requisitions,SAP ECC,Low
+ME29N,Release Purchase Order,Release purchase orders for processing,SAP ECC,High
+MIGO,Goods Movement,Post goods receipts and movements,SAP ECC,High
+MB1A,Goods Issue,Post goods issues from inventory,SAP ECC,Medium
+MB1B,Transfer Posting,Post stock transfers between locations,SAP ECC,Medium
+MB1C,Other Goods Receipts,Post miscellaneous goods receipts,SAP ECC,Medium
+MB51,Material Doc. List,Display material document history,SAP ECC,Low
+MB52,Warehouse Stocks,Display warehouse stock overview,SAP ECC,Low
+MMBE,Stock Overview,Display stock levels by plant/location,SAP ECC,Low
+MI01,Create Physical Inventory Doc,Create physical inventory documents,SAP ECC,Medium
+MI04,Enter Count Results,Enter physical inventory count results,SAP ECC,Medium
+MI07,Post Inventory Differences,Post adjustments from physical inventory,SAP ECC,High
+ME2M,POs by Material,List purchase orders by material,SAP ECC,Low
+MR8M,Cancel Invoice Document,Reverse and cancel logistics invoices,SAP ECC,High
+MI10,Post Inventory Differences,Post adjustments from physical inventory count,SAP ECC,High
+MB11,Goods Movement,Post general goods movements,SAP ECC,Medium
+MR21,Price Change,Change material standard or moving average price,SAP ECC,High
+XK01,Create Vendor Master,Create new vendor master records,SAP ECC,High
+XD01,Create Customer Master,Create new customer master records,SAP ECC,High
+XD02,Change Customer Master,Modify customer master data,SAP ECC,High
+VA01,Create Sales Order,Create standard sales orders,SAP ECC,Medium
+VF01,Create Billing Document,Generate customer billing documents,SAP ECC,Medium
+VK11,Create Pricing Condition,Maintain pricing condition records,SAP ECC,High
+VBO1,Create Rebate Agreement,Create volume rebate agreements,SAP ECC,High
+F-28,Customer Payment Clearing,Post incoming customer payments,SAP ECC,Medium
+FD32,Credit Limit Maintenance,Change customer credit limits,SAP ECC,High
+FB08,Reverse Document,Reverse accounting documents,SAP ECC,High
+OB52,Posting Period Open/Close,Control accounting period open and close,SAP ECC,Critical
+FS00,G/L Account Master,Maintain general ledger account master data,SAP ECC,High
+F-03,G/L Account Clearing,Clear open items on G/L accounts,SAP ECC,Medium
+FAGL_FC_VAL,Foreign Currency Valuation,Run foreign currency revaluation,SAP ECC,High
+FI12,Bank Master Data,Maintain house bank and bank account configuration,SAP ECC,Critical
+FF67,Manual Bank Statement,Enter bank statement data manually,SAP ECC,High
+FEBA,Bank Statement Reprocessing,Reprocess electronic bank statements,SAP ECC,High
+FCH5,Create Manual Check,Issue manual checks,SAP ECC,High
+FCHI,Check Reconciliation,Reconcile check register,SAP ECC,Medium
+AS01,Create Asset Master,Create fixed asset master records,SAP ECC,Medium
+AS02,Change Asset Master,Modify fixed asset master data,SAP ECC,Medium
+AS91,Create Legacy Asset,Create legacy asset data records,SAP ECC,Medium
+AB01,Asset Acquisition Posting,Post asset acquisition transactions,SAP ECC,Medium
+ABAON,Asset Retirement Posting,Post asset retirement and sale transactions,SAP ECC,Medium
+AFAB,Depreciation Run,Execute periodic asset depreciation,SAP ECC,High
+PA30,HR Master Data Maintenance,Maintain employee personnel master data,SAP ECC,Critical
+PA20,Display HR Master Data,Display employee personnel records,SAP ECC,Low
+PA03,Payroll Control Record,Maintain payroll area control records,SAP ECC,High
+IT0008,Basic Pay Infotype,Maintain employee basic pay compensation,SAP ECC,Critical
+PC00_M99_CALC,Payroll Processing,Execute payroll calculation run,SAP ECC,Critical
+PU01,Delete Payroll Results,Delete payroll processing results,SAP ECC,Critical
+SU01,User Administration,Create and modify SAP user accounts,SAP ECC,Critical
+SU10,Mass User Changes,Mass modification of user accounts,SAP ECC,Critical
+PFCG,Role Administration,Maintain authorization roles and profiles,SAP ECC,Critical
+SE38,ABAP Editor,Develop and edit ABAP programs,SAP ECC,Critical
+STMS,Transport Management,Manage transport requests and routes,SAP ECC,Critical
+SM49,Execute OS Commands,Execute operating system commands,SAP ECC,Critical
+SM19,Security Audit Log Config,Configure security audit log settings,SAP ECC,High
+KS01,Create Cost Center,Create controlling cost center master,SAP ECC,Medium
+KB11N,Direct Activity Allocation,Post direct activity allocations,SAP ECC,Medium
+KO01,Create Internal Order,Create controlling internal orders,SAP ECC,Medium
+KO88,Settle Internal Order,Settle internal order costs to receivers,SAP ECC,High
+KE51,Create Profit Center,Create profit center master records,SAP ECC,Medium
+9KE0,Profit Center Document Posting,Post documents to profit centers,SAP ECC,Medium
+KPZ2,Budget Maintenance,Enter and maintain cost center budgets,SAP ECC,Medium
+KO22,Budget Approval,Approve and release budgets,SAP ECC,High

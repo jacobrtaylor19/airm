@@ -81,6 +81,7 @@ export default function DataUploadPage() {
           expectedColumns="source_user_id, display_name, email, job_title, department"
           required={true}
           existingCount={counts.users}
+          templateUrl="/templates/users-template.csv"
         />
         <UploadCard
           type="source-roles"
@@ -89,6 +90,7 @@ export default function DataUploadPage() {
           expectedColumns="role_id, role_name, description, system, domain"
           required={true}
           existingCount={counts.sourceRoles}
+          templateUrl="/templates/source-roles-template.csv"
         />
         <UploadCard
           type="role-assignments"
@@ -97,6 +99,7 @@ export default function DataUploadPage() {
           expectedColumns="user_id, role_id"
           required={false}
           existingCount={counts.roleAssignments}
+          templateUrl="/templates/user-source-role-assignments-template.csv"
         />
         <UploadCard
           type="role-permissions"
@@ -105,6 +108,7 @@ export default function DataUploadPage() {
           expectedColumns="role_id, permission_id"
           required={false}
           existingCount={counts.rolePermissions}
+          templateUrl="/templates/source-role-permissions-template.csv"
         />
         <UploadCard
           type="target-roles"
@@ -113,6 +117,7 @@ export default function DataUploadPage() {
           expectedColumns="role_id, role_name, description, system, domain"
           required={true}
           existingCount={counts.targetRoles}
+          templateUrl="/templates/target-roles-template.csv"
         />
         <UploadCard
           type="target-permissions"
@@ -121,6 +126,7 @@ export default function DataUploadPage() {
           expectedColumns="permission_id, permission_name, description, system, risk_level"
           required={false}
           existingCount={counts.targetPermissions}
+          templateUrl="/templates/target-permissions-template.csv"
         />
         <UploadCard
           type="sod-rules"
@@ -129,6 +135,7 @@ export default function DataUploadPage() {
           expectedColumns="rule_id, rule_name, permission_a, permission_b, severity"
           required={false}
           existingCount={counts.sodRules}
+          templateUrl="/templates/sod-rules-template.csv"
         />
         <UploadCard
           type="personas"

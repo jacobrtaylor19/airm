@@ -1,0 +1,111 @@
+permission_id,permission_name,description,system,risk_level
+TBB1,Create Fixed-Term Deposit,Create fixed-term deposit transactions,SAP ECC,High
+TBB2,Change Fixed-Term Deposit,Modify fixed-term deposit transactions,SAP ECC,Medium
+TBB3,Display Fixed-Term Deposit,View fixed-term deposit details,SAP ECC,Low
+TBDF,Create FX Spot Forward,Create FX spot and forward transactions,SAP ECC,High
+TBDE,Change FX Transaction,Modify FX transactions,SAP ECC,Medium
+TBD3,Display FX Transaction,View FX transaction details,SAP ECC,Low
+TBBI,Create Securities Trade,Create securities buy/sell transactions,SAP ECC,High
+TBB5,Change Securities Trade,Modify securities transactions,SAP ECC,Medium
+TBB6,Display Securities Trade,View securities transaction details,SAP ECC,Low
+TBDO,Create OTC Derivative,Create over-the-counter derivative transactions,SAP ECC,Critical
+TBD7,Change OTC Derivative,Modify OTC derivative transactions,SAP ECC,High
+TBD8,Display OTC Derivative,View OTC derivative details,SAP ECC,Low
+TPM20,Trade Settlement,Execute trade settlement processing,SAP ECC,High
+TPM25,Settlement Confirmation,Confirm trade settlements with counterparties,SAP ECC,Medium
+TPM30,Payment Release,Release payments for settled trades,SAP ECC,Critical
+FF67,Cash Position Display,Display current cash position across accounts,SAP ECC,Low
+FF68,Cash Forecast,Generate cash flow forecasts,SAP ECC,Low
+FF7A,Bank Statement Import,Import electronic bank statements,SAP ECC,Medium
+FF7B,Bank Statement Process,Process and post bank statement items,SAP ECC,High
+FF_5,Bank Transfer,Execute interbank fund transfers,SAP ECC,Critical
+FWZZ,Position Management,Manage financial instrument positions,SAP ECC,High
+FWZ5,Limit Management,Set and monitor counterparty credit limits,SAP ECC,High
+JBRX,VaR Calculation,Execute Value-at-Risk calculations,SAP ECC,Medium
+JBRF,Risk Reporting,Generate market risk reports,SAP ECC,Low
+JBRP,P&L Attribution,Calculate profit and loss attribution,SAP ECC,Medium
+FTR_EDIT,Treasury Transaction Edit,Edit treasury financial transactions,SAP ECC,High
+FTR_CREATE,Treasury Transaction Create,Create new treasury transactions,SAP ECC,High
+FTR_SETTLE,Treasury Settlement,Process treasury transaction settlements,SAP ECC,High
+FB01,Post Document,Post general ledger journal entries,SAP ECC,High
+FB02,Change Document,Change posted financial documents,SAP ECC,High
+FB03,Display Document,Display posted financial documents,SAP ECC,Low
+FB50,Enter GL Account Document,Post GL account documents,SAP ECC,Medium
+FBL3N,GL Line Items,Display GL account line items,SAP ECC,Low
+FS10N,GL Balance Display,Display GL account balances,SAP ECC,Low
+FAGL_FC_VAL,Foreign Currency Valuation,Execute foreign currency valuation,SAP ECC,High
+F101,Balance Sheet Adjustment,Execute balance sheet adjustment posting,SAP ECC,High
+FB60,Enter Vendor Invoice,Post vendor invoices to accounts payable,SAP ECC,Medium
+FB65,Vendor Credit Memo,Post vendor credit memos,SAP ECC,Medium
+FBL1N,Vendor Line Items,Display vendor line item details,SAP ECC,Low
+F110,Automatic Payment Run,Execute automatic payment program,SAP ECC,Critical
+F-53,Post Vendor Payment,Post manual vendor payment,SAP ECC,High
+XK01,Create Vendor Master,Create vendor master records,SAP ECC,High
+XK02,Change Vendor Master,Modify vendor master data,SAP ECC,High
+XK03,Display Vendor Master,View vendor master records,SAP ECC,Low
+FB70,Enter Customer Invoice,Post customer invoices,SAP ECC,Medium
+FB75,Customer Credit Memo,Post customer credit memos,SAP ECC,Medium
+FBL5N,Customer Line Items,Display customer line item details,SAP ECC,Low
+F-28,Post Incoming Payment,Post customer incoming payments,SAP ECC,Medium
+XD01,Create Customer Master,Create customer master records,SAP ECC,High
+XD02,Change Customer Master,Modify customer master data,SAP ECC,Medium
+FBN1,Number Range Maintenance,Maintain document number ranges,SAP ECC,Critical
+OBR2,Tolerance Group Maintenance,Maintain payment tolerance groups,SAP ECC,High
+FSP0,Create GL Account,Create GL account master records,SAP ECC,High
+FS00,Display GL Account,Display GL account master data,SAP ECC,Low
+GCAC,Cross-Company Posting,Post cross-company code journal entries,SAP ECC,High
+FK10N,Vendor Balance Display,Display vendor account balances,SAP ECC,Low
+FD10N,Customer Balance Display,Display customer account balances,SAP ECC,Low
+S_ALR_87012332,Trial Balance Report,Generate trial balance report,SAP ECC,Low
+S_ALR_87012284,Balance Sheet Report,Generate balance sheet report,SAP ECC,Low
+RFUMSV25,Tax Reporting,Execute tax reporting and return generation,SAP ECC,Medium
+SU01,User Maintenance,Create and manage user accounts,SAP ECC,Critical
+SU10,Mass User Maintenance,Mass changes to user accounts,SAP ECC,Critical
+PFCG,Role Maintenance,Create and modify authorization roles,SAP ECC,Critical
+SM21,System Log,Display system log entries,SAP ECC,Low
+SM37,Job Monitoring,Monitor and manage background jobs,SAP ECC,Medium
+FKMT,Customer Correspondence,Generate customer correspondence and statements,SAP ECC,Low
+MRBR,Release Blocked Invoices,Release blocked vendor invoices for payment,SAP ECC,High
+MIR7,Park Invoice,Park vendor invoices for later processing,SAP ECC,Medium
+FBR2,Post Recurring Document,Post recurring journal entries,SAP ECC,Medium
+FBD1,Enter Recurring Entry,Enter recurring GL entry documents,SAP ECC,Medium
+F.5D,Automatic Clearing,Execute automatic clearing for GL accounts,SAP ECC,High
+OB52,Posting Period Control,Open and close posting periods,SAP ECC,Critical
+GGB1,Create Validation,Create financial posting validation rules,SAP ECC,High
+OBA5,Document Type Config,Configure financial document types,SAP ECC,High
+J1UFIN,Regulatory Return Filing,Submit regulatory financial returns,SAP ECC,High
+F.13,Automatic Payment Balance,Execute automatic clearing for vendor accounts,SAP ECC,Medium
+FBCJ,Cash Journal,Post and manage cash journal entries,SAP ECC,Medium
+FBV0,Parked Documents,Manage parked financial documents,SAP ECC,Medium
+FBV2,Change Parked Document,Change parked financial documents,SAP ECC,Medium
+SE16,Data Browser,Display database table contents,SAP ECC,High
+SA38,Program Execution,Execute ABAP programs,SAP ECC,High
+STMS,Transport Management,Manage transport requests in system landscape,SAP ECC,Critical
+SOST,Send Overview SAPConnect,Monitor outbound document transmissions,SAP ECC,Low
+SPRO,Customizing IMG,Access SAP Implementation Guide for configuration,SAP ECC,Critical
+ME21N,Create Purchase Order,Create purchase orders,SAP ECC,High
+ME23N,Display Purchase Order,View purchase order details,SAP ECC,Low
+KSB1,Cost Center Line Items,Display cost center actual line items,SAP ECC,Low
+KO01,Create Internal Order,Create internal orders for cost tracking,SAP ECC,Medium
+KS01,Create Cost Center,Create cost center master records,SAP ECC,High
+PA30,Maintain HR Master Data,Create and change personnel master data,SAP ECC,High
+PA20,Display HR Master Data,View personnel master data,SAP ECC,Low
+PC00_M99_CALC,Payroll Run,Execute payroll calculation,SAP ECC,Critical
+FI12,Change House Bank,Change house bank account configuration,SAP ECC,Critical
+FF63,Standing Instruction,Create standing wire transfer instructions,SAP ECC,High
+TBC3,Counterparty Master,Maintain counterparty master data,SAP ECC,High
+TBC4,Display Counterparty,Display counterparty master data,SAP ECC,Low
+JBRD,Risk Dashboard,Display risk management dashboard,SAP ECC,Low
+JBRE,Exposure Report,Generate counterparty exposure reports,SAP ECC,Low
+TPM10,Netting Run,Execute payment netting for counterparties,SAP ECC,High
+TPM40,Margin Call Processing,Process margin calls for derivative positions,SAP ECC,High
+F.19,GR/IR Clearing,Clear goods receipt / invoice receipt accounts,SAP ECC,Medium
+FPE1,Post Accrual,Post accrual and deferral entries,SAP ECC,Medium
+FBRA,Reverse Clearing,Reverse automatic clearing documents,SAP ECC,High
+FC10,Consolidation Monitor,Execute financial consolidation postings,SAP ECC,High
+FCHI,Check Information,Maintain check and payment instrument data,SAP ECC,Medium
+FF.5,Import Payment Advice,Import payment advice notes from banks,SAP ECC,Medium
+FBZ5,Display Payment Run Log,Display log of automatic payment program runs,SAP ECC,Low
+FBKP,Accounting Maintenance,Maintain accounting configuration parameters,SAP ECC,High
+KE30,Profitability Analysis,Execute profitability analysis reports,SAP ECC,Low
+KEFB,Post CO-PA Document,Post profitability analysis documents,SAP ECC,Medium

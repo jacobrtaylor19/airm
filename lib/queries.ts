@@ -365,6 +365,7 @@ export interface PersonaDetail {
     roleId: string;
     coveragePercent: number | null;
     confidence: string | null;
+    roleOwner: string | null;
   }[];
 }
 
@@ -418,6 +419,7 @@ export function getPersonaDetail(id: number): PersonaDetail | null {
       targetRoleId: schema.personaTargetRoleMappings.targetRoleId,
       roleName: schema.targetRoles.roleName,
       roleId: schema.targetRoles.roleId,
+      roleOwner: schema.targetRoles.roleOwner,
       coveragePercent: schema.personaTargetRoleMappings.coveragePercent,
       confidence: schema.personaTargetRoleMappings.confidence,
     })
@@ -480,6 +482,7 @@ export interface SourceRoleRow {
   roleName: string;
   domain: string | null;
   system: string | null;
+  roleOwner: string | null;
   permissionCount: number;
   userCount: number;
 }
@@ -492,6 +495,7 @@ export function getSourceRoles(): SourceRoleRow[] {
       roleName: schema.sourceRoles.roleName,
       domain: schema.sourceRoles.domain,
       system: schema.sourceRoles.system,
+      roleOwner: schema.sourceRoles.roleOwner,
       permissionCount: sql<number>`(
         SELECT count(*) FROM source_role_permissions srp
         WHERE srp.source_role_id = source_roles.id
@@ -553,6 +557,7 @@ export interface TargetRoleRow {
   description: string | null;
   domain: string | null;
   system: string | null;
+  roleOwner: string | null;
   permissionCount: number;
 }
 
@@ -565,6 +570,7 @@ export function getTargetRoles(): TargetRoleRow[] {
       description: schema.targetRoles.description,
       domain: schema.targetRoles.domain,
       system: schema.targetRoles.system,
+      roleOwner: schema.targetRoles.roleOwner,
       permissionCount: sql<number>`(
         SELECT count(*) FROM target_role_permissions trp
         WHERE trp.target_role_id = target_roles.id

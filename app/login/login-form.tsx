@@ -1,18 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Database, ChevronDown } from "lucide-react";
+
+const DEMO_ENVIRONMENTS = [
+  { value: "default", label: "SAP S/4HANA (Default)", available: true },
+  { value: "energy-chemicals-s4hana", label: "SAP S/4HANA — Energy & Chemicals", available: true },
+  { value: "financial-services-s4hana", label: "SAP S/4HANA — Financial Services", available: true },
+  { value: "oracle-cloud-erp", label: "Oracle Cloud ERP", available: false },
+  { value: "workday-hcm", label: "Workday HCM", available: false },
+  { value: "salesforce-crm", label: "Salesforce CRM", available: false },
+] as const;
 
 export function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [switching, setSwitching] = useState(false);
+  const [selectedDemo, setSelectedDemo] = useState("default");
   const router = useRouter();
+
+  useEffect(() => {
+    const stored = localStorage.getItem("airm_demo_env");
+    if (stored) setSelectedDemo(stored);
+  }, []);
+
+  async function handleDemoSwitch(value: string) {
+    const env = DEMO_ENVIRONMENTS.find((e) => e.value === value);
+    if (!env || !env.available) return;
+
+    setSelectedDemo(value);
+    localStorage.setItem("airm_demo_env", value);
+
+    // Only re-seed if switching to a different environment
+    if (value === selectedDemo) return;
+
+    setSwitching(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/demo/switch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ demo: value }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Failed to switch demo environment");
+        return;
+      }
+
+      // Refresh the page to pick up new data
+      router.refresh();
+    } catch {
+      setError("Failed to switch demo environment");
+    } finally {
+      setSwitching(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,40 +93,82 @@ export function LoginForm() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Sign In</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium">Username</label>
-            <Input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your username"
-              className="mt-1"
-              autoFocus
-            />
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Sign In</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Username</label>
+              <Input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Enter your username"
+                className="mt-1"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Password</label>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className="mt-1"
+              />
+            </div>
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
+            <Button type="submit" className="w-full" disabled={loading || switching || !username || !password}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Demo Environment Selector */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Database className="h-4 w-4" />
+            Demo Environment
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="relative">
+            <select
+              value={selectedDemo}
+              onChange={(e) => handleDemoSwitch(e.target.value)}
+              disabled={switching}
+              className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {DEMO_ENVIRONMENTS.map((env) => (
+                <option
+                  key={env.value}
+                  value={env.value}
+                  disabled={!env.available}
+                >
+                  {env.label}{!env.available ? " (Coming Soon)" : ""}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           </div>
-          <div>
-            <label className="text-sm font-medium">Password</label>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="mt-1"
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
+          {switching && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Switching demo environment...
+            </div>
           )}
-          <Button type="submit" className="w-full" disabled={loading || !username || !password}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Select an industry scenario to load sample data for that environment.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

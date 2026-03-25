@@ -32,6 +32,7 @@ export const sourceRoles = sqliteTable("source_roles", {
   system: text("system").default("SAP ECC"),
   domain: text("domain"),
   roleType: text("role_type"),
+  roleOwner: text("role_owner"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
@@ -142,6 +143,7 @@ export const targetRoles = sqliteTable("target_roles", {
   system: text("system").default("S/4HANA"),
   domain: text("domain"),
   capabilities: text("capabilities"),
+  roleOwner: text("role_owner"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 

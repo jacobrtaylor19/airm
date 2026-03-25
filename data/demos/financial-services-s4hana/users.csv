@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+FS001,Jonathan Hargreaves,jonathan.hargreaves@finserv.com,Head of Trading,Trading
+FS002,Mei-Lin Wu,meilin.wu@finserv.com,Senior Portfolio Manager,Trading
+FS003,Alexander Petrov,alexander.petrov@finserv.com,Chief Risk Officer,Risk Management
+FS004,Priya Raghavan,priya.raghavan@finserv.com,Market Risk Analyst,Risk Management
+FS005,David Goldstein,david.goldstein@finserv.com,Compliance Director,Compliance
+FS006,Aisling Murphy,aisling.murphy@finserv.com,AML Specialist,Compliance
+FS007,Marcus Chen,marcus.chen@finserv.com,Trade Settlement Analyst,Operations
+FS008,Fatima Benali,fatima.benali@finserv.com,Fund Accountant,Finance
+FS009,Oliver Blackwood,oliver.blackwood@finserv.com,Treasury Manager,Treasury
+FS010,Sofia Rodriguez,sofia.rodriguez@finserv.com,Internal Auditor,Audit
+FS011,William O'Connor,william.oconnor@finserv.com,Fixed Income Trader,Trading
+FS012,Aiko Nakamura,aiko.nakamura@finserv.com,Credit Risk Analyst,Risk Management
+FS013,Charles Beaumont,charles.beaumont@finserv.com,Regulatory Reporting Manager,Compliance
+FS014,Nkechi Okafor,nkechi.okafor@finserv.com,Reconciliation Analyst,Operations
+FS015,Hans Mueller,hans.mueller@finserv.com,Financial Controller,Finance
+FS016,Jasmine Patel,jasmine.patel@finserv.com,Client Services Manager,Client Services
+FS017,Richard Sterling,richard.sterling@finserv.com,Derivatives Trader,Trading
+FS018,Elena Voronova,elena.voronova@finserv.com,Operational Risk Analyst,Risk Management
+FS019,Daniel Osei-Mensah,daniel.oseimensah@finserv.com,Cash Management Specialist,Treasury
+FS020,Catherine Laurent,catherine.laurent@finserv.com,Senior Legal Counsel,Legal
+FS021,Ryan Gallagher,ryan.gallagher@finserv.com,Equity Research Analyst,Trading
+FS022,Suresh Krishnan,suresh.krishnan@finserv.com,Model Validation Analyst,Risk Management
+FS023,Emma Thornton,emma.thornton@finserv.com,KYC Analyst,Compliance
+FS024,Kwadwo Asante,kwadwo.asante@finserv.com,Trade Support Analyst,Operations
+FS025,Maria Gonzalez,maria.gonzalez@finserv.com,Accounts Payable Supervisor,Finance
+FS026,Patrick Brennan,patrick.brennan@finserv.com,IT Infrastructure Manager,IT
+FS027,Leila Ahmadi,leila.ahmadi@finserv.com,FX Trader,Trading
+FS028,James Morton,james.morton@finserv.com,Counterparty Risk Analyst,Risk Management
+FS029,Yemi Adewale,yemi.adewale@finserv.com,Sanctions Screening Analyst,Compliance
+FS030,Isabelle Fournier,isabelle.fournier@finserv.com,Corporate Actions Analyst,Operations
+FS031,Thomas Hartmann,thomas.hartmann@finserv.com,Tax Accountant,Finance
+FS032,Sienna Park,sienna.park@finserv.com,Portfolio Analyst,Trading
+FS033,Ahmad Al-Farsi,ahmad.alfarsi@finserv.com,Liquidity Risk Manager,Risk Management
+FS034,Rachel Abrams,rachel.abrams@finserv.com,Compliance Testing Analyst,Compliance
+FS035,Benjamin Okafor,benjamin.okafor@finserv.com,Middle Office Manager,Operations
+FS036,Lisa Bergstrom,lisa.bergstrom@finserv.com,Treasury Operations Analyst,Treasury
+FS037,Diego Reyes,diego.reyes@finserv.com,IT Application Developer,IT
+FS038,Hannah Smithfield,hannah.smithfield@finserv.com,Client Onboarding Specialist,Client Services
+FS039,Kenneth Park,kenneth.park@finserv.com,Structured Products Trader,Trading
+FS040,Victoria Ivanova,victoria.ivanova@finserv.com,Stress Testing Analyst,Risk Management
+FS041,Peter Magnusson,peter.magnusson@finserv.com,Regulatory Capital Analyst,Compliance
+FS042,Amina Diouf,amina.diouf@finserv.com,Margin Analyst,Operations
+FS043,Robert Sinclair,robert.sinclair@finserv.com,Revenue Accountant,Finance
+FS044,Jennifer Wu,jennifer.wu@finserv.com,Commodities Trader,Trading
+FS045,Oscar Lindqvist,oscar.lindqvist@finserv.com,Fraud Investigation Analyst,Compliance
+FS046,Grace Kimani,grace.kimani@finserv.com,Collateral Management Analyst,Operations
+FS047,Michael Byrne,michael.byrne@finserv.com,Hedge Fund Accountant,Finance
+FS048,Natalie Dubois,natalie.dubois@finserv.com,Relationship Manager,Client Services
+FS049,Tunde Adeleke,tunde.adeleke@finserv.com,IT Security Manager,IT
+FS050,Claudia Weiss,claudia.weiss@finserv.com,Contract Negotiator,Legal
+FS051,Andrew Kaplan,andrew.kaplan@finserv.com,Quantitative Analyst,Trading
+FS052,Deepa Sharma,deepa.sharma@finserv.com,Basel Reporting Analyst,Risk Management
+FS053,Francis Delacroix,francis.delacroix@finserv.com,Transaction Monitoring Analyst,Compliance
+FS054,Samuel Owusu,samuel.owusu@finserv.com,Clearing Specialist,Operations
+FS055,Brigitte Hoffmann,brigitte.hoffmann@finserv.com,GL Reconciliation Analyst,Finance
+FS056,Kevin Tang,kevin.tang@finserv.com,FX Settlement Analyst,Treasury
+FS057,Rebecca Walsh,rebecca.walsh@finserv.com,Data Privacy Officer,Legal
+FS058,Olumide Bakare,olumide.bakare@finserv.com,IT Database Administrator,IT
+FS059,Ingrid Svensson,ingrid.svensson@finserv.com,Investment Operations Analyst,Operations
+FS060,Paul Richardson,paul.richardson@finserv.com,Audit Manager,Audit
+FS061,Chiara Moretti,chiara.moretti@finserv.com,Fixed Asset Accountant,Finance
+FS062,Jason Ng,jason.ng@finserv.com,Algorithmic Trading Developer,Trading
+FS063,Sarah Al-Hashimi,sarah.alhashimi@finserv.com,Liquidity Reporting Analyst,Risk Management
+FS064,Mark Johansson,mark.johansson@finserv.com,Trade Confirmation Analyst,Operations
+FS065,Lucy O'Neill,lucy.oneill@finserv.com,Vendor Invoice Processor,Finance
+FS066,Rajesh Kapoor,rajesh.kapoor@finserv.com,IT Change Manager,IT
+FS067,Eva Schneider,eva.schneider@finserv.com,Client Reporting Analyst,Client Services
+FS068,Christopher Blake,christopher.blake@finserv.com,Interest Rate Swap Trader,Trading
+FS069,Amara Toure,amara.toure@finserv.com,Credit Portfolio Analyst,Risk Management
+FS070,Declan Fitzgerald,declan.fitzgerald@finserv.com,AML Investigation Manager,Compliance
+FS071,Naomi Sato,naomi.sato@finserv.com,Securities Lending Analyst,Operations
+FS072,George Papadopoulos,george.papadopoulos@finserv.com,Cost Allocation Analyst,Finance
+FS073,Vera Popova,vera.popova@finserv.com,Cash Forecasting Analyst,Treasury
+FS074,Donald Mitchell,donald.mitchell@finserv.com,Regulatory Examination Coordinator,Compliance
+FS075,Lilian Mensah,lilian.mensah@finserv.com,Performance Attribution Analyst,Trading
+FS076,Stefan Vogel,stefan.vogel@finserv.com,Valuation Analyst,Risk Management
+FS077,Amanda Pearson,amanda.pearson@finserv.com,Back Office Supervisor,Operations
+FS078,Ibrahim Hassan,ibrahim.hassan@finserv.com,Intercompany Accountant,Finance
+FS079,Caroline Jensen,caroline.jensen@finserv.com,IT Business Analyst,IT
+FS080,Nicolas Bertrand,nicolas.bertrand@finserv.com,Litigation Support Analyst,Legal
+FS081,Ruth Nkemelu,ruth.nkemelu@finserv.com,Payment Operations Analyst,Treasury
+FS082,Anthony Rossi,anthony.rossi@finserv.com,Compliance Officer,Compliance
+FS083,Min-Ji Kim,minji.kim@finserv.com,NAV Calculation Analyst,Finance
+FS084,Philip Anderson,philip.anderson@finserv.com,Market Data Analyst,Trading
+FS085,Zara Hussain,zara.hussain@finserv.com,Operational Due Diligence Analyst,Audit
+FS086,Erik Lindgren,erik.lindgren@finserv.com,Repo Trader,Trading
+FS087,Monica Silva,monica.silva@finserv.com,Regulatory Change Manager,Compliance
+FS088,Trevor Blackwell,trevor.blackwell@finserv.com,Custody Operations Analyst,Operations
+FS089,Chika Onyema,chika.onyema@finserv.com,Budget Analyst,Finance
+FS090,Helena Kravchenko,helena.kravchenko@finserv.com,Counterparty Credit Manager,Risk Management
+FS091,Lawrence Whitfield,lawrence.whitfield@finserv.com,Escrow Account Manager,Treasury
+FS092,Diana Castellanos,diana.castellanos@finserv.com,Compliance Training Coordinator,Compliance
+FS093,Arnold Becker,arnold.becker@finserv.com,IT Audit Specialist,Audit
+FS094,Folake Adeniyi,folake.adeniyi@finserv.com,Proxy Voting Analyst,Client Services
+FS095,Simon Larsen,simon.larsen@finserv.com,General Ledger Supervisor,Finance
+FS096,Christine Morel,christine.morel@finserv.com,Wire Transfer Specialist,Treasury
+FS097,Darryl Thompson,darryl.thompson@finserv.com,IT Disaster Recovery Manager,IT
+FS098,Nadia Petersen,nadia.petersen@finserv.com,Legal Document Manager,Legal
+FS099,Robert Achebe,robert.achebe@finserv.com,Senior Audit Associate,Audit
+FS100,Elaine Whitmore,elaine.whitmore@finserv.com,Head of Client Services,Client Services

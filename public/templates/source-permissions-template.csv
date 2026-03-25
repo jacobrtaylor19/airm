@@ -1,0 +1,5 @@
+# Source permissions template — permission_id must be unique. permission_type examples: transaction/report/action. t_code is the SAP transaction code.
+permission_id,permission_name,description,permission_type,t_code,domain
+FB60,Post Vendor Invoice,Post incoming invoices to vendor accounts,transaction,FB60,Finance
+ME21N,Create Purchase Order,Create new purchase orders,transaction,ME21N,Materials Management
+IW31,Create Maintenance Order,Create maintenance work orders in the PM module,transaction,IW31,EAM

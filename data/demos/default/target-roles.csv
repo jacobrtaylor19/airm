@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+S4_AP_INV_PROC,AP Invoice Processor,Process and post vendor invoices in Fiori,S/4HANA,Finance
+S4_AP_APPR_BASIC,AP Approver Basic,Approve invoices up to $25000,S/4HANA,Finance
+S4_AP_APPR_ADV,AP Approver Advanced,Approve invoices up to $100000,S/4HANA,Finance
+S4_AP_SUPERVISOR,AP Supervisor,Supervise AP team and review reports,S/4HANA,Finance
+S4_AP_MANAGER,AP Manager,Full AP management with analytics,S/4HANA,Finance
+S4_AP_PAY_SPEC,AP Payment Specialist,Handle payment processing and execution,S/4HANA,Finance
+S4_VEND_SPEC,Vendor Master Specialist,Maintain vendor master data,S/4HANA,Finance
+S4_GL_ACCT,GL Accountant,Post and manage general ledger entries,S/4HANA,Finance
+S4_PM_PLANNER,Maintenance Planner,Plan and schedule preventive and corrective maintenance in Fiori,S/4HANA,EAM
+S4_PM_TECHNICIAN,Maintenance Technician,Execute work orders and confirm maintenance activities,S/4HANA,EAM
+S4_PM_SUPERVISOR,Maintenance Supervisor,Oversee maintenance operations and manage work order lifecycle,S/4HANA,EAM
+S4_PM_ENGINEER,Asset Engineer,Configure equipment masters and maintenance strategies,S/4HANA,EAM
+S4_PM_MANAGER,EAM Manager,Full enterprise asset management with analytics and planning,S/4HANA,EAM
+S4_MM_BUYER,Procurement Specialist,Create and manage purchase orders in S/4HANA Sourcing,S/4HANA,Materials Management
+S4_MM_PLANNER,Material Planner,Manage material masters and MRP planning,S/4HANA,Materials Management
+S4_MM_WH_MGMT,Warehouse Management Specialist,Process goods movements and manage warehouse operations,S/4HANA,Materials Management
+S4_MM_INV_MGMT,Inventory Manager,Physical inventory and stock reconciliation,S/4HANA,Materials Management
+S4_MM_MANAGER,MM Manager,Full materials management with procurement analytics,S/4HANA,Materials Management

@@ -1,0 +1,117 @@
+permission_id,permission_name,description,system,risk_level
+IW31,Create Maintenance Order,Create maintenance work orders for equipment,SAP ECC,Medium
+IW32,Change Maintenance Order,Modify existing maintenance work orders,SAP ECC,Medium
+IW33,Display Maintenance Order,View maintenance work order details,SAP ECC,Low
+IW41,Confirm Maintenance Order,Record time and completion for maintenance tasks,SAP ECC,Medium
+IW21,Create PM Notification,Create maintenance notifications for equipment issues,SAP ECC,Low
+IW22,Change PM Notification,Modify existing maintenance notifications,SAP ECC,Low
+IW28,Change PM Notification List,Mass change maintenance notifications,SAP ECC,Medium
+IH01,Display Equipment,View equipment master records,SAP ECC,Low
+IH02,Change Equipment,Modify equipment master data,SAP ECC,Medium
+IH06,Display Equipment List,View list of equipment records,SAP ECC,Low
+IL01,Create Functional Location,Create functional locations in plant hierarchy,SAP ECC,High
+IL02,Change Functional Location,Modify functional location master data,SAP ECC,Medium
+IL03,Display Functional Location,View functional location details,SAP ECC,Low
+IP10,Schedule Maintenance Plan,Schedule preventive maintenance plans,SAP ECC,Medium
+IP30,Deadline Monitoring,Monitor maintenance plan deadlines,SAP ECC,Low
+IA01,Create Measuring Point,Create measuring points for condition monitoring,SAP ECC,Medium
+IA11,Create Measurement Document,Record measurement readings for equipment,SAP ECC,Low
+IK01,Create Calibration Order,Create calibration work orders for instruments,SAP ECC,Medium
+IK07,Calibration Planning,Plan and schedule instrument calibrations,SAP ECC,Medium
+QM01,Create Quality Notification,Create quality-related notifications and defects,SAP ECC,Medium
+QM02,Change Quality Notification,Modify quality notifications,SAP ECC,Medium
+QM03,Display Quality Notification,View quality notification details,SAP ECC,Low
+QA01,Record Inspection Results,Record quality inspection results,SAP ECC,Medium
+QA02,Change Inspection Results,Modify inspection lot results,SAP ECC,Medium
+QA03,Display Inspection Results,View inspection lot results,SAP ECC,Low
+QA11,Record Usage Decision,Make usage decisions for inspection lots,SAP ECC,High
+QP01,Create Inspection Plan,Create quality inspection plans,SAP ECC,Medium
+QP02,Change Inspection Plan,Modify inspection plans,SAP ECC,Medium
+ME21N,Create Purchase Order,Create purchase orders for goods and services,SAP ECC,High
+ME22N,Change Purchase Order,Modify existing purchase orders,SAP ECC,Medium
+ME23N,Display Purchase Order,View purchase order details,SAP ECC,Low
+ME51N,Create Purchase Requisition,Create purchase requisitions,SAP ECC,Medium
+ME52N,Change Purchase Requisition,Modify purchase requisitions,SAP ECC,Medium
+ME53N,Display Purchase Requisition,View purchase requisitions,SAP ECC,Low
+ME41,Create RFQ,Create request for quotation,SAP ECC,Medium
+ME47,Maintain Quotation,Maintain vendor quotations,SAP ECC,Medium
+ME31K,Create Contract,Create outline agreement contracts,SAP ECC,High
+ME32K,Change Contract,Modify outline agreement contracts,SAP ECC,Medium
+MIGO,Goods Movement,Post goods receipts goods issues and transfers,SAP ECC,High
+MIGO_GR,Goods Receipt,Post goods receipt against purchase order,SAP ECC,Medium
+MB1A,Goods Issue,Post goods issue from warehouse,SAP ECC,Medium
+MB1B,Transfer Posting,Transfer stock between storage locations,SAP ECC,Medium
+MB1C,Other Goods Receipts,Post other goods receipts without PO,SAP ECC,Medium
+MI01,Create Physical Inventory,Create physical inventory documents,SAP ECC,Medium
+MI04,Enter Inventory Count,Enter physical inventory count results,SAP ECC,Medium
+MI07,Post Inventory Differences,Post inventory count differences,SAP ECC,High
+MMBE,Stock Overview,Display stock overview for materials,SAP ECC,Low
+MM01,Create Material Master,Create material master records,SAP ECC,High
+MM02,Change Material Master,Modify material master data,SAP ECC,Medium
+MM03,Display Material Master,View material master details,SAP ECC,Low
+XK01,Create Vendor Master,Create vendor master records,SAP ECC,High
+XK02,Change Vendor Master,Modify vendor master data,SAP ECC,High
+XK03,Display Vendor Master,View vendor master records,SAP ECC,Low
+FB60,Enter Vendor Invoice,Post vendor invoices to accounts payable,SAP ECC,Medium
+FB65,Vendor Credit Memo,Post vendor credit memos,SAP ECC,Medium
+FBL1N,Vendor Line Items,Display vendor line item details,SAP ECC,Low
+F110,Automatic Payment Run,Execute automatic payment program for vendors,SAP ECC,Critical
+F-53,Post Vendor Payment,Post manual vendor payment,SAP ECC,High
+FB01,Post Document,Post general ledger journal entries,SAP ECC,High
+FB02,Change Document,Change posted financial documents,SAP ECC,High
+FB03,Display Document,Display posted financial documents,SAP ECC,Low
+FB50,Enter GL Account Document,Post GL account documents,SAP ECC,Medium
+FBL3N,GL Line Items,Display GL account line items,SAP ECC,Low
+FS10N,GL Balance Display,Display GL account balances,SAP ECC,Low
+FAGL_FC_VAL,Foreign Currency Valuation,Execute foreign currency valuation,SAP ECC,High
+F101,Balance Sheet Adjustment,Execute balance sheet adjustment posting,SAP ECC,High
+KS01,Create Cost Center,Create cost center master records,SAP ECC,High
+KS02,Change Cost Center,Modify cost center master data,SAP ECC,Medium
+KSB1,Cost Center Line Items,Display cost center actual line items,SAP ECC,Low
+KO01,Create Internal Order,Create internal orders for cost tracking,SAP ECC,Medium
+KO02,Change Internal Order,Modify internal orders,SAP ECC,Medium
+KO04,Release Internal Order,Release internal orders for posting,SAP ECC,Medium
+CJ20N,Project Builder,Create and maintain WBS elements and networks,SAP ECC,High
+CJ30,Actual Costs Project,Display project actual costs,SAP ECC,Low
+CJ40,Planned Costs Project,Display project planned costs,SAP ECC,Low
+CJ44,Project Planning Board,Manage project schedules and milestones,SAP ECC,Medium
+PA20,Display HR Master Data,View personnel master data,SAP ECC,Low
+PA30,Maintain HR Master Data,Create and change personnel master data,SAP ECC,High
+PA40,Personnel Actions,Execute personnel actions hire transfer terminate,SAP ECC,High
+PT01,Create Work Schedule,Create work schedules and shift plans,SAP ECC,Medium
+CAT2,Time Sheet Entry,Enter time sheet data for employees,SAP ECC,Medium
+PC00_M99_CALC,Payroll Run,Execute payroll calculation,SAP ECC,Critical
+VL01N,Create Outbound Delivery,Create outbound delivery documents,SAP ECC,Medium
+VL02N,Change Outbound Delivery,Modify outbound deliveries,SAP ECC,Medium
+VL03N,Display Outbound Delivery,View outbound delivery details,SAP ECC,Low
+VL06O,Outbound Delivery Monitor,Monitor outbound delivery processing,SAP ECC,Low
+CO01,Create Production Order,Create production orders,SAP ECC,Medium
+CO02,Change Production Order,Modify production orders,SAP ECC,Medium
+CO03,Display Production Order,View production orders,SAP ECC,Low
+CO11N,Confirm Production Order,Record confirmations for production orders,SAP ECC,Medium
+MD04,MRP Stock Requirements,Display stock requirements and MRP results,SAP ECC,Low
+SU01,User Maintenance,Create and manage user accounts,SAP ECC,Critical
+SU10,Mass User Maintenance,Mass changes to user accounts,SAP ECC,Critical
+PFCG,Role Maintenance,Create and modify authorization roles,SAP ECC,Critical
+SM21,System Log,Display system log entries,SAP ECC,Low
+SM37,Job Monitoring,Monitor and manage background jobs,SAP ECC,Medium
+CBIH01,Create Incident EHS,Create EHS incidents and near-misses,SAP ECC,Medium
+CBIH02,Change Incident EHS,Modify EHS incident records,SAP ECC,Medium
+CBIH03,Display Incident EHS,View EHS incident details,SAP ECC,Low
+CBP030,Emission Reporting,Process emissions data and create reports,SAP ECC,Medium
+CBWD01,Create Waste Disposition,Create waste disposal records,SAP ECC,Medium
+CBWD03,Display Waste Disposition,View waste disposal records,SAP ECC,Low
+CBRM01,Create Risk Assessment,Create occupational health risk assessments,SAP ECC,Medium
+CBRM03,Display Risk Assessment,View risk assessment records,SAP ECC,Low
+IW39,Order List PM,Display list of maintenance orders,SAP ECC,Low
+IP24,Maintenance Scheduling Overview,Display scheduling overview for maintenance items,SAP ECC,Low
+MK01,Create Vendor Purchasing,Create vendor master in purchasing view,SAP ECC,High
+MK02,Change Vendor Purchasing,Change vendor master purchasing data,SAP ECC,Medium
+ME2M,Purchase Orders by Material,Display POs by material,SAP ECC,Low
+ME2N,Purchase Orders by PO Number,Display POs by number,SAP ECC,Low
+FK10N,Vendor Balance Display,Display vendor account balances,SAP ECC,Low
+MRBR,Release Blocked Invoices,Release blocked vendor invoices for payment,SAP ECC,High
+S_ALR_87013611,Vendor Open Items,Display vendor open item report,SAP ECC,Low
+MB52,Warehouse Stocks,Display warehouse stock by storage location,SAP ECC,Low
+MB51,Material Document List,Display material document list,SAP ECC,Low
+MIR7,Park Invoice,Park vendor invoices for later processing,SAP ECC,Medium

@@ -1,0 +1,5 @@
+# Target permissions template — permission_id must be unique. permission_type examples: fiori_app/api/action. t_code is the Fiori app ID or transaction.
+permission_id,permission_name,description,permission_type,t_code,domain
+F0859,Post Supplier Invoice,Post invoices via Manage Supplier Invoices Fiori app,fiori_app,F0859,Finance
+F2680,Manage Purchase Orders,Create and manage POs via Fiori,fiori_app,F2680,Materials Management
+F2602,Manage Maintenance Orders,Create and track maintenance orders in Fiori,fiori_app,F2602,EAM

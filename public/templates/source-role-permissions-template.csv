@@ -1,0 +1,5 @@
+# Role-permission junction table — maps source roles to their permissions. Both role_id and permission_id must exist in their respective uploads.
+role_id,permission_id
+SAP_AP_CLERK_01,FB60
+SAP_PM_PLANNER,IW31
+SAP_MM_BUYER,ME21N

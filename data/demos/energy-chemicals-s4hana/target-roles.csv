@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+S4_EAM_PLANNER,EAM Maintenance Planner,Plan and schedule maintenance work orders in S/4HANA EAM,S/4HANA,EAM
+S4_EAM_TECHNICIAN,EAM Maintenance Technician,Execute and confirm maintenance tasks via Fiori,S/4HANA,EAM
+S4_EAM_SUPERVISOR,EAM Maintenance Supervisor,Approve work orders and oversee maintenance operations,S/4HANA,EAM
+S4_EAM_CALIBRATION,EAM Calibration Specialist,Manage instrument calibration schedules and records,S/4HANA,EAM
+S4_MM_PURCHASER,MM Operational Purchaser,Create and manage purchase orders in S/4HANA,S/4HANA,MM
+S4_MM_STRATEGIC,MM Strategic Buyer,Manage contracts sourcing and supplier evaluation,S/4HANA,MM
+S4_MM_INVENTORY,MM Inventory Manager,Manage warehouse operations and stock levels,S/4HANA,MM
+S4_FI_GL_ACCOUNTANT,FI General Ledger Accountant,GL postings journal entries and period-end closing,S/4HANA,FI
+S4_FI_AP_PROCESSOR,FI AP Invoice Processor,Process vendor invoices and manage payment runs,S/4HANA,FI
+S4_FI_CONTROLLER,FI Cost Controller,Cost center planning analysis and internal orders,S/4HANA,FI
+S4_HR_SPECIALIST,HCM HR Specialist,Manage employee master data and org structure,S/4HANA,HR
+S4_HR_TIME_ADMIN,HCM Time Administrator,Time recording and attendance management,S/4HANA,HR
+S4_HSE_COORDINATOR,EHS Incident Manager,Record and manage HSE incidents and near-misses,S/4HANA,HSE
+S4_HSE_COMPLIANCE,EHS Compliance Manager,Environmental permits emissions tracking and compliance reporting,S/4HANA,HSE
+S4_QM_INSPECTOR,QM Quality Inspector,Perform quality inspections and record results,S/4HANA,QM
+S4_QM_MANAGER,QM Quality Manager,Quality planning notifications and audit management,S/4HANA,QM
+S4_PP_SCHEDULER,PP Production Scheduler,Production planning scheduling and shop floor control,S/4HANA,PP
+S4_PS_PROJECT_MGR,PS Project Manager,Manage capital projects budgets and milestones,S/4HANA,PS

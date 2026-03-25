@@ -6,7 +6,24 @@ import { readFileSync, existsSync } from "fs";
 import { eq } from "drizzle-orm";
 import path from "path";
 
+// ─── Parse --demo flag ───
+const demoArg = process.argv.find((a) => a.startsWith("--demo="));
+const demoPack = demoArg ? demoArg.split("=")[1] : null;
+
 const DATA_DIR = path.join(process.cwd(), "data");
+const CSV_DIR = demoPack
+  ? path.join(DATA_DIR, "demos", demoPack)
+  : DATA_DIR;
+
+if (demoPack && !existsSync(CSV_DIR)) {
+  console.error(`❌ Demo pack not found: ${CSV_DIR}`);
+  process.exit(1);
+}
+
+if (demoPack) {
+  console.log(`📦 Using demo pack: ${demoPack}`);
+  console.log(`   CSV directory: ${CSV_DIR}\n`);
+}
 
 const sqlite = new Database(path.join(DATA_DIR, "airm.db"));
 sqlite.pragma("journal_mode = WAL");
@@ -16,8 +33,19 @@ sqlite.pragma("busy_timeout = 5000");
 const db = drizzle(sqlite, { schema });
 
 function readCsv<T>(filename: string): T[] {
-  const filepath = path.join(DATA_DIR, filename);
-  if (!existsSync(filepath)) return [];
+  // Try demo-pack directory first, fall back to main data dir
+  const filepath = path.join(CSV_DIR, filename);
+  if (!existsSync(filepath)) {
+    // If using a demo pack, try the default data dir as fallback
+    if (demoPack) {
+      const fallback = path.join(DATA_DIR, filename);
+      if (existsSync(fallback)) {
+        const content = readFileSync(fallback, "utf-8");
+        return parse(content, { columns: true, skip_empty_lines: true, trim: true }) as T[];
+      }
+    }
+    return [];
+  }
   const content = readFileSync(filepath, "utf-8");
   const records = parse(content, {
     columns: true,
@@ -116,6 +144,7 @@ function seed() {
       description: row.description,
       system: row.system || "SAP ECC",
       domain: row.domain,
+      roleOwner: row.role_owner || null,
     }).run();
   }
   console.log(`  ✓ ${rolesData.length} source roles`);
@@ -161,6 +190,7 @@ function seed() {
       description: row.description,
       system: row.system || "S/4HANA",
       domain: row.domain || "Finance",
+      roleOwner: row.role_owner || null,
     }).run();
   }
   console.log(`  ✓ ${targetRolesData.length} target roles`);

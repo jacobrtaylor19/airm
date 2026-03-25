@@ -1,0 +1,5 @@
+# SOD rules template — defines conflicting permission pairs. severity: critical/high/medium/low. permission_a and permission_b reference permission IDs.
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD001,Vendor Create vs Payment,FK01,F110,critical,User can create vendors and execute payments — fraud risk
+SOD002,PO Create vs Goods Receipt,ME21N,MIGO,high,User can create purchase orders and confirm receipt — collusion risk
+SOD003,Invoice Post vs Payment Run,FB60,F110,medium,User can post invoices and run payment programs

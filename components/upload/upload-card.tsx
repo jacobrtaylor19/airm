@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, AlertCircle, Loader2, FileUp } from "lucide-react";
+import { CheckCircle, AlertCircle, Loader2, FileUp, Download } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,7 @@ export function UploadCard({
   expectedColumns,
   required,
   existingCount,
+  templateUrl,
 }: {
   type: string;
   label: string;
@@ -35,6 +36,7 @@ export function UploadCard({
   expectedColumns: string;
   required: boolean;
   existingCount: number;
+  templateUrl?: string;
 }) {
   const [status, setStatus] = useState<UploadStatus>(existingCount > 0 ? "done" : "idle");
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -143,15 +145,25 @@ export function UploadCard({
               if (f) handleFileSelect(f);
             }}
           />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fileRef.current?.click()}
-            disabled={status === "uploading" || status === "committing"}
-          >
-            <FileUp className="mr-1 h-3 w-3" />
-            {status === "done" ? "Replace" : "Upload CSV"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+              disabled={status === "uploading" || status === "committing"}
+            >
+              <FileUp className="mr-1 h-3 w-3" />
+              {status === "done" ? "Replace" : "Upload CSV"}
+            </Button>
+            {templateUrl && (
+              <a href={templateUrl} download>
+                <Button variant="ghost" size="sm" type="button" className="text-muted-foreground hover:text-foreground">
+                  <Download className="mr-1 h-3 w-3" />
+                  Template
+                </Button>
+              </a>
+            )}
+          </div>
         </CardContent>
       </Card>
 

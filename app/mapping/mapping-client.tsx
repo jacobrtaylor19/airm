@@ -13,7 +13,7 @@ import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, Perso
 
 interface PersonaDetailInfo {
   sourcePermissionCount: number;
-  mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; confidence: string | null }[];
+  mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; confidence: string | null; roleOwner: string | null }[];
 }
 
 interface MappingClientProps {
@@ -194,6 +194,7 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                           <TableRow>
                             <TableHead>Role ID</TableHead>
                             <TableHead>Name</TableHead>
+                            <TableHead>Owner</TableHead>
                             <TableHead>Coverage</TableHead>
                             <TableHead>Confidence</TableHead>
                           </TableRow>
@@ -203,6 +204,7 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                             <TableRow key={r.targetRoleId}>
                               <TableCell className="font-mono text-xs">{r.roleId}</TableCell>
                               <TableCell className="text-sm">{r.roleName}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">{r.roleOwner ?? "—"}</TableCell>
                               <TableCell className="text-sm">
                                 {r.coveragePercent != null ? `${Math.round(r.coveragePercent)}%` : "—"}
                               </TableCell>

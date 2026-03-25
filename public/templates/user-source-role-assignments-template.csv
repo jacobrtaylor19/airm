@@ -1,0 +1,5 @@
+# User-role assignments — maps users to their legacy roles. source_user_id and role_id must exist. assigned_date is optional (YYYY-MM-DD).
+source_user_id,role_id,system,assigned_date
+U001,SAP_AP_CLERK_01,SAP ECC,2023-01-15
+U002,SAP_MM_BUYER,SAP ECC,2022-06-01
+U003,SAP_PM_PLANNER,SAP ECC,2023-03-20

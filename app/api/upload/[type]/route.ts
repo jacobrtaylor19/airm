@@ -153,6 +153,7 @@ async function commitUpload(
               system: row.system || "SAP ECC",
               domain: row.domain || null,
               roleType: row.role_type || null,
+              roleOwner: row.role_owner || null,
             })
             .run();
           inserted++;
@@ -252,6 +253,7 @@ async function commitUpload(
               description: row.description || null,
               system: row.system || "S/4HANA",
               domain: row.domain || null,
+              roleOwner: row.role_owner || null,
             })
             .run();
           inserted++;

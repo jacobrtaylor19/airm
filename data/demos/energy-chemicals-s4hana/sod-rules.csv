@@ -1,0 +1,61 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-EC-001,Vendor Create vs Payment Execution,XK01,F110,Critical,Creating vendors and executing payments enables fictitious vendor fraud
+SOD-EC-002,Vendor Modify vs Payment Execution,XK02,F110,Critical,Modifying vendor bank details and running payments enables payment redirection fraud
+SOD-EC-003,Vendor Create vs Invoice Entry,XK01,FB60,High,Creating vendors and posting invoices enables fictitious vendor invoicing
+SOD-EC-004,Vendor Modify vs Invoice Entry,XK02,FB60,High,Changing vendor data and posting invoices enables unauthorized payment routing
+SOD-EC-005,PO Creation vs Goods Receipt,ME21N,MIGO_GR,High,Creating POs and receiving goods enables fictitious procurement fraud
+SOD-EC-006,PO Creation vs Invoice Entry,ME21N,FB60,High,Creating POs and posting invoices allows bypass of three-way match controls
+SOD-EC-007,PO Creation vs Payment Execution,ME21N,F110,Critical,Creating POs and executing payments enables end-to-end procurement fraud
+SOD-EC-008,Goods Receipt vs Invoice Posting,MIGO_GR,FB60,High,Receiving goods and posting invoices bypasses separation of receiving and AP
+SOD-EC-009,Vendor Create vs PO Creation,XK01,ME21N,High,Creating vendors and purchase orders enables unauthorized procurement
+SOD-EC-010,Release Blocked Invoice vs Payment,MRBR,F110,High,Releasing blocked invoices and running payments bypasses invoice review controls
+SOD-EC-011,Material Master Create vs Goods Receipt,MM01,MIGO_GR,Medium,Creating materials and receiving goods could enable unauthorized inventory additions
+SOD-EC-012,Material Master Create vs PO Creation,MM01,ME21N,Medium,Creating materials and purchase orders enables procurement of unauthorized items
+SOD-EC-013,Inventory Count vs Post Differences,MI04,MI07,High,Counting inventory and posting differences enables inventory shrinkage concealment
+SOD-EC-014,Goods Issue vs Inventory Adjustment,MB1A,MI07,High,Issuing goods and adjusting inventory enables theft concealment
+SOD-EC-015,Create Maintenance Order vs Goods Issue,IW31,MB1A,Medium,Creating work orders and issuing materials could enable unauthorized material consumption
+SOD-EC-016,Maintenance Order vs PO Creation,IW31,ME21N,Medium,Creating maintenance orders and POs enables unauthorized maintenance procurement
+SOD-EC-017,GL Posting vs Vendor Payment,FB01,F-53,High,Posting journal entries and vendor payments enables misappropriation through GL manipulation
+SOD-EC-018,GL Posting vs Change Document,FB01,FB02,High,Creating and changing GL documents enables unauthorized financial statement manipulation
+SOD-EC-019,Cost Center Create vs GL Posting,KS01,FB01,Medium,Creating cost centers and posting to GL enables hidden cost allocation
+SOD-EC-020,Internal Order Create vs Release,KO01,KO04,Medium,Creating and releasing internal orders bypasses segregation of budget approval
+SOD-EC-021,HR Master Data vs Payroll,PA30,PC00_M99_CALC,Critical,Maintaining employee data and running payroll enables ghost employee fraud
+SOD-EC-022,Personnel Actions vs Payroll,PA40,PC00_M99_CALC,Critical,Executing personnel actions and payroll enables unauthorized compensation changes
+SOD-EC-023,HR Master Data vs Time Entry,PA30,CAT2,High,Maintaining HR data and entering time enables phantom overtime fraud
+SOD-EC-024,User Maintenance vs Role Assignment,SU01,PFCG,Critical,Creating users and assigning roles enables unauthorized access provisioning
+SOD-EC-025,Mass User Change vs Role Maintenance,SU10,PFCG,Critical,Mass user changes with role maintenance enables widespread unauthorized access
+SOD-EC-026,Equipment Change vs Maintenance Order,IH02,IW31,Medium,Changing equipment data and creating orders could mask unauthorized modifications
+SOD-EC-027,Functional Location Create vs Equipment Change,IL01,IH02,Medium,Creating locations and changing equipment enables unauthorized asset reorganization
+SOD-EC-028,Quality Decision vs Goods Receipt,QA11,MIGO_GR,High,Making quality decisions and receiving goods bypasses quality control segregation
+SOD-EC-029,Quality Notification vs Inspection Results,QM01,QA01,Medium,Creating quality issues and recording results could enable quality data manipulation
+SOD-EC-030,Inspection Plan vs Usage Decision,QP01,QA11,Medium,Creating inspection plans and making decisions bypasses quality oversight
+SOD-EC-031,EHS Incident Create vs Change,CBIH01,CBIH02,Medium,Creating and modifying incident records could enable incident report manipulation
+SOD-EC-032,Risk Assessment vs Incident Management,CBRM01,CBIH02,Medium,Creating risk assessments and changing incidents could enable risk underreporting
+SOD-EC-033,Waste Disposition vs Emission Reporting,CBWD01,CBP030,Medium,Managing waste records and emission reports could enable environmental compliance manipulation
+SOD-EC-034,Contract Create vs PO Creation,ME31K,ME21N,High,Creating contracts and purchase orders enables unauthorized commitment of company funds
+SOD-EC-035,Contract Create vs Vendor Create,ME31K,XK01,High,Creating contracts and vendors enables fictitious contract fraud
+SOD-EC-036,RFQ Create vs PO Creation,ME41,ME21N,Medium,Creating RFQs and POs could enable bid manipulation and favoritism
+SOD-EC-037,Production Order vs Goods Issue,CO01,MB1A,Medium,Creating production orders and issuing materials enables unauthorized material consumption
+SOD-EC-038,Production Order vs Confirmation,CO01,CO11N,Medium,Creating and confirming production orders enables output quantity manipulation
+SOD-EC-039,Project Builder vs GL Posting,CJ20N,FB01,High,Managing projects and posting to GL enables unauthorized project cost manipulation
+SOD-EC-040,Project Builder vs PO Creation,CJ20N,ME21N,High,Managing projects and creating POs enables unauthorized project procurement
+SOD-EC-041,Maintenance Plan Schedule vs Order Create,IP10,IW31,Medium,Scheduling plans and creating orders could enable excessive maintenance ordering
+SOD-EC-042,Calibration Order vs Measurement Record,IK01,IA11,Medium,Creating calibration orders and recording measurements bypasses calibration verification
+SOD-EC-043,Vendor Invoice vs Credit Memo,FB60,FB65,High,Posting invoices and credit memos enables credit memo fraud
+SOD-EC-044,Manual Payment vs Change Document,F-53,FB02,High,Making manual payments and changing documents enables payment manipulation
+SOD-EC-045,Goods Receipt vs Transfer Posting,MIGO_GR,MB1B,Medium,Receiving goods and transferring stock could enable misrouting of materials
+SOD-EC-046,Create PO vs Change PO,ME21N,ME22N,Medium,Creating and changing POs enables post-approval PO manipulation
+SOD-EC-047,Park Invoice vs Release Blocked Invoice,MIR7,MRBR,High,Parking invoices and releasing blocks bypasses invoice approval controls
+SOD-EC-048,Outbound Delivery vs Goods Issue,VL01N,MB1A,Medium,Creating deliveries and issuing goods enables unauthorized shipments
+SOD-EC-049,Work Schedule vs Time Entry,PT01,CAT2,Medium,Creating work schedules and entering time enables overtime manipulation
+SOD-EC-050,HSE Inspection vs Permit Coordination,CBIH01,IW31,Low,HSE incident management combined with maintenance ordering may create conflict of interest
+SOD-EC-051,Vendor Purchasing Create vs Contract,MK01,ME31K,High,Creating vendor purchasing records and contracts enables unauthorized vendor agreements
+SOD-EC-052,Physical Inventory Create vs Count Entry,MI01,MI04,Medium,Creating inventory documents and entering counts bypasses count verification
+SOD-EC-053,GL Posting vs Foreign Currency Valuation,FB01,FAGL_FC_VAL,High,GL posting and currency valuation enables manipulation of foreign exchange gains/losses
+SOD-EC-054,GL Posting vs Balance Sheet Adjustment,FB01,F101,High,GL posting and balance sheet adjustments enables financial statement manipulation
+SOD-EC-055,Cost Center Create vs Internal Order,KS01,KO01,Medium,Creating cost centers and internal orders enables hidden cost allocation structures
+SOD-EC-056,Equipment Change vs Calibration Order,IH02,IK01,Low,Changing equipment and creating calibration orders may enable skipping of calibration requirements
+SOD-EC-057,Maintenance Order Change vs Confirmation,IW32,IW41,Medium,Changing and confirming orders enables backdating or inflating maintenance activities
+SOD-EC-058,Purchase Requisition vs Purchase Order,ME51N,ME21N,High,Creating requisitions and converting to POs bypasses requisition approval workflow
+SOD-EC-059,Emission Reporting vs Waste Disposition,CBP030,CBWD01,Medium,Managing emissions and waste records simultaneously could enable environmental data manipulation
+SOD-EC-060,Vendor Balance Display vs Payment Execution,FK10N,F110,Low,Viewing vendor balances and executing payments could enable preferential payment processing

@@ -30,6 +30,7 @@ export default function TargetRolesPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Domain</TableHead>
                 <TableHead>System</TableHead>
+                <TableHead>Owner</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="text-right">Permissions</TableHead>
               </TableRow>
@@ -41,6 +42,7 @@ export default function TargetRolesPage() {
                   <TableCell className="font-medium text-sm">{role.roleName}</TableCell>
                   <TableCell className="text-sm">{role.domain ?? "—"}</TableCell>
                   <TableCell className="text-sm">{role.system ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{role.roleOwner ?? "—"}</TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
                     {role.description ?? "—"}
                   </TableCell>

@@ -1,0 +1,5 @@
+# Target roles template — role_id must be unique. role_type examples: security/task. role_owner is the business owner responsible.
+role_id,role_name,description,domain,system,role_type,role_owner
+S4_AP_INV_PROC,AP Invoice Processor,Process and post vendor invoices in Fiori,Finance,S/4HANA,security,John Smith - AP Manager
+S4_PM_PLANNER,Maintenance Planner,Plan and schedule preventive and corrective maintenance,EAM,S/4HANA,security,Sarah Chen - EAM Lead
+S4_MM_BUYER,Procurement Specialist,Create and manage purchase orders in S/4HANA Sourcing,Materials Management,S/4HANA,security,Maria Lopez - Procurement Manager

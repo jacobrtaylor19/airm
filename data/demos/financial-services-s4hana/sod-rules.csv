@@ -1,0 +1,61 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-FS-001,Trade Execution vs Settlement,FTR_CREATE,TPM20,Critical,Executing trades and settling them enables unauthorized transaction completion without oversight
+SOD-FS-002,Trade Execution vs Payment Release,FTR_CREATE,TPM30,Critical,Creating trades and releasing payments enables end-to-end unauthorized fund movement
+SOD-FS-003,Trade Edit vs Settlement Confirmation,FTR_EDIT,TPM25,High,Modifying trades and confirming settlements enables trade manipulation after execution
+SOD-FS-004,FX Trade Create vs Settlement,TBDF,TPM20,Critical,Creating FX trades and settling them bypasses front-to-back office segregation
+SOD-FS-005,Securities Trade vs Settlement,TBBI,TPM20,Critical,Executing securities trades and processing settlements enables unauthorized securities movement
+SOD-FS-006,OTC Derivative Create vs Settlement,TBDO,TPM20,Critical,Creating OTC derivatives and settling them enables creation of fictitious derivative positions
+SOD-FS-007,Position Management vs P&L Attribution,FWZZ,JBRP,High,Managing positions and calculating P&L enables manipulation of performance reporting
+SOD-FS-008,Position Management vs VaR Calculation,FWZZ,JBRX,High,Managing positions and calculating VaR enables risk metric manipulation
+SOD-FS-009,Limit Management vs Trade Create,FWZ5,FTR_CREATE,Critical,Setting credit limits and executing trades enables bypass of limit controls
+SOD-FS-010,Counterparty Master vs Trade Create,TBC3,FTR_CREATE,High,Creating counterparties and trades enables fictitious counterparty fraud
+SOD-FS-011,Counterparty Master vs Limit Management,TBC3,FWZ5,High,Creating counterparties and setting limits enables unauthorized credit exposure
+SOD-FS-012,Bank Transfer vs Bank Statement Process,FF_5,FF7B,Critical,Executing transfers and processing statements enables concealment of unauthorized transfers
+SOD-FS-013,Bank Transfer vs Cash Position,FF_5,FF67,High,Executing transfers and viewing cash positions enables timing manipulation of fund movements
+SOD-FS-014,Payment Release vs Bank Transfer,TPM30,FF_5,Critical,Releasing payments and executing bank transfers enables double payment fraud
+SOD-FS-015,House Bank Change vs Bank Transfer,FI12,FF_5,Critical,Changing bank configuration and transferring funds enables redirection of corporate funds
+SOD-FS-016,Standing Instructions vs Payment Release,FF63,TPM30,High,Creating standing transfer instructions and releasing payments enables recurring unauthorized payments
+SOD-FS-017,Vendor Create vs Payment Execution,XK01,F110,Critical,Creating vendors and executing payments enables fictitious vendor fraud
+SOD-FS-018,Vendor Modify vs Payment Execution,XK02,F110,Critical,Modifying vendor bank details and running payments enables payment redirection
+SOD-FS-019,Vendor Create vs Invoice Entry,XK01,FB60,High,Creating vendors and posting invoices enables fictitious vendor invoicing
+SOD-FS-020,Invoice Entry vs Payment Execution,FB60,F110,High,Posting invoices and executing payments bypasses invoice approval controls
+SOD-FS-021,Release Blocked Invoice vs Payment,MRBR,F110,High,Releasing blocked invoices and running payments bypasses invoice review
+SOD-FS-022,Park Invoice vs Release Blocked Invoice,MIR7,MRBR,High,Parking invoices and releasing blocks bypasses approval workflow
+SOD-FS-023,Customer Create vs Customer Invoice,XD01,FB70,High,Creating customers and posting invoices enables fictitious revenue recognition
+SOD-FS-024,Customer Credit Memo vs Incoming Payment,FB75,F-28,High,Posting credit memos and applying payments enables misappropriation of funds
+SOD-FS-025,Customer Create vs Incoming Payment,XD01,F-28,High,Creating customers and posting payments enables fraudulent cash application
+SOD-FS-026,GL Posting vs Vendor Payment,FB01,F-53,High,GL posting and manual payments enables misappropriation through GL manipulation
+SOD-FS-027,GL Posting vs Change Document,FB01,FB02,High,Creating and changing GL documents enables financial statement manipulation
+SOD-FS-028,GL Account Create vs GL Posting,FSP0,FB01,High,Creating GL accounts and posting entries enables hidden accounting manipulation
+SOD-FS-029,Cross-Company Posting vs GL Posting,GCAC,FB01,High,Cross-company and regular GL posting enables intercompany fraud
+SOD-FS-030,Posting Period Control vs GL Posting,OB52,FB01,Critical,Opening periods and posting entries enables backdated financial manipulation
+SOD-FS-031,Foreign Currency Valuation vs GL Posting,FAGL_FC_VAL,FB01,High,Currency valuation and GL posting enables FX gain/loss manipulation
+SOD-FS-032,Recurring Entry vs GL Posting,FBD1,FB01,Medium,Creating recurring entries and manual posting enables duplicate posting fraud
+SOD-FS-033,Automatic Clearing vs GL Posting,F.5D,FB01,High,Auto-clearing and GL posting enables clearing manipulation to hide transactions
+SOD-FS-034,Reverse Clearing vs GL Posting,FBRA,FB01,High,Reversing clearings and posting enables undoing of legitimate clearing for fraud
+SOD-FS-035,Consolidation vs GL Posting,FC10,FB01,High,Consolidation posting and GL entries enables manipulation of consolidated financials
+SOD-FS-036,Number Range vs Document Posting,FBN1,FB01,Critical,Controlling number ranges and posting enables gap or duplicate document manipulation
+SOD-FS-037,Tolerance Group vs Payment Execution,OBR2,F110,High,Setting tolerances and executing payments enables override of payment approval limits
+SOD-FS-038,User Maintenance vs Role Assignment,SU01,PFCG,Critical,Creating users and assigning roles enables unauthorized access provisioning
+SOD-FS-039,Mass User Change vs Role Maintenance,SU10,PFCG,Critical,Mass user changes with role maintenance enables widespread unauthorized access
+SOD-FS-040,Data Browser vs GL Posting,SE16,FB01,High,Database access and GL posting enables direct data manipulation
+SOD-FS-041,Program Execution vs GL Posting,SA38,FB01,High,Running programs and GL posting enables automated unauthorized postings
+SOD-FS-042,Transport Management vs Role Maintenance,STMS,PFCG,Critical,Transport and role management enables unauthorized role deployment to production
+SOD-FS-043,Customizing vs GL Posting,SPRO,FB01,Critical,System configuration and GL posting enables manipulation of posting rules
+SOD-FS-044,HR Master Data vs Payroll,PA30,PC00_M99_CALC,Critical,Maintaining employee data and running payroll enables ghost employee fraud
+SOD-FS-045,Cost Center Create vs GL Posting,KS01,FB01,Medium,Creating cost centers and GL posting enables hidden cost allocation
+SOD-FS-046,Internal Order vs GL Posting,KO01,FB01,Medium,Creating internal orders and GL posting enables unauthorized cost tracking
+SOD-FS-047,Netting Run vs Payment Release,TPM10,TPM30,High,Netting and payment release enables manipulation of net settlement amounts
+SOD-FS-048,Margin Call vs Position Management,TPM40,FWZZ,High,Processing margin calls and managing positions creates conflict of interest
+SOD-FS-049,Accrual Posting vs Balance Sheet Adjustment,FPE1,F101,Medium,Posting accruals and adjustments enables manipulation of period-end financials
+SOD-FS-050,Vendor Invoice vs Credit Memo,FB60,FB65,High,Posting invoices and credit memos enables credit memo fraud
+SOD-FS-051,Manual Payment vs Change Document,F-53,FB02,High,Manual payments and changing documents enables payment record manipulation
+SOD-FS-052,Check Information vs Payment Execution,FCHI,F110,High,Maintaining check data and executing payments enables check fraud
+SOD-FS-053,Validation Rules vs GL Posting,GGB1,FB01,High,Creating validations and posting bypasses enables selective control override
+SOD-FS-054,Document Type Config vs GL Posting,OBA5,FB01,High,Configuring document types and posting enables control framework manipulation
+SOD-FS-055,PO Creation vs Invoice Entry,ME21N,FB60,High,Creating POs and posting invoices bypasses three-way match controls
+SOD-FS-056,Trade Create vs Risk Reporting,FTR_CREATE,JBRF,Medium,Creating trades and generating risk reports enables selective risk disclosure
+SOD-FS-057,Regulatory Filing vs GL Posting,J1UFIN,FB01,High,Regulatory filing and GL posting enables manipulation of regulatory submissions
+SOD-FS-058,Cash Journal vs Bank Transfer,FBCJ,FF_5,Medium,Cash journal management and bank transfers enables cash misappropriation
+SOD-FS-059,Parked Document Change vs GL Posting,FBV2,FB01,Medium,Changing parked documents and posting enables bypass of parking approval workflow
+SOD-FS-060,Bank Statement Import vs Bank Transfer,FF7A,FF_5,High,Importing statements and executing transfers enables concealment of unauthorized transactions

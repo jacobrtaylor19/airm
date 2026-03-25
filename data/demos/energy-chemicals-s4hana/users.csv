@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+EC001,Robert Caldwell,robert.caldwell@energycorp.com,Plant Manager,Operations
+EC002,Maria Santos,maria.santos@energycorp.com,Senior Process Engineer,Engineering
+EC003,James Thornton,james.thornton@energycorp.com,HSE Coordinator,HSE
+EC004,Wei Zhang,wei.zhang@energycorp.com,Maintenance Planner,Maintenance
+EC005,Fatima Al-Rashid,fatima.alrashid@energycorp.com,Instrument Technician,Maintenance
+EC006,Derek Williams,derek.williams@energycorp.com,Turnaround Manager,Operations
+EC007,Priya Sharma,priya.sharma@energycorp.com,Environmental Specialist,HSE
+EC008,Carlos Mendez,carlos.mendez@energycorp.com,Pipeline Inspector,Operations
+EC009,Sarah Mitchell,sarah.mitchell@energycorp.com,Procurement Manager,Procurement
+EC010,Oluwaseun Adeyemi,oluwaseun.adeyemi@energycorp.com,Cost Controller,Finance
+EC011,John Patterson,john.patterson@energycorp.com,Rotating Equipment Engineer,Engineering
+EC012,Li Mei Chen,limei.chen@energycorp.com,Laboratory Analyst,Quality
+EC013,Ahmed Hassan,ahmed.hassan@energycorp.com,Shift Supervisor,Operations
+EC014,Jennifer Collins,jennifer.collins@energycorp.com,HR Business Partner,HR
+EC015,Mikhail Petrov,mikhail.petrov@energycorp.com,Electrical Technician,Maintenance
+EC016,Rachel Green,rachel.green@energycorp.com,Supply Chain Analyst,Supply Chain
+EC017,David Okonkwo,david.okonkwo@energycorp.com,Regulatory Affairs Manager,Regulatory
+EC018,Yuki Tanaka,yuki.tanaka@energycorp.com,Process Safety Engineer,HSE
+EC019,Thomas Mueller,thomas.mueller@energycorp.com,Warehouse Supervisor,Supply Chain
+EC020,Aisha Bello,aisha.bello@energycorp.com,Financial Analyst,Finance
+EC021,Mark Robinson,mark.robinson@energycorp.com,Operations Superintendent,Operations
+EC022,Nina Volkov,nina.volkov@energycorp.com,Quality Control Inspector,Quality
+EC023,Ricardo Torres,ricardo.torres@energycorp.com,Mechanical Technician,Maintenance
+EC024,Hannah Baker,hannah.baker@energycorp.com,IT Systems Administrator,IT
+EC025,Kwame Mensah,kwame.mensah@energycorp.com,Reliability Engineer,Engineering
+EC026,Laura Martinez,laura.martinez@energycorp.com,Accounts Payable Clerk,Finance
+EC027,Sanjay Gupta,sanjay.gupta@energycorp.com,Control Systems Engineer,Engineering
+EC028,Emily Watson,emily.watson@energycorp.com,Training Coordinator,HR
+EC029,Pierre Dupont,pierre.dupont@energycorp.com,Corrosion Engineer,Engineering
+EC030,Grace Obi,grace.obi@energycorp.com,Environmental Compliance Officer,Regulatory
+EC031,Steven Kim,steven.kim@energycorp.com,Plant Operator,Operations
+EC032,Claudia Rossi,claudia.rossi@energycorp.com,Buyer,Procurement
+EC033,Nathan Brown,nathan.brown@energycorp.com,Safety Inspector,HSE
+EC034,Amara Diallo,amara.diallo@energycorp.com,Logistics Coordinator,Supply Chain
+EC035,Kevin O'Brien,kevin.obrien@energycorp.com,Project Engineer,Engineering
+EC036,Sophia Lee,sophia.lee@energycorp.com,General Ledger Accountant,Finance
+EC037,Ibrahim Yusuf,ibrahim.yusuf@energycorp.com,Fire Protection Specialist,HSE
+EC038,Victoria Chang,victoria.chang@energycorp.com,Materials Manager,Procurement
+EC039,Andrew Thompson,andrew.thompson@energycorp.com,Scaffolding Supervisor,Maintenance
+EC040,Beatrice Kamau,beatrice.kamau@energycorp.com,Payroll Administrator,HR
+EC041,Frank Weber,frank.weber@energycorp.com,Tank Farm Operator,Operations
+EC042,Diana Morales,diana.morales@energycorp.com,Chemical Engineer,Engineering
+EC043,Charles Nwosu,charles.nwosu@energycorp.com,Permit Coordinator,HSE
+EC044,Megan Stewart,megan.stewart@energycorp.com,Contract Administrator,Procurement
+EC045,Hiroshi Yamamoto,hiroshi.yamamoto@energycorp.com,Instrumentation Engineer,Engineering
+EC046,Rebecca Harris,rebecca.harris@energycorp.com,Treasury Analyst,Finance
+EC047,Luis Ramirez,luis.ramirez@energycorp.com,Crane Operator,Operations
+EC048,Anna Kowalski,anna.kowalski@energycorp.com,QA/QC Manager,Quality
+EC049,Daniel Achebe,daniel.achebe@energycorp.com,IT Network Engineer,IT
+EC050,Catherine Blanc,catherine.blanc@energycorp.com,Recruitment Specialist,HR
+EC051,George Phillips,george.phillips@energycorp.com,Drilling Engineer,Operations
+EC052,Sandra Vega,sandra.vega@energycorp.com,Waste Management Coordinator,HSE
+EC053,Patrick Ng,patrick.ng@energycorp.com,HVAC Technician,Maintenance
+EC054,Michelle Dubois,michelle.dubois@energycorp.com,Vendor Manager,Procurement
+EC055,Roy Jenkins,roy.jenkins@energycorp.com,Production Planner,Operations
+EC056,Adama Traore,adama.traore@energycorp.com,Fixed Asset Accountant,Finance
+EC057,Helen Carter,helen.carter@energycorp.com,Occupational Health Nurse,HSE
+EC058,Takeshi Suzuki,takeshi.suzuki@energycorp.com,Pipeline Engineer,Engineering
+EC059,Barbara King,barbara.king@energycorp.com,Inventory Analyst,Supply Chain
+EC060,Joseph Mutua,joseph.mutua@energycorp.com,Regulatory Compliance Analyst,Regulatory
+EC061,Petra Schmidt,petra.schmidt@energycorp.com,Lab Manager,Quality
+EC062,Oscar Rivera,oscar.rivera@energycorp.com,Welder Supervisor,Maintenance
+EC063,Fiona Walsh,fiona.walsh@energycorp.com,Benefits Administrator,HR
+EC064,Samuel Osei,samuel.osei@energycorp.com,Compressor Operator,Operations
+EC065,Ingrid Larsen,ingrid.larsen@energycorp.com,Process Control Specialist,Engineering
+EC066,Tony Nguyen,tony.nguyen@energycorp.com,IT Security Analyst,IT
+EC067,Rashida Patel,rashida.patel@energycorp.com,Environmental Monitoring Technician,HSE
+EC068,William Fraser,william.fraser@energycorp.com,Purchasing Agent,Procurement
+EC069,Christina Hoffman,christina.hoffman@energycorp.com,Cost Estimator,Finance
+EC070,Emeka Eze,emeka.eze@energycorp.com,Cathodic Protection Technician,Maintenance
+EC071,Julia Anderson,julia.anderson@energycorp.com,Shipping Coordinator,Supply Chain
+EC072,Martin Gruber,martin.gruber@energycorp.com,Emissions Analyst,Regulatory
+EC073,Donna Scott,donna.scott@energycorp.com,Document Controller,Quality
+EC074,Ravi Krishnamurthy,ravi.krishnamurthy@energycorp.com,Automation Engineer,Engineering
+EC075,Lisa Johansson,lisa.johansson@energycorp.com,AP Supervisor,Finance
+EC076,Hassan Mahmoud,hassan.mahmoud@energycorp.com,Blasting Technician,Operations
+EC077,Cynthia Park,cynthia.park@energycorp.com,Compliance Auditor,Regulatory
+EC078,Brian McDonald,brian.mcdonald@energycorp.com,Maintenance Supervisor,Maintenance
+EC079,Zainab Abubakar,zainab.abubakar@energycorp.com,HR Administrator,HR
+EC080,Klaus Fischer,klaus.fischer@energycorp.com,Boiler Operator,Operations
+EC081,Angela Davis,angela.davis@energycorp.com,Strategic Sourcing Manager,Procurement
+EC082,Raj Patel,raj.patel@energycorp.com,Civil Engineer,Engineering
+EC083,Natasha Ivanova,natasha.ivanova@energycorp.com,Industrial Hygienist,HSE
+EC084,Paul Zimmermann,paul.zimmermann@energycorp.com,Receiving Clerk,Supply Chain
+EC085,Esther Owusu,esther.owusu@energycorp.com,Budget Analyst,Finance
+EC086,Marco Bianchi,marco.bianchi@energycorp.com,NDT Technician,Quality
+EC087,Karen Taylor,karen.taylor@energycorp.com,ERP Application Analyst,IT
+EC088,Abdul Rahman,abdul.rahman@energycorp.com,Scaffolding Inspector,HSE
+EC089,Christine Berger,christine.berger@energycorp.com,Travel Coordinator,HR
+EC090,Eric Henriksen,eric.henriksen@energycorp.com,Refinery Operator,Operations
+EC091,Fumiko Watanabe,fumiko.watanabe@energycorp.com,Analytical Chemist,Quality
+EC092,Dennis Murphy,dennis.murphy@energycorp.com,Millwright,Maintenance
+EC093,Isabel Ferreira,isabel.ferreira@energycorp.com,Freight Forwarder,Supply Chain
+EC094,Alfred Mensah,alfred.mensah@energycorp.com,Tax Accountant,Finance
+EC095,Ulrike Bauer,ulrike.bauer@energycorp.com,Permit-to-Work Administrator,HSE
+EC096,Roger Simmons,roger.simmons@energycorp.com,Pipeline Integrity Manager,Operations
+EC097,Mei Lin Wong,meilin.wong@energycorp.com,IT Project Manager,IT
+EC098,Teresa Gonzalez,teresa.gonzalez@energycorp.com,Environmental Reporting Specialist,Regulatory
+EC099,Michael O'Connor,michael.oconnor@energycorp.com,Commissioning Engineer,Engineering
+EC100,Nneka Obiora,nneka.obiora@energycorp.com,Internal Auditor,Finance

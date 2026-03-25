@@ -40,13 +40,16 @@ export default function MappingPage() {
   }
 
   // Pre-fetch persona details for the workspace
-  const personaDetails: Record<number, { sourcePermissionCount: number; mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; confidence: string | null }[] }> = {};
+  const personaDetails: Record<number, { sourcePermissionCount: number; mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; confidence: string | null; roleOwner: string | null }[] }> = {};
   for (const p of personas) {
     const detail = getPersonaDetail(p.personaId);
     if (detail) {
       personaDetails[p.personaId] = {
         sourcePermissionCount: detail.sourcePermissions.length,
-        mappedRoles: detail.targetRoleMappings,
+        mappedRoles: detail.targetRoleMappings.map(r => ({
+          ...r,
+          roleOwner: r.roleOwner ?? null,
+        })),
       };
     }
   }

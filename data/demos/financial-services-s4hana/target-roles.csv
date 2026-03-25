@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+S4_TR_DEALER,Treasury Dealer,Execute money market FX and securities transactions,S/4HANA,Treasury
+S4_TR_PORTFOLIO,Treasury Portfolio Manager,Manage investment portfolios and trading strategies,S/4HANA,Treasury
+S4_TR_CASH_MGR,Treasury Cash Manager,Cash position management forecasting and bank communication,S/4HANA,Treasury
+S4_TR_BACK_OFFICE,Treasury Back Office Processor,Trade settlement confirmation and payment processing,S/4HANA,Treasury
+S4_RM_MARKET,Risk Market Risk Analyst,Market risk measurement VaR calculation and stress testing,S/4HANA,Risk
+S4_RM_CREDIT,Risk Credit Analyst,Counterparty credit assessment limit monitoring and exposure,S/4HANA,Risk
+S4_RM_OPERATIONAL,Risk Operational Risk Analyst,Operational risk event tracking and reporting,S/4HANA,Risk
+S4_CO_OFFICER,Compliance Officer,Regulatory compliance monitoring policy enforcement,S/4HANA,Compliance
+S4_CO_AML,AML Compliance Analyst,Anti-money laundering screening investigation and SAR filing,S/4HANA,Compliance
+S4_CO_REPORTING,Regulatory Reporting Analyst,Regulatory report preparation and submission,S/4HANA,Compliance
+S4_FI_GL_ACCT,GL Accountant,General ledger accounting journal entries and reconciliation,S/4HANA,GL
+S4_FI_AP_PROC,AP Invoice Processor,Vendor invoice processing approval and payment,S/4HANA,AP
+S4_FI_AR_PROC,AR Collections Processor,Customer invoicing collections and cash application,S/4HANA,AR
+S4_FI_FUND_ACCT,Fund Accountant,Fund NAV calculation valuation and investor reporting,S/4HANA,GL
+S4_FI_CONTROLLER,Financial Controller,Financial reporting consolidation and period-end closing,S/4HANA,GL
+S4_CS_MANAGER,Client Relationship Manager,Client relationship management and service delivery,S/4HANA,Client Services
+S4_CS_ONBOARDING,Client Onboarding Specialist,Client onboarding KYC documentation and account setup,S/4HANA,Client Services
+S4_AU_AUDITOR,Internal Auditor,Audit planning testing reporting and follow-up,S/4HANA,Audit

@@ -1,0 +1,34 @@
+permission_id,permission_name,description,system,risk_level
+F0717,Manage Supplier Invoices,Process and post supplier invoices in Fiori,S/4HANA,Medium
+F0718,Display Supplier Invoices,View supplier invoice documents,S/4HANA,Low
+F0859,Approve Supplier Invoices,Approve invoices in workflow,S/4HANA,High
+F1603,Manage Automatic Payments,Configure and execute payment runs,S/4HANA,High
+F0790,Manage Supplier Master,Create and modify supplier master records,S/4HANA,High
+F0400,Post Journal Entries,Post manual journal entries to GL,S/4HANA,High
+F0710,Display GL Line Items,View general ledger line items,S/4HANA,Low
+F2439,Manage Purchase Orders,Create and edit purchase orders,S/4HANA,High
+F2440,Display Purchase Orders,View purchase order details,S/4HANA,Low
+F2441,Release Purchase Orders,Approve and release purchase orders,S/4HANA,High
+F2425,Manage Purchase Requisitions,Create and edit purchase requisitions,S/4HANA,Medium
+F2426,Display Purchase Requisitions,View purchase requisitions,S/4HANA,Low
+F3814,Manage Material Master,Create and modify material master records,S/4HANA,High
+F3815,Display Material Master,View material master data,S/4HANA,Low
+F3002,Post Goods Receipt,Post goods receipts for purchase orders,S/4HANA,Medium
+F3003,Post Goods Issue,Post goods issues from inventory,S/4HANA,Medium
+F3004,Transfer Posting,Post stock transfers between plants,S/4HANA,Medium
+F3005,Display Stock Overview,View current stock levels,S/4HANA,Low
+F3737,Manage Physical Inventory,Create and process physical inventory documents,S/4HANA,Medium
+F3738,Post Inventory Differences,Post adjustments from physical count,S/4HANA,High
+F4580,Create Maintenance Order,Create corrective and preventive maintenance orders,S/4HANA,Medium
+F4581,Manage Maintenance Orders,Change and manage maintenance work orders,S/4HANA,Medium
+F4582,Display Maintenance Orders,View maintenance order details,S/4HANA,Low
+F4583,Confirm Maintenance Order,Enter time and activity confirmations,S/4HANA,Medium
+F4570,Create Maintenance Notification,Create breakdown and malfunction notifications,S/4HANA,Low
+F4571,Manage Maintenance Notifications,Process and update notifications,S/4HANA,Low
+F4590,Manage Equipment,Create and modify equipment master records,S/4HANA,Medium
+F4591,Display Equipment,View equipment master data,S/4HANA,Low
+F4592,Manage Functional Locations,Create and modify functional locations,S/4HANA,Medium
+F4593,Display Functional Locations,View functional location hierarchy,S/4HANA,Low
+F4600,Schedule Maintenance Plans,Configure and schedule preventive maintenance plans,S/4HANA,Medium
+F4601,Monitor Maintenance Plans,View maintenance plan status and deadlines,S/4HANA,Low
+F4610,Manage Task Lists,Create and edit maintenance task lists,S/4HANA,Medium

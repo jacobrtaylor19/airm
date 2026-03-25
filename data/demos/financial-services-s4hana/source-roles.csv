@@ -1,0 +1,21 @@
+role_id,role_name,description,system,domain
+ZTR_TRADER,TR Trader,Execute and manage financial instrument trades,SAP ECC,Treasury
+ZTR_DEALER,TR Dealer,Money market and FX dealing operations,SAP ECC,Treasury
+ZTR_BACK_OFFICE,TR Back Office,Trade settlement confirmation and reconciliation,SAP ECC,Treasury
+ZRM_ANALYST,RM Risk Analyst,Market risk measurement and reporting,SAP ECC,Risk
+ZRM_CREDIT,RM Credit Analyst,Counterparty credit risk assessment and monitoring,SAP ECC,Risk
+ZCO_OFFICER,CO Compliance Officer,Regulatory compliance monitoring and reporting,SAP ECC,Compliance
+ZCO_AML,CO AML Analyst,Anti-money laundering screening and investigation,SAP ECC,Compliance
+ZFI_CONTROLLER,FI Financial Controller,Financial reporting and consolidation,SAP ECC,Finance
+ZFI_GL_ACCT,FI GL Accountant,General ledger postings and reconciliation,SAP ECC,Finance
+ZFI_AP_CLERK,FI AP Clerk,Vendor invoice processing and payment,SAP ECC,Finance
+ZFI_AR_CLERK,FI AR Clerk,Customer billing and collections,SAP ECC,Finance
+ZFI_FUND_ACCT,FI Fund Accountant,NAV calculation and fund accounting,SAP ECC,Finance
+ZCS_MANAGER,CS Client Services Manager,Client relationship and account management,SAP ECC,Client Services
+ZCS_ONBOARDING,CS Onboarding Specialist,Client onboarding and KYC documentation,SAP ECC,Client Services
+ZIT_ADMIN,IT System Administrator,System administration and access management,SAP ECC,IT
+ZIT_SECURITY,IT Security Analyst,IT security monitoring and incident response,SAP ECC,IT
+ZAU_AUDITOR,AU Internal Auditor,Internal audit testing and reporting,SAP ECC,Audit
+ZLG_COUNSEL,LG Legal Counsel,Legal review and contract management,SAP ECC,Legal
+ZTR_CASH_MGR,TR Cash Manager,Cash position management and forecasting,SAP ECC,Treasury
+ZFI_TAX,FI Tax Accountant,Tax compliance and reporting,SAP ECC,Finance

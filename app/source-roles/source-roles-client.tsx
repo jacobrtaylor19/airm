@@ -42,6 +42,7 @@ export function SourceRolesClient({
             <TableHead>Name</TableHead>
             <TableHead>Domain</TableHead>
             <TableHead>System</TableHead>
+            <TableHead>Owner</TableHead>
             <TableHead className="text-right">Permissions</TableHead>
             <TableHead className="text-right">Users</TableHead>
           </TableRow>
@@ -49,7 +50,7 @@ export function SourceRolesClient({
         <TableBody>
           {roles.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+              <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
                 No source roles found.
               </TableCell>
             </TableRow>
@@ -71,12 +72,13 @@ export function SourceRolesClient({
                   <TableCell className="font-medium text-sm">{role.roleName}</TableCell>
                   <TableCell className="text-sm">{role.domain ?? "—"}</TableCell>
                   <TableCell className="text-sm">{role.system ?? "—"}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{role.roleOwner ?? "—"}</TableCell>
                   <TableCell className="text-right text-sm">{role.permissionCount}</TableCell>
                   <TableCell className="text-right text-sm">{role.userCount}</TableCell>
                 </TableRow>
                 {expanded.has(role.id) && (
                   <TableRow>
-                    <TableCell colSpan={7} className="bg-muted/30 p-0">
+                    <TableCell colSpan={8} className="bg-muted/30 p-0">
                       <div className="p-4">
                         <p className="text-xs font-medium text-muted-foreground mb-2">
                           Permissions ({rolePermissions[role.id]?.length ?? 0})

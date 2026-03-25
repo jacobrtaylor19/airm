@@ -1,21 +1,21 @@
-role_id,role_name,description,system,domain
-SAP_AP_CLERK_01,AP Clerk Basic,Basic accounts payable clerk role for invoice entry,SAP ECC,Finance
-SAP_AP_CLERK_02,AP Clerk Advanced,Advanced AP clerk with vendor maintenance,SAP ECC,Finance
-SAP_AP_APPR_L1,AP Approver Level 1,Approve invoices up to $10000,SAP ECC,Finance
-SAP_AP_APPR_L2,AP Approver Level 2,Approve invoices up to $50000,SAP ECC,Finance
-SAP_AP_SUPER,AP Supervisor,AP supervisor with team oversight,SAP ECC,Finance
-SAP_VENDOR_MAINT,Vendor Master Maintainer,Create and modify vendor master records,SAP ECC,Finance
-SAP_PAY_PROC,Payment Processor,Process payment runs,SAP ECC,Finance
-SAP_AP_REPORT,AP Reporter,View AP reports and analytics,SAP ECC,Finance
-SAP_GL_POST,GL Poster,Post journal entries to general ledger,SAP ECC,Finance
-SAP_AP_MGR,AP Manager,Full AP management access,SAP ECC,Finance
-SAP_PM_PLANNER,Maintenance Planner,Plan and schedule maintenance orders and task lists,SAP ECC,EAM
-SAP_PM_TECH,Maintenance Technician,Execute maintenance orders and confirm work,SAP ECC,EAM
-SAP_PM_SUPV,Maintenance Supervisor,Oversee maintenance operations with order management,SAP ECC,EAM
-SAP_PM_ENGINEER,Maintenance Engineer,Create equipment masters and configure maintenance plans,SAP ECC,EAM
-SAP_PM_MANAGER,EAM Manager,Full PM access including scheduling and reporting,SAP ECC,EAM
-SAP_MM_BUYER,Procurement Buyer,Create and manage purchase orders,SAP ECC,Materials Management
-SAP_MM_PLANNER,Material Planner,Manage material masters and procurement requisitions,SAP ECC,Materials Management
-SAP_MM_WH_CLERK,Warehouse Clerk,Process goods receipts and warehouse movements,SAP ECC,Materials Management
-SAP_MM_INV_CTRL,Inventory Controller,Manage physical inventory and stock adjustments,SAP ECC,Materials Management
-SAP_MM_MANAGER,MM Manager,Full materials management access,SAP ECC,Materials Management
+role_id,role_name,description,system,domain,role_owner
+SAP_AP_CLERK_01,AP Clerk Basic,Basic accounts payable clerk role for invoice entry,SAP ECC,Finance,John Smith - AP Manager
+SAP_AP_CLERK_02,AP Clerk Advanced,Advanced AP clerk with vendor maintenance,SAP ECC,Finance,John Smith - AP Manager
+SAP_AP_APPR_L1,AP Approver Level 1,Approve invoices up to $10000,SAP ECC,Finance,John Smith - AP Manager
+SAP_AP_APPR_L2,AP Approver Level 2,Approve invoices up to $50000,SAP ECC,Finance,David Lee - Finance Director
+SAP_AP_SUPER,AP Supervisor,AP supervisor with team oversight,SAP ECC,Finance,David Lee - Finance Director
+SAP_VENDOR_MAINT,Vendor Master Maintainer,Create and modify vendor master records,SAP ECC,Finance,John Smith - AP Manager
+SAP_PAY_PROC,Payment Processor,Process payment runs,SAP ECC,Finance,David Lee - Finance Director
+SAP_AP_REPORT,AP Reporter,View AP reports and analytics,SAP ECC,Finance,John Smith - AP Manager
+SAP_GL_POST,GL Poster,Post journal entries to general ledger,SAP ECC,Finance,Rachel Adams - GL Manager
+SAP_AP_MGR,AP Manager,Full AP management access,SAP ECC,Finance,David Lee - Finance Director
+SAP_PM_PLANNER,Maintenance Planner,Plan and schedule maintenance orders and task lists,SAP ECC,EAM,Sarah Chen - EAM Lead
+SAP_PM_TECH,Maintenance Technician,Execute maintenance orders and confirm work,SAP ECC,EAM,Sarah Chen - EAM Lead
+SAP_PM_SUPV,Maintenance Supervisor,Oversee maintenance operations with order management,SAP ECC,EAM,Tom Harris - EAM Manager
+SAP_PM_ENGINEER,Maintenance Engineer,Create equipment masters and configure maintenance plans,SAP ECC,EAM,Tom Harris - EAM Manager
+SAP_PM_MANAGER,EAM Manager,Full PM access including scheduling and reporting,SAP ECC,EAM,Tom Harris - EAM Manager
+SAP_MM_BUYER,Procurement Buyer,Create and manage purchase orders,SAP ECC,Materials Management,Maria Lopez - Procurement Manager
+SAP_MM_PLANNER,Material Planner,Manage material masters and procurement requisitions,SAP ECC,Materials Management,Maria Lopez - Procurement Manager
+SAP_MM_WH_CLERK,Warehouse Clerk,Process goods receipts and warehouse movements,SAP ECC,Materials Management,Kevin Park - Warehouse Supervisor
+SAP_MM_INV_CTRL,Inventory Controller,Manage physical inventory and stock adjustments,SAP ECC,Materials Management,Kevin Park - Warehouse Supervisor
+SAP_MM_MANAGER,MM Manager,Full materials management access,SAP ECC,Materials Management,Maria Lopez - Procurement Manager

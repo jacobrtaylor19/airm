@@ -1,0 +1,21 @@
+role_id,role_name,description,system,domain
+ZPM_PLANNER,PM Planner,Plant maintenance work order planning and scheduling,SAP ECC,Maintenance
+ZPM_TECHNICIAN,PM Technician,Execute maintenance tasks and record confirmations,SAP ECC,Maintenance
+ZPM_SUPERVISOR,PM Supervisor,Supervise maintenance operations and approve work orders,SAP ECC,Maintenance
+ZPS_ENGINEER,PS Project Engineer,Capital project planning and execution in PS module,SAP ECC,Engineering
+ZHSE_COORDINATOR,HSE Coordinator,Health safety and environment incident recording and reporting,SAP ECC,HSE
+ZHSE_INSPECTOR,HSE Inspector,Safety inspection and permit-to-work management,SAP ECC,HSE
+ZMM_BUYER,MM Buyer,Purchase requisition to purchase order processing,SAP ECC,Procurement
+ZMM_WAREHOUSE,MM Warehouse Clerk,Goods receipt goods issue and inventory management,SAP ECC,Supply Chain
+ZFI_ACCOUNTANT,FI Accountant,General ledger posting and period-end closing,SAP ECC,Finance
+ZFI_AP_CLERK,FI AP Clerk,Vendor invoice processing and payment execution,SAP ECC,Finance
+ZFI_CONTROLLER,FI Cost Controller,Cost center and internal order management,SAP ECC,Finance
+ZHR_ADMIN,HR Administrator,Personnel master data and organizational management,SAP ECC,HR
+ZHR_PAYROLL,HR Payroll Processor,Payroll processing and time management,SAP ECC,HR
+ZQM_INSPECTOR,QM Inspector,Quality inspection lot processing and results recording,SAP ECC,Quality
+ZQM_MANAGER,QM Manager,Quality planning notifications and certificate management,SAP ECC,Quality
+ZPP_PLANNER,PP Production Planner,Production planning and shop floor control,SAP ECC,Operations
+ZSD_SHIPPING,SD Shipping Clerk,Delivery processing and goods issue for shipments,SAP ECC,Supply Chain
+ZEH_SPECIALIST,EHS Specialist,Environmental health and safety compliance management,SAP ECC,HSE
+ZPM_CALIBRATION,PM Calibration Tech,Instrument calibration and measurement management,SAP ECC,Maintenance
+ZIT_BASIS,IT Basis Administrator,System administration and user management,SAP ECC,IT
