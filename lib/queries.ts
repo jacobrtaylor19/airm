@@ -2,6 +2,50 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { count, sql, eq, desc, ne, and, inArray } from "drizzle-orm";
 
+// ─────────────────────────────────────────────
+// RELEASE SCOPING HELPERS
+// ─────────────────────────────────────────────
+
+/**
+ * Get user IDs that belong to the given releases.
+ * Returns null if releaseIds is null (no filter — show all).
+ */
+export function getUserIdsInReleases(releaseIds: number[] | null): number[] | null {
+  if (releaseIds === null || releaseIds.length === 0) return null;
+  const rows = db
+    .select({ userId: schema.releaseUsers.userId })
+    .from(schema.releaseUsers)
+    .where(inArray(schema.releaseUsers.releaseId, releaseIds))
+    .all();
+  return Array.from(new Set(rows.map((r) => r.userId)));
+}
+
+/**
+ * Get source role IDs that belong to the given releases.
+ */
+export function getSourceRoleIdsInReleases(releaseIds: number[] | null): number[] | null {
+  if (releaseIds === null || releaseIds.length === 0) return null;
+  const rows = db
+    .select({ sourceRoleId: schema.releaseSourceRoles.sourceRoleId })
+    .from(schema.releaseSourceRoles)
+    .where(inArray(schema.releaseSourceRoles.releaseId, releaseIds))
+    .all();
+  return rows.length > 0 ? Array.from(new Set(rows.map((r) => r.sourceRoleId))) : null;
+}
+
+/**
+ * Get target role IDs that belong to the given releases.
+ */
+export function getTargetRoleIdsInReleases(releaseIds: number[] | null): number[] | null {
+  if (releaseIds === null || releaseIds.length === 0) return null;
+  const rows = db
+    .select({ targetRoleId: schema.releaseTargetRoles.targetRoleId })
+    .from(schema.releaseTargetRoles)
+    .where(inArray(schema.releaseTargetRoles.releaseId, releaseIds))
+    .all();
+  return rows.length > 0 ? Array.from(new Set(rows.map((r) => r.targetRoleId))) : null;
+}
+
 export function getDashboardStats() {
   const totalUsers = db.select({ count: count() }).from(schema.users).get()!.count;
   const totalPersonas = db.select({ count: count() }).from(schema.personas).get()!.count;
