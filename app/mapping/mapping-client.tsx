@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { CheckCircle, Circle, Loader2, Zap } from "lucide-react";
-import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow } from "@/lib/queries";
+import { AlertTriangle, CheckCircle, Circle, Loader2, Zap } from "lucide-react";
+import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, PersonaSodConflict } from "@/lib/queries";
 
 interface PersonaDetailInfo {
   sourcePermissionCount: number;
@@ -22,9 +22,10 @@ interface MappingClientProps {
   refinements: UserRefinementRow[];
   gaps: GapRow[];
   targetRoles: TargetRoleRow[];
+  sodConflictsByPersona?: Record<number, PersonaSodConflict[]>;
 }
 
-export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles }: MappingClientProps) {
+export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {} }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const router = useRouter();
@@ -87,6 +88,7 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                 {personas.map((p) => {
                   const isSelected = selectedPersonaId === p.personaId;
                   const isMapped = p.mappedRoleCount > 0;
+                  const hasSodConflicts = (sodConflictsByPersona[p.personaId]?.length ?? 0) > 0;
                   return (
                     <div
                       key={p.personaId}
@@ -96,14 +98,23 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                       onClick={() => setSelectedPersonaId(p.personaId)}
                     >
                       <div className="flex items-center gap-2 min-w-0">
-                        {isMapped ? (
+                        {hasSodConflicts ? (
+                          <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
+                        ) : isMapped ? (
                           <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
                         ) : (
                           <Circle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         )}
                         <div className="min-w-0">
                           <p className="font-medium truncate">{p.personaName}</p>
-                          <p className="text-xs text-muted-foreground">{p.userCount} users</p>
+                          <p className="text-xs text-muted-foreground">
+                            {p.userCount} users
+                            {hasSodConflicts && (
+                              <span className="text-red-500 ml-1">
+                                ({sodConflictsByPersona[p.personaId].length} SOD conflict{sodConflictsByPersona[p.personaId].length !== 1 ? "s" : ""})
+                              </span>
+                            )}
+                          </p>
                         </div>
                       </div>
                       <Badge variant="outline" className="text-xs shrink-0">
@@ -140,6 +151,40 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                       <span className="font-medium">{selectedDetail.sourcePermissionCount}</span>
                     </div>
                   </div>
+
+                  {/* SOD Conflict Warning Banner */}
+                  {selectedPersonaId && sodConflictsByPersona[selectedPersonaId] && sodConflictsByPersona[selectedPersonaId].length > 0 && (
+                    <div className="rounded-md border border-red-200 bg-red-50 p-3">
+                      <div className="flex items-start gap-2">
+                        <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                        <div className="text-sm">
+                          <p className="font-medium text-red-800">
+                            SOD Conflicts Detected ({sodConflictsByPersona[selectedPersonaId].length})
+                          </p>
+                          <p className="text-red-700 mt-1">
+                            Users in this persona have segregation of duties conflicts. Consider removing one of the conflicting roles below to resolve.
+                          </p>
+                          <div className="mt-2 space-y-1">
+                            {sodConflictsByPersona[selectedPersonaId].map((sc) => (
+                              <div key={sc.conflictId} className="flex items-center gap-2 text-xs text-red-700 bg-red-100 rounded px-2 py-1">
+                                <Badge variant="secondary" className="text-[10px] bg-red-200 text-red-800">
+                                  {sc.severity}
+                                </Badge>
+                                <span className="font-medium">{sc.userName}:</span>
+                                <span>
+                                  {sc.roleNameA ?? "?"} <span className="text-red-400">vs</span> {sc.roleNameB ?? "?"}
+                                </span>
+                                <span className="text-red-500">({sc.ruleName})</span>
+                              </div>
+                            ))}
+                          </div>
+                          <a href="/sod" className="inline-block mt-2 text-xs font-medium text-red-700 underline hover:text-red-900">
+                            Go to SOD Conflicts page to fix &rarr;
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <h4 className="text-sm font-medium mb-2">Mapped Target Roles ({selectedDetail.mappedRoles.length})</h4>

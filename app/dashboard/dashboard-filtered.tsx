@@ -19,6 +19,14 @@ interface Props {
 function DeptProgressBar({ depts }: { depts: DepartmentMappingStatus[] }) {
   return (
     <div className="space-y-4">
+      {depts.length > 0 && (
+        <div className="flex gap-4 text-xs pb-2 border-b">
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Approved</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> SOD Clean</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-yellow-500" /> Mapped</span>
+          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-400" /> Persona Only</span>
+        </div>
+      )}
       {depts.map((dept) => (
         <div key={dept.department} className="space-y-1.5">
           <div className="flex items-center justify-between text-sm">
@@ -47,14 +55,6 @@ function DeptProgressBar({ depts }: { depts: DepartmentMappingStatus[] }) {
           </div>
         </div>
       ))}
-      {depts.length > 0 && (
-        <div className="flex gap-4 text-xs pt-2 border-t">
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Approved</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> SOD Clean</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-yellow-500" /> Mapped</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-400" /> Persona Only</span>
-        </div>
-      )}
     </div>
   );
 }

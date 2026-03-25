@@ -7,7 +7,9 @@ import {
   getAssignedScope,
   getSourceUserIdsInScope,
   getPersonaIdsForUsers,
+  getOpenSodConflictsByPersona,
 } from "@/lib/queries";
+import type { PersonaSodConflict } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
 import { MappingClient } from "./mapping-client";
 
@@ -49,6 +51,16 @@ export default function MappingPage() {
     }
   }
 
+  // Get open SOD conflicts grouped by persona for warning banners
+  const sodConflictMap = getOpenSodConflictsByPersona();
+  const sodConflictsByPersona: Record<number, PersonaSodConflict[]> = {};
+  sodConflictMap.forEach((conflicts, personaId) => {
+    // Only include personas that are in the current workspace
+    if (personas.some(p => p.personaId === personaId)) {
+      sodConflictsByPersona[personaId] = conflicts;
+    }
+  });
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
@@ -60,6 +72,7 @@ export default function MappingPage() {
         refinements={refinements}
         gaps={gaps}
         targetRoles={targetRoles}
+        sodConflictsByPersona={sodConflictsByPersona}
       />
     </div>
   );

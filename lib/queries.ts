@@ -607,6 +607,8 @@ export interface SodConflictRow {
   ruleDescription: string | null;
   permissionIdA: string | null;
   permissionIdB: string | null;
+  roleIdA: number | null;
+  roleIdB: number | null;
   roleNameA: string | null;
   roleNameB: string | null;
   resolutionStatus: string;
@@ -655,6 +657,8 @@ export function getSodConflicts(): SodConflictRow[] {
       ruleDescription: c.ruleDescription,
       permissionIdA: c.permissionIdA,
       permissionIdB: c.permissionIdB,
+      roleIdA: c.roleIdA,
+      roleIdB: c.roleIdB,
       roleNameA: roleA?.roleName ?? null,
       roleNameB: roleB?.roleName ?? null,
       resolutionStatus: c.resolutionStatus,
@@ -978,6 +982,77 @@ export function getUsersScoped(appUserId: number, assignmentType: string): UserR
   const scopedUserIds = getSourceUserIdsInScope(scope);
   const idSet = new Set(scopedUserIds);
   return all.filter((u) => idSet.has(u.id));
+}
+
+// ─────────────────────────────────────────────
+// SOD CONFLICTS BY PERSONA (for mapping workspace warnings)
+// ─────────────────────────────────────────────
+
+export interface PersonaSodConflict {
+  personaId: number;
+  conflictId: number;
+  userId: number;
+  userName: string;
+  severity: string;
+  ruleName: string;
+  permissionIdA: string | null;
+  permissionIdB: string | null;
+  roleIdA: number | null;
+  roleIdB: number | null;
+  roleNameA: string | null;
+  roleNameB: string | null;
+}
+
+export function getOpenSodConflictsByPersona(): Map<number, PersonaSodConflict[]> {
+  // Get all open SOD conflicts with user-persona info
+  const rows = db
+    .select({
+      conflictId: schema.sodConflicts.id,
+      userId: schema.sodConflicts.userId,
+      userName: schema.users.displayName,
+      severity: schema.sodConflicts.severity,
+      ruleName: schema.sodRules.ruleName,
+      permissionIdA: schema.sodConflicts.permissionIdA,
+      permissionIdB: schema.sodConflicts.permissionIdB,
+      roleIdA: schema.sodConflicts.roleIdA,
+      roleIdB: schema.sodConflicts.roleIdB,
+      personaId: schema.userPersonaAssignments.personaId,
+    })
+    .from(schema.sodConflicts)
+    .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
+    .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
+    .innerJoin(schema.userPersonaAssignments, eq(schema.userPersonaAssignments.userId, schema.sodConflicts.userId))
+    .where(eq(schema.sodConflicts.resolutionStatus, "open"))
+    .all();
+
+  const result = new Map<number, PersonaSodConflict[]>();
+  for (const r of rows) {
+    if (!r.personaId) continue;
+    const roleA = r.roleIdA
+      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, r.roleIdA)).get()
+      : null;
+    const roleB = r.roleIdB
+      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, r.roleIdB)).get()
+      : null;
+    const entry: PersonaSodConflict = {
+      personaId: r.personaId,
+      conflictId: r.conflictId,
+      userId: r.userId,
+      userName: r.userName,
+      severity: r.severity,
+      ruleName: r.ruleName,
+      permissionIdA: r.permissionIdA,
+      permissionIdB: r.permissionIdB,
+      roleIdA: r.roleIdA,
+      roleIdB: r.roleIdB,
+      roleNameA: roleA?.roleName ?? null,
+      roleNameB: roleB?.roleName ?? null,
+    };
+    const existing = result.get(r.personaId) || [];
+    existing.push(entry);
+    result.set(r.personaId, existing);
+  }
+  return result;
 }
 
 export function getPersonaIdsForUsers(userIds: number[]): number[] {

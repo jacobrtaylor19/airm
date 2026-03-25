@@ -2,9 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { getSessionUser } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const user = getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+
+    // Only approvers and admins can accept risk — mappers must fix mappings instead
+    if (user.role !== "approver" && user.role !== "admin") {
+      return NextResponse.json({ error: "Only approvers can accept SOD risk. Mappers should fix the mapping instead." }, { status: 403 });
+    }
+
     const { conflictId, justification } = await req.json();
     if (!conflictId || !justification) {
       return NextResponse.json({ error: "conflictId and justification required" }, { status: 400 });
@@ -22,7 +33,7 @@ export async function POST(req: NextRequest) {
     // Update conflict resolution
     db.update(schema.sodConflicts).set({
       resolutionStatus: "risk_accepted",
-      resolvedBy: "system_user",
+      resolvedBy: user.username,
       resolvedAt: new Date().toISOString(),
       resolutionNotes: justification,
     }).where(eq(schema.sodConflicts.id, conflictId)).run();

@@ -1,9 +1,11 @@
 import { getSodConflicts } from "@/lib/queries";
+import { getSessionUser } from "@/lib/auth";
 import { SodPageClient } from "./sod-client";
 
 export const dynamic = "force-dynamic";
 
 export default function SodConflictAnalysisPage() {
+  const currentUser = getSessionUser();
   const conflicts = getSodConflicts();
 
   const summary = {
@@ -23,7 +25,7 @@ export default function SodConflictAnalysisPage() {
           Run and review segregation of duties conflict analysis.
         </p>
       </div>
-      <SodPageClient conflicts={conflicts} summary={summary} />
+      <SodPageClient conflicts={conflicts} summary={summary} userRole={currentUser?.role ?? null} />
     </div>
   );
 }

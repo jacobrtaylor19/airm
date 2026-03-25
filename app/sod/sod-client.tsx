@@ -8,8 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, Play, CheckCircle } from "lucide-react";
+import { Loader2, Play, CheckCircle, Wrench } from "lucide-react";
 import type { SodConflictRow } from "@/lib/queries";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface SodSummary {
   critical: number;
@@ -30,16 +31,23 @@ const severityColors: Record<string, string> = {
 export function SodPageClient({
   conflicts,
   summary,
+  userRole,
 }: {
   conflicts: SodConflictRow[];
   summary: SodSummary;
+  userRole: string | null;
 }) {
   const [running, setRunning] = useState(false);
   const [riskDialogOpen, setRiskDialogOpen] = useState(false);
+  const [fixDialogOpen, setFixDialogOpen] = useState(false);
   const [selectedConflict, setSelectedConflict] = useState<SodConflictRow | null>(null);
   const [justification, setJustification] = useState("");
+  const [selectedRemoveRoleId, setSelectedRemoveRoleId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
+
+  const isMapper = userRole === "mapper";
+  const isAdmin = userRole === "admin";
 
   async function runAnalysis() {
     setRunning(true);
@@ -95,6 +103,30 @@ export function SodPageClient({
     } catch (err) {
       alert(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
+      router.refresh();
+    }
+  }
+
+  async function fixMapping() {
+    if (!selectedConflict || !selectedRemoveRoleId) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/sod/fix-mapping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conflictId: selectedConflict.id, removeRoleId: Number(selectedRemoveRoleId) }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to fix mapping");
+      }
+    } catch (err) {
+      alert(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+    } finally {
+      setSubmitting(false);
+      setFixDialogOpen(false);
+      setSelectedRemoveRoleId("");
+      setSelectedConflict(null);
       router.refresh();
     }
   }
@@ -194,19 +226,38 @@ export function SodPageClient({
                     <TableCell>
                       {c.resolutionStatus === "open" && (
                         <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-7 text-xs"
-                            disabled={c.severity === "critical"}
-                            title={c.severity === "critical" ? "Critical conflicts cannot be risk-accepted" : "Accept risk with justification"}
-                            onClick={() => {
-                              setSelectedConflict(c);
-                              setRiskDialogOpen(true);
-                            }}
-                          >
-                            Accept Risk
-                          </Button>
+                          {/* Fix Mapping — mappers and admins */}
+                          {(isMapper || isAdmin) && (c.roleIdA || c.roleIdB) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              onClick={() => {
+                                setSelectedConflict(c);
+                                setSelectedRemoveRoleId("");
+                                setFixDialogOpen(true);
+                              }}
+                            >
+                              <Wrench className="h-3 w-3 mr-1" />
+                              Fix Mapping
+                            </Button>
+                          )}
+                          {/* Accept Risk — approvers and admins only, NOT mappers */}
+                          {!isMapper && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              disabled={c.severity === "critical"}
+                              title={c.severity === "critical" ? "Critical conflicts cannot be risk-accepted" : "Accept risk with justification"}
+                              onClick={() => {
+                                setSelectedConflict(c);
+                                setRiskDialogOpen(true);
+                              }}
+                            >
+                              Accept Risk
+                            </Button>
+                          )}
                           <Button
                             variant="outline"
                             size="sm"
@@ -254,6 +305,54 @@ export function SodPageClient({
             <Button variant="outline" onClick={() => setRiskDialogOpen(false)}>Cancel</Button>
             <Button onClick={acceptRisk} disabled={!justification.trim() || submitting}>
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accept Risk"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fix Mapping Dialog */}
+      <Dialog open={fixDialogOpen} onOpenChange={setFixDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Fix Mapping — Remove Conflicting Role</DialogTitle>
+          </DialogHeader>
+          {selectedConflict && (
+            <div className="space-y-3">
+              <div className="text-sm">
+                <p><strong>User:</strong> {selectedConflict.userName}</p>
+                <p><strong>Rule:</strong> {selectedConflict.ruleName}</p>
+                <p><strong>Conflicting Permissions:</strong> {selectedConflict.permissionIdA} / {selectedConflict.permissionIdB}</p>
+              </div>
+              <div className="rounded-md bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
+                Select which conflicting target role to remove from this user. This will delete the
+                user&apos;s assignment to that role and resolve the SOD conflict.
+              </div>
+              <div>
+                <label className="text-sm font-medium">Role to remove</label>
+                <Select value={selectedRemoveRoleId} onValueChange={setSelectedRemoveRoleId}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select a role to remove..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {selectedConflict.roleIdA && (
+                      <SelectItem value={String(selectedConflict.roleIdA)}>
+                        {selectedConflict.roleNameA ?? `Role #${selectedConflict.roleIdA}`}
+                      </SelectItem>
+                    )}
+                    {selectedConflict.roleIdB && (
+                      <SelectItem value={String(selectedConflict.roleIdB)}>
+                        {selectedConflict.roleNameB ?? `Role #${selectedConflict.roleIdB}`}
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFixDialogOpen(false)}>Cancel</Button>
+            <Button onClick={fixMapping} disabled={!selectedRemoveRoleId || submitting} variant="destructive">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove Role & Resolve"}
             </Button>
           </DialogFooter>
         </DialogContent>
