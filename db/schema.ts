@@ -472,6 +472,8 @@ export const auditLog = sqliteTable("audit_log", {
   oldValue: text("old_value"),
   newValue: text("new_value"),
   actorEmail: text("actor_email"),
+  ipAddress: text("ip_address"),
+  metadata: text("metadata"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
