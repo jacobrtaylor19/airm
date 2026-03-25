@@ -1,9 +1,1 @@
-release_name,org_unit_name
-Release 1 — Finance Go-Live,Finance
-Release 1 — Finance Go-Live,Accounts Payable
-Release 1 — Finance Go-Live,Accounts Receivable
-Release 2 — Operations Wave,Manufacturing
-Release 2 — Operations Wave,Procurement
-Release 3 — HR and IT,Human Resources
-Release 3 — HR and IT,Recruiting
-Release 3 — HR and IT,IT
+release_name (required),org_unit_name (required)
