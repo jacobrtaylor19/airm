@@ -146,3 +146,10 @@ These are valuable features that are not prioritised for the current sprint. The
 | Provisioning Alerts on dashboard, strapline rewrite, Render deployment | v0.3.1 |
 | Mega-sprint: 7 bug fixes, 5 design spec updates, 28 tables | v0.4.0 |
 | Source/target permissions UI consolidation (inline on parent pages) | v0.4.0 |
+| **Sprint 2: AI chatbot (Lumen), persona confirmation gate, bulk mapping** | v0.5.0 |
+| **Sprint 2: Methodology page, Overview page, guided onboarding tour** | v0.5.0 |
+| **Sprint 2: Public landing page, brand refresh (AIRM → Provisum)** | v0.5.0 |
+| **UX overhaul: dark sidebar, header redesign, Lumen rename, pagination** | v0.5.0 |
+| **UX overhaul: upload accordion, audit log improvements, teal AI buttons** | v0.5.0 |
+| **UX overhaul: export card accents, empty states, status badges, mapping refinements** | v0.5.0 |
+| **Seed data: 3 demo environments (Default, Energy & Chemicals, Financial Services)** | v0.5.0 |
