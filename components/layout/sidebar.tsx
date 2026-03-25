@@ -30,6 +30,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ElementType;
+  minRole?: string[]; // Only show to these roles (empty = all)
 }
 
 interface NavSection {
@@ -50,7 +51,7 @@ const navSections: NavSection[] = [
       { href: "/mapping", label: "Role Mapping", icon: Route },
       { href: "/sod", label: "SOD Analysis", icon: ShieldAlert },
       { href: "/approvals", label: "Approvals", icon: CheckCircle },
-      { href: "/notifications", label: "Send Reminders", icon: Bell },
+      { href: "/notifications", label: "Send Reminders", icon: Bell, minRole: ["admin", "system_admin", "coordinator"] },
     ],
   },
   {
@@ -156,7 +157,9 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
                   </p>
                 </>
               )}
-              {section.items.map((item) => {
+              {section.items
+                .filter((item) => !item.minRole || item.minRole.includes(userRole))
+                .map((item) => {
                 const isActive =
                   pathname === item.href ||
                   (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));

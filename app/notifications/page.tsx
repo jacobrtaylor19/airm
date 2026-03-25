@@ -1,4 +1,4 @@
-import { requireAuth } from "@/lib/auth";
+import { requireAuth, requireRole } from "@/lib/auth";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, ne } from "drizzle-orm";
@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default function NotificationsPage() {
   const user = requireAuth();
+  requireRole(["admin", "system_admin", "coordinator"]);
 
   // For coordinators/admins: load app users who can receive notifications (mappers + approvers)
   const recipients = ["coordinator", "admin", "system_admin"].includes(user.role)

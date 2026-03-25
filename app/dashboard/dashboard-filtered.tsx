@@ -138,8 +138,10 @@ function DeptKanbanGrid({ depts }: { depts: DepartmentMappingStatus[] }) {
 export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sodConflicts, lowConfidence, sodRulesCount, personasWithMapping, totalPersonas, overprovisioningAlerts }: Props) {
   const router = useRouter();
 
-  const defaultValue = assignedDepartments && assignedDepartments.length === 1
-    ? assignedDepartments[0]
+  // Non-admin roles default to their first assigned department; admins see all
+  const isAdmin = ["admin", "system_admin"].includes(userRole);
+  const defaultValue = !isAdmin && assignedDepartments && assignedDepartments.length > 0
+    ? (assignedDepartments.length === 1 ? assignedDepartments[0] : assignedDepartments[0])
     : "__all__";
 
   const [selected, setSelected] = useState(defaultValue);
@@ -153,7 +155,10 @@ export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sod
 
   const filteredDepts = useMemo(() => {
     let depts = allDepts;
-    if (selected !== "__all__") {
+    // Non-admin "All" still scopes to their assigned departments
+    if (selected === "__all__" && !isAdmin && assignedDepartments && assignedDepartments.length > 0) {
+      depts = allDepts.filter((d) => assignedDepartments.includes(d.department));
+    } else if (selected !== "__all__") {
       depts = allDepts.filter((d) => d.department === selected);
     }
     return depts.sort((a, b) => {
