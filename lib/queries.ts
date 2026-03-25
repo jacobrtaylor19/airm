@@ -668,6 +668,7 @@ export interface SodRuleRow {
   permissionB: string;
   severity: string;
   riskDescription: string | null;
+  isActive: boolean | null;
 }
 
 export function getSodRules(): SodRuleRow[] {
