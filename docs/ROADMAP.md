@@ -2,7 +2,7 @@
 
 This document outlines planned features and improvements. Sprint 2 is the active build queue. Items below it are prioritised but not yet scheduled.
 
-*Last updated: March 25, 2026 (post mega-sprint reprioritization)*
+*Last updated: March 26, 2026 (full roadmap completion — only 3 deferred items remain)*
 
 ---
 
@@ -163,3 +163,11 @@ These are valuable features that are not prioritised for the current sprint. The
 | **Evening: Role-aware strapline, persona page redesign, QRG page** | v0.6.0 |
 | **Evening: Dashboard scoping, Send Reminders visibility, Lumen data context** | v0.6.0 |
 | **Evening: Auto-approve rework (routes to approver), empty states, status badges** | v0.6.0 |
+| **R5: Upload template dynamic picklist validation** | v0.6.0 |
+| **R6: Export enhancements (Cover Sheet, Executive Summary in Excel + PDF)** | v0.6.0 |
+| **R8: Approval batch processing (Approve All for Department)** | v0.6.0 |
+| **R9: Release comparison page + project_manager role** | v0.6.0 |
+| **R10: Read-only external reviewer link (/review/[token])** | v0.6.0 |
+| **R11: SOD rulebook editor (in-app CRUD, compliance access)** | v0.6.0 |
+| **R12: Multi-release project timeline** | v0.6.0 |
+| **R14: GRC export adapters (SAP GRC, ServiceNow, SailPoint)** | v0.6.0 |
