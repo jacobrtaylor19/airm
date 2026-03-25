@@ -30,12 +30,9 @@ export default function SodConflictAnalysisPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">SOD Conflict Resolution Workspace</h2>
-        <p className="text-sm text-muted-foreground">
-          Review, resolve, and manage segregation of duties conflicts across all user role assignments.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Review, resolve, and manage segregation of duties conflicts across all user role assignments.
+      </p>
       <SodPageClient
         conflicts={conflicts}
         summary={summary}

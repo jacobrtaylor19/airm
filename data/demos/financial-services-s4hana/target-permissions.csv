@@ -1,0 +1,67 @@
+permission_id,permission_name,description,system,risk_level
+FT100,Create Treasury Transaction,Create new treasury financial transactions,S/4HANA,High
+FT101,Edit Treasury Transaction,Modify existing treasury transactions,S/4HANA,High
+FT102,Display Treasury Transaction,View treasury transaction details,S/4HANA,Low
+FT110,FX Spot Forward Trading,Execute FX spot and forward transactions,S/4HANA,High
+FT111,Securities Trading,Execute securities buy and sell transactions,S/4HANA,High
+FT112,OTC Derivative Trading,Create over-the-counter derivative transactions,S/4HANA,Critical
+FT120,Trade Settlement,Process trade settlement operations,S/4HANA,High
+FT121,Settlement Confirmation,Confirm trade settlements with counterparties,S/4HANA,Medium
+FT122,Payment Release,Release payments for settled trades,S/4HANA,Critical
+FT130,Cash Position Display,Display current cash position across accounts,S/4HANA,Low
+FT131,Cash Forecasting,Generate cash flow forecasts,S/4HANA,Low
+FT132,Bank Statement Processing,Import and process electronic bank statements,S/4HANA,High
+FT133,Bank Transfer Execution,Execute interbank fund transfers,S/4HANA,Critical
+FT134,House Bank Configuration,Configure house bank account settings,S/4HANA,Critical
+FT135,Standing Instructions,Create standing wire transfer instructions,S/4HANA,High
+FT140,Position Management,Manage financial instrument positions,S/4HANA,High
+FT141,Limit Management,Set and monitor counterparty credit limits,S/4HANA,High
+FT150,VaR Calculation,Execute Value-at-Risk calculations,S/4HANA,Medium
+FT151,Risk Reporting,Generate market risk reports,S/4HANA,Low
+FT152,PnL Attribution,Calculate profit and loss attribution,S/4HANA,Medium
+FT160,Counterparty Master,Maintain counterparty master data,S/4HANA,High
+FT161,Display Counterparty,Display counterparty master data,S/4HANA,Low
+FT170,Netting Run,Execute payment netting for counterparties,S/4HANA,High
+FT171,Margin Call Processing,Process margin calls for derivative positions,S/4HANA,High
+F0717,Manage Supplier Invoices,Process and post supplier invoices,S/4HANA,Medium
+F0718,Display Supplier Invoices,View supplier invoice documents,S/4HANA,Low
+F0859,Approve Supplier Invoices,Approve invoices in workflow,S/4HANA,High
+F1603,Manage Automatic Payments,Configure and execute payment runs,S/4HANA,High
+F0790,Manage Supplier Master,Create and modify supplier master records,S/4HANA,High
+F0400,Post Journal Entries,Post manual journal entries to GL,S/4HANA,High
+F0710,Display GL Line Items,View general ledger line items,S/4HANA,Low
+F0401,GL Account Balances,Display GL account balances,S/4HANA,Low
+F0402,Foreign Currency Valuation,Execute foreign currency revaluation,S/4HANA,High
+F0403,Balance Sheet Adjustment,Execute balance sheet adjustment posting,S/4HANA,High
+F0404,Create GL Account,Create GL account master records,S/4HANA,High
+F0405,Cross-Company Posting,Post cross-company code journal entries,S/4HANA,High
+F0406,Posting Period Control,Open and close posting periods,S/4HANA,Critical
+F0407,Recurring Entries,Create and post recurring journal entries,S/4HANA,Medium
+F0408,Automatic Clearing,Execute automatic clearing for GL accounts,S/4HANA,High
+F0409,Reverse Clearing,Reverse automatic clearing documents,S/4HANA,High
+F0410,Consolidation,Execute financial consolidation postings,S/4HANA,High
+F0411,Number Range Maintenance,Maintain document number ranges,S/4HANA,Critical
+F0412,Tolerance Groups,Maintain payment tolerance groups,S/4HANA,High
+FC100,Customer Invoicing,Post customer invoices,S/4HANA,Medium
+FC101,Customer Credit Memo,Post customer credit memos,S/4HANA,Medium
+FC102,Customer Payment,Post incoming customer payments,S/4HANA,Medium
+FC103,Create Customer Master,Create customer master records,S/4HANA,High
+FC104,Display Customer Data,View customer account data,S/4HANA,Low
+FA200,Compliance Monitoring,Monitor regulatory compliance status,S/4HANA,Medium
+FA201,Regulatory Reporting,Prepare and submit regulatory reports,S/4HANA,High
+FA202,AML Screening,Anti-money laundering transaction screening,S/4HANA,High
+FA203,Regulatory Filing,Submit regulatory financial returns,S/4HANA,High
+FB100,User Administration,Create and manage user accounts,S/4HANA,Critical
+FB101,Role Administration,Create and modify authorization roles,S/4HANA,Critical
+FB110,System Monitoring,Monitor system logs and background jobs,S/4HANA,Low
+FB120,Transport Management,Manage transport requests in system landscape,S/4HANA,Critical
+FB130,Data Browser,Display database table contents,S/4HANA,High
+FB140,Program Execution,Execute ABAP programs,S/4HANA,High
+FB150,System Configuration,Access SAP Implementation Guide,S/4HANA,Critical
+F7100,Manage Employee Master,Create and modify employee records,S/4HANA,High
+F7200,Process Payroll,Execute payroll calculation runs,S/4HANA,Critical
+FF100,Fund Accounting,NAV calculation and fund valuation,S/4HANA,High
+FF101,Profitability Analysis,Execute profitability analysis reports,S/4HANA,Low
+FF102,CO-PA Posting,Post profitability analysis documents,S/4HANA,Medium
+FA210,Audit Trail Access,Access audit logs and system trace,S/4HANA,Medium
+FA211,Financial Statement Review,Review balance sheet and P&L reports,S/4HANA,Low

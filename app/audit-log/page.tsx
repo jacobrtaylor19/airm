@@ -8,12 +8,9 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Audit Log</h2>
-        <p className="text-sm text-muted-foreground">
-          View all state changes and actions.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        View all state changes and actions.
+      </p>
       <AuditLogClient logs={logs} />
     </div>
   );

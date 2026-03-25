@@ -8,12 +8,9 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Processing Jobs</h2>
-        <p className="text-sm text-muted-foreground">
-          Run AI pipeline jobs and view processing history.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Run AI pipeline jobs and view processing history.
+      </p>
       <JobsClient initialJobs={jobs} />
     </div>
   );

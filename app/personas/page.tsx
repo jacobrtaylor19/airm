@@ -9,14 +9,9 @@ export default function PersonasPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Personas</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage AI-generated and manually defined security personas.
-          </p>
-        </div>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Manage AI-generated and manually defined security personas.
+      </p>
       <PersonasPageClient
         personas={personas}
         groups={groups}

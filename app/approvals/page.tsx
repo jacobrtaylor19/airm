@@ -25,12 +25,9 @@ export default function ApprovalsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Approval Queue</h2>
-        <p className="text-sm text-muted-foreground">
-          Review and approve finalized role mappings.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Review and approve finalized role mappings.
+      </p>
       <ApprovalsClient
         queue={queue}
         counts={{

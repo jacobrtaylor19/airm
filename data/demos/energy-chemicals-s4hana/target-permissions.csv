@@ -1,0 +1,68 @@
+permission_id,permission_name,description,system,risk_level
+F4580,Create Maintenance Order,Create corrective and preventive maintenance orders,S/4HANA,Medium
+F4581,Manage Maintenance Orders,Change and manage maintenance work orders,S/4HANA,Medium
+F4582,Display Maintenance Orders,View maintenance order details,S/4HANA,Low
+F4583,Confirm Maintenance Order,Enter time and activity confirmations,S/4HANA,Medium
+F4570,Create Maintenance Notification,Create breakdown and malfunction notifications,S/4HANA,Low
+F4571,Manage Maintenance Notifications,Process and update notifications,S/4HANA,Low
+F4590,Manage Equipment,Create and modify equipment master records,S/4HANA,Medium
+F4591,Display Equipment,View equipment master data,S/4HANA,Low
+F4592,Manage Functional Locations,Create and modify functional locations,S/4HANA,Medium
+F4593,Display Functional Locations,View functional location hierarchy,S/4HANA,Low
+F4600,Schedule Maintenance Plans,Configure and schedule preventive maintenance plans,S/4HANA,Medium
+F4601,Monitor Maintenance Plans,View maintenance plan status and deadlines,S/4HANA,Low
+F4610,Manage Task Lists,Create and edit maintenance task lists,S/4HANA,Medium
+F4620,Calibration Management,Schedule and manage instrument calibrations,S/4HANA,Medium
+F4621,Record Measurements,Enter measurement readings for condition monitoring,S/4HANA,Low
+F2439,Manage Purchase Orders,Create and edit purchase orders,S/4HANA,High
+F2440,Display Purchase Orders,View purchase order details,S/4HANA,Low
+F2441,Release Purchase Orders,Approve and release purchase orders,S/4HANA,High
+F2425,Manage Purchase Requisitions,Create and edit purchase requisitions,S/4HANA,Medium
+F2426,Display Purchase Requisitions,View purchase requisitions,S/4HANA,Low
+F2450,Manage Contracts,Create and manage outline agreements,S/4HANA,High
+F2451,Manage RFQs,Create and evaluate requests for quotation,S/4HANA,Medium
+F3814,Manage Material Master,Create and modify material master records,S/4HANA,High
+F3815,Display Material Master,View material master data,S/4HANA,Low
+F3002,Post Goods Receipt,Post goods receipts for purchase orders,S/4HANA,Medium
+F3003,Post Goods Issue,Post goods issues from inventory,S/4HANA,Medium
+F3004,Transfer Posting,Post stock transfers between plants,S/4HANA,Medium
+F3005,Display Stock Overview,View current stock levels,S/4HANA,Low
+F3737,Manage Physical Inventory,Create and process physical inventory documents,S/4HANA,Medium
+F3738,Post Inventory Differences,Post adjustments from physical count,S/4HANA,High
+F0717,Manage Supplier Invoices,Process and post supplier invoices in Fiori,S/4HANA,Medium
+F0718,Display Supplier Invoices,View supplier invoice documents,S/4HANA,Low
+F0859,Approve Supplier Invoices,Approve invoices in workflow,S/4HANA,High
+F1603,Manage Automatic Payments,Configure and execute payment runs,S/4HANA,High
+F0790,Manage Supplier Master,Create and modify supplier master records,S/4HANA,High
+F0400,Post Journal Entries,Post manual journal entries to GL,S/4HANA,High
+F0710,Display GL Line Items,View general ledger line items,S/4HANA,Low
+F0401,Manage GL Account Balances,Display and manage GL balances,S/4HANA,Low
+F0402,Foreign Currency Valuation,Execute foreign currency revaluation,S/4HANA,High
+F5100,Manage Cost Centers,Create and maintain cost center records,S/4HANA,High
+F5101,Display Cost Centers,View cost center data,S/4HANA,Low
+F5110,Manage Internal Orders,Create and manage internal orders,S/4HANA,Medium
+F5111,Release Internal Orders,Release internal orders for posting,S/4HANA,Medium
+F7100,Manage Employee Master,Create and modify employee records,S/4HANA,High
+F7101,Display Employee Data,View employee master data,S/4HANA,Low
+F7200,Process Payroll,Execute payroll calculation runs,S/4HANA,Critical
+F7210,Manage Time Recording,Enter and manage time sheets,S/4HANA,Medium
+F6100,Quality Inspection,Record quality inspection results,S/4HANA,Medium
+F6101,Quality Decision,Make usage decisions for inspection lots,S/4HANA,High
+F6110,Manage Quality Notifications,Create and process quality notifications,S/4HANA,Medium
+F6120,Manage Inspection Plans,Create and modify quality inspection plans,S/4HANA,Medium
+F8100,Manage Production Orders,Create and manage production orders,S/4HANA,Medium
+F8101,Confirm Production,Record production order confirmations,S/4HANA,Medium
+F8110,MRP Analysis,Display stock requirements and MRP results,S/4HANA,Low
+F9100,Manage Projects,Create and maintain WBS elements and networks,S/4HANA,High
+F9101,Display Project Costs,View project actual and planned costs,S/4HANA,Low
+F9110,Project Scheduling,Manage project schedules and milestones,S/4HANA,Medium
+F0500,Delivery Processing,Create and manage outbound deliveries,S/4HANA,Medium
+F0501,Delivery Monitor,Monitor outbound delivery processing,S/4HANA,Low
+FA100,EHS Incident Management,Record and manage HSE incidents,S/4HANA,Medium
+FA101,EHS Risk Assessment,Create occupational health risk assessments,S/4HANA,Medium
+FA110,Emission Reporting,Process emissions data and create reports,S/4HANA,Medium
+FA120,Waste Management,Create and manage waste disposal records,S/4HANA,Medium
+FA130,Environmental Compliance,Monitor and report environmental compliance,S/4HANA,Medium
+FB100,User Administration,Create and manage user accounts,S/4HANA,Critical
+FB101,Role Administration,Create and modify authorization roles,S/4HANA,Critical
+FB110,System Monitoring,Monitor system logs and background jobs,S/4HANA,Low

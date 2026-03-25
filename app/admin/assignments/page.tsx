@@ -8,12 +8,9 @@ export default function AdminAssignmentsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Work Assignments</h2>
-        <p className="text-sm text-muted-foreground">
-          Assign mappers and approvers to departments or individual users.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Assign mappers and approvers to departments or individual users.
+      </p>
       <AssignmentsClient />
     </div>
   );

@@ -367,9 +367,7 @@ function seed() {
     console.log("  ⊘ sod-rules.csv not found or empty, skipping");
   }
 
-  // ─── 11c. Pre-seed User-Target-Role Assignments (with deliberate SOD conflicts) ───
-  // Assign conflicting target roles to ~40 users to generate realistic SOD conflict data
-
+  // ─── 11c. User-Target-Role Assignments (loaded from CSV) ───
   // Lookup helpers
   const targetRoleLookup = new Map<string, number>();
   const allTargetRoles = db.select().from(schema.targetRoles).all();
@@ -383,86 +381,12 @@ function seed() {
     userLookup.set(u.sourceUserId, { id: u.id, department: u.department });
   }
 
-  // Define conflicting role assignments by department pattern
-  // Format: [sourceUserId, [...targetRoleIds]]
-  const conflictingAssignments: [string, string[]][] = [
-    // ── Finance users: AP Processor + AP Approver → triggers invoice create/approve conflict ──
-    ["U096", ["S4_AP_INV_PROC", "S4_AP_APPR_BASIC"]],           // Nkechi Obi — AP Clerk
-    ["U017", ["S4_AP_INV_PROC", "S4_AP_APPR_ADV"]],             // Bridget Okonkwo — AP Specialist
-    ["U044", ["S4_AP_INV_PROC", "S4_AP_PAY_SPEC"]],             // Chen Wei — AP Coordinator (invoice + payment)
-
-    // ── Finance users: Vendor Master + Payment → critical conflict ──
-    ["U068", ["S4_VEND_SPEC", "S4_AP_PAY_SPEC"]],               // Ahmed Ibrahim — Staff Accountant
-
-    // ── Finance users: GL + AP conflicts ──
-    ["U008", ["S4_GL_ACCT", "S4_AP_PAY_SPEC"]],                 // Derek Patel — Sr Financial Analyst (GL + payment)
-
-    // ── Finance users: clean assignments (no conflicts) ──
-    ["U011", ["S4_AP_INV_PROC"]],                                // Tanya Ivanova — AR Specialist
-    ["U012", ["S4_GL_ACCT"]],                                     // William Foster — FP&A Analyst
-    ["U022", ["S4_AP_APPR_BASIC"]],                               // Nathan Goldberg — Finance Coord
-    ["U036", ["S4_AP_INV_PROC"]],                                 // Keiko Yamamoto — Payroll Specialist
-    ["U039", ["S4_GL_ACCT"]],                                     // Sienna Castellano — Treasury Analyst
-    ["U053", ["S4_AP_INV_PROC"]],                                 // Claudia Reyes — Tax Associate
-    ["U057", ["S4_GL_ACCT"]],                                     // Anastasia Kuznetsova — Budget Analyst
-    ["U062", ["S4_AP_APPR_BASIC"]],                               // Henrik Larsen — Corporate Finance
-    ["U072", ["S4_AP_SUPERVISOR"]],                               // Thomas Beaumont — FP&A Manager
-    ["U076", ["S4_GL_ACCT"]],                                     // Daniel Mwangi — Accounting Specialist
-    ["U089", ["S4_AP_INV_PROC"]],                                 // Camille Fontaine — Payroll Admin
-    ["U070", ["S4_AP_APPR_ADV"]],                                 // Aleksander Nowak — Finance Business Partner
-    ["U090", ["S4_GL_ACCT"]],                                     // Olamide Adebisi — Finance Data Analyst
-    ["U091", ["S4_AP_PAY_SPEC"]],                                 // Viktor Kovalenko — Cash Mgmt Specialist
-    ["U097", ["S4_GL_ACCT"]],                                     // Agnieszka Kowalczyk — Treasury Operations
-    ["U100", ["S4_AP_INV_PROC"]],                                 // Ozlem Yilmaz — AR Analyst
-    ["U021", ["S4_AP_APPR_BASIC"]],                               // Aisha Mohammed — Collections Analyst
-
-    // ── Procurement users: Buyer + Warehouse → triggers procurement segregation ──
-    ["U001", ["S4_MM_BUYER", "S4_MM_WH_MGMT"]],                 // Sarah Bennett — Vendor Mgmt (buy + receive)
-    ["U028", ["S4_MM_BUYER"]],                                    // Yuki Tanaka — Junior Buyer (clean)
-
-    // ── Maintenance users: PM roles + MM roles → cross-domain conflicts ──
-    ["U032", ["S4_PM_PLANNER", "S4_MM_BUYER"]],                  // Fatima Al-Hassan — Maint Tech + Buyer
-    ["U055", ["S4_PM_PLANNER", "S4_PM_TECHNICIAN"]],             // Ekaterina Morozova — PM Planner (create+confirm order)
-    ["U041", ["S4_PM_ENGINEER", "S4_MM_PLANNER"]],               // Nina Johansson — Maint Sys Admin (equip+material)
-
-    // ── Maintenance users: clean assignments ──
-    ["U074", ["S4_PM_TECHNICIAN"]],                               // Oluwafemi Abiodun — Field Service Tech
-    ["U083", ["S4_PM_TECHNICIAN"]],                               // Elena Vasquez — Maint Technician
-    ["U051", ["S4_PM_TECHNICIAN"]],                               // Yolanda Ferreira — Maint Technician
-    ["U047", ["S4_PM_ENGINEER"]],                                 // Annika Bergstrom — Reliability Engineer
-    ["U077", ["S4_PM_TECHNICIAN"]],                               // Astrid Lindqvist — Equipment Technician
-    ["U098", ["S4_PM_PLANNER"]],                                  // Takeshi Kimura — Work Order Coordinator
-    ["U016", ["S4_PM_ENGINEER"]],                                 // Colin Hughes — Asset Performance Analyst
-    ["U071", ["S4_PM_PLANNER"]],                                  // Priyanka Rao — Equip Performance Analyst
-    ["U038", ["S4_PM_TECHNICIAN"]],                               // Mikhail Sokolov — Equipment Technician
-
-    // ── Supply Chain / Warehouse users: some with cross-conflicts ──
-    ["U010", ["S4_MM_WH_MGMT"]],                                  // Jose Ramirez — Warehouse Assoc (clean now)
-    ["U023", ["S4_MM_WH_MGMT"]],                                  // Carlos Mendez — Warehouse Tech (clean)
-    ["U061", ["S4_MM_WH_MGMT"]],                                  // Grace Okonkwo — Warehouse Operative (clean)
-    ["U018", ["S4_MM_PLANNER"]],                                  // Alexei Volkov — SC Coordinator (clean)
-    ["U020", ["S4_MM_PLANNER"]],                                  // Tobias Mayer — Demand Planner (clean)
-    ["U030", ["S4_MM_PLANNER"]],                                  // Zara Ahmed — Inventory Planner (clean)
-    ["U050", ["S4_MM_WH_MGMT"]],                                  // Dmitri Volkov — Logistics Assoc (clean)
-    ["U043", ["S4_MM_WH_MGMT"]],                                  // Amara Diallo — Operations Supervisor (clean)
-    ["U054", ["S4_MM_WH_MGMT"]],                                  // Rashid Hassan — Distribution Coordinator (clean)
-    ["U075", ["S4_MM_PLANNER"]],                                  // Marina Popova — SC Associate (clean)
-
-    // ── Facilities users: PM roles only ──
-    ["U086", ["S4_PM_SUPERVISOR"]],                               // Emeka Nwosu — Building Services Mgr
-    ["U063", ["S4_PM_PLANNER"]],                                  // Amelia Kovacs — Facilities Coordinator
-    ["U033", ["S4_PM_SUPERVISOR"]],                               // Andre Dubois — Facilities Manager
-    ["U003", ["S4_PM_TECHNICIAN"]],                               // Priya Sharma — Facilities Maint Tech
-    ["U035", ["S4_PM_TECHNICIAN"]],                               // Ivan Petrov — Facilities Associate
-  ];
-
+  const utraData = readCsv<any>("user-target-role-assignments.csv");
   let utraCount = 0;
-  for (const [sourceUserId, roleIds] of conflictingAssignments) {
-    const userInfo = userLookup.get(sourceUserId);
-    if (!userInfo) continue;
-    for (const roleId of roleIds) {
-      const targetRoleDbId = targetRoleLookup.get(roleId);
-      if (!targetRoleDbId) continue;
+  for (const row of utraData) {
+    const userInfo = userLookup.get(row.user_id);
+    const targetRoleDbId = targetRoleLookup.get(row.role_id);
+    if (userInfo && targetRoleDbId) {
       db.insert(schema.userTargetRoleAssignments).values({
         userId: userInfo.id,
         targetRoleId: targetRoleDbId,
@@ -472,7 +396,11 @@ function seed() {
       utraCount++;
     }
   }
-  console.log(`  ✓ ${utraCount} user-target-role assignments (pre-seeded for SOD demo)`);
+  if (utraCount > 0) {
+    console.log(`  ✓ ${utraCount} user-target-role assignments (loaded from CSV)`);
+  } else {
+    console.log("  ⊘ user-target-role-assignments.csv not found or empty, skipping");
+  }
 
   // ─── 11d. Run SOD analysis on seeded assignments ───
   // The SOD rules reference SAP ECC t-codes (XK01, FB60, etc.) but target roles use

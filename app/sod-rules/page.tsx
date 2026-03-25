@@ -19,12 +19,9 @@ export default function SodRulesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">SOD Rules</h2>
-        <p className="text-sm text-muted-foreground">
-          Browse the uploaded SOD/GRC ruleset.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Browse the uploaded SOD/GRC ruleset.
+      </p>
 
       {rules.length === 0 ? (
         <Card>

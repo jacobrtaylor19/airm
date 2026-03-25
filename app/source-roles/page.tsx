@@ -18,12 +18,9 @@ export default function SourceRolesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Source Roles</h2>
-        <p className="text-sm text-muted-foreground">
-          Browse legacy system roles and their permissions across all source systems.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Browse legacy system roles and their permissions across all source systems.
+      </p>
       <SourceRolesClient roles={roles} rolePermissions={rolePermissions} systems={systems} />
     </div>
   );

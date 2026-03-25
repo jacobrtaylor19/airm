@@ -8,12 +8,9 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Manage App Users</h2>
-        <p className="text-sm text-muted-foreground">
-          Create and manage tool users (mappers, approvers, admins).
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Create and manage tool users (mappers, approvers, admins).
+      </p>
       <AdminUsersClient />
     </div>
   );

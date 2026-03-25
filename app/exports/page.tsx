@@ -41,12 +41,9 @@ export default function ExportsPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Exports</h2>
-        <p className="text-sm text-muted-foreground">
-          Download reports and provisioning files.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Download reports and provisioning files.
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {exports.map((exp) => (

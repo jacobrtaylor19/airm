@@ -14,12 +14,9 @@ export default function TargetRolesPage() {
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-xl font-semibold">Target Roles</h2>
-        <p className="text-sm text-muted-foreground">
-          Browse the target system role library.
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">
+        Browse the target system role library.
+      </p>
 
       {roles.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
