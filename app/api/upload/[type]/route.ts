@@ -599,6 +599,54 @@ async function commitUpload(
     }
   }
 
+  // Auto-associate uploaded data with the active release
+  const activeRelease = db.select().from(schema.releases)
+    .where(eq(schema.releases.isActive, true)).get();
+
+  if (activeRelease && inserted > 0) {
+    try {
+      if (type === "users") {
+        const userIds = db.select({ id: schema.users.id }).from(schema.users).all();
+        for (const u of userIds) {
+          const exists = db.select({ id: schema.releaseUsers.id }).from(schema.releaseUsers)
+            .where(eq(schema.releaseUsers.userId, u.id)).get();
+          if (!exists) {
+            db.insert(schema.releaseUsers).values({ releaseId: activeRelease.id, userId: u.id }).run();
+          }
+        }
+      } else if (type === "source-roles") {
+        const roleIds = db.select({ id: schema.sourceRoles.id }).from(schema.sourceRoles).all();
+        for (const r of roleIds) {
+          const exists = db.select({ id: schema.releaseSourceRoles.id }).from(schema.releaseSourceRoles)
+            .where(eq(schema.releaseSourceRoles.sourceRoleId, r.id)).get();
+          if (!exists) {
+            db.insert(schema.releaseSourceRoles).values({ releaseId: activeRelease.id, sourceRoleId: r.id }).run();
+          }
+        }
+      } else if (type === "target-roles") {
+        const roleIds = db.select({ id: schema.targetRoles.id }).from(schema.targetRoles).all();
+        for (const r of roleIds) {
+          const exists = db.select({ id: schema.releaseTargetRoles.id }).from(schema.releaseTargetRoles)
+            .where(eq(schema.releaseTargetRoles.targetRoleId, r.id)).get();
+          if (!exists) {
+            db.insert(schema.releaseTargetRoles).values({ releaseId: activeRelease.id, targetRoleId: r.id }).run();
+          }
+        }
+      } else if (type === "sod-rules") {
+        const ruleIds = db.select({ id: schema.sodRules.id }).from(schema.sodRules).all();
+        for (const r of ruleIds) {
+          const exists = db.select({ id: schema.releaseSodRules.id }).from(schema.releaseSodRules)
+            .where(eq(schema.releaseSodRules.sodRuleId, r.id)).get();
+          if (!exists) {
+            db.insert(schema.releaseSodRules).values({ releaseId: activeRelease.id, sodRuleId: r.id }).run();
+          }
+        }
+      }
+    } catch {
+      // Non-fatal: release association failure shouldn't block the upload
+    }
+  }
+
   return {
     inserted,
     skipped,

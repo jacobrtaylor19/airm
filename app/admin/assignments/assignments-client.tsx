@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Loader2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Layers } from "lucide-react";
+import { toast } from "sonner";
 
 interface Assignment {
   id: number;
@@ -28,6 +29,20 @@ interface AppUser {
   role: string;
 }
 
+interface ReleaseAssignment {
+  id: number;
+  appUserId: number;
+  appUserName: string;
+  appUserRole: string;
+  releaseId: number;
+  releaseName: string;
+}
+
+interface ReleaseInfo {
+  id: number;
+  name: string;
+}
+
 export function AssignmentsClient() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [appUsers, setAppUsers] = useState<AppUser[]>([]);
@@ -39,18 +54,33 @@ export function AssignmentsClient() {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Release assignment state
+  const [releaseAssignments, setReleaseAssignments] = useState<ReleaseAssignment[]>([]);
+  const [releases, setReleases] = useState<ReleaseInfo[]>([]);
+  const [releaseDialogOpen, setReleaseDialogOpen] = useState(false);
+  const [releaseUserId, setReleaseUserId] = useState("");
+  const [releaseId, setReleaseId] = useState("");
+
   useEffect(() => {
     fetchData();
   }, []);
 
   async function fetchData() {
     setLoading(true);
-    const [aRes, uRes] = await Promise.all([
+    const [aRes, uRes, raRes, rRes] = await Promise.all([
       fetch("/api/admin/assignments"),
       fetch("/api/admin/app-users"),
+      fetch("/api/admin/release-assignments"),
+      fetch("/api/releases"),
     ]);
     if (aRes.ok) setAssignments(await aRes.json());
     if (uRes.ok) setAppUsers(await uRes.json());
+    if (raRes.ok) setReleaseAssignments(await raRes.json());
+    if (rRes.ok) {
+      const data = await rRes.json();
+      setReleases(Array.isArray(data) ? data : data.releases || []);
+    }
     setLoading(false);
   }
 
@@ -162,6 +192,10 @@ export function AssignmentsClient() {
           <TabsList>
             <TabsTrigger value="mappers">Mapper Assignments ({mapperAssignments.length})</TabsTrigger>
             <TabsTrigger value="approvers">Approver Assignments ({approverAssignments.length})</TabsTrigger>
+            <TabsTrigger value="releases" className="flex items-center gap-1.5">
+              <Layers className="h-3.5 w-3.5" />
+              Release Access ({releaseAssignments.length})
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="mappers" className="mt-4">
             <Card>
@@ -171,6 +205,58 @@ export function AssignmentsClient() {
           <TabsContent value="approvers" className="mt-4">
             <Card>
               <CardContent className="pt-6">{renderAssignmentTable(approverAssignments)}</CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="releases" className="mt-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex justify-end mb-4">
+                  <Button size="sm" onClick={() => setReleaseDialogOpen(true)}>
+                    <Plus className="h-4 w-4 mr-2" /> Assign User to Release
+                  </Button>
+                </div>
+                {releaseAssignments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No release assignments. Users without release assignments can see all releases.
+                  </p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Release</TableHead>
+                        <TableHead className="w-10" />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {releaseAssignments.map((ra) => (
+                        <TableRow key={ra.id}>
+                          <TableCell className="font-medium">{ra.appUserName}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">{ra.appUserRole}</Badge>
+                          </TableCell>
+                          <TableCell>{ra.releaseName}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 w-7 p-0 text-red-500 hover:text-red-700"
+                              onClick={async () => {
+                                await fetch(`/api/admin/release-assignments?id=${ra.id}`, { method: "DELETE" });
+                                toast.success("Release assignment removed");
+                                fetchData();
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
@@ -242,6 +328,73 @@ export function AssignmentsClient() {
               <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={submitting || !selectedUserId || !scopeValue}>
                 {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Assignment"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Release Assignment Dialog */}
+      <Dialog open={releaseDialogOpen} onOpenChange={setReleaseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign User to Release</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            if (!releaseUserId || !releaseId) return;
+            setSubmitting(true);
+            try {
+              const res = await fetch("/api/admin/release-assignments", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ appUserId: Number(releaseUserId), releaseId: Number(releaseId) }),
+              });
+              if (res.ok) {
+                toast.success("Release assignment created");
+                setReleaseDialogOpen(false);
+                setReleaseUserId("");
+                setReleaseId("");
+                fetchData();
+              } else {
+                const data = await res.json();
+                toast.error(data.error || "Failed");
+              }
+            } finally {
+              setSubmitting(false);
+            }
+          }} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">User</label>
+              <Select value={releaseUserId} onValueChange={setReleaseUserId}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select user" /></SelectTrigger>
+                <SelectContent>
+                  {appUsers.filter(u => !["admin", "system_admin"].includes(u.role)).map((u) => (
+                    <SelectItem key={u.id} value={String(u.id)}>
+                      {u.displayName} ({u.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Release</label>
+              <Select value={releaseId} onValueChange={setReleaseId}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select release" /></SelectTrigger>
+                <SelectContent>
+                  {releases.map((r) => (
+                    <SelectItem key={r.id} value={String(r.id)}>{r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Users without release assignments can see all releases. Assigning specific releases restricts their view.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setReleaseDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={submitting || !releaseUserId || !releaseId}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assign"}
               </Button>
             </DialogFooter>
           </form>
