@@ -15,6 +15,7 @@ import {
   FolderOpen,
   Target,
   BookOpen,
+  Info,
   Cog,
   Activity,
   UserCog,
@@ -66,6 +67,13 @@ const navSections: NavSection[] = [
     items: [
       { href: "/exports", label: "Exports", icon: FileText },
       { href: "/audit-log", label: "Audit Log", icon: Activity },
+    ],
+  },
+  {
+    label: "LEARN",
+    items: [
+      { href: "/methodology", label: "How It Works", icon: BookOpen },
+      { href: "/overview", label: "Platform Overview", icon: Info },
     ],
   },
   {
