@@ -1,11 +1,16 @@
-import { getTargetRoles } from "@/lib/queries";
+import { getTargetRoles, getTargetRolePermissions } from "@/lib/queries";
+import { TargetRolesClient } from "./target-roles-client";
 
 export const dynamic = "force-dynamic";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 
 export default function TargetRolesPage() {
   const roles = getTargetRoles();
+
+  // Pre-fetch permission details for all roles (expandable rows need them)
+  const rolePermissions: Record<number, { id: number; permissionId: string; permissionName: string | null; permissionType: string | null; riskLevel: string | null }[]> = {};
+  for (const role of roles) {
+    rolePermissions[role.id] = getTargetRolePermissions(role.id);
+  }
 
   return (
     <div className="space-y-4">
@@ -22,42 +27,7 @@ export default function TargetRolesPage() {
           <a href="/upload" className="text-primary hover:underline">Data Upload</a> page.
         </div>
       ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Role ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Domain</TableHead>
-                <TableHead>System</TableHead>
-                <TableHead>Owner</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Permissions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {roles.map((role) => (
-                <TableRow key={role.id}>
-                  <TableCell className="font-mono text-xs">{role.roleId}</TableCell>
-                  <TableCell className="font-medium text-sm">{role.roleName}</TableCell>
-                  <TableCell className="text-sm">{role.domain ?? "—"}</TableCell>
-                  <TableCell className="text-sm">{role.system ?? "—"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{role.roleOwner ?? "—"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground max-w-[300px] truncate">
-                    {role.description ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-right text-sm">
-                    {role.permissionCount > 0 ? (
-                      <Badge variant="outline" className="text-xs">{role.permissionCount}</Badge>
-                    ) : (
-                      <span className="text-muted-foreground">0</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <TargetRolesClient roles={roles} rolePermissions={rolePermissions} />
       )}
     </div>
   );

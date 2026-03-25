@@ -582,6 +582,32 @@ export function getTargetRoles(): TargetRoleRow[] {
     .all();
 }
 
+export interface TargetPermissionInfo {
+  id: number;
+  permissionId: string;
+  permissionName: string | null;
+  permissionType: string | null;
+  riskLevel: string | null;
+}
+
+export function getTargetRolePermissions(roleId: number): TargetPermissionInfo[] {
+  return db
+    .select({
+      id: schema.targetPermissions.id,
+      permissionId: schema.targetPermissions.permissionId,
+      permissionName: schema.targetPermissions.permissionName,
+      permissionType: schema.targetPermissions.permissionType,
+      riskLevel: schema.targetPermissions.riskLevel,
+    })
+    .from(schema.targetRolePermissions)
+    .innerJoin(
+      schema.targetPermissions,
+      eq(schema.targetPermissions.id, schema.targetRolePermissions.targetPermissionId)
+    )
+    .where(eq(schema.targetRolePermissions.targetRoleId, roleId))
+    .all();
+}
+
 // ─────────────────────────────────────────────
 // SOD RULES
 // ─────────────────────────────────────────────
