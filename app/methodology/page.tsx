@@ -1,4 +1,3 @@
-import { requireAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Upload,
@@ -78,7 +77,7 @@ const principles = [
 ];
 
 export default function MethodologyPage() {
-  requireAuth();
+  // Public page — no auth required
 
   return (
     <div className="space-y-6">

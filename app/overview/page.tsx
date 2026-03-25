@@ -1,4 +1,3 @@
-import { requireAuth } from "@/lib/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Server,
@@ -49,7 +48,7 @@ const securityItems = [
 ];
 
 export default function OverviewPage() {
-  requireAuth();
+  // Public page — no auth required
 
   return (
     <div className="space-y-6">
