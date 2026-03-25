@@ -36,7 +36,7 @@ function n(count: number, singular: string, plural?: string): string {
   return `${count} ${count === 1 ? singular : (plural ?? singular + "s")}`;
 }
 
-function projectStrapline(stats: StraplineStats): { text: string; tone: "positive" | "warning" | "action" | "neutral" } {
+function projectStrapline(stats: StraplineStats, role: string): { text: string; tone: "positive" | "warning" | "action" | "neutral" } {
   const { totalUsers, totalPersonas, usersWithPersona, personasWithMapping, totalAssignments, approvedAssignments, readyForApproval, sodConflictsBySeverity, lowConfidence } = stats;
 
   if (totalUsers === 0) {
@@ -50,54 +50,106 @@ function projectStrapline(stats: StraplineStats): { text: string; tone: "positiv
   const coveragePercent = totalUsers > 0 ? Math.round((usersWithPersona / totalUsers) * 100) : 0;
   const mappedPercent = totalPersonas > 0 ? Math.round((personasWithMapping / totalPersonas) * 100) : 0;
   const approvalPercent = totalAssignments > 0 ? Math.round((approvedAssignments / totalAssignments) * 100) : 0;
+  const isAdmin = ["admin", "system_admin"].includes(role);
 
-  if (openConflicts > 0) {
+  // ── Admin / System Admin: executive project overview ──
+  if (isAdmin) {
+    if (totalPersonas === 0) {
+      return {
+        text: `${n(totalUsers, "user")} loaded. Next step: generate security personas from the Personas page to begin role mapping.`,
+        tone: "action",
+      };
+    }
+
+    const parts: string[] = [];
+    parts.push(`${coveragePercent}% persona coverage`);
+    parts.push(`${mappedPercent}% mapped`);
+    parts.push(`${approvalPercent}% approved`);
+
+    const blockers: string[] = [];
+    if (openConflicts > 0) blockers.push(`${n(openConflicts, "SOD conflict")} to resolve`);
+    if (lowConfidence > 0) blockers.push(`${n(lowConfidence, "low-confidence assignment")} to review`);
+    if (coveragePercent < 100 && totalPersonas > 0) blockers.push(`${totalUsers - usersWithPersona} users unassigned`);
+
+    const summary = parts.join(" · ");
+    if (approvalPercent >= 80) {
+      const remaining = totalAssignments - approvedAssignments;
+      return {
+        text: `Final stretch — ${summary}. Only ${n(remaining, "assignment")} left before provisioning.`,
+        tone: "positive",
+      };
+    }
+    if (blockers.length > 0) {
+      return {
+        text: `Project status: ${summary}. Blockers: ${blockers.join(", ")}.`,
+        tone: blockers.some(b => b.includes("SOD")) ? "action" : "warning",
+      };
+    }
+    return { text: `Project status: ${summary}. On track.`, tone: "neutral" };
+  }
+
+  // ── Approver: queue-focused ──
+  if (role === "approver") {
+    if (readyForApproval > 0) {
+      return {
+        text: `${n(readyForApproval, "assignment")} ${readyForApproval === 1 ? "is" : "are"} waiting for your review. This is the critical path — approve or flag them to keep the project moving.`,
+        tone: "action",
+      };
+    }
+    if (openConflicts > 0) {
+      return {
+        text: `Your approval queue is blocked by ${n(openConflicts, "SOD conflict")}. These need resolution before new assignments can reach you.`,
+        tone: "warning",
+      };
+    }
     return {
-      text: `${n(openConflicts, "critical/high SOD conflict")} ${openConflicts === 1 ? "is" : "are"} blocking your approval queue — resolve ${openConflicts === 1 ? "it" : "them"} in SOD Analysis before any assignments can move forward.`,
-      tone: "action",
+      text: `Approval queue is clear. ${approvalPercent}% of all assignments approved — watch for new items as mapping completes.`,
+      tone: approvalPercent >= 80 ? "positive" : "neutral",
     };
   }
 
-  if (coveragePercent < 50) {
-    const unmapped = totalUsers - usersWithPersona;
+  // ── Mapper: mapping-focused ──
+  if (role === "mapper") {
+    if (mappedPercent < 100 && totalPersonas > 0) {
+      const unmapped = totalPersonas - personasWithMapping;
+      return {
+        text: `${n(unmapped, "persona")} still need${unmapped === 1 ? "s" : ""} target role assignments — that's your priority. ${mappedPercent}% complete.`,
+        tone: unmapped > 5 ? "warning" : "action",
+      };
+    }
+    if (lowConfidence > 0) {
+      return {
+        text: `All personas mapped. Review ${n(lowConfidence, "low-confidence assignment")} before handing off to approvers.`,
+        tone: "warning",
+      };
+    }
     return {
-      text: `Persona grouping is the bottleneck — ${n(unmapped, "user")} still need${unmapped === 1 ? "s" : ""} to be assigned before role mapping can progress. At ${coveragePercent}% coverage, this needs urgent attention.`,
-      tone: "warning",
-    };
-  }
-
-  if (mappedPercent < 50) {
-    const unmapped = totalPersonas - personasWithMapping;
-    return {
-      text: `Mapping is lagging — ${n(unmapped, "persona")} still need${unmapped === 1 ? "s" : ""} target role assignments. Approvals can't begin until mappers close these out.`,
-      tone: "warning",
-    };
-  }
-
-  if (readyForApproval > 0) {
-    const lcNote = lowConfidence > 0
-      ? ` Also flag ${n(lowConfidence, "low-confidence assignment")} for a second look before ${lowConfidence === 1 ? "it ages" : "they age"} out.`
-      : "";
-    return {
-      text: `${n(readyForApproval, "assignment")} ${readyForApproval === 1 ? "is" : "are"} sitting in the approval queue — this is the critical path right now. Get approvers moving.${lcNote}`,
-      tone: "action",
-    };
-  }
-
-  if (approvalPercent >= 80) {
-    const remaining = totalAssignments - approvedAssignments;
-    return {
-      text: `Final stretch — ${approvalPercent}% approved, only ${n(remaining, "assignment")} left. Push for the finish line before the release window closes.`,
+      text: `All ${n(totalPersonas, "persona")} mapped. Waiting on approvals — ${approvalPercent}% approved so far.`,
       tone: "positive",
     };
   }
 
-  const lcNote = lowConfidence > 0
-    ? ` ${n(lowConfidence, "low-confidence assignment")} should be reviewed — don't let ${lowConfidence === 1 ? "it" : "them"} go stale.`
-    : " Confidence scores look clean.";
+  // ── Coordinator: workflow oversight ──
+  if (role === "coordinator") {
+    const parts: string[] = [];
+    if (coveragePercent < 100) parts.push(`${100 - coveragePercent}% of users still need persona assignments`);
+    if (mappedPercent < 100 && totalPersonas > 0) parts.push(`${mappedPercent}% of personas mapped`);
+    if (readyForApproval > 0) parts.push(`${n(readyForApproval, "approval")} pending`);
+    if (openConflicts > 0) parts.push(`${n(openConflicts, "SOD conflict")} blocking`);
+
+    if (parts.length === 0) {
+      return { text: `Workflow on track — ${approvalPercent}% approved. Push for completion.`, tone: "positive" };
+    }
+    return {
+      text: parts.join(". ") + ".",
+      tone: openConflicts > 0 ? "action" : "warning",
+    };
+  }
+
+  // ── Viewer / fallback: read-only summary ──
   return {
-    text: `${mappedPercent}% of personas mapped, ${approvalPercent}% of assignments approved.${lcNote}`,
-    tone: lowConfidence > 0 ? "warning" : "neutral",
+    text: `${coveragePercent}% persona coverage, ${mappedPercent}% mapped, ${approvalPercent}% approved.`,
+    tone: "neutral",
   };
 }
 
@@ -139,7 +191,7 @@ export function generateStrapline(
   scopedStats: ScopedStats | null,
   displayName: string,
 ): StraplineResult {
-  const { text, tone } = projectStrapline(stats);
+  const { text, tone } = projectStrapline(stats, role);
 
   const needsArea = ["mapper", "approver", "coordinator"].includes(role) && scopedStats !== null;
   const area = needsArea && scopedStats ? areaStrapline(role, scopedStats, displayName) : null;
