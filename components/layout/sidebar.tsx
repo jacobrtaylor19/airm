@@ -89,7 +89,7 @@ const navSections: NavSection[] = [
   },
 ];
 
-export function Sidebar({ userRole }: { userRole: string }) {
+export function Sidebar({ userRole, projectName }: { userRole: string; projectName?: string }) {
   const pathname = usePathname();
 
   return (
@@ -100,7 +100,7 @@ export function Sidebar({ userRole }: { userRole: string }) {
           <AIRMLogo size="sm" />
           <div className="flex flex-col">
             <span className="text-sm font-bold tracking-tight leading-none">
-              AIRM
+              {projectName || "AIRM"}
             </span>
             <span className="text-[10px] font-medium text-muted-foreground leading-tight">
               AI Role Mapping

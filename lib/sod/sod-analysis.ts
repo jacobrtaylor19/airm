@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { getSetting } from "@/lib/settings";
 
 interface SodAnalysisResult {
   usersAnalyzed: number;
@@ -143,6 +144,48 @@ export function runSodAnalysis(): SodAnalysisResult {
           )
         )
         .run();
+    }
+  }
+
+  // Auto-approve clean assignments if workflow.autoApprove is enabled and confidence >= threshold
+  const autoApprove = getSetting("workflow.autoApprove") === "true";
+  if (autoApprove) {
+    const confidenceThreshold = Number(getSetting("ai.confidenceThreshold") || "85");
+
+    // Get all compliance_approved assignments (just set above)
+    const cleanAssignments = db
+      .select()
+      .from(schema.userTargetRoleAssignments)
+      .where(eq(schema.userTargetRoleAssignments.status, "compliance_approved"))
+      .all();
+
+    // Group by user and check their persona assignment confidence
+    const userIds = Array.from(new Set(cleanAssignments.map((a) => a.userId)));
+    for (const userId of userIds) {
+      const personaAssignment = db
+        .select()
+        .from(schema.userPersonaAssignments)
+        .where(eq(schema.userPersonaAssignments.userId, userId))
+        .get();
+
+      const confidence = personaAssignment?.confidenceScore ?? 0;
+      if (confidence >= confidenceThreshold) {
+        // Auto-approve: compliance_approved -> approved
+        db.update(schema.userTargetRoleAssignments)
+          .set({
+            status: "approved",
+            approvedBy: "auto_approve",
+            approvedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          })
+          .where(
+            and(
+              eq(schema.userTargetRoleAssignments.userId, userId),
+              eq(schema.userTargetRoleAssignments.status, "compliance_approved")
+            )
+          )
+          .run();
+      }
     }
   }
 

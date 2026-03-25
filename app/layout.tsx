@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { getSessionUser } from "@/lib/auth";
+import { getProjectName } from "@/lib/settings";
 import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -35,7 +36,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} font-sans antialiased`}>
         <div className="flex h-screen overflow-hidden">
-          <Sidebar userRole={user.role} />
+          <Sidebar userRole={user.role} projectName={getProjectName()} />
           <div className="flex flex-1 flex-col overflow-hidden">
             <Header user={user} />
             <main className="flex-1 overflow-y-auto p-6">{children}</main>

@@ -1,7 +1,8 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
-import Anthropic from "@anthropic-ai/sdk";
+import { getAIProvider } from "@/lib/ai/provider";
+import { getSetting } from "@/lib/settings";
 
 interface UserAccessProfile {
   sourceUserId: string;
@@ -127,12 +128,7 @@ interface AssignmentResult {
 }
 
 export async function runPersonaAssignment(jobId: number): Promise<{ usersAssigned: number; failed: number }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === "your_key_here" || apiKey.length < 10) {
-    throw new Error("ANTHROPIC_API_KEY is missing or invalid in .env.local.");
-  }
-
-  const client = new Anthropic({ apiKey });
+  const provider = getAIProvider();
   const personas = getAvailablePersonas();
   if (personas.length === 0) {
     throw new Error("No personas available. Run persona generation first.");
@@ -151,18 +147,14 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
       if (!profile) { failed++; continue; }
 
       const prompt = buildPrompt(profile, personas);
-      const response = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      });
-
-      const text = response.content[0].type === "text" ? response.content[0].text : "";
+      const text = await provider.generateText(prompt);
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) { failed++; continue; }
 
       const result: AssignmentResult = JSON.parse(jsonMatch[0]);
-      const personaId = result.confidence >= 40 ? result.persona_id : null;
+      // Use configured confidence threshold (minimum 40 to avoid null assignments for borderline matches)
+      const minConfidence = Math.max(40, Number(getSetting("ai.confidenceThreshold") || "85") * 0.5);
+      const personaId = result.confidence >= minConfidence ? result.persona_id : null;
       const groupId = personaId
         ? db.select({ gid: schema.personas.consolidatedGroupId }).from(schema.personas).where(eq(schema.personas.id, personaId)).get()?.gid ?? null
         : null;
@@ -173,7 +165,7 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
         consolidatedGroupId: groupId,
         confidenceScore: result.confidence,
         aiReasoning: result.reasoning,
-        aiModel: "claude-sonnet-4-20250514",
+        aiModel: provider.name,
         assignmentMethod: "ai_assignment",
         jobRunId: jobId,
       }).run();

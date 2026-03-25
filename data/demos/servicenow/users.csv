@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+SN001,James Mitchell,james.mitchell@itservicecorp.com,Service Desk Team Lead,Service Desk
+SN002,Sarah Chen,sarah.chen@itservicecorp.com,Service Desk Analyst,Service Desk
+SN003,Robert Thompson,robert.thompson@itservicecorp.com,Senior Service Desk Analyst,Service Desk
+SN004,Maria Garcia,maria.garcia@itservicecorp.com,Service Desk Analyst,Service Desk
+SN005,David Kim,david.kim@itservicecorp.com,Service Desk Analyst,Service Desk
+SN006,Jennifer Lee,jennifer.lee@itservicecorp.com,Incident Manager,Incident Management
+SN007,Michael Brown,michael.brown@itservicecorp.com,Major Incident Coordinator,Incident Management
+SN008,Lisa Wang,lisa.wang@itservicecorp.com,Incident Analyst,Incident Management
+SN009,Christopher Davis,christopher.davis@itservicecorp.com,Incident Analyst,Incident Management
+SN010,Amanda Wilson,amanda.wilson@itservicecorp.com,Incident Response Specialist,Incident Management
+SN011,Daniel Martinez,daniel.martinez@itservicecorp.com,Change Manager,Change Management
+SN012,Emily Taylor,emily.taylor@itservicecorp.com,Change Coordinator,Change Management
+SN013,Kevin Anderson,kevin.anderson@itservicecorp.com,Change Advisory Board Chair,Change Management
+SN014,Rachel Clark,rachel.clark@itservicecorp.com,Change Analyst,Change Management
+SN015,Thomas Wright,thomas.wright@itservicecorp.com,Emergency Change Coordinator,Change Management
+SN016,Patricia Johnson,patricia.johnson@itservicecorp.com,Problem Manager,Problem Management
+SN017,Steven Robinson,steven.robinson@itservicecorp.com,Problem Analyst,Problem Management
+SN018,Nancy White,nancy.white@itservicecorp.com,Root Cause Analyst,Problem Management
+SN019,Jason Harris,jason.harris@itservicecorp.com,Problem Analyst,Problem Management
+SN020,Michelle Lewis,michelle.lewis@itservicecorp.com,CMDB Administrator,Configuration Management
+SN021,Brian Walker,brian.walker@itservicecorp.com,Configuration Analyst,Configuration Management
+SN022,Stephanie Hall,stephanie.hall@itservicecorp.com,CMDB Data Steward,Configuration Management
+SN023,Andrew Young,andrew.young@itservicecorp.com,CI Owner - Infrastructure,Configuration Management
+SN024,Karen Allen,karen.allen@itservicecorp.com,CI Owner - Applications,Configuration Management
+SN025,Ryan King,ryan.king@itservicecorp.com,Service Owner - Email,Service Management
+SN026,Jessica Scott,jessica.scott@itservicecorp.com,Service Owner - Network,Service Management
+SN027,Mark Green,mark.green@itservicecorp.com,Service Level Manager,Service Management
+SN028,Laura Baker,laura.baker@itservicecorp.com,Service Portfolio Manager,Service Management
+SN029,Eric Adams,eric.adams@itservicecorp.com,Service Catalog Manager,Service Management
+SN030,Angela Nelson,angela.nelson@itservicecorp.com,Release Manager,Release Management
+SN031,William Hill,william.hill@itservicecorp.com,Release Coordinator,Release Management
+SN032,Diana Campbell,diana.campbell@itservicecorp.com,Release Engineer,Release Management
+SN033,Joseph Parker,joseph.parker@itservicecorp.com,Deployment Coordinator,Release Management
+SN034,Sandra Evans,sandra.evans@itservicecorp.com,Release Analyst,Release Management
+SN035,Gregory Turner,gregory.turner@itservicecorp.com,Knowledge Manager,Knowledge Management
+SN036,Catherine Phillips,catherine.phillips@itservicecorp.com,Knowledge Author,Knowledge Management
+SN037,Kenneth Morgan,kenneth.morgan@itservicecorp.com,Knowledge Reviewer,Knowledge Management
+SN038,Deborah Stewart,deborah.stewart@itservicecorp.com,Knowledge Author,Knowledge Management
+SN039,Timothy Rogers,timothy.rogers@itservicecorp.com,Knowledge Base Administrator,Knowledge Management
+SN040,Sharon Reed,sharon.reed@itservicecorp.com,IT Asset Manager,Asset Management
+SN041,Frank Cook,frank.cook@itservicecorp.com,Software Asset Analyst,Asset Management
+SN042,Donna Bailey,donna.bailey@itservicecorp.com,Hardware Asset Analyst,Asset Management
+SN043,Raymond Bell,raymond.bell@itservicecorp.com,License Compliance Analyst,Asset Management
+SN044,Virginia Murphy,virginia.murphy@itservicecorp.com,Asset Lifecycle Coordinator,Asset Management
+SN045,Harold Rivera,harold.rivera@itservicecorp.com,Request Fulfillment Manager,Request Fulfillment
+SN046,Dorothy Cooper,dorothy.cooper@itservicecorp.com,Request Fulfillment Analyst,Request Fulfillment
+SN047,Carl Richardson,carl.richardson@itservicecorp.com,Service Request Coordinator,Request Fulfillment
+SN048,Julie Cox,julie.cox@itservicecorp.com,Request Fulfillment Analyst,Request Fulfillment
+SN049,Roy Howard,roy.howard@itservicecorp.com,Catalog Item Owner,Request Fulfillment
+SN050,Cheryl Ward,cheryl.ward@itservicecorp.com,IT Security Manager,Security Operations
+SN051,Eugene Torres,eugene.torres@itservicecorp.com,Security Analyst,Security Operations
+SN052,Martha Peterson,martha.peterson@itservicecorp.com,Security Incident Responder,Security Operations
+SN053,Wayne Gray,wayne.gray@itservicecorp.com,Vulnerability Analyst,Security Operations
+SN054,Gloria Ramirez,gloria.ramirez@itservicecorp.com,Security Operations Analyst,Security Operations
+SN055,Russell James,russell.james@itservicecorp.com,IT Operations Manager,IT Operations
+SN056,Diane Watson,diane.watson@itservicecorp.com,Systems Administrator,IT Operations
+SN057,Philip Brooks,philip.brooks@itservicecorp.com,Network Administrator,IT Operations
+SN058,Janet Kelly,janet.kelly@itservicecorp.com,Database Administrator,IT Operations
+SN059,Roger Sanders,roger.sanders@itservicecorp.com,Cloud Operations Engineer,IT Operations
+SN060,Marie Price,marie.price@itservicecorp.com,Capacity Planner,IT Operations
+SN061,Gerald Bennett,gerald.bennett@itservicecorp.com,IT Auditor,IT Governance
+SN062,Frances Wood,frances.wood@itservicecorp.com,Compliance Analyst,IT Governance
+SN063,Henry Barnes,henry.barnes@itservicecorp.com,IT Risk Manager,IT Governance
+SN064,Judith Ross,judith.ross@itservicecorp.com,GRC Analyst,IT Governance
+SN065,Arthur Henderson,arthur.henderson@itservicecorp.com,Policy Manager,IT Governance
+SN066,Joyce Coleman,joyce.coleman@itservicecorp.com,ServiceNow Platform Admin,Platform Administration
+SN067,Albert Jenkins,albert.jenkins@itservicecorp.com,ServiceNow Developer,Platform Administration
+SN068,Megan Perry,megan.perry@itservicecorp.com,Platform Configuration Specialist,Platform Administration
+SN069,Ralph Powell,ralph.powell@itservicecorp.com,Integration Specialist,Platform Administration
+SN070,Theresa Long,theresa.long@itservicecorp.com,Reporting Analyst,Platform Administration
+SN071,Louis Patterson,louis.patterson@itservicecorp.com,Availability Manager,Service Management
+SN072,Ann Hughes,ann.hughes@itservicecorp.com,Continuity Manager,Service Management
+SN073,Jack Butler,jack.butler@itservicecorp.com,Capacity Manager,Service Management
+SN074,Kelly Simmons,kelly.simmons@itservicecorp.com,Supplier Manager,Vendor Management
+SN075,Lawrence Foster,lawrence.foster@itservicecorp.com,Vendor Coordinator,Vendor Management
+SN076,Tammy Gonzales,tammy.gonzales@itservicecorp.com,Contract Administrator,Vendor Management
+SN077,Craig Bryant,craig.bryant@itservicecorp.com,Service Desk Analyst,Service Desk
+SN078,Brenda Alexander,brenda.alexander@itservicecorp.com,Service Desk Analyst,Service Desk
+SN079,Jesse Russell,jesse.russell@itservicecorp.com,Incident Analyst,Incident Management
+SN080,Kathryn Griffin,kathryn.griffin@itservicecorp.com,Change Analyst,Change Management
+SN081,Sean Diaz,sean.diaz@itservicecorp.com,Problem Analyst,Problem Management
+SN082,Carolyn Hayes,carolyn.hayes@itservicecorp.com,Configuration Analyst,Configuration Management
+SN083,Adam Myers,adam.myers@itservicecorp.com,Release Analyst,Release Management
+SN084,Evelyn Ford,evelyn.ford@itservicecorp.com,Knowledge Author,Knowledge Management
+SN085,Bruce Hamilton,bruce.hamilton@itservicecorp.com,Asset Analyst,Asset Management
+SN086,Christina Graham,christina.graham@itservicecorp.com,Request Fulfillment Analyst,Request Fulfillment
+SN087,Douglas Sullivan,douglas.sullivan@itservicecorp.com,Security Analyst,Security Operations
+SN088,Rebecca Wallace,rebecca.wallace@itservicecorp.com,Systems Administrator,IT Operations
+SN089,Nathan West,nathan.west@itservicecorp.com,Compliance Analyst,IT Governance
+SN090,Heather Cole,heather.cole@itservicecorp.com,Platform Configuration Specialist,Platform Administration
+SN091,Terry Jordan,terry.jordan@itservicecorp.com,Service Desk Analyst,Service Desk
+SN092,Victoria Owens,victoria.owens@itservicecorp.com,Incident Analyst,Incident Management
+SN093,Scott Reynolds,scott.reynolds@itservicecorp.com,Change Coordinator,Change Management
+SN094,Amber Fisher,amber.fisher@itservicecorp.com,CMDB Data Steward,Configuration Management
+SN095,Patrick Stone,patrick.stone@itservicecorp.com,Service Level Analyst,Service Management
+SN096,Tiffany Murray,tiffany.murray@itservicecorp.com,Release Engineer,Release Management
+SN097,Martin Dean,martin.dean@itservicecorp.com,Knowledge Reviewer,Knowledge Management
+SN098,Melissa Burns,melissa.burns@itservicecorp.com,Software Asset Analyst,Asset Management
+SN099,Derek Carroll,derek.carroll@itservicecorp.com,IT Security Analyst,Security Operations
+SN100,Crystal Webb,crystal.webb@itservicecorp.com,IT Governance Specialist,IT Governance

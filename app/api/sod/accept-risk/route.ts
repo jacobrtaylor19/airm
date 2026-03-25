@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { getSetting } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Conflict not found" }, { status: 404 });
     }
 
-    if (conflict.severity === "critical") {
+    // Check if risk acceptance is allowed for this severity level (from workflow settings)
+    const severity = conflict.severity;
+    if (severity === "critical") {
+      // Critical is never risk-acceptable regardless of settings
       return NextResponse.json({ error: "Critical severity conflicts cannot be risk-accepted." }, { status: 400 });
+    }
+    if (severity === "high" && getSetting("workflow.sodHighRiskAcceptable") === "false") {
+      return NextResponse.json({ error: "High severity risk acceptance is disabled by workflow settings." }, { status: 400 });
+    }
+    if (severity === "medium" && getSetting("workflow.sodMediumRiskAcceptable") === "false") {
+      return NextResponse.json({ error: "Medium severity risk acceptance is disabled by workflow settings." }, { status: 400 });
+    }
+    if (severity === "low" && getSetting("workflow.sodLowRiskAcceptable") === "false") {
+      return NextResponse.json({ error: "Low severity risk acceptance is disabled by workflow settings." }, { status: 400 });
     }
 
     // Handle reject action

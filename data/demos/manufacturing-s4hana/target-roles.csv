@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+S4_PP_SUPERVISOR,PP Production Supervisor,Manage production orders and shop floor operations in S/4HANA,S/4HANA,Production Planning
+S4_PP_PLANNER,PP Production Planner,Production planning and scheduling with MRP in S/4HANA,S/4HANA,Production Planning
+S4_MES_OPERATOR,MES Shop Floor Operator,Execute and confirm manufacturing operations via MES/Fiori,S/4HANA,Manufacturing Execution
+S4_QM_INSPECTOR,QM Quality Inspector,Perform inspections and record results in S/4HANA QM,S/4HANA,Quality Management
+S4_QM_MANAGER,QM Quality Manager,Manage quality plans and make disposition decisions,S/4HANA,Quality Management
+S4_QM_AUDITOR,QM Quality Auditor,Conduct quality audits and manage certifications,S/4HANA,Quality Management
+S4_PM_PLANNER,EAM Maintenance Planner,Plan and schedule maintenance in S/4HANA EAM,S/4HANA,Plant Maintenance
+S4_PM_TECHNICIAN,EAM Maintenance Technician,Execute maintenance work via Fiori apps,S/4HANA,Plant Maintenance
+S4_PM_ENGINEER,EAM Reliability Engineer,Equipment analytics and predictive maintenance,S/4HANA,Plant Maintenance
+S4_MM_HANDLER,MM Material Handler,Goods receipt and goods issue via Fiori apps,S/4HANA,Materials Management
+S4_MM_PURCHASER,MM Purchasing Specialist,Manage purchase orders and sourcing,S/4HANA,Materials Management
+S4_MM_WAREHOUSE,EWM Warehouse Manager,Extended warehouse management operations,S/4HANA,Warehouse Management
+S4_MM_INVENTORY,MM Inventory Manager,Physical inventory and stock management,S/4HANA,Materials Management
+S4_SD_SHIPPING,SD Shipping Specialist,Outbound delivery and transportation management,S/4HANA,Sales & Distribution
+S4_FI_COST,CO Cost Accountant,Product costing and profitability analysis,S/4HANA,Controlling
+S4_FI_AP,FI AP Specialist,Accounts payable processing in S/4HANA,S/4HANA,Finance
+S4_FI_GL,FI GL Accountant,General ledger and financial close,S/4HANA,Finance
+S4_EHS_SPECIALIST,EHS Specialist,Environment health and safety management,S/4HANA,EHS

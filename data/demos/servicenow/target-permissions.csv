@@ -1,0 +1,65 @@
+permission_id,permission_name,description,system,risk_level
+SN_INC_CREATE,Create Incident,Create incident records in ServiceNow,ServiceNow,Low
+SN_INC_WRITE,Write Incident,Modify incident records,ServiceNow,Low
+SN_INC_CLOSE,Close Incident,Close and resolve incidents,ServiceNow,Medium
+SN_INC_MAJOR,Major Incident,Declare and manage major incidents,ServiceNow,High
+SN_INC_DELETE,Delete Incident,Delete incident records,ServiceNow,Critical
+SN_INC_ASSIGN,Assign Incident,Assign incidents to groups and users,ServiceNow,Low
+SN_INC_REPORT,Incident Reports,Access incident reports and analytics,ServiceNow,Low
+SN_CHG_CREATE,Create Change,Create change requests,ServiceNow,Medium
+SN_CHG_WRITE,Write Change,Modify change request details,ServiceNow,Medium
+SN_CHG_APPROVE,Approve Change,Approve or reject change requests,ServiceNow,High
+SN_CHG_IMPLEMENT,Implement Change,Execute change implementation tasks,ServiceNow,High
+SN_CHG_CLOSE,Close Change,Close completed change requests,ServiceNow,Medium
+SN_CHG_EMERGENCY,Emergency Change,Process emergency change requests,ServiceNow,Critical
+SN_CHG_CAB,CAB Management,Manage Change Advisory Board,ServiceNow,Medium
+SN_PRB_CREATE,Create Problem,Create problem records,ServiceNow,Medium
+SN_PRB_WRITE,Write Problem,Modify problem records,ServiceNow,Medium
+SN_PRB_CLOSE,Close Problem,Close problem records,ServiceNow,Medium
+SN_PRB_RCA,Root Cause Analysis,Document root cause analysis,ServiceNow,Medium
+SN_PRB_KNOWN_ERR,Known Error DB,Manage known error database,ServiceNow,Medium
+SN_CMDB_READ,Read CMDB,View configuration items,ServiceNow,Low
+SN_CMDB_WRITE,Write CMDB,Create and modify CIs,ServiceNow,Medium
+SN_CMDB_DELETE,Delete CMDB,Delete configuration items,ServiceNow,High
+SN_CMDB_ADMIN,CMDB Admin,Full CMDB administration,ServiceNow,High
+SN_CMDB_IMPORT,CMDB Import,Import CI data from discovery,ServiceNow,High
+SN_KB_CREATE,Create Article,Create knowledge articles,ServiceNow,Low
+SN_KB_PUBLISH,Publish Article,Publish knowledge articles,ServiceNow,Medium
+SN_KB_ADMIN,KB Admin,Administer knowledge base,ServiceNow,Medium
+SN_KB_RETIRE,Retire Article,Retire knowledge articles,ServiceNow,Medium
+SN_ASSET_READ,Read Assets,View IT asset records,ServiceNow,Low
+SN_ASSET_WRITE,Write Assets,Create and modify asset records,ServiceNow,Medium
+SN_ASSET_LICENSE,License Mgmt,Manage software licenses,ServiceNow,High
+SN_ASSET_DISPOSE,Dispose Asset,Process asset disposal,ServiceNow,High
+SN_ASSET_AUDIT,Audit Assets,Perform asset audits,ServiceNow,Medium
+SN_REQ_CREATE,Create Request,Create service requests,ServiceNow,Low
+SN_REQ_FULFILL,Fulfill Request,Process service request fulfillment,ServiceNow,Medium
+SN_REQ_APPROVE,Approve Request,Approve service requests,ServiceNow,Medium
+SN_REQ_CATALOG,Catalog Admin,Manage service catalog,ServiceNow,Medium
+SN_REL_CREATE,Create Release,Create release records,ServiceNow,Medium
+SN_REL_DEPLOY,Deploy Release,Deploy releases to environments,ServiceNow,High
+SN_REL_APPROVE,Approve Release,Approve releases for deployment,ServiceNow,High
+SN_REL_PLAN,Plan Release,Plan release schedule and activities,ServiceNow,Medium
+SN_SEC_INCIDENT,Security Incident,Manage security incidents,ServiceNow,High
+SN_SEC_VULN,Vulnerability Mgmt,Manage vulnerability records,ServiceNow,High
+SN_SEC_POLICY,Security Policy,Manage security policies,ServiceNow,Critical
+SN_SEC_ACCESS,Access Control,Manage user access and roles,ServiceNow,Critical
+SN_SLA_CONFIG,SLA Configuration,Configure SLA definitions,ServiceNow,High
+SN_SLA_REPORT,SLA Reporting,View SLA compliance reports,ServiceNow,Low
+SN_REPORT_CREATE,Create Reports,Create reports and dashboards,ServiceNow,Low
+SN_REPORT_ADMIN,Report Admin,Administer reporting framework,ServiceNow,Medium
+SN_COMPLY_MANAGE,Compliance Mgmt,Manage compliance policies and audits,ServiceNow,High
+SN_COMPLY_REPORT,Compliance Report,View compliance reports,ServiceNow,Medium
+SN_VENDOR_MANAGE,Vendor Management,Manage vendor records,ServiceNow,Medium
+SN_VENDOR_CONTRACT,Contract Mgmt,Manage vendor contracts,ServiceNow,High
+SN_PLAT_ADMIN,Platform Admin,Full platform administration,ServiceNow,Critical
+SN_PLAT_DEV,Platform Dev,Develop custom applications,ServiceNow,High
+SN_PLAT_INTEG,Integration Admin,Manage integrations and APIs,ServiceNow,High
+SN_PLAT_WORKFLOW,Workflow Admin,Design automated workflows,ServiceNow,High
+SN_USER_ADMIN,User Admin,Manage user accounts and groups,ServiceNow,Critical
+SN_IMPORT_DATA,Data Import,Import data from external sources,ServiceNow,High
+SN_EXPORT_DATA,Data Export,Export system data,ServiceNow,Medium
+SN_NOTIFY_CONFIG,Notification Config,Configure email notifications,ServiceNow,Medium
+SN_MOBILE,Mobile Access,Mobile application access,ServiceNow,Low
+SN_DASH_VIEW,View Dashboard,View operational dashboards,ServiceNow,Low
+SN_DASH_CREATE,Create Dashboard,Create custom dashboards,ServiceNow,Low

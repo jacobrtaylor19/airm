@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle, Circle, Loader2, Zap, Search, ChevronRight, X, Save } from "lucide-react";
+import { AlertTriangle, CheckCircle, Circle, Loader2, Zap, Search, ChevronRight, X, Save, GripVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, PersonaSodConflict, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
@@ -33,6 +33,59 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const router = useRouter();
+
+  // Drag-and-drop mapping state
+  const [localMappedIds, setLocalMappedIds] = useState<number[]>([]);
+  const [isDirty, setIsDirty] = useState(false);
+  const [savingMapping, setSavingMapping] = useState(false);
+  const [dropZoneActive, setDropZoneActive] = useState<"mapped" | "available" | null>(null);
+  const dragRoleIdRef = useRef<number | null>(null);
+  const dragSourceRef = useRef<"mapped" | "available" | null>(null);
+
+  // Sync local state when selected persona changes
+  useEffect(() => {
+    if (selectedPersonaId && personaDetails[selectedPersonaId]) {
+      setLocalMappedIds(personaDetails[selectedPersonaId].mappedRoles.map((r) => r.targetRoleId));
+      setIsDirty(false);
+    } else {
+      setLocalMappedIds([]);
+      setIsDirty(false);
+    }
+  }, [selectedPersonaId, personaDetails]);
+
+  function addRole(roleId: number) {
+    setLocalMappedIds((prev) => prev.includes(roleId) ? prev : [...prev, roleId]);
+    setIsDirty(true);
+  }
+
+  function removeRole(roleId: number) {
+    setLocalMappedIds((prev) => prev.filter((id) => id !== roleId));
+    setIsDirty(true);
+  }
+
+  async function saveMappings() {
+    if (!selectedPersonaId) return;
+    setSavingMapping(true);
+    try {
+      const res = await fetch("/api/mapping/persona-roles", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ personaId: selectedPersonaId, targetRoleIds: localMappedIds }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to save mapping");
+      } else {
+        toast.success("Mapping saved");
+        setIsDirty(false);
+        router.refresh();
+      }
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+    } finally {
+      setSavingMapping(false);
+    }
+  }
 
   const selectedDetail = selectedPersonaId ? personaDetails[selectedPersonaId] : null;
   const selectedPersona = personas.find(p => p.personaId === selectedPersonaId);
@@ -215,57 +268,117 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                     </div>
                   )}
 
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Mapped Target Roles ({selectedDetail.mappedRoles.length})</h4>
-                    {selectedDetail.mappedRoles.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Role ID</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Owner</TableHead>
-                            <TableHead>Coverage</TableHead>
-                            <TableHead>Confidence</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {selectedDetail.mappedRoles.map((r) => (
-                            <TableRow key={r.targetRoleId}>
-                              <TableCell className="font-mono text-xs">{r.roleId}</TableCell>
-                              <TableCell className="text-sm">{r.roleName}</TableCell>
-                              <TableCell className="text-sm text-muted-foreground">{r.roleOwner ?? "—"}</TableCell>
-                              <TableCell className="text-sm">
-                                {r.coveragePercent != null ? `${Math.round(r.coveragePercent)}%` : "—"}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="text-xs">{r.confidence ?? "—"}</Badge>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    ) : (
-                      <p className="text-sm text-muted-foreground py-4 text-center">
-                        No target roles mapped. Use &quot;Auto-Map All&quot; or run target role mapping from the Jobs page.
-                      </p>
-                    )}
-                  </div>
+                  {/* Drag-and-drop mapping */}
+                  <div className="space-y-3">
+                    {/* Mapped Roles drop zone */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <h4 className="text-sm font-medium">Mapped Target Roles ({localMappedIds.length})</h4>
+                        {isDirty && (
+                          <Button size="sm" className="h-7 text-xs gap-1.5" onClick={saveMappings} disabled={savingMapping}>
+                            {savingMapping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                            Save
+                          </Button>
+                        )}
+                      </div>
+                      <div
+                        className={`min-h-[80px] rounded-md border-2 border-dashed p-2 transition-colors ${
+                          dropZoneActive === "mapped"
+                            ? "border-primary bg-primary/5"
+                            : "border-border bg-muted/20"
+                        }`}
+                        onDragOver={(e) => { e.preventDefault(); setDropZoneActive("mapped"); }}
+                        onDragLeave={() => setDropZoneActive(null)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDropZoneActive(null);
+                          if (dragRoleIdRef.current !== null && dragSourceRef.current === "available") {
+                            addRole(dragRoleIdRef.current);
+                          }
+                        }}
+                      >
+                        {localMappedIds.length === 0 ? (
+                          <p className="text-xs text-muted-foreground text-center py-4">
+                            Drag roles here from &quot;Available&quot; below, or run Auto-Map.
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {localMappedIds.map((roleId) => {
+                              const roleInfo = targetRoles.find((r) => r.id === roleId);
+                              const dbInfo = selectedDetail.mappedRoles.find((m) => m.targetRoleId === roleId);
+                              if (!roleInfo) return null;
+                              return (
+                                <div
+                                  key={roleId}
+                                  draggable
+                                  onDragStart={() => { dragRoleIdRef.current = roleId; dragSourceRef.current = "mapped"; }}
+                                  onDragEnd={() => { dragRoleIdRef.current = null; dragSourceRef.current = null; }}
+                                  className="flex items-center gap-1 rounded-full border bg-primary/10 border-primary/30 px-2 py-1 text-xs cursor-grab active:cursor-grabbing group"
+                                >
+                                  <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                                  <span className="font-medium text-primary">{roleInfo.roleName}</span>
+                                  {dbInfo?.confidence && dbInfo.confidence !== "manual" && (
+                                    <span className="text-[9px] text-muted-foreground ml-0.5">({dbInfo.confidence})</span>
+                                  )}
+                                  <button
+                                    onClick={() => removeRole(roleId)}
+                                    className="ml-0.5 text-muted-foreground hover:text-destructive transition-colors opacity-50 group-hover:opacity-100"
+                                    title="Remove role"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    </div>
 
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Available Target Roles</h4>
-                    <div className="flex flex-wrap gap-1.5">
-                      {targetRoles.map((r) => {
-                        const isMapped = selectedDetail.mappedRoles.some(m => m.targetRoleId === r.id);
-                        return (
-                          <Badge
-                            key={r.id}
-                            variant={isMapped ? "default" : "outline"}
-                            className="text-xs"
-                          >
-                            {r.roleName}
-                          </Badge>
-                        );
-                      })}
+                    {/* Available Roles drop zone */}
+                    <div>
+                      <h4 className="text-sm font-medium mb-1.5 text-muted-foreground">
+                        Available Target Roles ({targetRoles.filter((r) => !localMappedIds.includes(r.id)).length})
+                      </h4>
+                      <div
+                        className={`min-h-[60px] rounded-md border-2 border-dashed p-2 transition-colors ${
+                          dropZoneActive === "available"
+                            ? "border-muted-foreground/40 bg-muted/30"
+                            : "border-transparent"
+                        }`}
+                        onDragOver={(e) => { e.preventDefault(); setDropZoneActive("available"); }}
+                        onDragLeave={() => setDropZoneActive(null)}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          setDropZoneActive(null);
+                          if (dragRoleIdRef.current !== null && dragSourceRef.current === "mapped") {
+                            removeRole(dragRoleIdRef.current);
+                          }
+                        }}
+                      >
+                        <div className="flex flex-wrap gap-1.5">
+                          {targetRoles
+                            .filter((r) => !localMappedIds.includes(r.id))
+                            .map((r) => (
+                              <div
+                                key={r.id}
+                                draggable
+                                onDragStart={() => { dragRoleIdRef.current = r.id; dragSourceRef.current = "available"; }}
+                                onDragEnd={() => { dragRoleIdRef.current = null; dragSourceRef.current = null; }}
+                                className="flex items-center gap-1 rounded-full border px-2 py-1 text-xs cursor-grab active:cursor-grabbing hover:bg-muted/50 transition-colors"
+                              >
+                                <GripVertical className="h-3 w-3 text-muted-foreground/40 shrink-0" />
+                                <span>{r.roleName}</span>
+                              </div>
+                            ))}
+                          {targetRoles.filter((r) => !localMappedIds.includes(r.id)).length === 0 && (
+                            <p className="text-xs text-muted-foreground py-2">All roles have been mapped.</p>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Drag roles up to Mapped, or drag Mapped roles here to remove.
+                      </p>
                     </div>
                   </div>
                 </div>

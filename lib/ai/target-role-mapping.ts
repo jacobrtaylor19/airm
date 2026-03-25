@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
-import Anthropic from "@anthropic-ai/sdk";
+import { getAIProvider } from "@/lib/ai/provider";
 
 function buildMappingPrompt(
   persona: { name: string; description: string | null; businessFunction: string | null },
@@ -41,12 +41,7 @@ interface MappingResult {
 }
 
 export async function runTargetRoleMapping(jobId: number): Promise<{ personasMapped: number; totalMappings: number }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === "your_key_here" || apiKey.length < 10) {
-    throw new Error("ANTHROPIC_API_KEY is missing or invalid in .env.local.");
-  }
-
-  const client = new Anthropic({ apiKey });
+  const provider = getAIProvider();
   const personas = db.select().from(schema.personas).all();
   const targetRoles = db.select().from(schema.targetRoles).all();
 
@@ -64,13 +59,7 @@ export async function runTargetRoleMapping(jobId: number): Promise<{ personasMap
   for (const persona of personas) {
     try {
       const prompt = buildMappingPrompt(persona, targetRoles);
-      const response = await client.messages.create({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 2048,
-        messages: [{ role: "user", content: prompt }],
-      });
-
-      const text = response.content[0].type === "text" ? response.content[0].text : "";
+      const text = await provider.generateText(prompt);
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) continue;
 

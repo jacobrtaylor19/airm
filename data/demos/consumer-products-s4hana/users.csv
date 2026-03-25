@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+CP001,Victoria Hamilton,victoria.hamilton@cpgcorp.com,Brand Manager,Marketing
+CP002,Marcus Rivera,marcus.rivera@cpgcorp.com,Senior Brand Manager,Marketing
+CP003,Lauren Brooks,lauren.brooks@cpgcorp.com,Marketing Analyst,Marketing
+CP004,Tyler Washington,tyler.washington@cpgcorp.com,Digital Marketing Manager,Marketing
+CP005,Ashley Morgan,ashley.morgan@cpgcorp.com,Product Marketing Specialist,Marketing
+CP006,Ryan Cooper,ryan.cooper@cpgcorp.com,Brand Activation Manager,Marketing
+CP007,Megan Foster,megan.foster@cpgcorp.com,Marketing Coordinator,Marketing
+CP008,Brandon Clark,brandon.clark@cpgcorp.com,Consumer Insights Analyst,Marketing
+CP009,Samantha Reed,samantha.reed@cpgcorp.com,Creative Director,Marketing
+CP010,Justin Wright,justin.wright@cpgcorp.com,Marketing Operations Manager,Marketing
+CP011,Natalie Torres,natalie.torres@cpgcorp.com,Key Account Manager,Sales
+CP012,Derek Sullivan,derek.sullivan@cpgcorp.com,Regional Sales Director,Sales
+CP013,Brittany Campbell,brittany.campbell@cpgcorp.com,Sales Analyst,Sales
+CP014,Keith Edwards,keith.edwards@cpgcorp.com,National Account Manager,Sales
+CP015,Amanda Peterson,amanda.peterson@cpgcorp.com,Sales Representative,Sales
+CP016,Travis Bailey,travis.bailey@cpgcorp.com,Field Sales Manager,Sales
+CP017,Courtney Ross,courtney.ross@cpgcorp.com,Sales Operations Analyst,Sales
+CP018,Dustin Price,dustin.price@cpgcorp.com,Channel Manager,Sales
+CP019,Lindsey Howard,lindsey.howard@cpgcorp.com,Sales Coordinator,Sales
+CP020,Blake Myers,blake.myers@cpgcorp.com,Key Account Executive,Sales
+CP021,Kayla Griffin,kayla.griffin@cpgcorp.com,Supply Chain Director,Supply Chain
+CP022,Ian Stewart,ian.stewart@cpgcorp.com,Demand Planner,Supply Chain
+CP023,Rebecca Coleman,rebecca.coleman@cpgcorp.com,Supply Planner,Supply Chain
+CP024,Cody Brooks,cody.brooks@cpgcorp.com,S&OP Manager,Supply Chain
+CP025,Nicole Jenkins,nicole.jenkins@cpgcorp.com,Procurement Manager,Supply Chain
+CP026,Garrett Long,garrett.long@cpgcorp.com,Supply Chain Analyst,Supply Chain
+CP027,Danielle Powell,danielle.powell@cpgcorp.com,Logistics Coordinator,Supply Chain
+CP028,Eric Russell,eric.russell@cpgcorp.com,Purchasing Agent,Supply Chain
+CP029,Chelsea Gray,chelsea.gray@cpgcorp.com,Vendor Relations Manager,Supply Chain
+CP030,Shane Cooper,shane.cooper@cpgcorp.com,Materials Planner,Supply Chain
+CP031,Taylor Patterson,taylor.patterson@cpgcorp.com,Distribution Manager,Distribution
+CP032,Jake Sanders,jake.sanders@cpgcorp.com,Warehouse Operations Manager,Distribution
+CP033,Morgan Price,morgan.price@cpgcorp.com,Distribution Planner,Distribution
+CP034,Cole Richardson,cole.richardson@cpgcorp.com,Shipping Supervisor,Distribution
+CP035,Paige Foster,paige.foster@cpgcorp.com,Inventory Control Specialist,Distribution
+CP036,Trent Watson,trent.watson@cpgcorp.com,Fleet Manager,Distribution
+CP037,Sierra Thompson,sierra.thompson@cpgcorp.com,DC Operations Analyst,Distribution
+CP038,Chase Martinez,chase.martinez@cpgcorp.com,Order Fulfillment Coordinator,Distribution
+CP039,Alexis Young,alexis.young@cpgcorp.com,Returns Processing Specialist,Distribution
+CP040,Tyler Ward,tyler.ward@cpgcorp.com,Warehouse Clerk,Distribution
+CP041,Hannah Scott,hannah.scott@cpgcorp.com,Finance Director,Finance
+CP042,Mason Adams,mason.adams@cpgcorp.com,Revenue Accountant,Finance
+CP043,Emma Nelson,emma.nelson@cpgcorp.com,AP Supervisor,Finance
+CP044,Logan Hill,logan.hill@cpgcorp.com,AR Specialist,Finance
+CP045,Grace Turner,grace.turner@cpgcorp.com,Financial Analyst,Finance
+CP046,Caleb Wright,caleb.wright@cpgcorp.com,Controller,Finance
+CP047,Lily Baker,lily.baker@cpgcorp.com,Cost Analyst,Finance
+CP048,Owen Clark,owen.clark@cpgcorp.com,GL Accountant,Finance
+CP049,Zoe Garcia,zoe.garcia@cpgcorp.com,Tax Accountant,Finance
+CP050,Ethan Lopez,ethan.lopez@cpgcorp.com,Treasury Analyst,Finance
+CP051,Chloe Anderson,chloe.anderson@cpgcorp.com,Trade Promotion Manager,Trade Promotion
+CP052,Lucas Thomas,lucas.thomas@cpgcorp.com,Trade Marketing Analyst,Trade Promotion
+CP053,Alyssa Martin,alyssa.martin@cpgcorp.com,Promotion Planner,Trade Promotion
+CP054,Noah Jackson,noah.jackson@cpgcorp.com,Trade Funds Administrator,Trade Promotion
+CP055,Isabella White,isabella.white@cpgcorp.com,Deduction Analyst,Trade Promotion
+CP056,Jayden Harris,jayden.harris@cpgcorp.com,Trade Operations Coordinator,Trade Promotion
+CP057,Sophie Robinson,sophie.robinson@cpgcorp.com,Settlement Analyst,Trade Promotion
+CP058,Carter Lee,carter.lee@cpgcorp.com,Promotion Effectiveness Analyst,Trade Promotion
+CP059,Ella Walker,ella.walker@cpgcorp.com,Trade Compliance Specialist,Trade Promotion
+CP060,Adrian Young,adrian.young@cpgcorp.com,Trade Finance Analyst,Trade Promotion
+CP061,Maya King,maya.king@cpgcorp.com,Category Manager,Category Management
+CP062,Evan Green,evan.green@cpgcorp.com,Category Analyst,Category Management
+CP063,Avery Baker,avery.baker@cpgcorp.com,Shopper Insights Manager,Category Management
+CP064,Luke Adams,luke.adams@cpgcorp.com,Space Planning Analyst,Category Management
+CP065,Aria Davis,aria.davis@cpgcorp.com,Category Development Manager,Category Management
+CP066,Julian Morris,julian.morris@cpgcorp.com,Assortment Planner,Category Management
+CP067,Stella Rogers,stella.rogers@cpgcorp.com,Pricing Analyst,Category Management
+CP068,Miles Cook,miles.cook@cpgcorp.com,Category Assistant,Category Management
+CP069,Nora Bell,nora.bell@cpgcorp.com,Planogram Specialist,Category Management
+CP070,Liam Murphy,liam.murphy@cpgcorp.com,Retail Execution Analyst,Category Management
+CP071,Hazel Rivera,hazel.rivera@cpgcorp.com,HR Manager,HR
+CP072,Gavin Torres,gavin.torres@cpgcorp.com,HR Business Partner,HR
+CP073,Violet Peterson,violet.peterson@cpgcorp.com,Payroll Specialist,HR
+CP074,Xavier Cruz,xavier.cruz@cpgcorp.com,Talent Acquisition Specialist,HR
+CP075,Ruby James,ruby.james@cpgcorp.com,Training Coordinator,HR
+CP076,Maxwell Ward,maxwell.ward@cpgcorp.com,Compensation Analyst,HR
+CP077,Penelope Ross,penelope.ross@cpgcorp.com,HR Coordinator,HR
+CP078,Sebastian Howard,sebastian.howard@cpgcorp.com,Benefits Administrator,HR
+CP079,Aubrey Flores,aubrey.flores@cpgcorp.com,HRIS Analyst,HR
+CP080,Theodore Sanders,theodore.sanders@cpgcorp.com,Employee Relations Specialist,HR
+CP081,Clara Price,clara.price@cpgcorp.com,IT Director,IT
+CP082,Jasper Coleman,jasper.coleman@cpgcorp.com,SAP Basis Administrator,IT
+CP083,Ivy Powell,ivy.powell@cpgcorp.com,Application Analyst,IT
+CP084,Felix Barnes,felix.barnes@cpgcorp.com,IT Support Specialist,IT
+CP085,Daisy Bell,daisy.bell@cpgcorp.com,Data Engineer,IT
+CP086,Oscar Hughes,oscar.hughes@cpgcorp.com,IT Security Analyst,IT
+CP087,Luna Butler,luna.butler@cpgcorp.com,BI Developer,IT
+CP088,Hugo Simmons,hugo.simmons@cpgcorp.com,Integration Analyst,IT
+CP089,Iris Foster,iris.foster@cpgcorp.com,IT Project Manager,IT
+CP090,Leo Bryant,leo.bryant@cpgcorp.com,SAP Developer,IT
+CP091,Aurora Russell,aurora.russell@cpgcorp.com,Customer Service Manager,Customer Service
+CP092,Axel Griffin,axel.griffin@cpgcorp.com,Customer Service Representative,Customer Service
+CP093,Vivian Hayes,vivian.hayes@cpgcorp.com,Order Management Specialist,Customer Service
+CP094,Roman Diaz,roman.diaz@cpgcorp.com,Customer Service Analyst,Customer Service
+CP095,Eloise Graham,eloise.graham@cpgcorp.com,Complaint Resolution Specialist,Customer Service
+CP096,Milo Hamilton,milo.hamilton@cpgcorp.com,Customer Service Representative,Customer Service
+CP097,Scarlett Ford,scarlett.ford@cpgcorp.com,Order Entry Specialist,Customer Service
+CP098,Arthur Webb,arthur.webb@cpgcorp.com,Customer Master Data Specialist,Customer Service
+CP099,Sienna Cole,sienna.cole@cpgcorp.com,EDI Coordinator,Customer Service
+CP100,Felix Stone,felix.stone@cpgcorp.com,Customer Service Team Lead,Customer Service

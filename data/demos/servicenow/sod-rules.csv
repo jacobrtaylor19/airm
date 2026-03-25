@@ -1,0 +1,61 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-SN-001,Create and Approve Changes,LP_CHG_CREATE,LP_CHG_APPROVE,Critical,A user who can both create and approve change requests can bypass the dual-control process for system modifications
+SOD-SN-002,Implement and Approve Changes,LP_CHG_IMPLEMENT,LP_CHG_APPROVE,Critical,A user who can both implement and approve changes controls the entire change lifecycle without independent oversight
+SOD-SN-003,Emergency Change and Audit,LP_CHG_EMERGENCY,LP_AUDIT_EXEC,Critical,A user who can create emergency changes and perform audits can circumvent controls and hide evidence
+SOD-SN-004,Create and Close Incidents,LP_INC_CREATE,LP_INC_CLOSE,High,A user who can both create and close incidents can fabricate and immediately resolve false incidents
+SOD-SN-005,Delete Incidents and Audit,LP_INC_DELETE,LP_AUDIT_EXEC,Critical,A user who can delete incidents and perform audits can destroy evidence and falsify compliance records
+SOD-SN-006,Create and Delete Problems,LP_PRB_CREATE,LP_PRB_DELETE,High,A user who can create and delete problems can manipulate problem management records without accountability
+SOD-SN-007,CMDB Create and Delete CI,LP_CMDB_CREATE,LP_CMDB_DELETE,High,A user who can create and delete CIs can manipulate the CMDB to hide unauthorized infrastructure changes
+SOD-SN-008,CMDB Import and Audit,LP_CMDB_IMPORT,LP_CMDB_AUDIT,High,A user who can import CI data and audit the CMDB can load false data and certify its accuracy
+SOD-SN-009,Create and Approve SLA,LP_SVC_SLA_CREATE,LP_SVC_SLA_MODIFY,High,A user who can both create and modify SLAs can set favorable terms and alter them without oversight
+SOD-SN-010,Deploy and Approve Release,LP_REL_DEPLOY,LP_REL_APPROVE,Critical,A user who can deploy releases and approve them can push unauthorized code to production
+SOD-SN-011,Build and Deploy Release,LP_REL_BUILD,LP_REL_DEPLOY,High,A user who can build and deploy releases without independent testing can introduce defects or malicious code
+SOD-SN-012,Deploy and Rollback Release,LP_REL_DEPLOY,LP_REL_ROLLBACK,Medium,A user who controls both deployment and rollback can mask failed or unauthorized deployments
+SOD-SN-013,Create and Publish KB,LP_KB_CREATE,LP_KB_PUBLISH,Medium,A user who can create and publish articles without review can distribute incorrect or misleading information
+SOD-SN-014,Create and Retire Assets,LP_ASSET_CREATE,LP_ASSET_RETIRE,High,A user who can create and retire assets can register fictitious assets and immediately retire them for fraud
+SOD-SN-015,Asset Disposal and Delete,LP_ASSET_DISPOSE,LP_ASSET_DELETE,Critical,A user who can dispose of and delete asset records can steal assets and remove evidence
+SOD-SN-016,License and Asset Audit,LP_ASSET_LICENSE,LP_ASSET_AUDIT,High,A user who manages licenses and audits compliance can hide license violations
+SOD-SN-017,Create and Approve Requests,LP_REQ_CREATE,LP_REQ_APPROVE,High,A user who can create and approve service requests can self-approve requests bypassing controls
+SOD-SN-018,Fulfill and Approve Requests,LP_REQ_FULFILL,LP_REQ_APPROVE,Medium,A user who can fulfill and approve requests controls the entire request lifecycle
+SOD-SN-019,Security Policy and Access,LP_SEC_POLICY,LP_SEC_ACCESS,Critical,A user who defines security policies and manages access can create policies that grant themselves excessive privileges
+SOD-SN-020,Security Audit and Access,LP_SEC_AUDIT,LP_SEC_ACCESS,Critical,A user who can audit security and manage access can cover up unauthorized access grants
+SOD-SN-021,Security Incident and Monitoring,LP_SEC_INCIDENT,LP_SEC_MONITOR,Medium,A user who creates security incidents and monitors alerts can suppress real alerts and create false ones
+SOD-SN-022,Platform Config and User Admin,LP_PLAT_CONFIG,LP_PLAT_USER,Critical,A user who configures the platform and manages user accounts has unrestricted system control
+SOD-SN-023,Platform Custom and Workflow,LP_PLAT_CUSTOM,LP_PLAT_WORKFLOW,High,A user who customizes forms and manages workflows can alter business processes without oversight
+SOD-SN-024,User Admin and Audit,LP_PLAT_USER,LP_AUDIT_EXEC,Critical,A user who manages user accounts and performs audits can create accounts and audit their own actions
+SOD-SN-025,Import and Export Data,LP_IMPORT_DATA,LP_EXPORT_DATA,High,A user who can import and export data can exfiltrate sensitive information or inject malicious data
+SOD-SN-026,Vendor Create and Payment,LP_VENDOR_CREATE,LP_VENDOR_PAYMENT,Critical,A user who can create vendors and process payments can create fictitious vendors and pay them
+SOD-SN-027,Vendor Contract and Payment,LP_VENDOR_CONTRACT,LP_VENDOR_PAYMENT,High,A user who manages contracts and processes payments can inflate contract values and process excess payments
+SOD-SN-028,Vendor Eval and Contract,LP_VENDOR_EVAL,LP_VENDOR_CONTRACT,Medium,A user who evaluates vendors and manages contracts can bias evaluations to favor specific vendors
+SOD-SN-029,Incident Resolve and Close,LP_INC_RESOLVE,LP_INC_CLOSE,Medium,A user who can both resolve and close incidents may prematurely close incidents without proper resolution
+SOD-SN-030,Change Schedule and Implement,LP_CHG_SCHEDULE,LP_CHG_IMPLEMENT,Medium,A user who schedules and implements changes can schedule changes outside maintenance windows
+SOD-SN-031,Problem RCA and Close,LP_PRB_RCA,LP_PRB_CLOSE,Medium,A user who performs root cause analysis and closes problems can close without adequate investigation
+SOD-SN-032,Incident Delete and Close,LP_INC_DELETE,LP_INC_CLOSE,Critical,A user who can delete and close incidents can eliminate audit trail of incident handling
+SOD-SN-033,Create CI and Baseline,LP_CMDB_CREATE,LP_CMDB_BASELINE,Medium,A user who creates CIs and manages baselines can create unauthorized CIs and include them in baselines
+SOD-SN-034,Release Plan and Approve,LP_REL_PLAN,LP_REL_APPROVE,High,A user who plans and approves releases can plan and self-approve without independent review
+SOD-SN-035,KB Admin and Publish,LP_KB_ADMIN,LP_KB_PUBLISH,Medium,A user who administers the KB and publishes articles can bypass knowledge review processes
+SOD-SN-036,Asset Procure and Audit,LP_ASSET_PROCURE,LP_ASSET_AUDIT,High,A user who procures assets and audits them can order unnecessary assets and certify the inventory
+SOD-SN-037,Security Response and Policy,LP_SEC_RESPONSE,LP_SEC_POLICY,High,A user who responds to security incidents and manages policies can alter policies to cover up breaches
+SOD-SN-038,Platform Backup and Config,LP_PLAT_BACKUP,LP_PLAT_CONFIG,High,A user who manages backups and configurations can alter configs and restore old states to hide changes
+SOD-SN-039,Workflow and Approval Admin,LP_PLAT_WORKFLOW,LP_APPROVAL_ADMIN,Critical,A user who designs workflows and approval chains can bypass approval requirements entirely
+SOD-SN-040,Bulk Update and Export,LP_BULK_UPDATE,LP_EXPORT_DATA,High,A user who can perform bulk updates and export data can manipulate large datasets and extract them
+SOD-SN-041,API Access and User Admin,LP_API_ACCESS,LP_PLAT_USER,Critical,A user with API access and user admin can automate unauthorized account creation
+SOD-SN-042,Change Create and Emergency,LP_CHG_CREATE,LP_CHG_EMERGENCY,High,A user who creates standard and emergency changes can classify changes as emergency to skip approvals
+SOD-SN-043,Incident Major and Report,LP_INC_MAJOR,LP_INC_REPORT,Medium,A user who declares major incidents and creates reports can exaggerate or downplay incident severity
+SOD-SN-044,CMDB Delete and Export,LP_CMDB_DELETE,LP_CMDB_EXPORT,High,A user who can delete CIs and export CMDB data can remove CIs after exporting sensitive infrastructure info
+SOD-SN-045,Asset License and Delete,LP_ASSET_LICENSE,LP_ASSET_DELETE,Critical,A user who manages licenses and can delete asset records can hide unlicensed software
+SOD-SN-046,Request Catalog and Fulfill,LP_REQ_CATALOG,LP_REQ_FULFILL,Medium,A user who manages catalog and fulfills requests can create and fulfill self-serving catalog items
+SOD-SN-047,Security Vuln and Access,LP_SEC_VULN,LP_SEC_ACCESS,High,A user who manages vulnerabilities and access can exploit known vulnerabilities through access manipulation
+SOD-SN-048,Platform Integ and Config,LP_PLAT_INTEG,LP_PLAT_CONFIG,High,A user who manages integrations and platform config can create unauthorized data pathways
+SOD-SN-049,Notification Config and User Admin,LP_NOTIFY_CONFIG,LP_PLAT_USER,Medium,A user who configures notifications and manages users can suppress alerts for specific accounts
+SOD-SN-050,Audit Report and Policy,LP_AUDIT_REPORT,LP_AUDIT_POLICY,High,A user who creates audit reports and manages policies can write policies to match their own audit findings
+SOD-SN-051,Risk Assessment and Compliance,LP_AUDIT_RISK,LP_AUDIT_COMPLY,Medium,A user who assesses risk and monitors compliance can understate risks and certify compliance falsely
+SOD-SN-052,Vendor Create and Eval,LP_VENDOR_CREATE,LP_VENDOR_EVAL,Medium,A user who creates vendors and evaluates them can establish and favorably rate new vendors
+SOD-SN-053,Change Approve and Reject,LP_CHG_APPROVE,LP_CHG_REJECT,Medium,A user who can approve and reject changes has unchecked authority over the change process
+SOD-SN-054,Problem Known Error and Close,LP_PRB_KNOWN_ERR,LP_PRB_CLOSE,Medium,A user who creates known errors and closes problems can prematurely mark problems as known without proper fix
+SOD-SN-055,KB Review and Retire,LP_KB_REVIEW,LP_KB_RETIRE,Low,A user who reviews and retires articles can remove valid knowledge without peer oversight
+SOD-SN-056,Asset Update and Dispose,LP_ASSET_UPDATE,LP_ASSET_DISPOSE,Medium,A user who updates and disposes assets can change asset details before disposal to obscure theft
+SOD-SN-057,Security Monitor and Report,LP_SEC_MONITOR,LP_SEC_REPORT,Low,A user who monitors security and generates reports can selectively report security events
+SOD-SN-058,Platform Report and Export,LP_PLAT_REPORT,LP_EXPORT_DATA,Low,A user who creates reports and exports data can design reports to extract sensitive information
+SOD-SN-059,Incident Escalate and Major,LP_INC_ESCALATE,LP_INC_MAJOR,Medium,A user who escalates incidents and declares major incidents can unnecessarily elevate minor issues
+SOD-SN-060,Change Review and Close,LP_CHG_REVIEW,LP_CHG_CLOSE,Low,A user who reviews and closes changes controls the post-implementation assessment without independent check

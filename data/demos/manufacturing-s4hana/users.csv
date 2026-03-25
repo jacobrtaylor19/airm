@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+MF001,Richard Bauer,richard.bauer@mfgcorp.com,Production Supervisor,Production
+MF002,Angela Fischer,angela.fischer@mfgcorp.com,Production Planner,Production
+MF003,Thomas Muller,thomas.muller@mfgcorp.com,Shop Floor Manager,Production
+MF004,Sandra Weber,sandra.weber@mfgcorp.com,MES Operator,Production
+MF005,Michael Schneider,michael.schneider@mfgcorp.com,Production Scheduler,Production
+MF006,Christina Wagner,christina.wagner@mfgcorp.com,Process Engineer,Production
+MF007,Frank Becker,frank.becker@mfgcorp.com,Production Team Lead,Production
+MF008,Heike Hoffmann,heike.hoffmann@mfgcorp.com,Assembly Line Supervisor,Production
+MF009,Peter Schaefer,peter.schaefer@mfgcorp.com,Production Operator,Production
+MF010,Monika Koch,monika.koch@mfgcorp.com,Shift Lead,Production
+MF011,Hans Richter,hans.richter@mfgcorp.com,Quality Manager,Quality
+MF012,Claudia Klein,claudia.klein@mfgcorp.com,Quality Inspector,Quality
+MF013,Juergen Wolf,juergen.wolf@mfgcorp.com,QA Engineer,Quality
+MF014,Petra Neumann,petra.neumann@mfgcorp.com,Quality Inspector,Quality
+MF015,Stefan Schwarz,stefan.schwarz@mfgcorp.com,Incoming Quality Inspector,Quality
+MF016,Gabriele Braun,gabriele.braun@mfgcorp.com,Quality Lab Technician,Quality
+MF017,Martin Zimmermann,martin.zimmermann@mfgcorp.com,Quality Auditor,Quality
+MF018,Ursula Krueger,ursula.krueger@mfgcorp.com,Quality Data Analyst,Quality
+MF019,Klaus Hartmann,klaus.hartmann@mfgcorp.com,SPC Analyst,Quality
+MF020,Birgit Lange,birgit.lange@mfgcorp.com,Quality Inspector,Quality
+MF021,Andreas Werner,andreas.werner@mfgcorp.com,Maintenance Manager,Maintenance
+MF022,Sabine Schmitt,sabine.schmitt@mfgcorp.com,Maintenance Planner,Maintenance
+MF023,Ralf Meier,ralf.meier@mfgcorp.com,Maintenance Technician,Maintenance
+MF024,Karin Lehmann,karin.lehmann@mfgcorp.com,Reliability Engineer,Maintenance
+MF025,Dirk Schmid,dirk.schmid@mfgcorp.com,Maintenance Technician,Maintenance
+MF026,Anja Schulz,anja.schulz@mfgcorp.com,Preventive Maintenance Coordinator,Maintenance
+MF027,Bernd Maier,bernd.maier@mfgcorp.com,Maintenance Technician,Maintenance
+MF028,Elke Huber,elke.huber@mfgcorp.com,CMMS Administrator,Maintenance
+MF029,Joerg Kaiser,joerg.kaiser@mfgcorp.com,Calibration Technician,Maintenance
+MF030,Marion Fuchs,marion.fuchs@mfgcorp.com,Maintenance Supervisor,Maintenance
+MF031,Wolfgang Peters,wolfgang.peters@mfgcorp.com,Supply Chain Director,Supply Chain
+MF032,Ingrid Scholz,ingrid.scholz@mfgcorp.com,Supply Chain Planner,Supply Chain
+MF033,Helmut Roth,helmut.roth@mfgcorp.com,Demand Planner,Supply Chain
+MF034,Barbara Schreiber,barbara.schreiber@mfgcorp.com,MRP Controller,Supply Chain
+MF035,Christoph Vogel,christoph.vogel@mfgcorp.com,Procurement Specialist,Supply Chain
+MF036,Renate Friedrich,renate.friedrich@mfgcorp.com,Supply Chain Analyst,Supply Chain
+MF037,Gerd Keller,gerd.keller@mfgcorp.com,Logistics Coordinator,Supply Chain
+MF038,Ulrike Koenig,ulrike.koenig@mfgcorp.com,Purchasing Agent,Supply Chain
+MF039,Herbert Mueller,herbert.mueller@mfgcorp.com,Vendor Manager,Supply Chain
+MF040,Brigitte Haas,brigitte.haas@mfgcorp.com,Supply Chain Planner,Supply Chain
+MF041,Manfred Ludwig,manfred.ludwig@mfgcorp.com,Warehouse Manager,Warehouse
+MF042,Erika Busch,erika.busch@mfgcorp.com,Warehouse Supervisor,Warehouse
+MF043,Lothar Heinrich,lothar.heinrich@mfgcorp.com,Material Handler,Warehouse
+MF044,Doris Seidel,doris.seidel@mfgcorp.com,Inventory Analyst,Warehouse
+MF045,Norbert Brandt,norbert.brandt@mfgcorp.com,Receiving Clerk,Warehouse
+MF046,Hannelore Graf,hannelore.graf@mfgcorp.com,Shipping Coordinator,Warehouse
+MF047,Uwe Pohl,uwe.pohl@mfgcorp.com,Forklift Operator,Warehouse
+MF048,Elfriede Kuhn,elfriede.kuhn@mfgcorp.com,Cycle Counter,Warehouse
+MF049,Dieter Engel,dieter.engel@mfgcorp.com,Material Handler,Warehouse
+MF050,Christa Horn,christa.horn@mfgcorp.com,Warehouse Clerk,Warehouse
+MF051,Kurt Sauer,kurt.sauer@mfgcorp.com,Manufacturing Engineer,Engineering
+MF052,Gudrun Bauer,gudrun.bauer@mfgcorp.com,Process Engineer,Engineering
+MF053,Werner Vogt,werner.vogt@mfgcorp.com,Industrial Engineer,Engineering
+MF054,Ilse Sommer,ilse.sommer@mfgcorp.com,Tool Engineer,Engineering
+MF055,Heinz Winter,heinz.winter@mfgcorp.com,Design Engineer,Engineering
+MF056,Gerda Hauser,gerda.hauser@mfgcorp.com,Methods Engineer,Engineering
+MF057,Karl Wolff,karl.wolff@mfgcorp.com,Automation Engineer,Engineering
+MF058,Hildegard Berger,hildegard.berger@mfgcorp.com,CAD Designer,Engineering
+MF059,Erwin Pfeiffer,erwin.pfeiffer@mfgcorp.com,Engineering Manager,Engineering
+MF060,Margot Franke,margot.franke@mfgcorp.com,Project Engineer,Engineering
+MF061,Hermann Lang,hermann.lang@mfgcorp.com,EHS Manager,EHS
+MF062,Gertrude Kraus,gertrude.kraus@mfgcorp.com,EHS Coordinator,EHS
+MF063,Armin Baumann,armin.baumann@mfgcorp.com,Safety Inspector,EHS
+MF064,Helga Simon,helga.simon@mfgcorp.com,Environmental Specialist,EHS
+MF065,Fritz Schuster,fritz.schuster@mfgcorp.com,Occupational Health Technician,EHS
+MF066,Edith Lorenz,edith.lorenz@mfgcorp.com,EHS Data Analyst,EHS
+MF067,Otto Boehm,otto.boehm@mfgcorp.com,Waste Management Coordinator,EHS
+MF068,Lieselotte Dietrich,lieselotte.dietrich@mfgcorp.com,EHS Compliance Specialist,EHS
+MF069,Georg Kuehne,georg.kuehne@mfgcorp.com,Fire Safety Officer,EHS
+MF070,Irmgard Schubert,irmgard.schubert@mfgcorp.com,EHS Trainer,EHS
+MF071,Paul Beckmann,paul.beckmann@mfgcorp.com,HR Manager,HR
+MF072,Waltraud Hahn,waltraud.hahn@mfgcorp.com,HR Business Partner,HR
+MF073,Siegfried Kruse,siegfried.kruse@mfgcorp.com,Payroll Administrator,HR
+MF074,Rosemarie Voigt,rosemarie.voigt@mfgcorp.com,Training Coordinator,HR
+MF075,Max Reuter,max.reuter@mfgcorp.com,Recruiter,HR
+MF076,Elisabeth Jansen,elisabeth.jansen@mfgcorp.com,HR Administrator,HR
+MF077,Alfred Lindner,alfred.lindner@mfgcorp.com,Benefits Administrator,HR
+MF078,Anneliese Winkler,anneliese.winkler@mfgcorp.com,Time and Attendance Clerk,HR
+MF079,Gerhard Steiner,gerhard.steiner@mfgcorp.com,Labor Relations Specialist,HR
+MF080,Ruth Albrecht,ruth.albrecht@mfgcorp.com,HR Analyst,HR
+MF081,Walter Ritter,walter.ritter@mfgcorp.com,Finance Manager,Finance
+MF082,Margarete Arnold,margarete.arnold@mfgcorp.com,Cost Accountant,Finance
+MF083,Friedrich Herrmann,friedrich.herrmann@mfgcorp.com,AP Specialist,Finance
+MF084,Anni Kock,anni.kock@mfgcorp.com,AR Specialist,Finance
+MF085,Reinhard Stark,reinhard.stark@mfgcorp.com,Financial Analyst,Finance
+MF086,Katharina Grimm,katharina.grimm@mfgcorp.com,GL Accountant,Finance
+MF087,Erich Lenz,erich.lenz@mfgcorp.com,Controller,Finance
+MF088,Hilde Weiss,hilde.weiss@mfgcorp.com,Budget Analyst,Finance
+MF089,Rainer Hoppe,rainer.hoppe@mfgcorp.com,Tax Accountant,Finance
+MF090,Ingeborg Kraft,ingeborg.kraft@mfgcorp.com,Finance Clerk,Finance
+MF091,Detlef Moser,detlef.moser@mfgcorp.com,IT Manager,IT
+MF092,Renata Guenther,renata.guenther@mfgcorp.com,SAP Basis Administrator,IT
+MF093,Bernhard Krug,bernhard.krug@mfgcorp.com,Network Administrator,IT
+MF094,Evelyn Fiedler,evelyn.fiedler@mfgcorp.com,Help Desk Analyst,IT
+MF095,Horst Wendt,horst.wendt@mfgcorp.com,Application Support Analyst,IT
+MF096,Hannelore Grosse,hannelore.grosse@mfgcorp.com,IT Security Analyst,IT
+MF097,Konrad Pfeffer,konrad.pfeffer@mfgcorp.com,SAP Developer,IT
+MF098,Anita Kunze,anita.kunze@mfgcorp.com,Data Analyst,IT
+MF099,Wilfried Stein,wilfried.stein@mfgcorp.com,Plant Controller,Finance
+MF100,Gisela Bergmann,gisela.bergmann@mfgcorp.com,Production Controller,Production

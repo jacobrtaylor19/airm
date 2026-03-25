@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+itil,ITIL User,Standard ITSM user with access to incident and change modules,ServiceNow,ITSM
+admin,System Administrator,Full platform administration access,ServiceNow,Platform
+catalog_admin,Service Catalog Administrator,Manage service catalog items and categories,ServiceNow,Service Catalog
+change_manager,Change Manager,Approve and manage change requests and CAB,ServiceNow,Change Management
+incident_manager,Incident Manager,Manage incident lifecycle and escalations,ServiceNow,Incident Management
+problem_manager,Problem Manager,Manage problems and known error database,ServiceNow,Problem Management
+knowledge_admin,Knowledge Administrator,Manage knowledge base articles and workflows,ServiceNow,Knowledge Management
+cmdb_admin,CMDB Administrator,Full CMDB management and CI lifecycle,ServiceNow,CMDB
+asset_manager,IT Asset Manager,Manage IT assets and software licenses,ServiceNow,Asset Management
+sn_sec_analyst,Security Analyst,Security incident response and investigation,ServiceNow,Security Operations
+sn_request_mgr,Request Manager,Manage service request fulfillment workflows,ServiceNow,Request Fulfillment
+sn_release_mgr,Release Manager,Manage release records and deployment plans,ServiceNow,Release Management
+sn_sla_admin,SLA Administrator,Configure and manage service level agreements,ServiceNow,Service Level Management
+sn_report_admin,Report Administrator,Create and manage reports and dashboards,ServiceNow,Reporting
+sn_compliance,Compliance Manager,Manage IT compliance policies and audits,ServiceNow,GRC
+sn_vendor_mgr,Vendor Manager,Manage vendor records and contracts,ServiceNow,Vendor Management
+sn_platform_dev,Platform Developer,Develop and customize ServiceNow applications,ServiceNow,Platform
+sn_integration,Integration Specialist,Manage integrations and data flows,ServiceNow,Platform

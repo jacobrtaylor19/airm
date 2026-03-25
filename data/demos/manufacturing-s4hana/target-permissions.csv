@@ -1,0 +1,64 @@
+permission_id,permission_name,description,system,risk_level
+F3200,Manage Production Orders,Create and manage production orders in S/4HANA,S/4HANA,Medium
+F3201,Production Order Confirmation,Confirm production order operations,S/4HANA,Medium
+F3202,Final Confirmation,Final confirmation of production orders,S/4HANA,Medium
+F3203,Display Production Orders,View production order details,S/4HANA,Low
+F3204,Mass Production Processing,Mass change production orders,S/4HANA,High
+F3210,MRP Run,Execute material requirements planning,S/4HANA,Medium
+F3211,Stock Requirements List,View stock and requirements,S/4HANA,Low
+F3220,Create BOM,Create bill of materials,S/4HANA,Medium
+F3221,Manage Routing,Create and manage production routings,S/4HANA,Medium
+F3222,Manage Work Centers,Create and manage work centers,S/4HANA,Medium
+F3300,Create Inspection Lot,Create quality inspection lots,S/4HANA,Medium
+F3301,Record Inspection Results,Enter quality inspection results,S/4HANA,Medium
+F3302,Usage Decision,Make quality usage decisions,S/4HANA,High
+F3303,Quality Notification,Create quality notifications,S/4HANA,Medium
+F3304,Inspection Plan,Create and manage inspection plans,S/4HANA,Medium
+F3305,Master Inspection Char,Manage master inspection characteristics,S/4HANA,Medium
+F3306,Change Usage Decision,Modify quality disposition decisions,S/4HANA,Critical
+F3400,Create Maintenance Order,Create maintenance work orders,S/4HANA,Medium
+F3401,Confirm Maintenance,Confirm maintenance order operations,S/4HANA,Medium
+F3402,Maintenance Notification,Create maintenance notifications,S/4HANA,Medium
+F3403,Schedule Maintenance,Schedule preventive maintenance plans,S/4HANA,Medium
+F3404,Manage Equipment,Create and manage equipment records,S/4HANA,Medium
+F3405,Manage Functional Locations,Create and manage functional locations,S/4HANA,Medium
+F3406,Mass Maintenance Change,Mass change maintenance orders,S/4HANA,High
+F3407,Equipment Analytics,Equipment reliability and failure analytics,S/4HANA,Low
+F3500,Goods Receipt,Post goods receipt for purchase orders,S/4HANA,Medium
+F3501,Goods Issue,Post goods issue to orders,S/4HANA,Medium
+F3502,Transfer Posting,Post material transfer between locations,S/4HANA,Medium
+F3503,Stock Overview,View material stock overview,S/4HANA,Low
+F3504,Material Documents,Display material document history,S/4HANA,Low
+F3510,Physical Inventory Create,Create physical inventory documents,S/4HANA,Medium
+F3511,Inventory Count Entry,Enter physical inventory counts,S/4HANA,Medium
+F3512,Post Inventory Differences,Post inventory count differences,S/4HANA,High
+F3513,Cycle Count,Create and manage cycle counts,S/4HANA,Medium
+F3520,Create Purchase Order,Create purchase orders,S/4HANA,High
+F3521,Manage Purchase Orders,Change and manage purchase orders,S/4HANA,High
+F3522,Purchase Requisition,Create and manage purchase requisitions,S/4HANA,Medium
+F3523,Auto PO Generation,Automatically generate purchase orders,S/4HANA,High
+F3524,Material Master,Create and manage material master data,S/4HANA,Medium
+F3525,Vendor Master,Create and manage vendor master records,S/4HANA,High
+F3530,Warehouse Transfer Order,Create warehouse transfer orders,S/4HANA,Medium
+F3531,Storage Bin Management,Manage storage bin assignments,S/4HANA,Medium
+F3540,Outbound Delivery,Create outbound delivery documents,S/4HANA,Medium
+F3541,Shipment Management,Create and manage shipments,S/4HANA,Medium
+F3600,Vendor Invoice Entry,Enter accounts payable invoices,S/4HANA,High
+F3601,Vendor Invoice Approval,Approve vendor invoices,S/4HANA,High
+F3602,Payment Execution,Execute automatic payment runs,S/4HANA,Critical
+F3603,GL Account Posting,Post to general ledger accounts,S/4HANA,High
+F3604,GL Balance Display,Display GL account balances,S/4HANA,Low
+F3605,Mass GL Reversal,Mass reversal of GL documents,S/4HANA,Critical
+F3610,Cost Center Management,Create and manage cost centers,S/4HANA,Medium
+F3611,Cost Planning,Manage cost center planning,S/4HANA,Medium
+F3612,Product Cost Estimate,Create product cost estimates,S/4HANA,Medium
+F3613,Standard Price Update,Update standard material prices,S/4HANA,Critical
+F3700,Employee Master Data,Maintain employee records,S/4HANA,High
+F3701,Work Schedule Mgmt,Manage employee work schedules,S/4HANA,Medium
+F3800,EHS Substance Mgmt,Manage hazardous substances,S/4HANA,Medium
+F3801,EHS Incident Mgmt,Create and manage EHS incidents,S/4HANA,Medium
+F3802,EHS Compliance Reports,Generate EHS compliance reports,S/4HANA,Low
+F3900,User Administration,Manage user accounts and roles,S/4HANA,Critical
+F3901,Transport Management,Manage system transports,S/4HANA,Critical
+F3902,Program Development,Develop and modify programs,S/4HANA,Critical
+F3903,Job Monitoring,Monitor background job execution,S/4HANA,Medium

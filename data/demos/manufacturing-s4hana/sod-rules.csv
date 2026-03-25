@@ -1,0 +1,61 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-MF-001,Create and Confirm Production Order,CO01,CO11N,High,A user who creates and confirms production orders can fabricate production output records
+SOD-MF-002,Production Order and Goods Issue,CO01,MIGO_GI,High,A user who creates production orders and issues goods can consume materials for fictitious orders
+SOD-MF-003,Cancel Confirmation and Final Confirm,CO13,CO15,High,A user who can cancel and finalize confirmations can manipulate production output records
+SOD-MF-004,Mass Change Orders and Confirm,COHV,CO11N,Critical,A user who can mass change and confirm production orders can alter large volumes of production data
+SOD-MF-005,Quality Inspection and Usage Decision,QE01,QA11,Critical,A user who records quality results and makes usage decisions can pass defective materials
+SOD-MF-006,Change Quality Results and Disposition,QE02,QA12,Critical,A user who modifies quality results and changes disposition can falsify quality data
+SOD-MF-007,Create Inspection Lot and Usage Decision,QA01,QA11,High,A user who creates inspection lots and makes usage decisions controls the entire quality gate
+SOD-MF-008,Quality Notification and Usage Decision,QM01,QA11,Medium,A user who creates quality notifications and makes disposition decisions can suppress defect reporting
+SOD-MF-009,Create Inspection Plan and Record Results,QP01,QE01,Medium,A user who designs inspection plans and records results can set easy pass criteria
+SOD-MF-010,Maintenance Order and Goods Receipt,IW31,MIGO_GR,High,A user who creates maintenance orders and receives goods can order and receive materials for personal use
+SOD-MF-011,Create and Confirm Maintenance Order,IW31,IW41,Medium,A user who creates and confirms maintenance orders can fabricate maintenance activity records
+SOD-MF-012,Change Equipment and Create Maint Order,IE02,IW31,Medium,A user who modifies equipment data and creates maintenance can manipulate maintenance schedules
+SOD-MF-013,Schedule Maintenance and Confirm,IP10,IW41,Medium,A user who schedules and confirms maintenance can create phantom maintenance activities
+SOD-MF-014,Mass Change Maint Orders and Confirm,IW38,IW41,High,A user who mass changes and confirms maintenance can bulk-manipulate maintenance records
+SOD-MF-015,Create PO and Goods Receipt,ME21N,MIGO_GR,Critical,A user who creates purchase orders and receives goods can procure and receive without independent verification
+SOD-MF-016,Change PO and Goods Receipt,ME22N,MIGO_GR,High,A user who modifies purchase orders and posts goods receipts can alter PO terms and receipt quantities
+SOD-MF-017,Create Vendor and Create PO,XK01,ME21N,Critical,A user who creates vendors and purchase orders can establish fictitious vendors and place orders with them
+SOD-MF-018,Create Vendor and Post Invoice,XK01,FB60,Critical,A user who creates vendors and posts invoices can create fictitious vendors and submit false invoices
+SOD-MF-019,Post Invoice and Payment Run,FB60,F110,Critical,A user who posts invoices and runs payments can submit and pay fraudulent invoices
+SOD-MF-020,Create Vendor and Payment Run,XK01,F110,Critical,A user who creates vendors and executes payments can set up and pay fictitious vendors
+SOD-MF-021,Goods Receipt and Invoice Posting,MIGO_GR,FB60,High,A user who confirms receipt and posts invoices can confirm receipt of undelivered goods and process payment
+SOD-MF-022,Auto PO and Goods Receipt,ME59N,MIGO_GR,High,A user who auto-creates POs and receives goods can generate and receive orders without review
+SOD-MF-023,Create Material and Create PO,MM01,ME21N,Medium,A user who creates materials and purchase orders can add materials and immediately procure them
+SOD-MF-024,Change Material and Cost Estimate,MM02,CK11N,Medium,A user who changes material data and creates cost estimates can manipulate product costs
+SOD-MF-025,Price Update and Cost Estimate,CK24,CK11N,High,A user who creates cost estimates and updates prices controls the entire costing process
+SOD-MF-026,GL Posting and Vendor Invoice,FB50,FB60,High,A user who posts GL entries and vendor invoices can manipulate both sides of financial records
+SOD-MF-027,GL Posting and Payment Run,FB50,F110,Critical,A user who posts GL entries and runs payments can create journal entries and disburse funds
+SOD-MF-028,Mass GL Changes and GL Posting,F.80,FB50,Critical,A user who can mass reverse and post GL entries can hide fraudulent transactions
+SOD-MF-029,Cost Center Create and Plan Change,KS01,KP06,Medium,A user who creates cost centers and modifies plans can create cost centers with inflated budgets
+SOD-MF-030,Inventory Count and Post Differences,MI04,MI07,High,A user who enters counts and posts adjustments can manipulate inventory levels
+SOD-MF-031,Create Physical Inventory and Post Diff,MI01,MI07,High,A user who initiates counts and posts differences can selectively count and adjust to hide shrinkage
+SOD-MF-032,Create BOM and Create Routing,CS01,CA01,Medium,A user who creates BOMs and routings controls the entire product structure and process definition
+SOD-MF-033,Create BOM and Cost Estimate,CS01,CK11N,Medium,A user who creates BOMs and cost estimates can manipulate material composition and product cost
+SOD-MF-034,Create Work Center and Routing,CR01,CA01,Medium,A user who creates work centers and routings can define production capacity and process steps
+SOD-MF-035,Transfer Order and Goods Issue,LT01,MIGO_GI,Medium,A user who creates transfer orders and goods issues can move and issue inventory without oversight
+SOD-MF-036,Transfer Order and Inventory Count,LT01,MI04,High,A user who creates transfers and counts inventory can move stock and falsify count results
+SOD-MF-037,User Maintenance and Transport Mgmt,SU01,STMS,Critical,A user who maintains user accounts and manages transports can grant access and deploy unauthorized changes
+SOD-MF-038,ABAP Editor and Transport Mgmt,SE38,STMS,Critical,A user who develops code and manages transports can write and deploy malicious programs
+SOD-MF-039,User Maintenance and GL Posting,SU01,FB50,Critical,A user who manages user accounts and posts GL entries can create accounts with financial posting access
+SOD-MF-040,HR Master and Payroll,PA30,PT01,High,A user who maintains HR data and work schedules can create phantom employees with scheduled hours
+SOD-MF-041,Goods Receipt and Transfer Posting,MIGO_GR,MIGO_TR,Medium,A user who receives goods and transfers stock can receive and relocate materials without oversight
+SOD-MF-042,Outbound Delivery and Goods Issue,VL01N,MIGO_GI,Medium,A user who creates deliveries and issues goods controls the entire outbound process
+SOD-MF-043,Shipment and Outbound Delivery,VT01N,VL01N,Low,A user who creates shipments and deliveries controls the transportation and delivery chain
+SOD-MF-044,Purchase Requisition and PO Create,ME51N,ME21N,Medium,A user who creates requisitions and purchase orders can self-approve procurement
+SOD-MF-045,Change Purchase Req and Auto PO,ME52N,ME59N,High,A user who modifies requisitions and auto-generates POs can alter requirements and auto-procure
+SOD-MF-046,Production Confirm and Quality Decision,CO11N,QA11,High,A user who confirms production and makes quality decisions controls both output and quality approval
+SOD-MF-047,EHS Incident and Quality Notification,EHS_INC,QM01,Low,A user who creates EHS incidents and quality notifications may create duplicates or suppress one type
+SOD-MF-048,Create Equipment and Functional Location,IE01,IL01,Low,A user who creates equipment and functional locations controls the entire asset structure
+SOD-MF-049,Maintenance Plan and Equipment Change,IP02,IE02,Medium,A user who modifies maintenance plans and equipment can alter maintenance schedules and asset data
+SOD-MF-050,Goods Movement and Stock Overview,MIGO,MB52,Low,A user who performs goods movements and views stock has full visibility into inventory operations
+SOD-MF-051,Create PO and Assign Req,ME21N,ME57,Medium,A user who creates POs and assigns requisitions can route requisitions to preferred vendors
+SOD-MF-052,EHS Substance and EHS Reporting,EHS01,EHS_RPT,Medium,A user who creates substance records and generates reports can manipulate compliance data
+SOD-MF-053,Quality Audit and Inspection Change,QA07,QA02,Medium,A user who triggers inspections and changes lots controls the quality audit process
+SOD-MF-054,Cycle Count and Inventory Post,MI31,MI07,High,A user who creates cycle counts and posts differences can manipulate ongoing inventory accuracy
+SOD-MF-055,Production Order and Goods Receipt,CO01,MIGO_GR,Medium,A user who creates production orders and receives goods can fabricate material receipts
+SOD-MF-056,Change Vendor and Create PO,XK02,ME21N,High,A user who modifies vendors and creates POs can redirect orders to altered vendor accounts
+SOD-MF-057,Change Vendor and Payment,XK02,F110,Critical,A user who modifies vendor bank details and runs payments can redirect payments
+SOD-MF-058,GL Posting and Cost Center Change,FB50,KS02,Medium,A user who posts GL entries and changes cost centers can post to and then modify cost center structures
+SOD-MF-059,Preliminary Invoice and Payment,FB65,F110,High,A user who posts preliminary invoices and runs payments can process unverified invoices for payment
+SOD-MF-060,Background Jobs and ABAP Editor,SM37,SE38,High,A user who monitors jobs and edits ABAP can create and schedule malicious background programs

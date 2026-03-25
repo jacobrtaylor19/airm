@@ -1,7 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
-import Anthropic from "@anthropic-ai/sdk";
+import { getAIProvider } from "@/lib/ai/provider";
 
 interface UserAccessProfile {
   sourceUserId: string;
@@ -166,12 +166,7 @@ interface GenerationResult {
 }
 
 export async function runPersonaGeneration(jobId: number): Promise<{ personasCreated: number; usersAssigned: number }> {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey || apiKey === "your_key_here" || apiKey.length < 10) {
-    throw new Error("ANTHROPIC_API_KEY is missing or invalid in .env.local. Set a valid API key to run AI pipeline jobs.");
-  }
-
-  const client = new Anthropic({ apiKey });
+  const provider = getAIProvider();
   const profiles = assembleUserProfiles();
   const prompt = buildPrompt(profiles);
 
@@ -187,13 +182,7 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
     db.delete(schema.consolidatedGroups).run();
   }
 
-  const response = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 8192,
-    messages: [{ role: "user", content: prompt }],
-  });
-
-  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const text = await provider.generateText(prompt);
   // Extract JSON from response (may be wrapped in markdown code block)
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error("Failed to parse AI response — no JSON found");
@@ -264,7 +253,7 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
         consolidatedGroupId: groupId,
         confidenceScore: assignment.confidence,
         aiReasoning: assignment.reasoning,
-        aiModel: "claude-sonnet-4-20250514",
+        aiModel: provider.name,
         assignmentMethod: "ai_generation",
         jobRunId: jobId,
       }).run();

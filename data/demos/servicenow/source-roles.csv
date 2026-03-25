@@ -1,0 +1,21 @@
+role_id,role_name,description,system,domain
+LEGACY_SD_AGENT,Service Desk Agent,Handle incoming service desk tickets and first-level support,Legacy ITSM,Service Desk
+LEGACY_SD_LEAD,Service Desk Lead,Supervise service desk operations and escalations,Legacy ITSM,Service Desk
+LEGACY_INC_MGR,Incident Manager,Manage incident lifecycle and major incidents,Legacy ITSM,Incident Management
+LEGACY_INC_ANALYST,Incident Analyst,Investigate and resolve incidents,Legacy ITSM,Incident Management
+LEGACY_CHG_MGR,Change Manager,Approve and oversee change requests,Legacy ITSM,Change Management
+LEGACY_CHG_COORD,Change Coordinator,Coordinate change implementation activities,Legacy ITSM,Change Management
+LEGACY_PRB_MGR,Problem Manager,Manage problem records and root cause analysis,Legacy ITSM,Problem Management
+LEGACY_PRB_ANALYST,Problem Analyst,Perform root cause analysis on recurring issues,Legacy ITSM,Problem Management
+LEGACY_CMDB_ADMIN,CMDB Administrator,Maintain configuration management database,Legacy ITSM,Configuration Management
+LEGACY_CMDB_ANALYST,CMDB Analyst,Manage configuration items and relationships,Legacy ITSM,Configuration Management
+LEGACY_SVC_OWNER,Service Owner,Own and manage IT service definitions,Legacy ITSM,Service Management
+LEGACY_SLM,Service Level Manager,Manage SLAs and service level agreements,Legacy ITSM,Service Management
+LEGACY_REL_MGR,Release Manager,Plan and coordinate software releases,Legacy ITSM,Release Management
+LEGACY_REL_ENG,Release Engineer,Build and deploy releases to environments,Legacy ITSM,Release Management
+LEGACY_KM_ADMIN,Knowledge Admin,Administer knowledge base articles and workflows,Legacy ITSM,Knowledge Management
+LEGACY_ASSET_MGR,IT Asset Manager,Manage IT hardware and software assets lifecycle,Legacy ITSM,Asset Management
+LEGACY_REQ_MGR,Request Fulfillment Manager,Manage service request fulfillment processes,Legacy ITSM,Request Fulfillment
+LEGACY_SEC_OPS,Security Operations,Monitor and respond to security incidents,Legacy ITSM,Security
+LEGACY_IT_ADMIN,IT Platform Admin,Administer ITSM platform configuration,Legacy ITSM,Platform
+LEGACY_AUDIT,IT Auditor,Perform IT compliance audits and reviews,Legacy ITSM,Governance

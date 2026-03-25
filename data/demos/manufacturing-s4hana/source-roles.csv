@@ -1,0 +1,21 @@
+role_id,role_name,description,system,domain
+ZPP_PLANNER,PP Production Planner,Create and manage production orders and planning,SAP ECC,Production Planning
+ZPP_SUPERVISOR,PP Production Supervisor,Supervise shop floor operations and confirmations,SAP ECC,Production Planning
+ZPP_OPERATOR,PP Shop Floor Operator,Execute and confirm production operations,SAP ECC,Production Planning
+ZQM_INSPECTOR,QM Quality Inspector,Perform quality inspections and record results,SAP ECC,Quality Management
+ZQM_MANAGER,QM Quality Manager,Manage quality plans and disposition decisions,SAP ECC,Quality Management
+ZQM_AUDITOR,QM Quality Auditor,Conduct quality audits and certifications,SAP ECC,Quality Management
+ZPM_PLANNER,PM Maintenance Planner,Plan and schedule maintenance work orders,SAP ECC,Plant Maintenance
+ZPM_TECHNICIAN,PM Maintenance Technician,Execute maintenance tasks and confirmations,SAP ECC,Plant Maintenance
+ZPM_ENGINEER,PM Reliability Engineer,Analyze equipment failures and reliability data,SAP ECC,Plant Maintenance
+ZMM_HANDLER,MM Material Handler,Goods movements and inventory transfers,SAP ECC,Materials Management
+ZMM_BUYER,MM Purchasing Agent,Create and process purchase orders,SAP ECC,Materials Management
+ZMM_WAREHOUSE,MM Warehouse Manager,Manage warehouse operations and storage,SAP ECC,Materials Management
+ZMM_INVENTORY,MM Inventory Controller,Perform inventory counts and adjustments,SAP ECC,Materials Management
+ZSD_SHIPPING,SD Shipping Coordinator,Process outbound deliveries and shipments,SAP ECC,Sales & Distribution
+ZFI_COST,FI Cost Accountant,Product costing and cost center accounting,SAP ECC,Finance
+ZFI_AP,FI AP Specialist,Accounts payable invoice processing,SAP ECC,Finance
+ZFI_GL,FI GL Accountant,General ledger postings and period close,SAP ECC,Finance
+ZHR_ADMIN,HR Administrator,Maintain employee master data and org structure,SAP ECC,Human Resources
+ZEHS_COORD,EHS Coordinator,Manage EHS incidents and compliance reporting,SAP ECC,EHS
+ZIT_BASIS,IT Basis Administrator,SAP system administration and transport management,SAP ECC,IT

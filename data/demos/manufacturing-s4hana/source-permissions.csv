@@ -1,0 +1,110 @@
+permission_id,permission_name,description,system,risk_level
+CO01,Create Production Order,Create production orders for manufacturing,SAP ECC,Medium
+CO02,Change Production Order,Modify existing production orders,SAP ECC,Medium
+CO03,Display Production Order,Display production order details,SAP ECC,Low
+CO11N,Confirm Production Order,Enter production order confirmations,SAP ECC,Medium
+CO15,Confirm Production Order (Final),Enter final confirmation for production order,SAP ECC,Medium
+COGI,Automatic Goods Movements,Process automatic goods movements errors,SAP ECC,High
+CO13,Cancel Confirmation,Cancel production order confirmations,SAP ECC,High
+MD01,Run MRP,Execute material requirements planning,SAP ECC,Medium
+MD02,Single-Item MRP,Run MRP for individual materials,SAP ECC,Medium
+MD04,Display Stock Requirements,View stock and requirements list,SAP ECC,Low
+MD05,Display MRP List,View MRP planning results,SAP ECC,Low
+COHV,Mass Change Prod Orders,Mass processing of production orders,SAP ECC,High
+QA01,Create Inspection Lot,Create quality inspection lots,SAP ECC,Medium
+QA02,Change Inspection Lot,Modify inspection lot data,SAP ECC,Medium
+QA03,Display Inspection Lot,View inspection lot details,SAP ECC,Low
+QE01,Record Results,Record quality inspection results,SAP ECC,Medium
+QE02,Change Results,Modify quality inspection results,SAP ECC,High
+QA11,Record Usage Decision,Make quality usage decisions (accept/reject),SAP ECC,High
+QA12,Change Usage Decision,Modify quality usage decisions,SAP ECC,Critical
+QA32,Change Inspection Lot Status,Change status of quality inspection lots,SAP ECC,High
+QM01,Create Quality Notification,Create quality notifications for defects,SAP ECC,Medium
+QM02,Change Quality Notification,Modify quality notification details,SAP ECC,Medium
+QM03,Display Quality Notification,View quality notifications,SAP ECC,Low
+QP01,Create Inspection Plan,Create quality inspection plans,SAP ECC,Medium
+QP02,Change Inspection Plan,Modify inspection plan parameters,SAP ECC,Medium
+QS21,Create Master Inspection Char,Create quality master inspection characteristics,SAP ECC,Medium
+QA07,Trigger-Point Processing,Process trigger points for inspections,SAP ECC,Medium
+QA08,Run Recurring Inspection,Execute recurring inspection processing,SAP ECC,Medium
+IW31,Create Maintenance Order,Create plant maintenance work orders,SAP ECC,Medium
+IW32,Change Maintenance Order,Modify maintenance work orders,SAP ECC,Medium
+IW33,Display Maintenance Order,View maintenance work order details,SAP ECC,Low
+IW21,Create PM Notification,Create maintenance notifications,SAP ECC,Medium
+IW22,Change PM Notification,Modify maintenance notifications,SAP ECC,Medium
+IW38,Change Maintenance Orders,Mass change maintenance work orders,SAP ECC,High
+IW41,Confirm Maintenance Order,Enter maintenance order confirmations,SAP ECC,Medium
+IW45,Confirmation Collective Entry,Mass enter maintenance confirmations,SAP ECC,Medium
+IP10,Schedule Maintenance Plan,Schedule preventive maintenance plans,SAP ECC,Medium
+IP02,Change Maintenance Plan,Modify maintenance plan parameters,SAP ECC,Medium
+IE01,Create Equipment,Create equipment master records,SAP ECC,Medium
+IE02,Change Equipment,Modify equipment master data,SAP ECC,Medium
+IL01,Create Functional Location,Create functional location records,SAP ECC,Medium
+IL02,Change Functional Location,Modify functional location data,SAP ECC,Medium
+MIGO,Goods Movement,Process goods receipts and goods issues,SAP ECC,High
+MIGO_GR,Goods Receipt,Post goods receipt for purchase orders,SAP ECC,Medium
+MIGO_GI,Goods Issue,Post goods issue to production orders,SAP ECC,Medium
+MIGO_TR,Transfer Posting,Post material transfers between locations,SAP ECC,Medium
+MB51,Material Document List,Display list of material documents,SAP ECC,Low
+MB52,List Warehouse Stocks,Display warehouse stock overview,SAP ECC,Low
+MMBE,Stock Overview,Display stock for a material,SAP ECC,Low
+MI01,Create Physical Inventory,Create physical inventory documents,SAP ECC,Medium
+MI04,Enter Inventory Count,Enter physical inventory count results,SAP ECC,Medium
+MI07,Post Differences,Post inventory count differences,SAP ECC,High
+MI20,Print Inventory List,Print physical inventory lists,SAP ECC,Low
+MI31,Create Cycle Count,Create cycle count documents,SAP ECC,Medium
+ME21N,Create Purchase Order,Create purchase orders for procurement,SAP ECC,High
+ME22N,Change Purchase Order,Modify existing purchase orders,SAP ECC,High
+ME23N,Display Purchase Order,View purchase order details,SAP ECC,Low
+ME51N,Create Purchase Requisition,Create purchase requisitions,SAP ECC,Medium
+ME52N,Change Purchase Requisition,Modify purchase requisitions,SAP ECC,Medium
+ME57,Assign Purchase Requisition,Assign and convert purchase requisitions,SAP ECC,Medium
+ME59N,Auto PO Creation,Automatically create purchase orders,SAP ECC,High
+ME2M,Purchase Orders by Material,Display purchase orders by material,SAP ECC,Low
+MM01,Create Material Master,Create material master records,SAP ECC,Medium
+MM02,Change Material Master,Modify material master data,SAP ECC,Medium
+XK01,Create Vendor Master,Create vendor master records,SAP ECC,High
+XK02,Change Vendor Master,Modify vendor master data,SAP ECC,High
+VL01N,Create Outbound Delivery,Create outbound delivery documents,SAP ECC,Medium
+VL02N,Change Outbound Delivery,Modify outbound delivery details,SAP ECC,Medium
+VT01N,Create Shipment,Create shipment documents,SAP ECC,Medium
+VT02N,Change Shipment,Modify shipment documents,SAP ECC,Medium
+FB60,Enter Vendor Invoice,Enter accounts payable invoices,SAP ECC,High
+FB65,Preliminary Vendor Invoice,Post preliminary vendor invoices,SAP ECC,Medium
+FBL1N,Vendor Line Items,Display vendor line item details,SAP ECC,Low
+F110,Automatic Payment Run,Execute automatic payment program,SAP ECC,Critical
+FB50,GL Account Posting,Post to general ledger accounts,SAP ECC,High
+FS10N,GL Account Balance,Display GL account balance,SAP ECC,Low
+FB01,Post Document,Post financial documents,SAP ECC,High
+F.80,Mass GL Account Changes,Mass reversal of GL documents,SAP ECC,Critical
+KS01,Create Cost Center,Create cost centers in controlling,SAP ECC,Medium
+KS02,Change Cost Center,Modify cost center details,SAP ECC,Medium
+KP06,Change Cost Plan,Modify cost center planning data,SAP ECC,Medium
+CK11N,Create Cost Estimate,Create standard cost estimates,SAP ECC,Medium
+CK40N,Run Costing,Execute costing runs for materials,SAP ECC,Medium
+CK24,Price Update,Release and update standard prices,SAP ECC,Critical
+PA20,Display HR Master,Display employee master data,SAP ECC,Low
+PA30,Maintain HR Master,Maintain employee master data,SAP ECC,High
+PT01,Create Work Schedule,Create employee work schedules,SAP ECC,Medium
+PT02,Change Work Schedule,Modify employee work schedules,SAP ECC,Medium
+CATT,Test Automation,Execute computer-aided test tool,SAP ECC,Medium
+SM37,Background Job Monitor,Monitor background job execution,SAP ECC,Medium
+SU01,User Maintenance,Maintain user accounts and authorizations,SAP ECC,Critical
+STMS,Transport Management,Manage SAP transport requests,SAP ECC,Critical
+SE38,ABAP Editor,Develop and modify ABAP programs,SAP ECC,Critical
+IH06,Equipment List,Display equipment structure list,SAP ECC,Low
+IH08,Equipment BOM,Display equipment bill of materials,SAP ECC,Low
+CS01,Create BOM,Create bill of materials,SAP ECC,Medium
+CS02,Change BOM,Modify bill of materials,SAP ECC,Medium
+CA01,Create Routing,Create production routing,SAP ECC,Medium
+CA02,Change Routing,Modify production routing,SAP ECC,Medium
+CR01,Create Work Center,Create work center master data,SAP ECC,Medium
+CR02,Change Work Center,Modify work center data,SAP ECC,Medium
+LT01,Create Transfer Order,Create warehouse transfer orders,SAP ECC,Medium
+LT10,Create TO for Material,Create transfer order for material document,SAP ECC,Medium
+LS24,Storage Bin Overview,Display storage bin utilization,SAP ECC,Low
+CRHD,Work Center Overview,Display work center overview,SAP ECC,Low
+EHS01,Create Substance,Create hazardous substance records,SAP ECC,Medium
+EHS02,Change Substance,Modify hazardous substance data,SAP ECC,Medium
+EHS_INC,EHS Incident,Create and manage EHS incidents,SAP ECC,Medium
+EHS_RPT,EHS Reporting,Generate EHS compliance reports,SAP ECC,Low

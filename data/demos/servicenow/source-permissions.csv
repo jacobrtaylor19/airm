@@ -1,0 +1,116 @@
+permission_id,permission_name,description,system,risk_level
+LP_INC_CREATE,Create Incident,Create new incident records,Legacy ITSM,Low
+LP_INC_UPDATE,Update Incident,Modify incident records,Legacy ITSM,Low
+LP_INC_RESOLVE,Resolve Incident,Resolve and close incident records,Legacy ITSM,Medium
+LP_INC_REASSIGN,Reassign Incident,Reassign incidents to other groups,Legacy ITSM,Low
+LP_INC_ESCALATE,Escalate Incident,Escalate incidents to higher tiers,Legacy ITSM,Medium
+LP_INC_MAJOR,Major Incident Declaration,Declare and manage major incidents,Legacy ITSM,High
+LP_INC_CLOSE,Close Incident,Close incident records after resolution,Legacy ITSM,Medium
+LP_INC_DELETE,Delete Incident,Delete incident records from system,Legacy ITSM,Critical
+LP_INC_REPORT,Incident Reporting,Generate incident management reports,Legacy ITSM,Low
+LP_INC_SLA,View Incident SLA,View SLA compliance for incidents,Legacy ITSM,Low
+LP_CHG_CREATE,Create Change,Create change request records,Legacy ITSM,Medium
+LP_CHG_UPDATE,Update Change,Modify change request details,Legacy ITSM,Medium
+LP_CHG_APPROVE,Approve Change,Approve change requests for implementation,Legacy ITSM,High
+LP_CHG_IMPLEMENT,Implement Change,Execute change implementation,Legacy ITSM,High
+LP_CHG_REVIEW,Review Change,Post-implementation review of changes,Legacy ITSM,Medium
+LP_CHG_EMERGENCY,Emergency Change,Create and approve emergency changes,Legacy ITSM,Critical
+LP_CHG_CLOSE,Close Change,Close change records,Legacy ITSM,Medium
+LP_CHG_REJECT,Reject Change,Reject change requests,Legacy ITSM,High
+LP_CHG_SCHEDULE,Schedule Change,Schedule change implementation windows,Legacy ITSM,Medium
+LP_CHG_CAB,CAB Participation,Participate in Change Advisory Board meetings,Legacy ITSM,Medium
+LP_PRB_CREATE,Create Problem,Create problem records from incidents,Legacy ITSM,Medium
+LP_PRB_UPDATE,Update Problem,Modify problem record details,Legacy ITSM,Medium
+LP_PRB_RCA,Root Cause Analysis,Perform and document root cause analysis,Legacy ITSM,Medium
+LP_PRB_KNOWN_ERR,Create Known Error,Create known error records,Legacy ITSM,Medium
+LP_PRB_CLOSE,Close Problem,Close problem records after resolution,Legacy ITSM,Medium
+LP_PRB_WORKAROUND,Document Workaround,Document temporary workarounds,Legacy ITSM,Low
+LP_PRB_DELETE,Delete Problem,Delete problem records,Legacy ITSM,Critical
+LP_PRB_REPORT,Problem Reporting,Generate problem management reports,Legacy ITSM,Low
+LP_CMDB_CREATE,Create CI,Create configuration items in CMDB,Legacy ITSM,Medium
+LP_CMDB_UPDATE,Update CI,Modify configuration item attributes,Legacy ITSM,Medium
+LP_CMDB_DELETE,Delete CI,Remove configuration items from CMDB,Legacy ITSM,High
+LP_CMDB_RELATE,Manage CI Relationships,Create and modify CI relationships,Legacy ITSM,Medium
+LP_CMDB_AUDIT,Audit CMDB,Run CMDB audit and reconciliation,Legacy ITSM,Medium
+LP_CMDB_IMPORT,Import CI Data,Bulk import CI data from discovery,Legacy ITSM,High
+LP_CMDB_EXPORT,Export CI Data,Export CMDB data for reporting,Legacy ITSM,Medium
+LP_CMDB_BASELINE,CI Baseline,Create CI baselines for comparison,Legacy ITSM,Medium
+LP_SVC_DEFINE,Define Service,Define and maintain service records,Legacy ITSM,Medium
+LP_SVC_CATALOG,Manage Catalog,Manage service catalog items and categories,Legacy ITSM,Medium
+LP_SVC_SLA_CREATE,Create SLA,Create service level agreements,Legacy ITSM,High
+LP_SVC_SLA_MODIFY,Modify SLA,Modify existing SLA definitions,Legacy ITSM,High
+LP_SVC_SLA_REPORT,SLA Reporting,Generate SLA compliance reports,Legacy ITSM,Low
+LP_SVC_AVAIL,Availability Management,Monitor and report service availability,Legacy ITSM,Medium
+LP_SVC_CAPACITY,Capacity Management,Monitor and plan capacity,Legacy ITSM,Medium
+LP_SVC_CONTINUITY,Continuity Planning,Manage IT service continuity plans,Legacy ITSM,High
+LP_SVC_PORTFOLIO,Service Portfolio,Manage service portfolio entries,Legacy ITSM,Medium
+LP_REL_CREATE,Create Release,Create release records,Legacy ITSM,Medium
+LP_REL_PLAN,Plan Release,Plan release activities and schedules,Legacy ITSM,Medium
+LP_REL_BUILD,Build Release,Build and package release artifacts,Legacy ITSM,Medium
+LP_REL_TEST,Test Release,Execute release testing activities,Legacy ITSM,Medium
+LP_REL_DEPLOY,Deploy Release,Deploy releases to production,Legacy ITSM,High
+LP_REL_ROLLBACK,Rollback Release,Execute release rollback procedures,Legacy ITSM,High
+LP_REL_APPROVE,Approve Release,Approve releases for deployment,Legacy ITSM,High
+LP_REL_CLOSE,Close Release,Close release records,Legacy ITSM,Medium
+LP_KB_CREATE,Create Article,Create knowledge base articles,Legacy ITSM,Low
+LP_KB_UPDATE,Update Article,Modify knowledge base articles,Legacy ITSM,Low
+LP_KB_PUBLISH,Publish Article,Publish articles to knowledge base,Legacy ITSM,Medium
+LP_KB_RETIRE,Retire Article,Retire outdated knowledge articles,Legacy ITSM,Medium
+LP_KB_REVIEW,Review Article,Review articles for accuracy and quality,Legacy ITSM,Low
+LP_KB_ADMIN,KB Administration,Administer knowledge base structure,Legacy ITSM,Medium
+LP_KB_REPORT,KB Reporting,Generate knowledge management reports,Legacy ITSM,Low
+LP_ASSET_CREATE,Create Asset,Create IT asset records,Legacy ITSM,Medium
+LP_ASSET_UPDATE,Update Asset,Modify IT asset details,Legacy ITSM,Medium
+LP_ASSET_RETIRE,Retire Asset,Retire assets from active inventory,Legacy ITSM,Medium
+LP_ASSET_LICENSE,License Management,Manage software license compliance,Legacy ITSM,High
+LP_ASSET_AUDIT,Asset Audit,Perform asset inventory audits,Legacy ITSM,Medium
+LP_ASSET_PROCURE,Asset Procurement,Request and track asset procurement,Legacy ITSM,Medium
+LP_ASSET_DISPOSE,Asset Disposal,Process asset disposal records,Legacy ITSM,High
+LP_ASSET_REPORT,Asset Reporting,Generate asset management reports,Legacy ITSM,Low
+LP_ASSET_DELETE,Delete Asset,Delete asset records from system,Legacy ITSM,Critical
+LP_REQ_CREATE,Create Request,Create service requests,Legacy ITSM,Low
+LP_REQ_FULFILL,Fulfill Request,Process and fulfill service requests,Legacy ITSM,Medium
+LP_REQ_APPROVE,Approve Request,Approve service requests,Legacy ITSM,Medium
+LP_REQ_CLOSE,Close Request,Close fulfilled service requests,Legacy ITSM,Low
+LP_REQ_CATALOG,Manage Request Catalog,Manage request catalog items,Legacy ITSM,Medium
+LP_REQ_REPORT,Request Reporting,Generate request fulfillment reports,Legacy ITSM,Low
+LP_SEC_MONITOR,Security Monitoring,Monitor security events and alerts,Legacy ITSM,High
+LP_SEC_INCIDENT,Security Incident,Create and manage security incidents,Legacy ITSM,High
+LP_SEC_VULN,Vulnerability Management,Manage vulnerability assessments,Legacy ITSM,High
+LP_SEC_POLICY,Security Policy,Manage security policies,Legacy ITSM,Critical
+LP_SEC_AUDIT,Security Audit,Perform security audits,Legacy ITSM,High
+LP_SEC_ACCESS,Access Management,Manage user access and permissions,Legacy ITSM,Critical
+LP_SEC_REPORT,Security Reporting,Generate security reports,Legacy ITSM,Medium
+LP_SEC_RESPONSE,Incident Response,Execute security incident response,Legacy ITSM,High
+LP_PLAT_CONFIG,Platform Configuration,Configure ITSM platform settings,Legacy ITSM,Critical
+LP_PLAT_CUSTOM,Platform Customization,Customize platform workflows and forms,Legacy ITSM,High
+LP_PLAT_INTEG,Integration Management,Manage system integrations,Legacy ITSM,High
+LP_PLAT_USER,User Administration,Manage platform user accounts,Legacy ITSM,Critical
+LP_PLAT_REPORT,Report Builder,Create and modify reports and dashboards,Legacy ITSM,Medium
+LP_PLAT_WORKFLOW,Workflow Management,Design and modify automated workflows,Legacy ITSM,High
+LP_PLAT_BACKUP,Platform Backup,Manage platform backups,Legacy ITSM,High
+LP_AUDIT_EXEC,Execute Audit,Execute IT compliance audits,Legacy ITSM,High
+LP_AUDIT_REPORT,Audit Reporting,Generate audit findings reports,Legacy ITSM,Medium
+LP_AUDIT_POLICY,Policy Management,Manage IT governance policies,Legacy ITSM,High
+LP_AUDIT_RISK,Risk Assessment,Perform IT risk assessments,Legacy ITSM,High
+LP_AUDIT_COMPLY,Compliance Monitoring,Monitor compliance with standards,Legacy ITSM,Medium
+LP_VENDOR_CREATE,Create Vendor,Create vendor records,Legacy ITSM,Medium
+LP_VENDOR_CONTRACT,Contract Management,Manage vendor contracts,Legacy ITSM,High
+LP_VENDOR_EVAL,Vendor Evaluation,Evaluate vendor performance,Legacy ITSM,Medium
+LP_VENDOR_PAYMENT,Vendor Payment,Process vendor payments,Legacy ITSM,High
+LP_VENDOR_REPORT,Vendor Reporting,Generate vendor management reports,Legacy ITSM,Low
+LP_DASH_VIEW,View Dashboard,View operational dashboards,Legacy ITSM,Low
+LP_DASH_CREATE,Create Dashboard,Create custom dashboards,Legacy ITSM,Low
+LP_DASH_SHARE,Share Dashboard,Share dashboards with other users,Legacy ITSM,Low
+LP_EXPORT_DATA,Export Data,Export system data to files,Legacy ITSM,Medium
+LP_IMPORT_DATA,Import Data,Import data from external sources,Legacy ITSM,High
+LP_NOTIFY_CONFIG,Notification Config,Configure notification rules,Legacy ITSM,Medium
+LP_TASK_CREATE,Create Task,Create and assign tasks,Legacy ITSM,Low
+LP_TASK_UPDATE,Update Task,Update task progress and details,Legacy ITSM,Low
+LP_APPROVAL_ADMIN,Approval Administration,Configure approval workflows,Legacy ITSM,High
+LP_SURVEY_ADMIN,Survey Administration,Manage satisfaction surveys,Legacy ITSM,Low
+LP_CHAT_AGENT,Chat Support Agent,Handle live chat support sessions,Legacy ITSM,Low
+LP_SELF_SERVICE,Self-Service Portal,Access self-service portal features,Legacy ITSM,Low
+LP_MOBILE_ACCESS,Mobile Access,Access ITSM via mobile application,Legacy ITSM,Low
+LP_API_ACCESS,API Access,Access ITSM via REST APIs,Legacy ITSM,High
+LP_BULK_UPDATE,Bulk Operations,Perform bulk updates on records,Legacy ITSM,High

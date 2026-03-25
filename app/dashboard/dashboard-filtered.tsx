@@ -16,50 +16,110 @@ interface Props {
   totalPersonas: number;
 }
 
-function DeptProgressBar({ depts }: { depts: DepartmentMappingStatus[] }) {
+const STAGES = [
+  { key: "noPersona",   label: "No Persona",    color: "bg-zinc-200 text-zinc-600",        dot: "bg-zinc-400"   },
+  { key: "persona",     label: "Persona",       color: "bg-slate-100 text-slate-600",      dot: "bg-slate-400"  },
+  { key: "mapped",      label: "Mapped",        color: "bg-yellow-50 text-yellow-700",     dot: "bg-yellow-500" },
+  { key: "sodRejected", label: "SOD Conflict",  color: "bg-red-50 text-red-700",           dot: "bg-red-500"    },
+  { key: "sodClean",    label: "SOD Clean",     color: "bg-blue-50 text-blue-700",         dot: "bg-blue-500"   },
+  { key: "approved",    label: "Approved",      color: "bg-emerald-50 text-emerald-700",   dot: "bg-emerald-500"},
+] as const;
+
+type StageKey = typeof STAGES[number]["key"];
+
+function deptStageCounts(dept: DepartmentMappingStatus): Record<StageKey, number> {
+  const noPersona    = dept.totalUsers - dept.withPersona;
+  const persona      = dept.withPersona - dept.mapped;
+  const mapped       = Math.max(0, dept.mapped - dept.sodClean - dept.sodRejected);
+  const sodRejected  = dept.sodRejected;
+  const sodClean     = Math.max(0, dept.sodClean - dept.approved);
+  const approved     = dept.approved;
+  return { noPersona, persona, mapped, sodRejected, sodClean, approved };
+}
+
+function DeptKanbanGrid({ depts }: { depts: DepartmentMappingStatus[] }) {
+  if (depts.length === 0) return null;
+
   return (
-    <div className="space-y-4">
-      {depts.length > 0 && (
-        <div className="flex gap-4 text-xs pb-2 border-b">
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-zinc-400" /> Persona Assigned</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-yellow-500" /> Mapped</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-red-500" /> SOD Rejected</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> SOD Clean</span>
-          <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Approved</span>
-        </div>
-      )}
-      {depts.map((dept) => (
-        <div key={dept.department} className="space-y-1.5">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">{dept.department}</span>
-            <span className="text-xs text-muted-foreground">{dept.totalUsers} users</span>
+    <div className="space-y-3">
+      {/* Column header legend */}
+      <div className="hidden sm:grid grid-cols-6 gap-1 text-[10px] font-medium text-muted-foreground px-3">
+        {STAGES.map((s) => (
+          <div key={s.key} className="flex items-center gap-1">
+            <span className={`h-2 w-2 rounded-full ${s.dot} shrink-0`} />
+            {s.label}
           </div>
-          <div className="flex h-2 rounded-full bg-muted overflow-hidden">
-            {dept.withPersona - dept.mapped > 0 && (
-              <div className="h-2 bg-zinc-400" style={{ width: `${((dept.withPersona - dept.mapped) / dept.totalUsers) * 100}%` }} />
-            )}
-            {dept.mapped - dept.sodClean - dept.sodRejected > 0 && (
-              <div className="h-2 bg-yellow-500" style={{ width: `${(Math.max(0, dept.mapped - dept.sodClean - dept.sodRejected) / dept.totalUsers) * 100}%` }} />
-            )}
-            {dept.sodRejected > 0 && (
-              <div className="h-2 bg-red-500" style={{ width: `${(dept.sodRejected / dept.totalUsers) * 100}%` }} />
-            )}
-            {dept.sodClean - dept.approved > 0 && (
-              <div className="h-2 bg-blue-500" style={{ width: `${((dept.sodClean - dept.approved) / dept.totalUsers) * 100}%` }} />
-            )}
-            {dept.approved > 0 && (
-              <div className="h-2 bg-emerald-500" style={{ width: `${(dept.approved / dept.totalUsers) * 100}%` }} />
-            )}
+        ))}
+      </div>
+
+      {/* Department cards */}
+      {depts.map((dept) => {
+        const counts = deptStageCounts(dept);
+        const pct = dept.totalUsers > 0 ? Math.round((dept.approved / dept.totalUsers) * 100) : 0;
+
+        // Determine dominant stage for border accent
+        const isComplete  = dept.approved > 0 && dept.approved === dept.totalUsers;
+        const hasConflict = dept.sodRejected > 0;
+
+        return (
+          <div
+            key={dept.department}
+            className={`rounded-lg border bg-card px-4 py-3 transition-colors ${
+              isComplete  ? "border-emerald-300 bg-emerald-50/30" :
+              hasConflict ? "border-red-200 bg-red-50/20" :
+              "border-border"
+            }`}
+          >
+            {/* Header row */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm">{dept.department}</span>
+                {isComplete && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Complete</span>
+                )}
+                {hasConflict && (
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-red-100 text-red-700">{dept.sodRejected} conflict{dept.sodRejected !== 1 ? "s" : ""}</span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">{dept.totalUsers} users</span>
+                <span className="text-xs font-semibold tabular-nums text-muted-foreground">{pct}%</span>
+              </div>
+            </div>
+
+            {/* Thin progress bar */}
+            <div className="flex h-1.5 rounded-full bg-muted overflow-hidden mb-2.5">
+              {STAGES.map((s) => {
+                const count = counts[s.key];
+                if (count <= 0 || dept.totalUsers === 0) return null;
+                return (
+                  <div
+                    key={s.key}
+                    className={`h-full ${s.dot}`}
+                    style={{ width: `${(count / dept.totalUsers) * 100}%` }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Stage count chips */}
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+              {STAGES.map((s) => {
+                const count = counts[s.key];
+                return (
+                  <div
+                    key={s.key}
+                    className={`flex flex-col items-center rounded px-2 py-1.5 text-center ${count > 0 ? s.color : "bg-muted/30 text-muted-foreground/40"}`}
+                  >
+                    <span className="text-base font-bold tabular-nums leading-none">{count}</span>
+                    <span className="text-[9px] font-medium mt-0.5 leading-tight">{s.label}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="flex gap-3 text-xs text-muted-foreground">
-            <span>{dept.withPersona} persona</span>
-            <span>{dept.mapped} mapped</span>
-            {dept.sodRejected > 0 && <span className="text-red-600">{dept.sodRejected} SOD rejected</span>}
-            <span>{dept.sodClean} SOD ok</span>
-            <span>{dept.approved} approved</span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -161,8 +221,8 @@ export function DashboardFiltered({ allDepts, assignedDepartments, userRole, sod
             </div>
           </div>
 
-          {/* Department Progress Bars */}
-          <DeptProgressBar depts={filteredDepts} />
+          {/* Department Kanban Cards */}
+          <DeptKanbanGrid depts={filteredDepts} />
         </CardContent>
       </Card>
 
