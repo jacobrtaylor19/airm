@@ -1,0 +1,41 @@
+permission_id,permission_name,description,system,risk_level
+HRIS_VIEW_WORKER,View Worker Data,View employee personal and job data,Legacy HRIS,Low
+HRIS_EDIT_WORKER,Edit Worker Data,Modify employee personal information,Legacy HRIS,High
+HRIS_CREATE_WORKER,Create Worker,Add new employees to HRIS,Legacy HRIS,High
+HRIS_TERM_WORKER,Terminate Worker,Process employee terminations,Legacy HRIS,High
+HRIS_TRANSFER,Process Transfer,Execute employee transfers between departments,Legacy HRIS,Medium
+HRIS_PROMOTE,Process Promotion,Execute employee promotions,Legacy HRIS,Medium
+HRIS_ORG_MANAGE,Manage Organizations,Create and modify org units,Legacy HRIS,High
+HRIS_BEN_ENROLL,Enroll Benefits,Process benefits enrollment for employees,Legacy HRIS,Medium
+HRIS_BEN_CHANGE,Change Benefits,Modify active benefits elections,Legacy HRIS,Medium
+HRIS_BEN_PLAN_ADMIN,Administer Plans,Create and configure benefit plans,Legacy HRIS,High
+HRIS_BEN_CARRIER,Manage Carriers,Manage insurance carrier connections,Legacy HRIS,High
+HRIS_PAY_ENTRY,Enter Payroll Data,Input payroll adjustments and overrides,Legacy HRIS,Medium
+HRIS_PAY_RUN,Run Payroll,Execute payroll calculation,Legacy HRIS,Critical
+HRIS_PAY_APPROVE,Approve Payroll,Approve payroll results for payment,Legacy HRIS,Critical
+HRIS_PAY_VOID,Void Payment,Void issued payroll payments,Legacy HRIS,High
+HRIS_PAY_TAX,Manage Tax Setup,Configure payroll tax tables and withholding,Legacy HRIS,High
+HRIS_COMP_VIEW,View Compensation,View salary and total comp data,Legacy HRIS,Medium
+HRIS_COMP_EDIT,Edit Compensation,Modify salary and compensation components,Legacy HRIS,High
+HRIS_COMP_APPROVE,Approve Comp Changes,Approve compensation change requests,Legacy HRIS,High
+HRIS_COMP_EQUITY,Manage Equity,Administer stock plans and grants,Legacy HRIS,High
+HRIS_RECRUIT_CREATE,Create Requisition,Create job requisitions,Legacy HRIS,Medium
+HRIS_RECRUIT_SCREEN,Screen Candidates,Review and advance candidates,Legacy HRIS,Medium
+HRIS_RECRUIT_OFFER,Extend Offer,Create and send offer letters,Legacy HRIS,High
+HRIS_RECRUIT_ONBOARD,Onboard Hire,Process pre-boarding and day-one setup,Legacy HRIS,Medium
+HRIS_LND_ASSIGN,Assign Training,Assign courses to employees,Legacy HRIS,Medium
+HRIS_LND_CREATE,Create Course,Create training courses and curricula,Legacy HRIS,Medium
+HRIS_LND_TRACK,Track Completion,Monitor training compliance and completion,Legacy HRIS,Low
+HRIS_PERF_INITIATE,Initiate Review,Start performance review cycles,Legacy HRIS,Medium
+HRIS_PERF_RATE,Rate Performance,Enter performance ratings,Legacy HRIS,Medium
+HRIS_PERF_CALIBRATE,Calibrate Ratings,Participate in calibration sessions,Legacy HRIS,High
+HRIS_REPORT_RUN,Run Reports,Execute HR reports and analytics,Legacy HRIS,Low
+HRIS_REPORT_CREATE,Create Reports,Build custom HR reports,Legacy HRIS,Medium
+HRIS_FIN_BUDGET,Manage HR Budget,Create and manage HR budgets,Legacy HRIS,Medium
+HRIS_FIN_FORECAST,Forecast Headcount,Model headcount and cost scenarios,Legacy HRIS,Medium
+HRIS_FIN_JOURNAL,Post HR Journals,Post HR-related accounting entries,Legacy HRIS,Medium
+HRIS_SEC_USER,Manage Users,Create and manage system user accounts,Legacy HRIS,Critical
+HRIS_SEC_ROLE,Manage Roles,Assign and configure security roles,Legacy HRIS,Critical
+HRIS_SEC_AUDIT,View Audit Logs,Access system audit trails,Legacy HRIS,Medium
+HRIS_ABSENCE_ADMIN,Manage Absences,Administer leave policies and balances,Legacy HRIS,Medium
+HRIS_ABSENCE_REQUEST,Request Absence,Submit and approve absence requests,Legacy HRIS,Low

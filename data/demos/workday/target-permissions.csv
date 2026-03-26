@@ -1,0 +1,36 @@
+permission_id,permission_name,description,system,risk_level
+WD_HR_VIEW_WORKER,View Worker,View worker personal and job data,Workday,Low
+WD_HR_EDIT_WORKER,Edit Worker,Modify worker data and assignments,Workday,High
+WD_HR_HIRE,Hire Worker,Process new hires into Workday,Workday,High
+WD_HR_TERMINATE,Terminate Worker,Process terminations and offboarding,Workday,High
+WD_HR_TRANSFER,Transfer Worker,Process job changes and transfers,Workday,Medium
+WD_HR_ORG_MANAGE,Manage Organizations,Create supervisory and cost center orgs,Workday,High
+WD_BEN_ENROLL,Process Enrollment,Enroll workers in benefit plans,Workday,Medium
+WD_BEN_CHANGE,Change Elections,Modify benefit elections,Workday,Medium
+WD_BEN_ADMIN_PLAN,Administer Plans,Configure and manage benefit plans,Workday,High
+WD_PAY_INPUT,Input Payroll,Enter payroll inputs and adjustments,Workday,Medium
+WD_PAY_RUN_PAYROLL,Run Payroll,Calculate and process payroll,Workday,Critical
+WD_PAY_APPROVE,Approve Payroll,Approve payroll results,Workday,Critical
+WD_PAY_VOID,Void Payment,Void issued payments,Workday,High
+WD_PAY_TAX,Manage Tax,Configure tax setup and withholding,Workday,High
+WD_COMP_VIEW,View Compensation,Access comp data and history,Workday,Medium
+WD_COMP_PROPOSE,Propose Compensation,Create compensation change proposals,Workday,High
+WD_COMP_APPROVE,Approve Compensation,Approve comp changes,Workday,High
+WD_COMP_EQUITY,Manage Equity,Administer stock and equity grants,Workday,High
+WD_TA_CREATE_REQ,Create Requisition,Create and post job requisitions,Workday,Medium
+WD_TA_SCREEN,Screen Candidates,Review and disposition candidates,Workday,Medium
+WD_TA_OFFER,Create Offer,Generate and manage offer letters,Workday,High
+WD_TA_ONBOARD,Onboard,Process new hire onboarding,Workday,Medium
+WD_LND_ASSIGN,Assign Learning,Assign training to workers,Workday,Medium
+WD_LND_CREATE,Create Content,Create courses and learning paths,Workday,Medium
+WD_LND_TRACK,Track Compliance,Monitor learning compliance,Workday,Low
+WD_PERF_INITIATE,Launch Reviews,Initiate performance review cycles,Workday,Medium
+WD_PERF_MANAGE,Manage Reviews,Configure review templates and workflows,Workday,Medium
+WD_REPORT_RUN,Run Reports,Execute Workday reports,Workday,Low
+WD_REPORT_BUILD,Build Reports,Create custom Workday reports,Workday,Medium
+WD_FIN_BUDGET,Manage Budget,Create and manage HR budgets,Workday,Medium
+WD_FIN_JOURNAL,Post Journals,Post HR accounting entries,Workday,Medium
+WD_SEC_USER,Manage Users,Provision and manage Workday accounts,Workday,Critical
+WD_SEC_ROLE,Manage Roles,Configure security groups and domain policies,Workday,Critical
+WD_SEC_AUDIT,Audit Security,View audit logs and security reports,Workday,Medium
+WD_ABSENCE_ADMIN,Manage Absences,Configure and administer leave policies,Workday,Medium

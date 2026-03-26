@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+S4_SD_ORDER,Sales Order Specialist,Manage sales orders in Fiori,S/4HANA,Sales
+S4_SD_BILLING,Billing Specialist,Customer billing and invoicing in Fiori,S/4HANA,Sales
+S4_SD_PRICING,Pricing & Promotions Manager,Pricing conditions and trade promotions,S/4HANA,Sales
+S4_PROC_BUYER,Procurement Buyer,Source-to-pay in Fiori,S/4HANA,Procurement
+S4_DEMAND_PLANNER,Demand Planner,Demand forecasting and MRP in Fiori,S/4HANA,Supply Chain
+S4_INV_SPECIALIST,Inventory Specialist,Inventory management in Fiori,S/4HANA,Supply Chain
+S4_DIST_COORD,Distribution Coordinator,Outbound logistics and shipment management,S/4HANA,Distribution
+S4_AP_SPECIALIST,AP Specialist,Supplier invoice and payment management,S/4HANA,Finance
+S4_AR_SPECIALIST,AR Specialist,Customer billing and collections,S/4HANA,Finance
+S4_GL_ACCOUNTANT,GL Accountant,Journal entries and period-end closing,S/4HANA,Finance
+S4_TRADE_ANALYST,Trade Spend Analyst,Profitability analysis and trade spend tracking,S/4HANA,Trade Promotions
+S4_TPM_MANAGER,Trade Promotion Manager,Trade promotion planning and execution,S/4HANA,Trade Promotions
+S4_PROD_PLANNER,Production Planner,Production scheduling and shop floor,S/4HANA,Supply Chain
+S4_QM_SPECIALIST,Quality Specialist,Quality inspection and batch management,S/4HANA,Quality
+S4_HR_SPECIALIST,HR Specialist,Employee lifecycle management,S/4HANA,HR
+S4_PAYROLL_SPEC,Payroll Specialist,Payroll execution and time management,S/4HANA,HR
+S4_MKT_ANALYST,Marketing Analyst,Campaign analytics and consumer insights,S/4HANA,Marketing
+S4_IT_ADMIN,IT Administrator,User and authorization management,S/4HANA,IT

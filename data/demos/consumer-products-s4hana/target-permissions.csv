@@ -1,0 +1,33 @@
+permission_id,permission_name,description,system,risk_level
+F3891,Create Sales Orders,Create and process sales orders in Fiori,S/4HANA,Medium
+F3892,Process Deliveries,Create outbound deliveries and post goods issue,S/4HANA,Medium
+F3893,Create Billing,Generate customer billing documents,S/4HANA,Medium
+F3894,Manage Pricing,Create and maintain pricing conditions,S/4HANA,Medium
+F3895,Manage Rebates,Create and manage customer rebate agreements,S/4HANA,High
+F1074,Create Purchase Orders,Create and process purchase orders,S/4HANA,Medium
+F6201,Run MRP,Execute material requirements planning in Fiori,S/4HANA,Medium
+F6202,Demand Forecast,Manage demand forecasts and safety stock,S/4HANA,Medium
+F2093,Post Goods Receipt,Record goods receipts against purchase orders,S/4HANA,Medium
+F2094,Post Goods Issue,Record goods issues for consumption or delivery,S/4HANA,Medium
+F3721,Manage Physical Inventory,Create counts and post adjustments,S/4HANA,Medium
+F3896,Create Shipments,Create and manage transportation documents,S/4HANA,Medium
+F0717,Manage Supplier Invoices,Process and post supplier invoices,S/4HANA,Medium
+F2424,Manage Automatic Payments,Configure and run automatic payment programs,S/4HANA,Critical
+F0743,Manage Supplier Master,Create and maintain supplier master data,S/4HANA,High
+F1603,Post Customer Invoices,Create and post customer billing,S/4HANA,Medium
+F2170,Manage Customer Master,Create and maintain customer master data,S/4HANA,High
+F2625,Manage Customer Payments,Post and clear customer payments,S/4HANA,Medium
+F0716,Post Journal Entries,Create and post journal entries,S/4HANA,Medium
+F0814,Close Period,Execute period-end closing activities,S/4HANA,Critical
+F0719,Reverse Documents,Reverse posted financial documents,S/4HANA,High
+F4801,Profitability Analysis,Create and analyze profitability segments,S/4HANA,Medium
+F4802,Trade Promotion Mgmt,Plan and execute trade promotions in Fiori,S/4HANA,Medium
+F6101,Create Production Orders,Create and manage production orders,S/4HANA,Medium
+F6102,Confirm Production,Record production confirmations,S/4HANA,Low
+F5782,Record QM Results,Enter quality inspection results,S/4HANA,Low
+F5783,Manage QM Plans,Create quality inspection plans,S/4HANA,Medium
+F5785,Manage Batches,Create and maintain batch records,S/4HANA,Medium
+F2721,Maintain Employee Data,Create and modify employee records,S/4HANA,High
+F2722,Run Payroll,Execute payroll calculation and posting,S/4HANA,Critical
+F7721,Manage Users,Create and maintain user accounts,S/4HANA,Critical
+F7722,Manage Authorizations,Configure role-based access control,S/4HANA,Critical

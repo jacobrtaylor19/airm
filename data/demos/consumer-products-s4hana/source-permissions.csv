@@ -1,0 +1,47 @@
+permission_id,permission_name,description,system,risk_level
+VA01,Create Sales Order,Create customer sales orders,SAP ECC,Medium
+VA02,Change Sales Order,Modify customer sales orders,SAP ECC,Medium
+VF01,Create Billing Document,Create customer billing documents,SAP ECC,Medium
+VF02,Change Billing Document,Modify billing documents,SAP ECC,Medium
+VK11,Create Condition Record,Create pricing condition records,SAP ECC,Medium
+VK12,Change Condition Record,Modify pricing condition records,SAP ECC,Medium
+VBO1,Create Rebate Agreement,Create customer rebate agreements,SAP ECC,High
+VBO2,Change Rebate Agreement,Modify rebate agreements,SAP ECC,High
+ME21N,Create Purchase Order,Create purchase orders,SAP ECC,Medium
+ME22N,Change Purchase Order,Modify purchase orders,SAP ECC,Medium
+ME51N,Create Purchase Requisition,Create purchase requisitions,SAP ECC,Low
+MD04,Stock/Requirements List,Display MRP stock requirements list,SAP ECC,Low
+MD01,Run MRP,Execute material requirements planning,SAP ECC,Medium
+MIGO,Goods Movement,Post goods receipts issues and transfers,SAP ECC,Medium
+MI01,Create Physical Inventory,Create physical inventory documents,SAP ECC,Medium
+MI04,Enter Inventory Count,Enter physical inventory count results,SAP ECC,Medium
+VL01N,Create Delivery,Create outbound delivery documents,SAP ECC,Medium
+VL02N,Change Delivery,Modify outbound deliveries,SAP ECC,Medium
+VT01N,Create Shipment,Create transportation shipment documents,SAP ECC,Medium
+FB60,Enter Invoice,Post vendor invoices,SAP ECC,Medium
+F110,Automatic Payment Run,Execute automatic payment program,SAP ECC,Critical
+FK01,Create Vendor Master,Create vendor master records,SAP ECC,High
+FB70,Enter Customer Invoice,Post customer invoices,SAP ECC,Medium
+FD01,Create Customer Master,Create customer master records,SAP ECC,High
+F-28,Post Incoming Payment,Post customer payments,SAP ECC,Medium
+FB01,Post Document,Post general ledger documents,SAP ECC,Medium
+OB52,Open/Close Posting Periods,Control posting period open/close,SAP ECC,Critical
+KEA0,Create Profitability Segment,Create CO-PA profitability segments,SAP ECC,Medium
+KE21N,Create CO-PA Actual Line Item,Post actual profitability data,SAP ECC,Medium
+MDF7,Trade Promotion Planning,Create and manage trade promotions,SAP ECC,Medium
+ME9F,Send Purchase Order,Transmit purchase orders to vendors,SAP ECC,Low
+CO01,Create Production Order,Create production orders,SAP ECC,Medium
+CO11N,Confirm Production Order,Confirm production operations,SAP ECC,Low
+QA01,Create Inspection Lot,Create quality inspection lots,SAP ECC,Medium
+QA11,Record Usage Decision,Record quality usage decision,SAP ECC,Medium
+QE01,Record Results,Enter inspection results,SAP ECC,Low
+QM01,Create Quality Notification,Create quality notifications,SAP ECC,Low
+MSC1N,Create Batch,Create material batch records,SAP ECC,Medium
+PA30,Maintain HR Master Data,Create and modify employee records,SAP ECC,High
+PC00_M99_CIPE,Run Payroll,Execute payroll processing runs,SAP ECC,Critical
+SU01,User Administration,Create and manage user accounts,SAP ECC,Critical
+PFCG,Role Administration,Create and maintain authorization roles,SAP ECC,Critical
+MC46,Category ABC Analysis,Run ABC analysis for inventory categories,SAP ECC,Low
+MC.9,Consumption Analysis,Analyze material consumption patterns,SAP ECC,Low
+XK01,Create Vendor,Create vendor master records all views,SAP ECC,Critical
+FB08,Reverse Document,Reverse posted financial documents,SAP ECC,High

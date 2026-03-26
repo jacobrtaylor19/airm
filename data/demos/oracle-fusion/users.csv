@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+ORA001,Sarah Chopra,sarah.chopra@oracleclient.com,Buyer,Procurement
+ORA002,Dorothy Vasquez,dorothy.vasquez@oracleclient.com,Sales Analyst,Sales
+ORA003,Valeria Alvarez,valeria.alvarez@oracleclient.com,Credit Analyst,Finance
+ORA004,Lars Zhou,lars.zhou@oracleclient.com,Material Planner,Supply Chain
+ORA005,Elizabeth Coleman,elizabeth.coleman@oracleclient.com,Tax Analyst,Finance
+ORA006,Willie Mishra,willie.mishra@oracleclient.com,GL Accountant,Finance
+ORA007,Suresh Huang,suresh.huang@oracleclient.com,Cycle Counter,Warehouse
+ORA008,Teresa Scott,teresa.scott@oracleclient.com,Procurement Manager,Procurement
+ORA009,Walter Almeida,walter.almeida@oracleclient.com,Budget Analyst,Finance
+ORA010,Natalie Brooks,natalie.brooks@oracleclient.com,Strategic Sourcing Analyst,Procurement
+ORA011,Nicholas Singh,nicholas.singh@oracleclient.com,Training Coordinator,HR
+ORA012,Judy Andersson,judy.andersson@oracleclient.com,Plant Manager,Operations
+ORA013,Arthur Kumar,arthur.kumar@oracleclient.com,IT Project Manager,IT
+ORA014,Amanda Ito,amanda.ito@oracleclient.com,Process Engineer,Operations
+ORA015,Lars Diaz,lars.diaz@oracleclient.com,Benefits Administrator,HR
+ORA016,Rebecca Yang,rebecca.yang@oracleclient.com,Shipping Coordinator,Supply Chain
+ORA017,Deepak Singh,deepak.singh@oracleclient.com,HR Manager,HR
+ORA018,Dylan Schmidt,dylan.schmidt@oracleclient.com,IT Support Specialist,IT
+ORA019,Ananya Almeida,ananya.almeida@oracleclient.com,Financial Analyst,Finance
+ORA020,Divya Reddy,divya.reddy@oracleclient.com,Facilities Director,Facilities
+ORA021,Scott Cooper,scott.cooper@oracleclient.com,Employee Relations Specialist,HR
+ORA022,Fatima Young,fatima.young@oracleclient.com,Material Planner,Supply Chain
+ORA023,Zachary Cruz,zachary.cruz@oracleclient.com,Payroll Specialist,Finance
+ORA024,Anna Bell,anna.bell@oracleclient.com,Contract Specialist,Procurement
+ORA025,Jason Price,jason.price@oracleclient.com,Cycle Counter,Warehouse
+ORA026,Sarah Bell,sarah.bell@oracleclient.com,GL Accountant,Finance
+ORA027,Jennifer Reyes,jennifer.reyes@oracleclient.com,Operations Analyst,Operations
+ORA028,Emma Ward,emma.ward@oracleclient.com,Staff Accountant,Finance
+ORA029,Mei Gonzalez,mei.gonzalez@oracleclient.com,Category Manager,Procurement
+ORA030,Alexander Hill,alexander.hill@oracleclient.com,Engineering Director,Engineering
+ORA031,Astrid Perry,astrid.perry@oracleclient.com,Warehouse Supervisor,Warehouse
+ORA032,Bruce Fisher,bruce.fisher@oracleclient.com,Consumer Insights Analyst,Market Research
+ORA033,Karen Perez,karen.perez@oracleclient.com,Market Research Manager,Market Research
+ORA034,Raymond Ramirez,raymond.ramirez@oracleclient.com,Plant Manager,Operations
+ORA035,Christopher Lindberg,christopher.lindberg@oracleclient.com,HRIS Analyst,HR
+ORA036,Thomas Sousa,thomas.sousa@oracleclient.com,Market Research Manager,Market Research
+ORA037,Benjamin Andersson,benjamin.andersson@oracleclient.com,Security Analyst,IT
+ORA038,Ralph Howard,ralph.howard@oracleclient.com,Production Planner,Operations
+ORA039,Kathryn Torres,kathryn.torres@oracleclient.com,Benefits Administrator,HR
+ORA040,Emma Wu,emma.wu@oracleclient.com,Forklift Operator,Warehouse
+ORA041,Andrea Howard,andrea.howard@oracleclient.com,IT Project Manager,IT
+ORA042,Ann Spencer,ann.spencer@oracleclient.com,Material Planner,Supply Chain
+ORA043,Sofia Rivera,sofia.rivera@oracleclient.com,Sales Manager,Sales
+ORA044,Cheryl Morales,cheryl.morales@oracleclient.com,AR Specialist,Finance
+ORA045,Judy Barnes,judy.barnes@oracleclient.com,Infrastructure Engineer,IT
+ORA046,Theresa White,theresa.white@oracleclient.com,Operations Manager,Operations
+ORA047,Kevin Price,kevin.price@oracleclient.com,Procurement Director,Procurement
+ORA048,Robert Gonzalez,robert.gonzalez@oracleclient.com,Billing Specialist,Finance
+ORA049,Emma Petrov,emma.petrov@oracleclient.com,Document Control Specialist,Quality
+ORA050,Harry Nelson,harry.nelson@oracleclient.com,Buyer,Procurement
+ORA051,Raymond Jones,raymond.jones@oracleclient.com,Strategic Sourcing Analyst,Procurement
+ORA052,Wei Joshi,wei.joshi@oracleclient.com,HR Director,HR
+ORA053,Stephen Johansson,stephen.johansson@oracleclient.com,Operations Director,Operations
+ORA054,Betty Kumar,betty.kumar@oracleclient.com,Procurement Manager,Procurement
+ORA055,Bryan Sullivan,bryan.sullivan@oracleclient.com,Sales Operations Analyst,Sales
+ORA056,Patrick Lewis,patrick.lewis@oracleclient.com,Compensation Analyst,HR
+ORA057,Jesse White,jesse.white@oracleclient.com,VP Sales,Sales
+ORA058,Doris Morton,doris.morton@oracleclient.com,Shipping Coordinator,Supply Chain
+ORA059,Cynthia Howard,cynthia.howard@oracleclient.com,Senior Buyer,Procurement
+ORA060,Ann James,ann.james@oracleclient.com,Territory Manager,Sales
+ORA061,Gerald Richardson,gerald.richardson@oracleclient.com,AP Clerk,Finance
+ORA062,Priya Evans,priya.evans@oracleclient.com,Mechanical Engineer,Engineering
+ORA063,Valeria Cook,valeria.cook@oracleclient.com,Shipping Coordinator,Supply Chain
+ORA064,Kimberly Cooper,kimberly.cooper@oracleclient.com,Logistics Manager,Supply Chain
+ORA065,Patrick Jackson,patrick.jackson@oracleclient.com,Electrical Engineer,Engineering
+ORA066,Judy Hall,judy.hall@oracleclient.com,Operations Analyst,Operations
+ORA067,Jose Eriksson,jose.eriksson@oracleclient.com,Logistics Coordinator,Operations
+ORA068,Nicholas Lewis,nicholas.lewis@oracleclient.com,Quality Director,Quality
+ORA069,Christina Cox,christina.cox@oracleclient.com,Help Desk Technician,IT
+ORA070,Daniel Liu,daniel.liu@oracleclient.com,AR Specialist,Finance
+ORA071,Joshua Ramirez,joshua.ramirez@oracleclient.com,Production Planner,Operations
+ORA072,Luis Jimenez,luis.jimenez@oracleclient.com,HR Director,HR
+ORA073,Amit Fisher,amit.fisher@oracleclient.com,AR Specialist,Finance
+ORA074,Brenda Pereira,brenda.pereira@oracleclient.com,Billing Specialist,Finance
+ORA075,Gloria Cruz,gloria.cruz@oracleclient.com,Material Planner,Supply Chain
+ORA076,Sarah Zhou,sarah.zhou@oracleclient.com,Facilities Coordinator,Facilities
+ORA077,Brittany Hernandez,brittany.hernandez@oracleclient.com,Forklift Operator,Warehouse
+ORA078,Willie Patel,willie.patel@oracleclient.com,Vendor Manager,Procurement
+ORA079,Kelly Watson,kelly.watson@oracleclient.com,Quality Inspector,Quality
+ORA080,Dorothy Morris,dorothy.morris@oracleclient.com,Credit Analyst,Finance
+ORA081,Randy Kelly,randy.kelly@oracleclient.com,Supply Chain Manager,Supply Chain
+ORA082,Danielle Gomez,danielle.gomez@oracleclient.com,Document Control Specialist,Quality
+ORA083,Meera Morales,meera.morales@oracleclient.com,QC Coordinator,Quality
+ORA084,Deborah Hughes,deborah.hughes@oracleclient.com,Revenue Analyst,Finance
+ORA085,Alice Stewart,alice.stewart@oracleclient.com,Vendor Manager,Procurement
+ORA086,Jean Lee,jean.lee@oracleclient.com,Engineering Director,Engineering
+ORA087,Amber Rivera,amber.rivera@oracleclient.com,Senior Buyer,Procurement
+ORA088,Yuki Lopez,yuki.lopez@oracleclient.com,Staff Accountant,Finance
+ORA089,Michael Ruiz,michael.ruiz@oracleclient.com,Production Planner,Operations
+ORA090,Stephen Torres,stephen.torres@oracleclient.com,DevOps Engineer,IT
+ORA091,Lauren Huang,lauren.huang@oracleclient.com,Stock Controller,Warehouse
+ORA092,Jean Gomes,jean.gomes@oracleclient.com,Procurement Manager,Procurement
+ORA093,Mary Kim,mary.kim@oracleclient.com,Controller,Finance
+ORA094,Omar Becker,omar.becker@oracleclient.com,Buyer,Procurement
+ORA095,Denise Robinson,denise.robinson@oracleclient.com,Quality Inspector,Quality
+ORA096,Stephanie Jackson,stephanie.jackson@oracleclient.com,Area Supervisor,Operations
+ORA097,Julie Wilson,julie.wilson@oracleclient.com,Senior Accountant,Finance
+ORA098,Valentina Rodriguez,valentina.rodriguez@oracleclient.com,GL Accountant,Finance
+ORA099,Judy Moore,judy.moore@oracleclient.com,HR Director,HR
+ORA100,Roger Watson,roger.watson@oracleclient.com,Senior Buyer,Procurement

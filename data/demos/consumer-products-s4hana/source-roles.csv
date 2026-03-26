@@ -1,0 +1,21 @@
+role_id,role_name,description,system,domain
+SAP_SD_ORDER,SD Sales Order Processor,Sales order creation and management,SAP ECC,Sales
+SAP_SD_BILLING,SD Billing Specialist,Customer billing and invoicing,SAP ECC,Sales
+SAP_SD_PRICING,SD Pricing Analyst,Pricing conditions and promotions management,SAP ECC,Sales
+SAP_MM_BUYER,MM Buyer,Purchase order creation and vendor management,SAP ECC,Procurement
+SAP_MM_DEMAND,MM Demand Planner,Demand forecasting and material requirements,SAP ECC,Supply Chain
+SAP_WM_CLERK,WM Warehouse Clerk,Goods receipt goods issue and stock transfers,SAP ECC,Supply Chain
+SAP_WM_DIST,WM Distribution Coordinator,Distribution planning and shipping management,SAP ECC,Distribution
+SAP_FI_AP,FI AP Clerk,Vendor invoice processing and payments,SAP ECC,Finance
+SAP_FI_AR,FI AR Clerk,Customer billing and payment processing,SAP ECC,Finance
+SAP_FI_GL,FI GL Accountant,General ledger and period-end closing,SAP ECC,Finance
+SAP_CO_ANALYST,CO Trade Spend Analyst,Trade promotion spending and rebate tracking,SAP ECC,Trade Promotions
+SAP_CO_TPM,CO Trade Promotion Manager,Trade promotion planning and execution,SAP ECC,Trade Promotions
+SAP_PP_PLANNER,PP Production Planner,Production planning and shop floor scheduling,SAP ECC,Supply Chain
+SAP_QM_INSPECTOR,QM Quality Inspector,Incoming and in-process quality inspections,SAP ECC,Quality
+SAP_QM_MANAGER,QM Quality Manager,Quality planning and batch management,SAP ECC,Quality
+SAP_HR_ADMIN,HR Administrator,Employee records and organizational management,SAP ECC,HR
+SAP_HR_PAYROLL,HR Payroll Processor,Payroll processing and time management,SAP ECC,HR
+SAP_MKT_ANALYST,Marketing Analyst,Campaign tracking and marketing analytics,SAP ECC,Marketing
+SAP_CAT_MANAGER,Category Manager,Category planning and assortment management,SAP ECC,Category Management
+SAP_BASIS_ADMIN,Basis Administrator,System administration and user management,SAP ECC,IT

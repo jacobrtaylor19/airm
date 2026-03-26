@@ -1,0 +1,21 @@
+role_id,role_name,description,system,domain
+EBS_AP_CLERK,AP Clerk,Invoice entry and payment processing in Oracle AP,Oracle EBS,Finance
+EBS_AP_MANAGER,AP Manager,Payment batch management and vendor approvals,Oracle EBS,Finance
+EBS_AR_CLERK,AR Clerk,Customer billing and receipt processing,Oracle EBS,Finance
+EBS_AR_MANAGER,AR Manager,Credit management and collection strategies,Oracle EBS,Finance
+EBS_GL_ACCOUNTANT,GL Accountant,Journal entries and period close in Oracle GL,Oracle EBS,Finance
+EBS_GL_CONTROLLER,GL Controller,Financial reporting and chart of accounts management,Oracle EBS,Finance
+EBS_PO_BUYER,PO Buyer,Purchase order creation and requisition management,Oracle EBS,Procurement
+EBS_PO_MANAGER,PO Manager,Approval workflows and contract management,Oracle EBS,Procurement
+EBS_INV_CLERK,Inventory Clerk,Inventory transactions and cycle counting,Oracle EBS,Supply Chain
+EBS_INV_MANAGER,Inventory Manager,Inventory planning and subinventory management,Oracle EBS,Supply Chain
+EBS_OM_CLERK,OM Order Clerk,Sales order entry and scheduling,Oracle EBS,Sales
+EBS_OM_MANAGER,OM Manager,Order management and fulfillment oversight,Oracle EBS,Sales
+EBS_HR_CLERK,HR Clerk,Employee data entry and personnel actions,Oracle EBS,HR
+EBS_HR_MANAGER,HR Manager,Workforce management and organizational changes,Oracle EBS,HR
+EBS_PAY_CLERK,Payroll Clerk,Payroll processing and tax reporting,Oracle EBS,HR
+EBS_FA_ACCOUNTANT,Fixed Assets Accountant,Asset tracking and depreciation,Oracle EBS,Finance
+EBS_CM_ANALYST,Cash Management Analyst,Bank reconciliation and cash positioning,Oracle EBS,Finance
+EBS_WIP_PLANNER,WIP Planner,Work in process planning and production scheduling,Oracle EBS,Operations
+EBS_QA_INSPECTOR,QA Inspector,Quality collection plans and results entry,Oracle EBS,Quality
+EBS_SYSADMIN,System Administrator,User management and system configuration,Oracle EBS,IT

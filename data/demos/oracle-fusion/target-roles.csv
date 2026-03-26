@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+OFC_AP_SPECIALIST,AP Specialist,Supplier invoice processing in Fusion Cloud,Oracle Fusion,Finance
+OFC_AP_MANAGER,AP Manager,Payment management and supplier approvals,Oracle Fusion,Finance
+OFC_AR_SPECIALIST,AR Specialist,Customer billing and receipts in Fusion,Oracle Fusion,Finance
+OFC_AR_MANAGER,AR Manager,Credit and collection management,Oracle Fusion,Finance
+OFC_GL_ACCOUNTANT,GL Accountant,Journal management and reporting,Oracle Fusion,Finance
+OFC_GL_CONTROLLER,Financial Controller,Period close and financial governance,Oracle Fusion,Finance
+OFC_PROC_BUYER,Procurement Buyer,Procurement processing in Fusion,Oracle Fusion,Procurement
+OFC_PROC_MANAGER,Procurement Manager,Sourcing and contract management,Oracle Fusion,Procurement
+OFC_INV_SPECIALIST,Inventory Specialist,Inventory transactions and counting,Oracle Fusion,Supply Chain
+OFC_INV_MANAGER,Inventory Manager,Inventory planning and configuration,Oracle Fusion,Supply Chain
+OFC_OM_SPECIALIST,Order Management Specialist,Sales order processing,Oracle Fusion,Sales
+OFC_OM_MANAGER,Order Management Manager,Fulfillment and order oversight,Oracle Fusion,Sales
+OFC_HR_SPECIALIST,HR Specialist,Employee lifecycle in Fusion HCM,Oracle Fusion,HR
+OFC_HR_MANAGER,HR Manager,Workforce and org management,Oracle Fusion,HR
+OFC_PAY_SPECIALIST,Payroll Specialist,Payroll processing in Fusion,Oracle Fusion,HR
+OFC_FA_ACCOUNTANT,Fixed Assets Accountant,Asset management in Fusion,Oracle Fusion,Finance
+OFC_MFG_PLANNER,Manufacturing Planner,Work order management,Oracle Fusion,Operations
+OFC_IT_ADMIN,IT Administrator,User and security management,Oracle Fusion,IT

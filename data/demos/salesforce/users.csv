@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+SF001,Doris Lewis,doris.lewis@sfclient.com,Integration Specialist,Platform Admin
+SF002,Jesse Sanders,jesse.sanders@sfclient.com,Reporting Analyst,Analytics
+SF003,Juan Cruz,juan.cruz@sfclient.com,Lab Technician,Quality
+SF004,Thomas Reyes,thomas.reyes@sfclient.com,Data Analyst,Analytics
+SF005,Madison Wood,madison.wood@sfclient.com,Platform Engineer,Platform Admin
+SF006,Isabella Verma,isabella.verma@sfclient.com,Senior Brand Manager,Marketing
+SF007,Ralph Oliveira,ralph.oliveira@sfclient.com,Campaign Manager,Marketing
+SF008,Amanda White,amanda.white@sfclient.com,Release Manager,Platform Admin
+SF009,Andrea James,andrea.james@sfclient.com,Data Analyst,Analytics
+SF010,Betty Sato,betty.sato@sfclient.com,Sales Manager,Sales
+SF011,Ruth Yamamoto,ruth.yamamoto@sfclient.com,Service Director,Service
+SF012,Kayla Wood,kayla.wood@sfclient.com,Quality Director,Quality
+SF013,Debra Silva,debra.silva@sfclient.com,Escalation Specialist,Service
+SF014,Jacqueline Lundgren,jacqueline.lundgren@sfclient.com,Salesforce Admin,Platform Admin
+SF015,Jennifer Rogers,jennifer.rogers@sfclient.com,Sales Manager,Sales
+SF016,Fatima Nair,fatima.nair@sfclient.com,Quality Auditor,Quality
+SF017,Amit Brooks,amit.brooks@sfclient.com,Key Account Manager,Sales
+SF018,Andrea Almeida,andrea.almeida@sfclient.com,Support Engineer,Service
+SF019,Joyce Miller,joyce.miller@sfclient.com,Account Executive,Sales
+SF020,Nathan Cooper,nathan.cooper@sfclient.com,Integration Specialist,Platform Admin
+SF021,Kenneth Ito,kenneth.ito@sfclient.com,Regional Sales Director,Sales
+SF022,Diane Powell,diane.powell@sfclient.com,Sales Operations Analyst,Sales
+SF023,Charles Wood,charles.wood@sfclient.com,Help Desk Technician,IT
+SF024,John Bailey,john.bailey@sfclient.com,Shift Supervisor,Operations
+SF025,Dorothy Price,dorothy.price@sfclient.com,Technical Support Lead,Service
+SF026,Harold Turner,harold.turner@sfclient.com,Marketing Analyst,Marketing
+SF027,Patrick Sanders,patrick.sanders@sfclient.com,Production Planner,Operations
+SF028,Austin Kato,austin.kato@sfclient.com,IT Support Specialist,IT
+SF029,Leila Carter,leila.carter@sfclient.com,Regional Sales Director,Sales
+SF030,Sunita Long,sunita.long@sfclient.com,Reporting Analyst,Analytics
+SF031,Viktor Foster,viktor.foster@sfclient.com,Release Manager,Platform Admin
+SF032,Omar Adams,omar.adams@sfclient.com,Key Account Manager,Sales
+SF033,Barbara Green,barbara.green@sfclient.com,Escalation Specialist,Service
+SF034,Suresh Mishra,suresh.mishra@sfclient.com,Document Control Specialist,Quality
+SF035,Omar Watson,omar.watson@sfclient.com,Trade Marketing Manager,Marketing
+SF036,Gregory Edwards,gregory.edwards@sfclient.com,Escalation Specialist,Service
+SF037,Natalie Roberts,natalie.roberts@sfclient.com,Integration Specialist,Platform Admin
+SF038,Jennifer James,jennifer.james@sfclient.com,System Configurator,Platform Admin
+SF039,Isabella Jackson,isabella.jackson@sfclient.com,Account Executive,Sales
+SF040,Keith Costa,keith.costa@sfclient.com,Regional Sales Director,Sales
+SF041,Kathryn Singh,kathryn.singh@sfclient.com,Service Director,Service
+SF042,Samuel Chen,samuel.chen@sfclient.com,Compensation Analyst,HR
+SF043,George Kelly,george.kelly@sfclient.com,VP Sales,Sales
+SF044,Larry Santos,larry.santos@sfclient.com,BI Developer,Analytics
+SF045,Ingrid O'Brien,ingrid.obrien@sfclient.com,Territory Manager,Sales
+SF046,Samantha Smith,samantha.smith@sfclient.com,Trade Marketing Manager,Marketing
+SF047,John Yang,john.yang@sfclient.com,Regional Sales Director,Sales
+SF048,Santiago Coleman,santiago.coleman@sfclient.com,Sales Operations Analyst,Sales
+SF049,Keith Miller,keith.miller@sfclient.com,Salesforce Admin,Platform Admin
+SF050,Julie Johnson,julie.johnson@sfclient.com,Key Account Manager,Sales
+SF051,Martha Hernandez,martha.hernandez@sfclient.com,Escalation Specialist,Service
+SF052,James Sullivan,james.sullivan@sfclient.com,Shopper Marketing Analyst,Marketing
+SF053,Margaret Costa,margaret.costa@sfclient.com,Regional Sales Director,Sales
+SF054,Deborah Andersson,deborah.andersson@sfclient.com,Area Supervisor,Operations
+SF055,Amber Yang,amber.yang@sfclient.com,Staff Accountant,Finance
+SF056,Natalie Harris,natalie.harris@sfclient.com,Salesforce Admin,Platform Admin
+SF057,Kavita Schulz,kavita.schulz@sfclient.com,Customer Operations Analyst,Service
+SF058,Kayla Reyes,kayla.reyes@sfclient.com,Inside Sales Rep,Sales
+SF059,Lauren Harris,lauren.harris@sfclient.com,Service Agent,Service
+SF060,Suresh Campbell,suresh.campbell@sfclient.com,Service Agent,Service
+SF061,Thomas Zhang,thomas.zhang@sfclient.com,Quality Auditor,Quality
+SF062,Denise Gray,denise.gray@sfclient.com,System Configurator,Platform Admin
+SF063,Judith Johansson,judith.johansson@sfclient.com,Regional Sales Director,Sales
+SF064,Hiroshi Kelly,hiroshi.kelly@sfclient.com,Sales Manager,Sales
+SF065,Steven Takahashi,steven.takahashi@sfclient.com,Category Manager,Marketing
+SF066,Elijah Gonzalez,elijah.gonzalez@sfclient.com,Brand Manager,Marketing
+SF067,Andrea Cox,andrea.cox@sfclient.com,Service Manager,Service
+SF068,Judy Chen,judy.chen@sfclient.com,Marketing Director,Marketing
+SF069,Michael Wu,michael.wu@sfclient.com,VP Sales,Sales
+SF070,Kathryn Liu,kathryn.liu@sfclient.com,Controller,Finance
+SF071,Bruce Lopez,bruce.lopez@sfclient.com,Service Agent,Service
+SF072,Jason Brown,jason.brown@sfclient.com,Benefits Administrator,HR
+SF073,Valeria Eriksson,valeria.eriksson@sfclient.com,Plant Operator,Operations
+SF074,Carl Yamamoto,carl.yamamoto@sfclient.com,Inside Sales Rep,Sales
+SF075,George Reed,george.reed@sfclient.com,Escalation Specialist,Service
+SF076,Roy Sharma,roy.sharma@sfclient.com,AP Clerk,Finance
+SF077,Joshua Yamamoto,joshua.yamamoto@sfclient.com,Financial Analyst,Finance
+SF078,Joseph Ramos,joseph.ramos@sfclient.com,Quality Director,Quality
+SF079,Jason Morris,jason.morris@sfclient.com,Operations Analyst,Operations
+SF080,Lucia Bailey,lucia.bailey@sfclient.com,Category Manager,Marketing
+SF081,Justin Joshi,justin.joshi@sfclient.com,Sales Operations Analyst,Sales
+SF082,Amber Powell,amber.powell@sfclient.com,Marketing Analyst,Marketing
+SF083,Mateo Richardson,mateo.richardson@sfclient.com,Service Director,Service
+SF084,Eugene Turner,eugene.turner@sfclient.com,AR Specialist,Finance
+SF085,Deborah Mueller,deborah.mueller@sfclient.com,Billing Specialist,Finance
+SF086,Suresh Suzuki,suresh.suzuki@sfclient.com,Integration Specialist,Platform Admin
+SF087,Randy Fischer,randy.fischer@sfclient.com,Customer Success Manager,Service
+SF088,Russell Wang,russell.wang@sfclient.com,VP Sales,Sales
+SF089,Juan Kobayashi,juan.kobayashi@sfclient.com,Inside Sales Rep,Sales
+SF090,Brandon Nelson,brandon.nelson@sfclient.com,Key Account Manager,Sales
+SF091,Amy Griffin,amy.griffin@sfclient.com,Sales Representative,Sales
+SF092,Kayla Diaz,kayla.diaz@sfclient.com,Plant Operator,Operations
+SF093,Charles Eriksson,charles.eriksson@sfclient.com,Sales Representative,Sales
+SF094,Marco Rodriguez,marco.rodriguez@sfclient.com,Sales Manager,Sales
+SF095,Jacqueline Schulz,jacqueline.schulz@sfclient.com,Shopper Marketing Analyst,Marketing
+SF096,Joyce Petrov,joyce.petrov@sfclient.com,Area Supervisor,Operations
+SF097,Gregory Chopra,gregory.chopra@sfclient.com,Brand Manager,Marketing
+SF098,Mateo Ross,mateo.ross@sfclient.com,Plant Operator,Operations
+SF099,Andrew Price,andrew.price@sfclient.com,Reporting Analyst,Analytics
+SF100,Suresh Gupta,suresh.gupta@sfclient.com,Inside Sales Rep,Sales

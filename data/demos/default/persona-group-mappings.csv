@@ -1,51 +1,51 @@
 persona_name,consolidated_group_name
 Accounts Receivable Processor,Financial Processing Staff
-Procurement Manager,Procurement & Supplier Management
-Maintenance Planner,Plant Maintenance Planning & Coordination
-Logistics Coordinator,Supply Chain Operations
-Product Analyst,Product Management & Analysis
-Product Manager,Product Management & Analysis
-Finance Processor,Financial Processing Staff
-Market Research Analyst,Market Research & Analysis
-Maintenance System Administrator,Equipment Maintenance & Systems Administration
-Operations Planner,Supply Chain Planning & Operations Management
-Product Engineer,Product Development & Design
-Maintenance Coordinator,Plant Maintenance Planning & Coordination
-Warehouse Operations Personnel,Warehouse Operations
-Tax Processor,Financial Processing Staff
-Field Maintenance Technician,Plant Maintenance Technical Staff
-Maintenance Technician,Plant Maintenance Technical Staff
-Supply Chain Coordinator,Supply Chain Operations
-Finance Analyst,Financial Analysis & Treasury
-Maintenance Specialist,Plant Maintenance Technical Staff
-Facilities Manager,Facilities Management & Operations
-Facilities Operations Specialist,Facilities Management & Operations
-Operations Supervisor,Supply Chain Planning & Operations Management
-Product Developer,Product Development & Design
-Payroll Processor,Financial Processing Staff
-Product Researcher,Product Development & Design
-Equipment Maintenance Worker,Plant Maintenance Technical Staff
-Procurement Analyst,Procurement Operations
-Procurement Specialist,Procurement Operations
-Equipment Maintenance Analyst,Equipment Maintenance & Systems Administration
-Warehouse Worker,Warehouse Operations
-Supply Chain Manager,Supply Chain Planning & Operations Management
-Supply Chain Operator,Supply Chain Operations
-Equipment Maintenance Technician,Equipment Maintenance & Systems Administration
-Quality Assurance Analyst,Quality Assurance
-Treasury Specialist,Financial Analysis & Treasury
-Product Designer,Product Development & Design
-Maintenance Analyst,Plant Maintenance Planning & Coordination
-Supplier Relations Manager,Procurement & Supplier Management
-Quality Assurance Tester,Quality Assurance
-Vendor Management Specialist,Procurement & Supplier Management
-Research Professional,Research & Development
-Finance Accounting Processor,Financial Processing Staff
-Supply Chain Planner,Supply Chain Planning & Operations Management
-Facilities Maintenance Worker,Facilities Management & Operations
-Research & Development Engineer,Research & Development
 Accounts Payable Processor,Financial Processing Staff
-Facilities Maintenance Specialist,Facilities Management & Operations
-Market Researcher,Market Research & Analysis
-Warehouse Operations Worker,Warehouse Operations
-Accounting Processor,Financial Processing Staff
+General Ledger Accountant,Financial Processing Staff
+Financial Controller,Financial Management
+Cost Center Analyst,Financial Processing Staff
+Treasury Analyst,Financial Processing Staff
+Procurement Buyer,Procurement Operations
+Strategic Procurement Manager,Procurement Management
+Warehouse Clerk,Warehouse Operations
+Inventory Manager,Warehouse Management
+Maintenance Planner,Maintenance Operations
+Maintenance Technician,Maintenance Operations
+Maintenance Supervisor,Maintenance Management
+Quality Inspector,Quality Operations
+Quality Manager,Quality Management
+HR Administrator,HR Operations
+Payroll Processor,HR Management
+Sales Order Processor,Sales Operations
+IT Basis Administrator,IT Administration
+Vendor Management Specialist,Procurement Management
+Credit Management Analyst,Financial Management
+Supply Chain Coordinator,Sales Operations
+Production Planner,Maintenance Operations
+Engineering Specialist,Engineering Operations
+AP Senior Specialist,Financial Processing Staff
+AR Senior Specialist,Financial Processing Staff
+GL Senior Analyst,Financial Management
+Procurement Analyst,Procurement Operations
+Warehouse Receiving Specialist,Warehouse Operations
+Shipping Coordinator,Sales Operations
+Maintenance Reliability Engineer,Maintenance Management
+QA Documentation Specialist,Quality Operations
+HR Business Partner,HR Management
+Time Management Specialist,HR Operations
+IT Security Administrator,IT Administration
+IT Change Manager,IT Administration
+Financial Reporting Analyst,Financial Management
+Budget Analyst,Financial Management
+Material Master Specialist,Warehouse Management
+Plant Operations Coordinator,Maintenance Operations
+Environmental Compliance Specialist,Quality Management
+Distribution Planner,Sales Operations
+Demand Planning Analyst,Sales Operations
+Asset Accountant,Financial Processing Staff
+Internal Audit Analyst,Financial Management
+Process Engineer,Engineering Operations
+R&D Project Coordinator,Engineering Operations
+Facilities Coordinator,Maintenance Operations
+Compliance Officer,Quality Management
+Data Governance Analyst,IT Operations

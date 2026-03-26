@@ -1,0 +1,21 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-SD-001,Sales Order vs Billing,VA01,VF01,Medium,User creating orders and billing can fabricate revenue.
+SOD-SD-002,Sales Order vs Delivery,VA01,VL01N,Medium,User creating orders and deliveries can ship unauthorized goods.
+SOD-SD-003,Pricing vs Rebate Agreements,VK11,VBO1,High,User managing pricing and rebates can create favorable terms.
+SOD-SD-004,Rebate Create vs Rebate Change,VBO1,VBO2,Medium,User creating and changing rebates can manipulate trade terms.
+SOD-AP-001,Vendor Create vs Payment Run,FK01,F110,Critical,User creating vendors and running payments can pay fictitious vendors.
+SOD-AP-002,Invoice Entry vs Payment Run,FB60,F110,Critical,User entering invoices and running payments can create fraudulent payments.
+SOD-AP-003,Vendor Create vs Invoice Entry,FK01,FB60,High,User creating vendors and entering invoices can fabricate relationships.
+SOD-AR-001,Customer Create vs Payment Posting,FD01,F-28,High,User creating customers and posting payments can fabricate transactions.
+SOD-GL-001,Journal Entry vs Period Close,FB01,OB52,Critical,User posting journals and controlling periods can post to closed periods.
+SOD-GL-002,Journal Entry vs Doc Reversal,FB01,FB08,High,User posting and reversing journals can manipulate records.
+SOD-MM-001,PO Create vs Goods Receipt,ME21N,MIGO,High,User creating POs and receiving goods can fabricate procurement.
+SOD-MM-002,Vendor Create vs PO Create,XK01,ME21N,Critical,User creating vendors and POs can set up fictitious supply chains.
+SOD-WM-001,Goods Receipt vs Inventory Count,MIGO,MI04,High,User receiving goods and counting can conceal discrepancies.
+SOD-PP-001,Create Production vs Confirm,CO01,CO11N,Medium,User creating and confirming production can fabricate output.
+SOD-QM-001,Create Inspection vs Usage Decision,QA01,QA11,Medium,User creating and approving inspections can bypass quality controls.
+SOD-HR-001,Employee Data vs Payroll,PA30,PC00_M99_CIPE,Critical,User maintaining records and running payroll can create ghost employees.
+SOD-IT-001,User Admin vs Role Admin,SU01,PFCG,Critical,User creating users and roles can grant unlimited access.
+SOD-TPM-001,Trade Promo vs Profitability Post,MDF7,KE21N,High,User planning promotions and posting profitability can inflate results.
+SOD-SD-005,Pricing Change vs Sales Order,VK12,VA01,Medium,User changing pricing and creating orders can apply unauthorized discounts.
+SOD-DIST-001,Create Delivery vs Create Shipment,VL01N,VT01N,Low,User creating deliveries and shipments can bypass shipping controls.

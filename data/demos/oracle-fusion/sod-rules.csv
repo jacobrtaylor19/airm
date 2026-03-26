@@ -1,0 +1,26 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-AP-001,Supplier Create vs Payment Run,ORA_AP_SUPPLIER_CREATE,ORA_AP_PAY_RUN,Critical,User creating suppliers and running payments can pay fictitious suppliers.
+SOD-AP-002,Invoice Entry vs Payment Run,ORA_AP_INV_CREATE,ORA_AP_PAY_RUN,Critical,User entering invoices and running payments can create fraudulent payments.
+SOD-AP-003,Supplier Create vs Invoice Entry,ORA_AP_SUPPLIER_CREATE,ORA_AP_INV_CREATE,High,User creating suppliers and entering invoices can fabricate relationships.
+SOD-AP-004,Invoice Approve vs Payment Run,ORA_AP_INV_APPROVE,ORA_AP_PAY_RUN,High,User approving invoices and running payments bypasses payment controls.
+SOD-AP-005,Invoice Create vs Invoice Cancel,ORA_AP_INV_CREATE,ORA_AP_INV_CANCEL,Medium,User creating and cancelling invoices can manipulate AP balances.
+SOD-AR-001,Customer Create vs Credit Review,ORA_AR_CUST_CREATE,ORA_AR_CREDIT_REVIEW,High,User creating customers and reviewing credit can extend inappropriate credit.
+SOD-AR-002,Customer Create vs Receipt,ORA_AR_CUST_CREATE,ORA_AR_RECEIPT,High,User creating customers and posting receipts can fabricate transactions.
+SOD-AR-003,AR Invoice vs AR Adjust,ORA_AR_INV_CREATE,ORA_AR_ADJUST,High,User creating invoices and adjusting balances can manipulate receivables.
+SOD-GL-001,Journal Post vs Period Close,ORA_GL_JOURNAL_POST,ORA_GL_PERIOD_CLOSE,Critical,User posting journals and closing periods can post to closed periods.
+SOD-GL-002,Journal Post vs Journal Reverse,ORA_GL_JOURNAL_POST,ORA_GL_REVERSE,High,User posting and reversing journals can manipulate financial records.
+SOD-GL-003,COA Manage vs Journal Post,ORA_GL_COA_MANAGE,ORA_GL_JOURNAL_POST,High,User managing COA and posting can create hidden accounts.
+SOD-PO-001,PO Create vs Inventory Receipt,ORA_PO_CREATE,ORA_INV_RECEIPT,High,User creating POs and receiving inventory can fabricate procurement.
+SOD-PO-002,Supplier Create vs PO Create,ORA_AP_SUPPLIER_CREATE,ORA_PO_CREATE,Critical,User creating suppliers and POs can set up fictitious supply chains.
+SOD-PO-003,PO Create vs PO Approve,ORA_PO_CREATE,ORA_PO_APPROVE,High,User creating and approving POs bypasses segregation.
+SOD-PO-004,PO Cancel vs PO Create,ORA_PO_CANCEL,ORA_PO_CREATE,Medium,User cancelling and creating POs can cycle orders to manipulate commitments.
+SOD-INV-001,Inventory Receipt vs Physical Count,ORA_INV_RECEIPT,ORA_INV_COUNT,High,User receiving and counting can conceal inventory discrepancies.
+SOD-INV-002,Subinventory Manage vs Inventory Issue,ORA_INV_SUBINV,ORA_INV_ISSUE,Medium,User managing locations and issuing can route stock to unauthorized areas.
+SOD-HR-001,Employee Create vs Payroll Run,ORA_HR_EMP_CREATE,ORA_PAY_RUN,Critical,User creating employees and running payroll can create ghost employees.
+SOD-HR-002,Payroll Run vs Payment Void,ORA_PAY_RUN,ORA_PAY_VOID,High,User running payroll and voiding payments can divert funds.
+SOD-HR-003,Org Manage vs Employee Create,ORA_HR_ORG_MANAGE,ORA_HR_EMP_CREATE,Medium,User managing org and creating employees can place people in unauthorized structures.
+SOD-FA-001,Add Asset vs Transfer Asset,ORA_FA_ADD,ORA_FA_TRANSFER,Medium,User adding and transferring assets can misappropriate company property.
+SOD-OM-001,Create Order vs Ship Confirm,ORA_OM_ORDER_CREATE,ORA_OM_SHIP_CONFIRM,Medium,User creating orders and confirming shipment can ship unauthorized goods.
+SOD-IT-001,User Manage vs Responsibility Manage,ORA_SYS_USER_MANAGE,ORA_SYS_RESP_MANAGE,Critical,User managing users and responsibilities can grant unlimited access.
+SOD-QA-001,Enter QA vs Approve QA,ORA_QA_ENTER,ORA_QA_APPROVE,Medium,User entering and approving QA results can bypass quality controls.
+SOD-WIP-001,Create Work Order vs Complete,ORA_WIP_CREATE,ORA_WIP_COMPLETE,Medium,User creating and completing work orders can fabricate production output.

@@ -1,19 +1,19 @@
 role_id,role_name,description,system,domain
-S4_EAM_PLANNER,EAM Maintenance Planner,Plan and schedule maintenance work orders in S/4HANA EAM,S/4HANA,EAM
-S4_EAM_TECHNICIAN,EAM Maintenance Technician,Execute and confirm maintenance tasks via Fiori,S/4HANA,EAM
-S4_EAM_SUPERVISOR,EAM Maintenance Supervisor,Approve work orders and oversee maintenance operations,S/4HANA,EAM
-S4_EAM_CALIBRATION,EAM Calibration Specialist,Manage instrument calibration schedules and records,S/4HANA,EAM
-S4_MM_PURCHASER,MM Operational Purchaser,Create and manage purchase orders in S/4HANA,S/4HANA,MM
-S4_MM_STRATEGIC,MM Strategic Buyer,Manage contracts sourcing and supplier evaluation,S/4HANA,MM
-S4_MM_INVENTORY,MM Inventory Manager,Manage warehouse operations and stock levels,S/4HANA,MM
-S4_FI_GL_ACCOUNTANT,FI General Ledger Accountant,GL postings journal entries and period-end closing,S/4HANA,FI
-S4_FI_AP_PROCESSOR,FI AP Invoice Processor,Process vendor invoices and manage payment runs,S/4HANA,FI
-S4_FI_CONTROLLER,FI Cost Controller,Cost center planning analysis and internal orders,S/4HANA,FI
-S4_HR_SPECIALIST,HCM HR Specialist,Manage employee master data and org structure,S/4HANA,HR
-S4_HR_TIME_ADMIN,HCM Time Administrator,Time recording and attendance management,S/4HANA,HR
-S4_HSE_COORDINATOR,EHS Incident Manager,Record and manage HSE incidents and near-misses,S/4HANA,HSE
-S4_HSE_COMPLIANCE,EHS Compliance Manager,Environmental permits emissions tracking and compliance reporting,S/4HANA,HSE
-S4_QM_INSPECTOR,QM Quality Inspector,Perform quality inspections and record results,S/4HANA,QM
-S4_QM_MANAGER,QM Quality Manager,Quality planning notifications and audit management,S/4HANA,QM
-S4_PP_SCHEDULER,PP Production Scheduler,Production planning scheduling and shop floor control,S/4HANA,PP
-S4_PS_PROJECT_MGR,PS Project Manager,Manage capital projects budgets and milestones,S/4HANA,PS
+S4PM_PLANNER,Maintenance Planner,Predictive maintenance planning in Fiori,S/4HANA,Maintenance
+S4PM_TECH,Maintenance Technician,Mobile work order execution and confirmations,S/4HANA,Maintenance
+S4PM_SUPERVISOR,Maintenance Supervisor,Maintenance operations oversight and approvals,S/4HANA,Maintenance
+S4PS_ENGINEER,Project Engineer,Capital project management in S/4HANA,S/4HANA,Engineering
+S4HSE_COORDINATOR,HSE Coordinator,Incident management and risk assessment,S/4HANA,HSE
+S4HSE_INSPECTOR,HSE Inspector,Safety inspections and permit management,S/4HANA,HSE
+S4MM_BUYER,Procurement Buyer,Source-to-pay processing in Fiori,S/4HANA,Procurement
+S4MM_WAREHOUSE,Warehouse Specialist,Inventory and warehouse management,S/4HANA,Supply Chain
+S4FI_ACCOUNTANT,GL Accountant,Journal entries and financial reporting,S/4HANA,Finance
+S4FI_AP,AP Specialist,Supplier invoice and payment management,S/4HANA,Finance
+S4FI_CONTROLLER,Cost Controller,Cost management and profitability analysis,S/4HANA,Finance
+S4HR_ADMIN,HR Specialist,Employee lifecycle and org management,S/4HANA,HR
+S4HR_PAYROLL,Payroll Specialist,Payroll execution and time management,S/4HANA,HR
+S4QM_INSPECTOR,Quality Inspector,Inspection processing and results management,S/4HANA,Quality
+S4QM_MANAGER,Quality Manager,Quality planning and compliance oversight,S/4HANA,Quality
+S4PP_PLANNER,Production Planner,Production scheduling and MRP,S/4HANA,Operations
+S4SD_SHIPPING,Shipping Specialist,Outbound logistics and delivery management,S/4HANA,Supply Chain
+S4IT_ADMIN,IT Administrator,User management and Fiori administration,S/4HANA,IT

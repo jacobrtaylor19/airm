@@ -1,0 +1,21 @@
+role_id,role_name,description,system,domain
+CRM_SALES_REP,Sales Representative,Opportunity and account management,Legacy CRM,Sales
+CRM_SALES_MGR,Sales Manager,Team management and pipeline oversight,Legacy CRM,Sales
+CRM_SALES_DIR,Sales Director,Territory planning and forecasting,Legacy CRM,Sales
+CRM_SALES_OPS,Sales Operations Analyst,CRM data management and reporting,Legacy CRM,Sales
+CRM_SDR,Sales Development Rep,Lead qualification and outreach,Legacy CRM,Sales
+CRM_SVC_AGENT,Service Agent,Case management and resolution,Legacy CRM,Service
+CRM_SVC_MGR,Service Manager,Escalation management and SLA oversight,Legacy CRM,Service
+CRM_SVC_ADMIN,Service Administrator,Service process configuration,Legacy CRM,Service
+CRM_MKT_SPECIALIST,Marketing Specialist,Campaign execution and lead management,Legacy CRM,Marketing
+CRM_MKT_MANAGER,Marketing Manager,Campaign strategy and analytics,Legacy CRM,Marketing
+CRM_MKT_OPS,Marketing Ops Analyst,Marketing automation and data hygiene,Legacy CRM,Marketing
+CRM_BI_ANALYST,BI Analyst,Dashboard creation and data analysis,Legacy CRM,Analytics
+CRM_BI_MANAGER,BI Manager,Analytics strategy and data governance,Legacy CRM,Analytics
+CRM_ADMIN,CRM Administrator,System configuration and user management,Legacy CRM,Platform Admin
+CRM_DEVELOPER,CRM Developer,Customization and integration development,Legacy CRM,Platform Admin
+CRM_FIN_ANALYST,Revenue Analyst,Revenue reporting and forecasting,Legacy CRM,Finance
+CRM_FIN_MANAGER,Revenue Manager,Revenue recognition and deal desk,Legacy CRM,Finance
+CRM_OPS_COORD,Operations Coordinator,Process management and workflow design,Legacy CRM,Operations
+CRM_HR_PARTNER,HR Business Partner,HR support for sales teams,Legacy CRM,HR
+CRM_IT_SUPPORT,IT Support Specialist,Technical support and troubleshooting,Legacy CRM,IT

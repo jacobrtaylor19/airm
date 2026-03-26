@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+SF_SALES_REP,Sales Cloud - Rep,Account and opportunity management,Salesforce,Sales
+SF_SALES_MGR,Sales Cloud - Manager,Pipeline management and forecasting,Salesforce,Sales
+SF_SALES_DIR,Sales Cloud - Director,Territory and forecast ownership,Salesforce,Sales
+SF_SALES_OPS,Sales Operations Analyst,CRM data and reporting,Salesforce,Sales
+SF_SDR,Sales Development Rep,Lead management and qualification,Salesforce,Sales
+SF_SVC_AGENT,Service Cloud - Agent,Case management and resolution,Salesforce,Service
+SF_SVC_MGR,Service Cloud - Manager,Service team oversight and SLAs,Salesforce,Service
+SF_SVC_ADMIN,Service Cloud - Admin,Service process configuration,Salesforce,Service
+SF_MKT_SPECIALIST,Marketing Cloud - Specialist,Campaign execution,Salesforce,Marketing
+SF_MKT_MANAGER,Marketing Cloud - Manager,Campaign strategy and analytics,Salesforce,Marketing
+SF_BI_ANALYST,Analytics - Analyst,Reporting and dashboard creation,Salesforce,Analytics
+SF_BI_MANAGER,Analytics - Manager,Data strategy and governance,Salesforce,Analytics
+SF_ADMIN,Platform Administrator,System configuration and security,Salesforce,Platform Admin
+SF_DEVELOPER,Platform Developer,Custom development and integration,Salesforce,Platform Admin
+SF_FIN_ANALYST,Revenue Analyst,Revenue reporting and analysis,Salesforce,Finance
+SF_FIN_MANAGER,Revenue Manager,Revenue recognition and deal desk,Salesforce,Finance
+SF_OPS_COORD,Operations Coordinator,Process design and automation,Salesforce,Operations
+SF_IT_SUPPORT,IT Support Specialist,User support and troubleshooting,Salesforce,IT

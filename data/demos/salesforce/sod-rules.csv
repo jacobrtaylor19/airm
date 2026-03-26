@@ -1,0 +1,21 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-SALES-001,Create Opp vs Close Opp,CRM_OPP_CREATE,CRM_OPP_CLOSE,Medium,User creating and closing opportunities can fabricate revenue pipeline.
+SOD-SALES-002,Edit Opp vs Manage Forecasts,CRM_OPP_EDIT,CRM_FORECAST_MANAGE,Medium,User editing opportunities and managing forecasts can inflate projections.
+SOD-SALES-003,Create Quote vs Approve Quote,CRM_QUOTE_CREATE,CRM_QUOTE_APPROVE,High,User creating and approving quotes can authorize unauthorized discounts.
+SOD-SALES-004,Manage Pricing vs Create Quote,CRM_PRICE_MANAGE,CRM_QUOTE_CREATE,High,User managing pricing and creating quotes can manipulate deal terms.
+SOD-SALES-005,Territory Manage vs Close Opp,CRM_TERRITORY_MANAGE,CRM_OPP_CLOSE,High,User assigning territories and closing deals can route opportunities for personal gain.
+SOD-SALES-006,Create Contract vs Approve Contract,CRM_CONTRACT_CREATE,CRM_CONTRACT_APPROVE,High,User creating and approving contracts bypasses deal approval controls.
+SOD-SVC-001,Create Case vs Close Case,CRM_CASE_CREATE,CRM_CASE_CLOSE,Low,User creating and closing cases can fabricate resolution metrics.
+SOD-SVC-002,Assign Case vs Close Case,CRM_CASE_ASSIGN,CRM_CASE_CLOSE,Medium,User assigning and closing cases can manipulate team performance.
+SOD-MKT-001,Create Campaign vs Campaign Budget,CRM_CAMP_CREATE,CRM_CAMP_BUDGET,High,User creating campaigns and managing budgets can misallocate marketing spend.
+SOD-MKT-002,Create Lead vs Convert Lead,CRM_LEAD_CREATE,CRM_LEAD_CONVERT,Medium,User creating and converting leads can fabricate qualified pipeline.
+SOD-DATA-001,Import Data vs Delete Data,CRM_DATA_IMPORT,CRM_DATA_DELETE,Critical,User importing and deleting data can replace records to cover manipulation.
+SOD-DATA-002,Export Data vs Delete Data,CRM_REPORT_EXPORT,CRM_DATA_DELETE,Critical,User exporting and deleting can exfiltrate then destroy evidence.
+SOD-DATA-003,Import Data vs Manage Users,CRM_DATA_IMPORT,CRM_USER_MANAGE,High,User importing data and managing users can bulk-create unauthorized accounts.
+SOD-ADMIN-001,Manage Users vs Manage Roles,CRM_USER_MANAGE,CRM_ROLE_MANAGE,Critical,User managing users and roles can grant unlimited system access.
+SOD-ADMIN-002,Manage Users vs Manage Profiles,CRM_USER_MANAGE,CRM_PROFILE_MANAGE,Critical,User managing users and profiles can escalate permissions.
+SOD-ADMIN-003,Manage Automation vs Manage Fields,CRM_FLOW_MANAGE,CRM_FIELD_MANAGE,High,User managing flows and schema can create backdoor data access.
+SOD-ADMIN-004,Manage Automation vs API Access,CRM_FLOW_MANAGE,CRM_API_ACCESS,High,User managing automation and API can create unauthorized integrations.
+SOD-FIN-001,Close Opp vs Manage Pricing,CRM_OPP_CLOSE,CRM_PRICE_MANAGE,High,User closing deals and managing pricing can retroactively change deal terms.
+SOD-FIN-002,Manage Forecasts vs Export Data,CRM_FORECAST_MANAGE,CRM_REPORT_EXPORT,Medium,User managing forecasts and exporting can leak financial projections.
+SOD-ACCT-001,Create Account vs Delete Account,CRM_ACCT_CREATE,CRM_ACCT_DELETE,High,User creating and deleting accounts can fabricate and destroy customer records.

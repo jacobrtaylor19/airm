@@ -1,0 +1,23 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-HR-001,Hire Worker vs Terminate Worker,HRIS_CREATE_WORKER,HRIS_TERM_WORKER,High,User who hires and terminates can cycle employees for fraudulent purposes.
+SOD-HR-002,Edit Worker vs Run Payroll,HRIS_EDIT_WORKER,HRIS_PAY_RUN,Critical,User who edits employee data and runs payroll can create ghost employees.
+SOD-HR-003,Create Worker vs Run Payroll,HRIS_CREATE_WORKER,HRIS_PAY_RUN,Critical,User who creates employees and runs payroll can fabricate payroll.
+SOD-HR-004,Edit Worker vs Approve Comp,HRIS_EDIT_WORKER,HRIS_COMP_APPROVE,High,User who edits data and approves comp can inflate their own compensation.
+SOD-PAY-001,Run Payroll vs Approve Payroll,HRIS_PAY_RUN,HRIS_PAY_APPROVE,Critical,User who runs and approves payroll bypasses segregation of duties.
+SOD-PAY-002,Run Payroll vs Void Payment,HRIS_PAY_RUN,HRIS_PAY_VOID,High,User who runs payroll and voids payments can divert funds.
+SOD-PAY-003,Payroll Entry vs Tax Setup,HRIS_PAY_ENTRY,HRIS_PAY_TAX,High,User who enters payroll and manages taxes can manipulate withholding.
+SOD-COMP-001,Edit Comp vs Approve Comp,HRIS_COMP_EDIT,HRIS_COMP_APPROVE,High,User who proposes and approves comp changes bypasses controls.
+SOD-COMP-002,View Comp vs Manage Equity,HRIS_COMP_VIEW,HRIS_COMP_EQUITY,Medium,User with comp visibility and equity access can exploit insider information.
+SOD-BEN-001,Enroll Benefits vs Administer Plans,HRIS_BEN_ENROLL,HRIS_BEN_PLAN_ADMIN,High,User who enrolls and administers plans can create favorable enrollments.
+SOD-BEN-002,Change Benefits vs Manage Carriers,HRIS_BEN_CHANGE,HRIS_BEN_CARRIER,Medium,User who changes elections and manages carriers can manipulate plan data.
+SOD-TA-001,Screen Candidates vs Extend Offer,HRIS_RECRUIT_SCREEN,HRIS_RECRUIT_OFFER,Medium,User who screens and extends offers can bypass hiring controls.
+SOD-TA-002,Extend Offer vs Onboard Hire,HRIS_RECRUIT_OFFER,HRIS_RECRUIT_ONBOARD,Medium,User who offers and onboards can expedite hires without proper vetting.
+SOD-LND-001,Assign Training vs Track Completion,HRIS_LND_ASSIGN,HRIS_LND_TRACK,Low,User who assigns and tracks training can fabricate compliance records.
+SOD-PERF-001,Initiate Review vs Rate Performance,HRIS_PERF_INITIATE,HRIS_PERF_RATE,Medium,User who initiates and rates reviews can manipulate evaluations.
+SOD-PERF-002,Rate Performance vs Calibrate,HRIS_PERF_RATE,HRIS_PERF_CALIBRATE,Medium,User who rates and calibrates can override peer ratings.
+SOD-FIN-001,HR Budget vs Post Journals,HRIS_FIN_BUDGET,HRIS_FIN_JOURNAL,High,User managing budgets and posting journals can misallocate HR costs.
+SOD-FIN-002,Forecast Headcount vs Post Journals,HRIS_FIN_FORECAST,HRIS_FIN_JOURNAL,Medium,User who forecasts and posts can justify false spending.
+SOD-SEC-001,Manage Users vs Manage Roles,HRIS_SEC_USER,HRIS_SEC_ROLE,Critical,User who manages users and roles can grant unlimited access.
+SOD-HR-005,Org Manage vs Create Worker,HRIS_ORG_MANAGE,HRIS_CREATE_WORKER,Medium,User managing orgs and creating workers can place unauthorized employees.
+SOD-HR-006,Edit Worker vs Manage Absences,HRIS_EDIT_WORKER,HRIS_ABSENCE_ADMIN,Medium,User who edits worker data and manages absences can grant unauthorized leave.
+SOD-REPORT-001,Create Reports vs Edit Worker,HRIS_REPORT_CREATE,HRIS_EDIT_WORKER,Medium,User who creates reports and edits data can extract and manipulate PII.

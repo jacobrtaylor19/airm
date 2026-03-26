@@ -1,0 +1,34 @@
+permission_id,permission_name,description,system,risk_level
+SF_ACCT_VIEW,View Accounts,View account records,Salesforce,Low
+SF_ACCT_MANAGE,Manage Accounts,"Create, edit, and manage accounts",Salesforce,Medium
+SF_ACCT_DELETE,Delete Accounts,Delete account records,Salesforce,High
+SF_OPP_VIEW,View Opportunities,View opportunity pipeline,Salesforce,Low
+SF_OPP_MANAGE,Manage Opportunities,Create and edit opportunities,Salesforce,Medium
+SF_OPP_CLOSE,Close Opportunities,Close-won or close-lost opportunities,Salesforce,High
+SF_LEAD_VIEW,View Leads,View lead records,Salesforce,Low
+SF_LEAD_MANAGE,Manage Leads,"Create, qualify, and convert leads",Salesforce,Medium
+SF_CASE_VIEW,View Cases,View support cases,Salesforce,Low
+SF_CASE_MANAGE,Manage Cases,"Create, edit, and close cases",Salesforce,Medium
+SF_CASE_ESCALATE,Escalate Cases,Escalate to higher-tier support,Salesforce,Medium
+SF_CASE_ASSIGN,Assign Cases,Route cases to agents and queues,Salesforce,Medium
+SF_CAMP_MANAGE,Manage Campaigns,Create and manage campaigns,Salesforce,Medium
+SF_CAMP_BUDGET,Campaign Budgets,Manage campaign spending,Salesforce,High
+SF_REPORT_VIEW,View Reports,View reports and dashboards,Salesforce,Low
+SF_REPORT_CREATE,Create Reports,Build custom reports and dashboards,Salesforce,Medium
+SF_REPORT_EXPORT,Export Data,Export data from reports,Salesforce,High
+SF_FORECAST_VIEW,View Forecasts,View sales forecasts,Salesforce,Low
+SF_FORECAST_MANAGE,Manage Forecasts,Submit and adjust forecast numbers,Salesforce,Medium
+SF_TERRITORY_MANAGE,Manage Territories,Configure territory hierarchies,Salesforce,High
+SF_PRICE_MANAGE,Manage Pricing,Configure price books and products,Salesforce,High
+SF_QUOTE_CREATE,Create Quotes,Generate quotes and proposals,Salesforce,Medium
+SF_QUOTE_APPROVE,Approve Quotes,Approve discounts and special terms,Salesforce,High
+SF_CONTRACT_MANAGE,Manage Contracts,Create and manage contracts,Salesforce,Medium
+SF_CONTRACT_APPROVE,Approve Contracts,Approve contract terms,Salesforce,High
+SF_USER_MANAGE,Manage Users,Provision and deactivate users,Salesforce,Critical
+SF_ROLE_MANAGE,Manage Roles,Configure role hierarchy,Salesforce,Critical
+SF_PROFILE_MANAGE,Manage Profiles,Create and edit permission profiles,Salesforce,Critical
+SF_FLOW_MANAGE,Manage Automation,Create flows and process builders,Salesforce,High
+SF_FIELD_MANAGE,Manage Schema,Create custom objects and fields,Salesforce,High
+SF_API_ACCESS,API Access,Programmatic data access,Salesforce,High
+SF_DATA_IMPORT,Import Data,Bulk data import,Salesforce,High
+SF_DATA_DELETE,Mass Delete,Bulk record deletion,Salesforce,Critical

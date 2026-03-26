@@ -1,0 +1,41 @@
+permission_id,permission_name,description,system,risk_level
+CRM_ACCT_VIEW,View Accounts,View account records and details,Legacy CRM,Low
+CRM_ACCT_CREATE,Create Accounts,Create new account records,Legacy CRM,Medium
+CRM_ACCT_EDIT,Edit Accounts,Modify account information,Legacy CRM,Medium
+CRM_ACCT_DELETE,Delete Accounts,Remove account records,Legacy CRM,High
+CRM_OPP_VIEW,View Opportunities,View opportunity pipeline,Legacy CRM,Low
+CRM_OPP_CREATE,Create Opportunities,Create new opportunities,Legacy CRM,Medium
+CRM_OPP_EDIT,Edit Opportunities,Modify opportunity details and stages,Legacy CRM,Medium
+CRM_OPP_CLOSE,Close Opportunities,Mark opportunities as won or lost,Legacy CRM,High
+CRM_LEAD_VIEW,View Leads,View lead records,Legacy CRM,Low
+CRM_LEAD_CREATE,Create Leads,Create new lead records,Legacy CRM,Low
+CRM_LEAD_CONVERT,Convert Leads,Convert leads to accounts and opportunities,Legacy CRM,Medium
+CRM_CASE_VIEW,View Cases,View customer support cases,Legacy CRM,Low
+CRM_CASE_CREATE,Create Cases,Create new support cases,Legacy CRM,Low
+CRM_CASE_CLOSE,Close Cases,Resolve and close support cases,Legacy CRM,Medium
+CRM_CASE_ESCALATE,Escalate Cases,Escalate cases to higher tier support,Legacy CRM,Medium
+CRM_CASE_ASSIGN,Assign Cases,Reassign cases to agents or queues,Legacy CRM,Medium
+CRM_CAMP_CREATE,Create Campaigns,Create marketing campaigns,Legacy CRM,Medium
+CRM_CAMP_MANAGE,Manage Campaigns,Manage campaign members and activities,Legacy CRM,Medium
+CRM_CAMP_BUDGET,Campaign Budgets,Manage campaign budget allocation,Legacy CRM,High
+CRM_REPORT_VIEW,View Reports,View existing reports and dashboards,Legacy CRM,Low
+CRM_REPORT_CREATE,Create Reports,Build custom reports,Legacy CRM,Medium
+CRM_REPORT_EXPORT,Export Data,Export report data to CSV or Excel,Legacy CRM,High
+CRM_DASH_CREATE,Create Dashboards,Build and publish dashboards,Legacy CRM,Medium
+CRM_USER_MANAGE,Manage Users,Create and deactivate user accounts,Legacy CRM,Critical
+CRM_ROLE_MANAGE,Manage Roles,Configure role hierarchy and sharing,Legacy CRM,Critical
+CRM_PROFILE_MANAGE,Manage Profiles,Create and edit user profiles,Legacy CRM,Critical
+CRM_FLOW_MANAGE,Manage Automation,Create and activate workflow rules and flows,Legacy CRM,High
+CRM_FIELD_MANAGE,Manage Fields,Create custom fields and objects,Legacy CRM,High
+CRM_API_ACCESS,API Access,Access CRM data via API,Legacy CRM,High
+CRM_FORECAST_VIEW,View Forecasts,View sales forecasts,Legacy CRM,Low
+CRM_FORECAST_MANAGE,Manage Forecasts,Submit and adjust forecasts,Legacy CRM,Medium
+CRM_TERRITORY_MANAGE,Manage Territories,Configure territory assignments,Legacy CRM,High
+CRM_PRICE_VIEW,View Price Books,View pricing and product catalog,Legacy CRM,Low
+CRM_PRICE_MANAGE,Manage Price Books,Create and modify pricing,Legacy CRM,High
+CRM_QUOTE_CREATE,Create Quotes,Generate customer quotes,Legacy CRM,Medium
+CRM_QUOTE_APPROVE,Approve Quotes,Approve discounted quotes,Legacy CRM,High
+CRM_CONTRACT_CREATE,Create Contracts,Create customer contracts,Legacy CRM,Medium
+CRM_CONTRACT_APPROVE,Approve Contracts,Approve contract terms,Legacy CRM,High
+CRM_DATA_IMPORT,Import Data,Bulk import records via data loader,Legacy CRM,High
+CRM_DATA_DELETE,Mass Delete,Perform mass record deletion,Legacy CRM,Critical

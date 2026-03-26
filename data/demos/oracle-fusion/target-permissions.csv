@@ -1,0 +1,31 @@
+permission_id,permission_name,description,system,risk_level
+OFC_AP_INV_PROC,Process Supplier Invoices,Enter and validate supplier invoices,Oracle Fusion,Medium
+OFC_AP_INV_APPR,Approve Supplier Invoices,Approve invoices for payment,Oracle Fusion,High
+OFC_AP_PAY_PROC,Process Payments,Create and execute payment batches,Oracle Fusion,Critical
+OFC_AP_SUPP_MGMT,Manage Suppliers,Create and maintain supplier records,Oracle Fusion,High
+OFC_AR_INV_PROC,Process Customer Invoices,Create customer invoices and credit memos,Oracle Fusion,Medium
+OFC_AR_RCPT_PROC,Process Receipts,Record and apply customer receipts,Oracle Fusion,Medium
+OFC_AR_CUST_MGMT,Manage Customers,Create and maintain customer accounts,Oracle Fusion,High
+OFC_AR_CREDIT_MGMT,Manage Credit,Review and set credit limits,Oracle Fusion,High
+OFC_GL_JOURNAL,Manage Journals,"Create, post, and reverse journal entries",Oracle Fusion,Medium
+OFC_GL_CLOSE,Manage Close,"Open, close, and manage accounting periods",Oracle Fusion,Critical
+OFC_GL_COA,Manage Chart of Accounts,Maintain chart of accounts structure,Oracle Fusion,High
+OFC_GL_REPORT,Financial Reporting,Run financial reports and analytics,Oracle Fusion,Low
+OFC_PO_CREATE,Create Purchase Orders,Create POs from requisitions or manually,Oracle Fusion,Medium
+OFC_PO_APPROVE,Approve Purchase Orders,Approve POs per delegation rules,Oracle Fusion,High
+OFC_PO_CONTRACT,Manage Agreements,Create blanket and contract purchase agreements,Oracle Fusion,Medium
+OFC_INV_TRANSACT,Inventory Transactions,"Receive, issue, and transfer inventory",Oracle Fusion,Medium
+OFC_INV_COUNT,Physical Count,Perform physical inventory counts,Oracle Fusion,Medium
+OFC_INV_CONFIG,Configure Inventory,Manage subinventories and locators,Oracle Fusion,High
+OFC_OM_CREATE,Create Orders,Enter and book sales orders,Oracle Fusion,Medium
+OFC_OM_FULFILL,Fulfill Orders,"Pick, pack, and ship customer orders",Oracle Fusion,Medium
+OFC_HR_EMP_MGMT,Manage Employees,Create and maintain person records,Oracle Fusion,High
+OFC_HR_ORG_MGMT,Manage Organizations,Create and maintain org structures,Oracle Fusion,High
+OFC_PAY_PROCESS,Process Payroll,Calculate and execute payroll,Oracle Fusion,Critical
+OFC_PAY_VOID,Void Payments,Void payroll checks and payments,Oracle Fusion,High
+OFC_FA_MANAGE,Manage Assets,"Add, transfer, and retire assets",Oracle Fusion,Medium
+OFC_FA_DEPR,Run Depreciation,Execute depreciation calculations,Oracle Fusion,Medium
+OFC_MFG_WO,Manage Work Orders,Create and complete work orders,Oracle Fusion,Medium
+OFC_SEC_USER,Manage Users,Create and maintain user accounts,Oracle Fusion,Critical
+OFC_SEC_ROLE,Manage Roles,Assign and manage security roles,Oracle Fusion,Critical
+OFC_AR_ADJUST,Adjust Receivables,Make adjustments to customer balances,Oracle Fusion,High

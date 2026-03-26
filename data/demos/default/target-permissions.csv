@@ -1,34 +1,34 @@
 permission_id,permission_name,description,system,risk_level
 F0717,Manage Supplier Invoices,Process and post supplier invoices in Fiori,S/4HANA,Medium
-F0718,Display Supplier Invoices,View supplier invoice documents,S/4HANA,Low
-F0859,Approve Supplier Invoices,Approve invoices in workflow,S/4HANA,High
-F1603,Manage Automatic Payments,Configure and execute payment runs,S/4HANA,High
-F0790,Manage Supplier Master,Create and modify supplier master records,S/4HANA,High
-F0400,Post Journal Entries,Post manual journal entries to GL,S/4HANA,High
-F0710,Display GL Line Items,View general ledger line items,S/4HANA,Low
-F2439,Manage Purchase Orders,Create and edit purchase orders,S/4HANA,High
-F2440,Display Purchase Orders,View purchase order details,S/4HANA,Low
-F2441,Release Purchase Orders,Approve and release purchase orders,S/4HANA,High
-F2425,Manage Purchase Requisitions,Create and edit purchase requisitions,S/4HANA,Medium
-F2426,Display Purchase Requisitions,View purchase requisitions,S/4HANA,Low
-F3814,Manage Material Master,Create and modify material master records,S/4HANA,High
-F3815,Display Material Master,View material master data,S/4HANA,Low
-F3002,Post Goods Receipt,Post goods receipts for purchase orders,S/4HANA,Medium
-F3003,Post Goods Issue,Post goods issues from inventory,S/4HANA,Medium
-F3004,Transfer Posting,Post stock transfers between plants,S/4HANA,Medium
-F3005,Display Stock Overview,View current stock levels,S/4HANA,Low
-F3737,Manage Physical Inventory,Create and process physical inventory documents,S/4HANA,Medium
-F3738,Post Inventory Differences,Post adjustments from physical count,S/4HANA,High
-F4580,Create Maintenance Order,Create corrective and preventive maintenance orders,S/4HANA,Medium
-F4581,Manage Maintenance Orders,Change and manage maintenance work orders,S/4HANA,Medium
-F4582,Display Maintenance Orders,View maintenance order details,S/4HANA,Low
-F4583,Confirm Maintenance Order,Enter time and activity confirmations,S/4HANA,Medium
-F4570,Create Maintenance Notification,Create breakdown and malfunction notifications,S/4HANA,Low
-F4571,Manage Maintenance Notifications,Process and update notifications,S/4HANA,Low
-F4590,Manage Equipment,Create and modify equipment master records,S/4HANA,Medium
-F4591,Display Equipment,View equipment master data,S/4HANA,Low
-F4592,Manage Functional Locations,Create and modify functional locations,S/4HANA,Medium
-F4593,Display Functional Locations,View functional location hierarchy,S/4HANA,Low
-F4600,Schedule Maintenance Plans,Configure and schedule preventive maintenance plans,S/4HANA,Medium
-F4601,Monitor Maintenance Plans,View maintenance plan status and deadlines,S/4HANA,Low
-F4610,Manage Task Lists,Create and edit maintenance task lists,S/4HANA,Medium
+F0718,Approve Supplier Invoices,Approve invoices above threshold in Fiori,S/4HANA,High
+F2424,Manage Automatic Payments,Configure and run automatic payment programs,S/4HANA,Critical
+F0743,Manage Supplier Master,Create and maintain supplier master data,S/4HANA,High
+F1603,Post Customer Invoices,Create and post customer billing documents,S/4HANA,Medium
+F2170,Manage Customer Master,Create and maintain customer master data,S/4HANA,High
+F2625,Manage Customer Payments,Post and clear customer incoming payments,S/4HANA,Medium
+F0716,Post Journal Entries,Create and post manual journal entries,S/4HANA,Medium
+F0814,Close Period,Execute period-end closing activities,S/4HANA,Critical
+F2312,Run Financial Reports,Generate financial statements and reports,S/4HANA,Low
+F2872,Manage Cost Centers,Create and maintain cost center master data,S/4HANA,Medium
+F3382,Manage Cash Position,Monitor and manage cash positions,S/4HANA,Low
+F1074,Create Purchase Orders,Create and process purchase orders in Fiori,S/4HANA,Medium
+F1076,Approve Purchase Orders,Approve purchase orders above threshold,S/4HANA,High
+F1489,Manage Contracts,Create and manage purchasing contracts,S/4HANA,Medium
+F2093,Post Goods Receipt,Record goods receipts against purchase orders,S/4HANA,Medium
+F2094,Post Goods Issue,Record goods issues for consumption or delivery,S/4HANA,Medium
+F3721,Manage Physical Inventory,Create counts and post inventory adjustments,S/4HANA,Medium
+F0893,Create Maintenance Orders,Create and schedule maintenance work orders,S/4HANA,Medium
+F0894,Confirm Maintenance,Record time and material on work orders,S/4HANA,Low
+F0895,Manage Equipment,Create and maintain equipment master records,S/4HANA,Medium
+F5782,Record QM Results,Enter and evaluate quality inspection results,S/4HANA,Low
+F5783,Manage QM Plans,Create quality inspection plans and specs,S/4HANA,Medium
+F2721,Maintain Employee Data,Create and modify employee master records,S/4HANA,High
+F2722,Run Payroll,Execute payroll calculation and posting,S/4HANA,Critical
+F3891,Create Sales Orders,Create and process sales orders in Fiori,S/4HANA,Medium
+F3892,Process Deliveries,Create outbound deliveries and post goods issue,S/4HANA,Medium
+F7721,Manage Users,Create and maintain user accounts and roles,S/4HANA,Critical
+F7722,Manage Authorizations,Configure role-based access control,S/4HANA,Critical
+F0719,Reverse Documents,Reverse posted financial documents,S/4HANA,High
+F0720,Clear Accounts,Clear open items on GL and subledger accounts,S/4HANA,Medium
+F2313,Manage GL Master,Create and modify GL account master records,S/4HANA,High
+F2626,Manage Credit Limits,Set and modify customer credit limits,S/4HANA,High

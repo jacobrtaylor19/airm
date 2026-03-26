@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+WD_HR_PARTNER,HR Business Partner,Strategic HR support and workforce planning,Workday,Core HR
+WD_HR_ADMIN,HR Administrator,Employee lifecycle transactions,Workday,Core HR
+WD_HR_DIRECTOR,HR Director,Organizational design and HR strategy,Workday,Core HR
+WD_BEN_ADMIN,Benefits Administrator,Benefits enrollment and administration,Workday,Benefits
+WD_BEN_MANAGER,Benefits Manager,Plan design and vendor management,Workday,Benefits
+WD_PAY_ANALYST,Payroll Analyst,Payroll processing and reconciliation,Workday,Payroll
+WD_PAY_MANAGER,Payroll Manager,Payroll oversight and compliance,Workday,Payroll
+WD_COMP_ANALYST,Compensation Analyst,Job evaluation and market analysis,Workday,Compensation
+WD_COMP_MANAGER,Compensation Manager,Comp strategy and plan management,Workday,Compensation
+WD_TA_RECRUITER,Recruiter,Talent acquisition processing,Workday,Recruiting
+WD_TA_MANAGER,Recruiting Manager,Recruiting strategy and operations,Workday,Recruiting
+WD_LND_ADMIN,Learning Admin,Course management and assignment,Workday,Talent Management
+WD_LND_MANAGER,Learning Manager,Learning strategy and compliance,Workday,Talent Management
+WD_PERF_ADMIN,Performance Admin,Review cycle management,Workday,Talent Management
+WD_FIN_ANALYST,Financial Analyst,HR financial analysis,Workday,Finance
+WD_FIN_CONTROLLER,Financial Controller,HR accounting and control,Workday,Finance
+WD_REPORT_ANALYST,People Analytics Analyst,HR reporting and dashboards,Workday,Core HR
+WD_IT_ADMIN,Security Administrator,Workday security and integration,Workday,IT

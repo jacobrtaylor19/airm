@@ -1,0 +1,21 @@
+role_id,role_name,description,system,domain
+HRIS_HR_ADMIN,HR Administrator,Manage employee records in legacy HRIS,Legacy HRIS,Core HR
+HRIS_HR_MANAGER,HR Manager,Workforce management and org changes,Legacy HRIS,Core HR
+HRIS_HR_DIRECTOR,HR Director,Strategic HR and org design,Legacy HRIS,Core HR
+HRIS_BEN_ADMIN,Benefits Administrator,Benefits enrollment and plan management,Legacy HRIS,Benefits
+HRIS_BEN_MANAGER,Benefits Manager,Benefits strategy and vendor management,Legacy HRIS,Benefits
+HRIS_PAY_CLERK,Payroll Clerk,Payroll data entry and processing,Legacy HRIS,Payroll
+HRIS_PAY_MANAGER,Payroll Manager,Payroll oversight and tax compliance,Legacy HRIS,Payroll
+HRIS_COMP_ANALYST,Compensation Analyst,Job evaluation and salary benchmarking,Legacy HRIS,Compensation
+HRIS_COMP_MANAGER,Compensation Manager,Comp strategy and equity planning,Legacy HRIS,Compensation
+HRIS_TA_RECRUITER,Recruiter,Candidate sourcing and screening,Legacy HRIS,Recruiting
+HRIS_TA_MANAGER,Recruiting Manager,Recruiting strategy and team management,Legacy HRIS,Recruiting
+HRIS_LND_COORD,L&D Coordinator,Training program administration,Legacy HRIS,Talent Management
+HRIS_LND_MANAGER,L&D Manager,Learning strategy and curriculum design,Legacy HRIS,Talent Management
+HRIS_PERF_ADMIN,Performance Admin,Performance review cycle administration,Legacy HRIS,Talent Management
+HRIS_FIN_ANALYST,Financial Analyst,HR cost analysis and budgeting,Legacy HRIS,Finance
+HRIS_FIN_CONTROLLER,Financial Controller,HR financial oversight and reporting,Legacy HRIS,Finance
+HRIS_IT_ADMIN,IT Administrator,HRIS system administration,Legacy HRIS,IT
+HRIS_IT_SECURITY,IT Security Analyst,Access control and audit,Legacy HRIS,IT
+HRIS_OPS_ADMIN,Operations Admin,Facilities and office management,Legacy HRIS,Operations
+HRIS_REPORT_ANALYST,Reporting Analyst,HR analytics and reporting,Legacy HRIS,Core HR

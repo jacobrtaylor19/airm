@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+WD001,Jose Reyes,jose.reyes@workdayclient.com,Enrollment Specialist,Benefits
+WD002,Barbara White,barbara.white@workdayclient.com,Talent Acquisition Specialist,Talent Management
+WD003,Camila Sullivan,camila.sullivan@workdayclient.com,Payroll Specialist,Finance
+WD004,Mary Wang,mary.wang@workdayclient.com,HR Generalist,Core HR
+WD005,Kayla Richardson,kayla.richardson@workdayclient.com,Sourcing Specialist,Recruiting
+WD006,Alexis Chavez,alexis.chavez@workdayclient.com,Recruiter,Recruiting
+WD007,Betty Sanchez,betty.sanchez@workdayclient.com,Process Engineer,Operations
+WD008,Valentina Wang,valentina.wang@workdayclient.com,Area Supervisor,Operations
+WD009,Joshua Ribeiro,joshua.ribeiro@workdayclient.com,OD Specialist,Talent Management
+WD010,Hans Barnes,hans.barnes@workdayclient.com,Sales Operations Analyst,Sales
+WD011,Sandra Wood,sandra.wood@workdayclient.com,Benefits Administrator,Core HR
+WD012,Larry Richardson,larry.richardson@workdayclient.com,Senior Accountant,Finance
+WD013,John Ferreira,john.ferreira@workdayclient.com,AR Specialist,Finance
+WD014,Betty Sullivan,betty.sullivan@workdayclient.com,Succession Planning Analyst,Talent Management
+WD015,Wayne Scott,wayne.scott@workdayclient.com,Payroll Specialist,Payroll
+WD016,Teresa Kato,teresa.kato@workdayclient.com,Talent Partner,Recruiting
+WD017,Joseph Cruz,joseph.cruz@workdayclient.com,Benefits Manager,Benefits
+WD018,Diana Bailey,diana.bailey@workdayclient.com,Sourcing Specialist,Recruiting
+WD019,Stephen Gutierrez,stephen.gutierrez@workdayclient.com,Payroll Manager,Payroll
+WD020,Kathryn Williams,kathryn.williams@workdayclient.com,Payroll Specialist,Payroll
+WD021,Eric Murphy,eric.murphy@workdayclient.com,Performance Management Analyst,Talent Management
+WD022,Ryan Flores,ryan.flores@workdayclient.com,HR Coordinator,Core HR
+WD023,Alice Butler,alice.butler@workdayclient.com,Succession Planning Analyst,Talent Management
+WD024,Sean James,sean.james@workdayclient.com,Sales Operations Analyst,Sales
+WD025,Victoria Jones,victoria.jones@workdayclient.com,Learning & Development Manager,Talent Management
+WD026,Lauren Morgan,lauren.morgan@workdayclient.com,Succession Planning Analyst,Talent Management
+WD027,Joan Price,joan.price@workdayclient.com,IT Manager,IT
+WD028,Charles Bennett,charles.bennett@workdayclient.com,Benefits Analyst,Benefits
+WD029,Walter Walker,walter.walker@workdayclient.com,Compensation Analyst,Compensation
+WD030,Ruth Cook,ruth.cook@workdayclient.com,Compensation Analyst,Compensation
+WD031,Sofia Morgan,sofia.morgan@workdayclient.com,Billing Specialist,Finance
+WD032,Divya Jones,divya.jones@workdayclient.com,Payroll Director,Payroll
+WD033,Brandon Baker,brandon.baker@workdayclient.com,Payroll Coordinator,Payroll
+WD034,Virginia Howard,virginia.howard@workdayclient.com,Benefits Administrator,Core HR
+WD035,Richard Howard,richard.howard@workdayclient.com,Payroll Specialist,Finance
+WD036,Peter Perez,peter.perez@workdayclient.com,Benefits Director,Benefits
+WD037,Nicole Foster,nicole.foster@workdayclient.com,Account Executive,Sales
+WD038,Eric Ramirez,eric.ramirez@workdayclient.com,Treasury Analyst,Finance
+WD039,Gary Stewart,gary.stewart@workdayclient.com,Recruiting Coordinator,Recruiting
+WD040,Olivia Johnson,olivia.johnson@workdayclient.com,Senior Accountant,Finance
+WD041,Brandon Jones,brandon.jones@workdayclient.com,Financial Analyst,Finance
+WD042,Yuki Thomas,yuki.thomas@workdayclient.com,Sourcing Specialist,Recruiting
+WD043,Amy Mueller,amy.mueller@workdayclient.com,Job Evaluation Specialist,Compensation
+WD044,Carolyn Henderson,carolyn.henderson@workdayclient.com,Payroll Analyst,Payroll
+WD045,Dylan Lee,dylan.lee@workdayclient.com,Billing Specialist,Finance
+WD046,Janice Johnson,janice.johnson@workdayclient.com,Payroll Manager,Payroll
+WD047,Bobby Smith,bobby.smith@workdayclient.com,IT Manager,IT
+WD048,Willie Kim,willie.kim@workdayclient.com,Benefits Director,Benefits
+WD049,Sara Allen,sara.allen@workdayclient.com,Operations Analyst,Operations
+WD050,Camila Larsson,camila.larsson@workdayclient.com,Help Desk Technician,IT
+WD051,Denise Reddy,denise.reddy@workdayclient.com,HR Director,Core HR
+WD052,Madison Baker,madison.baker@workdayclient.com,Total Rewards Analyst,Compensation
+WD053,Jean Russell,jean.russell@workdayclient.com,HR Business Partner,Core HR
+WD054,Ravi Verma,ravi.verma@workdayclient.com,Quality Director,Quality
+WD055,Ahmed Murphy,ahmed.murphy@workdayclient.com,AR Specialist,Finance
+WD056,Isabella Myers,isabella.myers@workdayclient.com,Payroll Specialist,Payroll
+WD057,Evelyn Baker,evelyn.baker@workdayclient.com,IT Project Manager,IT
+WD058,Lisa Cox,lisa.cox@workdayclient.com,HR Director,Core HR
+WD059,Wayne Kato,wayne.kato@workdayclient.com,Benefits Director,Benefits
+WD060,Alan Nakamura,alan.nakamura@workdayclient.com,OD Specialist,Talent Management
+WD061,Joseph Cooper,joseph.cooper@workdayclient.com,Sourcing Specialist,Recruiting
+WD062,Wei Foster,wei.foster@workdayclient.com,Total Rewards Analyst,Compensation
+WD063,Randy Collins,randy.collins@workdayclient.com,People Operations Specialist,Core HR
+WD064,Lisa Harris,lisa.harris@workdayclient.com,Benefits Manager,Benefits
+WD065,Benjamin Nguyen,benjamin.nguyen@workdayclient.com,HRIS Analyst,Core HR
+WD066,Vincent Wu,vincent.wu@workdayclient.com,Sales Representative,Sales
+WD067,Ruth Patel,ruth.patel@workdayclient.com,Benefits Administrator,Benefits
+WD068,Julie Santos,julie.santos@workdayclient.com,Benefits Manager,Benefits
+WD069,Brandon Mueller,brandon.mueller@workdayclient.com,Succession Planning Analyst,Talent Management
+WD070,Christina Hill,christina.hill@workdayclient.com,People Operations Specialist,Core HR
+WD071,Lawrence Larsson,lawrence.larsson@workdayclient.com,Senior Recruiter,Recruiting
+WD072,Vincent Lewis,vincent.lewis@workdayclient.com,Financial Analyst,Finance
+WD073,Linda Johnson,linda.johnson@workdayclient.com,Benefits Administrator,Benefits
+WD074,Elena Andersson,elena.andersson@workdayclient.com,Sales Representative,Sales
+WD075,Marco Singh,marco.singh@workdayclient.com,Recruiter,Recruiting
+WD076,Amanda Mendoza,amanda.mendoza@workdayclient.com,Payroll Specialist,Payroll
+WD077,Olivia Price,olivia.price@workdayclient.com,Performance Management Analyst,Talent Management
+WD078,Russell Yang,russell.yang@workdayclient.com,Benefits Analyst,Benefits
+WD079,Lucia Fischer,lucia.fischer@workdayclient.com,Operations Analyst,Operations
+WD080,Jeremy Edwards,jeremy.edwards@workdayclient.com,Network Engineer,IT
+WD081,Amit Liu,amit.liu@workdayclient.com,Recruiter,Recruiting
+WD082,Jeremy Wood,jeremy.wood@workdayclient.com,Territory Manager,Sales
+WD083,Ryan Huang,ryan.huang@workdayclient.com,Senior Recruiter,Recruiting
+WD084,Mason Powell,mason.powell@workdayclient.com,Payroll Manager,Payroll
+WD085,Ananya Wang,ananya.wang@workdayclient.com,Senior Recruiter,Recruiting
+WD086,Emily Kobayashi,emily.kobayashi@workdayclient.com,Network Engineer,IT
+WD087,Mei Chavez,mei.chavez@workdayclient.com,HRIS Analyst,Core HR
+WD088,Dylan Ito,dylan.ito@workdayclient.com,Compensation Analyst,Compensation
+WD089,Hiroshi Hill,hiroshi.hill@workdayclient.com,Compensation Director,Compensation
+WD090,Peter Reyes,peter.reyes@workdayclient.com,Payroll Manager,Payroll
+WD091,Virginia Silva,virginia.silva@workdayclient.com,Inside Sales Rep,Sales
+WD092,Henry Wood,henry.wood@workdayclient.com,IT Project Manager,IT
+WD093,Arthur Martinez,arthur.martinez@workdayclient.com,Benefits Administrator,Benefits
+WD094,Jerry Andersson,jerry.andersson@workdayclient.com,Operations Analyst,Operations
+WD095,Christina Bell,christina.bell@workdayclient.com,People Operations Specialist,Core HR
+WD096,Kelly Ramirez,kelly.ramirez@workdayclient.com,Benefits Director,Benefits
+WD097,Jeremy Santos,jeremy.santos@workdayclient.com,Sourcing Specialist,Recruiting
+WD098,Bryan Reddy,bryan.reddy@workdayclient.com,Recruiting Manager,Recruiting
+WD099,Karen Williams,karen.williams@workdayclient.com,Benefits Manager,Benefits
+WD100,Isabella Gonzales,isabella.gonzales@workdayclient.com,HR Manager,Core HR

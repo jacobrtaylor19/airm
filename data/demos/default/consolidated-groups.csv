@@ -1,17 +1,17 @@
 name,access_level,description
 Financial Processing Staff,Standard Financial Systems,"Staff handling routine financial transactions including AP, AR, payroll, tax processing, and general accounting operations."
-Financial Analysis & Treasury,Elevated Financial Access,"Analysts and specialists performing financial analysis, budgeting, treasury operations, and strategic financial planning."
-Plant Maintenance Technical Staff,Standard Maintenance Access,"Technicians performing hands-on equipment maintenance, repairs, and field service activities."
-Plant Maintenance Planning & Coordination,Standard Maintenance Access,Planners and coordinators responsible for scheduling maintenance activities and analyzing equipment performance.
-Equipment Maintenance & Systems Administration,Elevated Maintenance Access,"Specialists with elevated access for equipment analysis, system administration, and maintenance management."
-Supply Chain Operations,Standard Supply Chain Access,"Coordinators and operators handling logistics, distribution, and day-to-day supply chain activities."
-Supply Chain Planning & Operations Management,Elevated Supply Chain Access,"Managers and planners with elevated access for supply chain strategy, demand planning, and operations oversight."
-Procurement Operations,Standard Procurement Access,"Analysts and specialists handling sourcing, purchasing, and procurement process activities."
-Procurement & Supplier Management,Elevated Procurement Access,"Managers and specialists with elevated access for vendor relationships, contract management, and strategic sourcing."
-Product Development & Design,Standard Product Development Access,"Designers, developers, and researchers creating and improving products across the development lifecycle."
-Product Management & Analysis,Elevated Product Access,"Product managers and analysts with elevated access for product strategy, roadmap management, and cross-functional coordination."
-Quality Assurance,Standard Quality Access,QA analysts and testers ensuring products and systems meet quality standards and specifications.
-Warehouse Operations,Standard Warehouse Access,"Personnel handling physical inventory management, order fulfillment, and warehouse logistics."
-Facilities Management & Operations,Standard Facilities Access,"Staff managing and maintaining physical facilities, building systems, and workplace infrastructure."
-Market Research & Analysis,Standard Research Access,"Analysts conducting market research, competitive intelligence, and consumer trend analysis."
-Research & Development,Elevated Research Access,Engineers and scientists performing research and development of new products and technologies.
+Financial Management,Elevated Financial Systems,Managers and controllers with approval authority over financial processes and reporting.
+Procurement Operations,Standard Procurement Systems,"Staff handling purchase orders, requisitions, and basic vendor interactions."
+Procurement Management,Elevated Procurement Systems,"Managers with contract authority, vendor creation rights, and strategic sourcing access."
+Warehouse Operations,Standard Warehouse Systems,"Staff handling daily warehouse transactions including receiving, putaway, and shipping."
+Warehouse Management,Elevated Warehouse Systems,"Managers with inventory planning, storage configuration, and exception handling authority."
+Maintenance Operations,Standard Maintenance Systems,"Technicians and planners handling work orders, notifications, and routine maintenance tasks."
+Maintenance Management,Elevated Maintenance Systems,"Supervisors with equipment management, scheduling authority, and resource allocation."
+Quality Operations,Standard Quality Systems,Inspectors and analysts performing routine quality checks and documentation.
+Quality Management,Elevated Quality Systems,"Managers with quality planning, certification, and compliance authority."
+HR Operations,Standard HR Systems,"Staff handling employee records, time entry, and routine HR transactions."
+HR Management,Elevated HR Systems,"Managers with payroll execution, compensation management, and policy administration."
+Sales Operations,Standard Sales Systems,"Staff handling sales orders, deliveries, and customer service transactions."
+IT Operations,Standard IT Systems,"Staff handling user support, monitoring, and basic system administration."
+IT Administration,Elevated IT Systems,"Administrators with user management, role configuration, and system customization authority."
+Engineering Operations,Standard Engineering Systems,"Engineers handling technical documentation, change management, and project support."

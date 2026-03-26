@@ -1,0 +1,46 @@
+permission_id,permission_name,description,system,risk_level
+ORA_AP_INV_CREATE,Create AP Invoice,Enter invoices into accounts payable,Oracle EBS,Medium
+ORA_AP_INV_APPROVE,Approve AP Invoice,Approve invoices for payment,Oracle EBS,High
+ORA_AP_PAY_CREATE,Create Payment Batch,Create payment batches for processing,Oracle EBS,Medium
+ORA_AP_PAY_RUN,Execute Payment Run,Execute payment batch processing,Oracle EBS,Critical
+ORA_AP_SUPPLIER_CREATE,Create Supplier,Create new supplier records,Oracle EBS,High
+ORA_AP_SUPPLIER_UPDATE,Update Supplier,Modify supplier records and bank details,Oracle EBS,Medium
+ORA_AR_INV_CREATE,Create AR Invoice,Create customer invoices,Oracle EBS,Medium
+ORA_AR_RECEIPT,Create Receipt,Record customer receipts and payments,Oracle EBS,Medium
+ORA_AR_CUST_CREATE,Create Customer,Create new customer records,Oracle EBS,High
+ORA_AR_CREDIT_REVIEW,Review Credit,Review and manage customer credit limits,Oracle EBS,High
+ORA_GL_JOURNAL_POST,Post Journal,Enter and post journal entries,Oracle EBS,Medium
+ORA_GL_PERIOD_CLOSE,Close Period,Open and close accounting periods,Oracle EBS,Critical
+ORA_GL_COA_MANAGE,Manage Chart of Accounts,Create and modify chart of accounts,Oracle EBS,High
+ORA_GL_REPORT,Run Financial Reports,Generate financial statements and reports,Oracle EBS,Low
+ORA_PO_CREATE,Create Purchase Order,Create purchase orders from requisitions,Oracle EBS,Medium
+ORA_PO_APPROVE,Approve Purchase Order,Approve purchase orders,Oracle EBS,High
+ORA_REQ_CREATE,Create Requisition,Create purchase requisitions,Oracle EBS,Low
+ORA_PO_CONTRACT,Manage Contracts,Create and manage blanket purchase agreements,Oracle EBS,Medium
+ORA_INV_RECEIPT,Receive Inventory,Record inventory receipts,Oracle EBS,Medium
+ORA_INV_ISSUE,Issue Inventory,Record inventory issues and transfers,Oracle EBS,Medium
+ORA_INV_COUNT,Physical Count,Enter and process physical inventory counts,Oracle EBS,Medium
+ORA_INV_SUBINV,Manage Subinventories,Create and configure subinventories,Oracle EBS,High
+ORA_OM_ORDER_CREATE,Create Sales Order,Enter sales orders,Oracle EBS,Medium
+ORA_OM_ORDER_BOOK,Book Sales Order,Book and schedule sales orders,Oracle EBS,Medium
+ORA_OM_SHIP_CONFIRM,Ship Confirm,Confirm shipment of sales orders,Oracle EBS,Medium
+ORA_HR_EMP_CREATE,Create Employee,Create employee records in HRMS,Oracle EBS,High
+ORA_HR_EMP_UPDATE,Update Employee,Modify employee personal and assignment data,Oracle EBS,Medium
+ORA_HR_ORG_MANAGE,Manage Organization,Create and modify organizational structures,Oracle EBS,High
+ORA_PAY_RUN,Run Payroll,Execute payroll processing,Oracle EBS,Critical
+ORA_PAY_VOID,Void Payment,Void payroll payments,Oracle EBS,High
+ORA_FA_ADD,Add Asset,Add new fixed assets,Oracle EBS,Medium
+ORA_FA_TRANSFER,Transfer Asset,Transfer assets between locations,Oracle EBS,Medium
+ORA_FA_DEPRECIATE,Run Depreciation,Execute depreciation calculations,Oracle EBS,Medium
+ORA_CM_RECONCILE,Bank Reconciliation,Perform bank reconciliation,Oracle EBS,Medium
+ORA_CM_CASHPOS,Cash Positioning,View and manage cash positions,Oracle EBS,Low
+ORA_WIP_CREATE,Create Work Order,Create work orders for production,Oracle EBS,Medium
+ORA_WIP_COMPLETE,Complete Work Order,Record work order completions,Oracle EBS,Low
+ORA_QA_ENTER,Enter QA Results,Enter quality collection results,Oracle EBS,Low
+ORA_QA_APPROVE,Approve QA Results,Approve quality results and dispositions,Oracle EBS,Medium
+ORA_SYS_USER_MANAGE,Manage Users,Create and manage application users,Oracle EBS,Critical
+ORA_SYS_RESP_MANAGE,Manage Responsibilities,Assign and manage user responsibilities,Oracle EBS,Critical
+ORA_GL_REVERSE,Reverse Journal,Reverse posted journal entries,Oracle EBS,High
+ORA_AP_INV_CANCEL,Cancel AP Invoice,Cancel approved invoices,Oracle EBS,High
+ORA_AR_ADJUST,Adjust AR Balance,Make adjustments to customer balances,Oracle EBS,High
+ORA_PO_CANCEL,Cancel Purchase Order,Cancel approved purchase orders,Oracle EBS,Medium
