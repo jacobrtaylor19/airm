@@ -31,7 +31,7 @@ interface MappingClientProps {
   userRole?: string;
 }
 
-export function MappingClient({ personas, personaDetails, refinements, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30, userRole }: MappingClientProps) {
+export function MappingClient({ personas, personaDetails, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30, userRole }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const [autoMapProgress, setAutoMapProgress] = useState<{ processed: number; total: number } | null>(null);
@@ -198,8 +198,8 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
     <Tabs defaultValue="persona-mapping">
       <TabsList>
         <TabsTrigger value="persona-mapping">Persona Mapping</TabsTrigger>
-        <TabsTrigger value="refinements">Individual Refinements ({refinements.length})</TabsTrigger>
-        <TabsTrigger value="gap-analysis">Gap Analysis ({gaps.length})</TabsTrigger>
+        <TabsTrigger value="refinements">Individual Refinements</TabsTrigger>
+        <TabsTrigger value="gap-analysis">Gap Analysis</TabsTrigger>
       </TabsList>
 
       {/* Tab A: Persona Mapping */}
