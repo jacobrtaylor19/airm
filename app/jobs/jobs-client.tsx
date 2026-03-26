@@ -115,7 +115,7 @@ const statusColors: Record<string, string> = {
   failed: "bg-red-100 text-red-700",
 };
 
-export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; hasData: boolean }) {
+export function JobsClient({ initialJobs, hasData, userRole = "viewer" }: { initialJobs: JobRow[]; hasData: boolean; userRole?: string }) {
   const [jobs] = useState(initialJobs);
   const [runningJob, setRunningJob] = useState<string | null>(null);
   const [pipelineRunning, setPipelineRunning] = useState(false);
@@ -324,6 +324,8 @@ export function JobsClient({ initialJobs, hasData }: { initialJobs: JobRow[]; ha
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </Link>
+                    ) : userRole === "viewer" ? (
+                      <Badge variant="outline" className="text-xs">{status === "completed" ? "Done" : status === "running" ? "Running" : "Pending"}</Badge>
                     ) : (
                       <Button
                         variant="outline"
