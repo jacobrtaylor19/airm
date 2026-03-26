@@ -63,6 +63,17 @@ Session cookie: `airm_session` (httpOnly, 24h expiry). Middleware validates on e
 
 **Account lockout:** 5 failed attempts per username triggers 5-minute lockout. Tracked in-memory per-account (not global IP-based).
 
+**Action permissions by role:**
+| Action | system_admin | admin | mapper | approver | coordinator | viewer |
+|--------|:---:|:---:|:---:|:---:|:---:|:---:|
+| Generate Personas | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Auto-Map Roles | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Run SOD Analysis | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Pipeline Jobs (run) | ✅ | ✅ | ✅ | badge | badge | badge |
+| Approve/Reject | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Bulk Delete | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Admin Console | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+
 ---
 
 ## Org-unit scoping
