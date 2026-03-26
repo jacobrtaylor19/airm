@@ -110,6 +110,12 @@ function projectStrapline(stats: StraplineStats, role: string): { text: string; 
 
   // ── Mapper: mapping-focused ──
   if (role === "mapper") {
+    if (totalPersonas === 0) {
+      return {
+        text: "No personas generated yet. Head to Personas and click Generate Personas to begin.",
+        tone: "action",
+      };
+    }
     if (mappedPercent < 100 && totalPersonas > 0) {
       const unmapped = totalPersonas - personasWithMapping;
       return {
@@ -177,6 +183,9 @@ function areaStrapline(role: string, scopedStats: ScopedStats, displayName: stri
   }
 
   // mapper
+  if (totalPersonaCount === 0) {
+    return `Your area: ${n(userCount, "user")} across ${n(deptCount, "department")}. Generate personas to begin mapping.`;
+  }
   const mappedPct = totalPersonaCount > 0 ? Math.round((mappedPersonaCount / totalPersonaCount) * 100) : 0;
   if (mappedPct === 100) {
     return `All ${n(totalPersonaCount, "persona")} in your area mapped. Check for any SOD conflicts or low-confidence items to review.`;
