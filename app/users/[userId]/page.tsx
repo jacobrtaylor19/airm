@@ -1,10 +1,10 @@
-import { getUserDetail, getAssignedMapperApproverForUser } from "@/lib/queries";
+import { getUserDetail, getAssignedMapperApproverForUser, getUserGapAnalysis } from "@/lib/queries";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { ArrowRight, User, Shield, Users } from "lucide-react";
+import { ArrowRight, User, Shield, Users, AlertTriangle, Plus } from "lucide-react";
 import Link from "next/link";
 import { UserSodConflicts } from "./user-sod-conflicts";
 
@@ -15,6 +15,7 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
   if (!user) return notFound();
 
   const { mapperName, mapperOrgUnitName, approverName, approverOrgUnitName } = getAssignedMapperApproverForUser(user.orgUnitId);
+  const gapAnalysis = getUserGapAnalysis(user.id);
 
   return (
     <div className="space-y-6">
@@ -217,6 +218,69 @@ export default function UserDetailPage({ params }: { params: { userId: string } 
           </div>
         </CardContent>
       </Card>
+
+      {/* Gap Analysis */}
+      {(gapAnalysis.uncoveredPermissions.length > 0 || gapAnalysis.newPermissions.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Shield className="h-4 w-4" /> Permission Gap Analysis
+              </span>
+              <Badge variant="outline" className={`text-xs ${gapAnalysis.coveragePercent >= 90 ? "bg-emerald-50 text-emerald-700" : gapAnalysis.coveragePercent >= 70 ? "bg-yellow-50 text-yellow-700" : "bg-red-50 text-red-700"}`}>
+                {gapAnalysis.coveragePercent}% coverage
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Uncovered Permissions */}
+              {gapAnalysis.uncoveredPermissions.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3 text-amber-500" />
+                    Uncovered Source Permissions ({gapAnalysis.uncoveredPermissions.length})
+                  </h4>
+                  <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                    {gapAnalysis.uncoveredPermissions.map(p => (
+                      <div key={p.permissionId} className="flex items-center justify-between text-xs rounded-md border border-amber-200 bg-amber-50/50 px-2 py-1.5">
+                        <div>
+                          <span className="font-medium">{p.permissionName ?? p.permissionId}</span>
+                          <span className="text-muted-foreground ml-1 font-mono text-[10px]">{p.permissionId}</span>
+                        </div>
+                        <span className="text-muted-foreground text-[10px]">{p.sourceRoles.join(", ")}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">Source permissions not covered by any target role assignment.</p>
+                </div>
+              )}
+
+              {/* New Permissions */}
+              {gapAnalysis.newPermissions.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                    <Plus className="h-3 w-3 text-blue-500" />
+                    New Target Permissions ({gapAnalysis.newPermissions.length})
+                  </h4>
+                  <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                    {gapAnalysis.newPermissions.map(p => (
+                      <div key={p.permissionId} className="flex items-center justify-between text-xs rounded-md border border-blue-200 bg-blue-50/50 px-2 py-1.5">
+                        <div>
+                          <span className="font-medium">{p.permissionName ?? p.permissionId}</span>
+                          <span className="text-muted-foreground ml-1 font-mono text-[10px]">{p.permissionId}</span>
+                        </div>
+                        <span className="text-muted-foreground text-[10px]">{p.targetRoles.join(", ")}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1">Permissions the user will gain in the target system that they did not have in source.</p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Persona Assignment Details */}
       {user.persona?.reasoning && (

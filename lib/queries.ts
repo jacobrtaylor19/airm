@@ -406,6 +406,136 @@ export function getUserDetail(id: number): UserDetail | null {
 }
 
 // ─────────────────────────────────────────────
+// USER-LEVEL GAP ANALYSIS
+// ─────────────────────────────────────────────
+
+export interface UserGapAnalysis {
+  sourcePermissions: { permissionId: string; permissionName: string | null; system: string | null; roleName: string }[];
+  targetPermissions: { permissionId: string; permissionName: string | null; system: string | null; roleName: string }[];
+  uncoveredPermissions: { permissionId: string; permissionName: string | null; system: string | null; sourceRoles: string[] }[];
+  newPermissions: { permissionId: string; permissionName: string | null; system: string | null; targetRoles: string[] }[];
+  coveragePercent: number;
+}
+
+export function getUserGapAnalysis(userId: number): UserGapAnalysis {
+  // Get user's source permissions (via source role assignments → source roles → source role permissions)
+  const sourceRoleAssignments = db
+    .select({
+      roleId: schema.sourceRoles.id,
+      roleName: schema.sourceRoles.roleName,
+    })
+    .from(schema.userSourceRoleAssignments)
+    .innerJoin(schema.sourceRoles, eq(schema.userSourceRoleAssignments.sourceRoleId, schema.sourceRoles.id))
+    .where(eq(schema.userSourceRoleAssignments.userId, userId))
+    .all();
+
+  const sourcePerms: { permissionId: string; permissionName: string | null; system: string | null; roleName: string }[] = [];
+  const sourcePermMap = new Map<string, string[]>(); // permId → roleNames
+
+  for (const role of sourceRoleAssignments) {
+    const perms = db
+      .select({
+        permissionId: schema.sourcePermissions.permissionId,
+        permissionName: schema.sourcePermissions.permissionName,
+        system: schema.sourcePermissions.system,
+      })
+      .from(schema.sourceRolePermissions)
+      .innerJoin(schema.sourcePermissions, eq(schema.sourceRolePermissions.sourcePermissionId, schema.sourcePermissions.id))
+      .where(eq(schema.sourceRolePermissions.sourceRoleId, role.roleId))
+      .all();
+
+    for (const p of perms) {
+      sourcePerms.push({ ...p, roleName: role.roleName });
+      if (!sourcePermMap.has(p.permissionId)) sourcePermMap.set(p.permissionId, []);
+      if (!sourcePermMap.get(p.permissionId)!.includes(role.roleName)) {
+        sourcePermMap.get(p.permissionId)!.push(role.roleName);
+      }
+    }
+  }
+
+  // Get user's target permissions (via target role assignments → target roles → target role permissions)
+  const targetRoleAssignments = db
+    .select({
+      roleId: schema.targetRoles.id,
+      roleName: schema.targetRoles.roleName,
+    })
+    .from(schema.userTargetRoleAssignments)
+    .innerJoin(schema.targetRoles, eq(schema.userTargetRoleAssignments.targetRoleId, schema.targetRoles.id))
+    .where(eq(schema.userTargetRoleAssignments.userId, userId))
+    .all();
+
+  const targetPerms: { permissionId: string; permissionName: string | null; system: string | null; roleName: string }[] = [];
+  const targetPermMap = new Map<string, string[]>(); // permId → roleNames
+
+  for (const role of targetRoleAssignments) {
+    const perms = db
+      .select({
+        permissionId: schema.targetPermissions.permissionId,
+        permissionName: schema.targetPermissions.permissionName,
+        system: schema.targetPermissions.system,
+      })
+      .from(schema.targetRolePermissions)
+      .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
+      .where(eq(schema.targetRolePermissions.targetRoleId, role.roleId))
+      .all();
+
+    for (const p of perms) {
+      targetPerms.push({ ...p, roleName: role.roleName });
+      if (!targetPermMap.has(p.permissionId)) targetPermMap.set(p.permissionId, []);
+      if (!targetPermMap.get(p.permissionId)!.includes(role.roleName)) {
+        targetPermMap.get(p.permissionId)!.push(role.roleName);
+      }
+    }
+  }
+
+  // Source permission IDs and target permission IDs (unique)
+  const sourcePermIds = new Set(Array.from(sourcePermMap.keys()));
+  const targetPermIds = new Set(Array.from(targetPermMap.keys()));
+
+  // Uncovered: source perms not in target
+  const uncovered: UserGapAnalysis["uncoveredPermissions"] = [];
+  const seen = new Set<string>();
+  for (const p of sourcePerms) {
+    if (!targetPermIds.has(p.permissionId) && !seen.has(p.permissionId)) {
+      seen.add(p.permissionId);
+      uncovered.push({
+        permissionId: p.permissionId,
+        permissionName: p.permissionName,
+        system: p.system,
+        sourceRoles: sourcePermMap.get(p.permissionId) || [],
+      });
+    }
+  }
+
+  // New: target perms not in source
+  const newPerms: UserGapAnalysis["newPermissions"] = [];
+  const seenNew = new Set<string>();
+  for (const p of targetPerms) {
+    if (!sourcePermIds.has(p.permissionId) && !seenNew.has(p.permissionId)) {
+      seenNew.add(p.permissionId);
+      newPerms.push({
+        permissionId: p.permissionId,
+        permissionName: p.permissionName,
+        system: p.system,
+        targetRoles: targetPermMap.get(p.permissionId) || [],
+      });
+    }
+  }
+
+  const totalSource = sourcePermIds.size;
+  const covered = totalSource - uncovered.length;
+  const coveragePercent = totalSource > 0 ? Math.round((covered / totalSource) * 100) : 100;
+
+  return {
+    sourcePermissions: sourcePerms,
+    targetPermissions: targetPerms,
+    uncoveredPermissions: uncovered,
+    newPermissions: newPerms,
+    coveragePercent,
+  };
+}
+
+// ─────────────────────────────────────────────
 // PERSONAS
 // ─────────────────────────────────────────────
 
