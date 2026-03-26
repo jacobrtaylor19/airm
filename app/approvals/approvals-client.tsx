@@ -48,7 +48,12 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
   const router = useRouter();
 
   const isViewer = userRole === "viewer";
-  const canApprove = !isViewer;
+  const isMapper = userRole === "mapper";
+  const isCoordinator = userRole === "coordinator";
+  // Only approvers, admins, and system_admins can approve — mappers can only send back
+  const canApprove = !isViewer && !isMapper && !isCoordinator;
+  // Mappers can send back assignments to draft for re-editing
+  const canSendBack = canApprove || isMapper;
 
   // Get unique departments
   const departments = Array.from(new Set(queue.map(a => a.department).filter((d): d is string => d !== null))).sort();
@@ -331,7 +336,7 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
                   <TableHead>Confidence</TableHead>
                   <TableHead>SOD</TableHead>
                   <TableHead>Status</TableHead>
-                  {canApprove && <TableHead>Actions</TableHead>}
+                  {canSendBack && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -366,18 +371,20 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
                     <TableCell>
                       <StatusBadge status={a.status} />
                     </TableCell>
-                    {canApprove && (
+                    {canSendBack && (
                       <TableCell>
                         {a.status !== "approved" && (
                           <div className="flex items-center gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => approveMapping(a.assignmentId)}
-                            >
-                              <CheckCircle className="h-3 w-3 mr-1" /> Approve
-                            </Button>
+                            {canApprove && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => approveMapping(a.assignmentId)}
+                              >
+                                <CheckCircle className="h-3 w-3 mr-1" /> Approve
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"

@@ -57,6 +57,7 @@ export function SodPageClient({
   conflicts,
   summary,
   userRole,
+  userName,
 }: {
   conflicts: SodConflictDetailed[];
   summary: SodSummary;
@@ -72,7 +73,8 @@ export function SodPageClient({
     roleName?: string;
     permissions?: { permissionId: string; permissionName: string | null }[];
   } | null>(null);
-  const [justification, setJustification] = useState("");
+  const [escalateReason, setEscalateReason] = useState("");
+  const [riskJustification, setRiskJustification] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -85,9 +87,14 @@ export function SodPageClient({
   const isAdmin = userRole === "admin" || userRole === "system_admin";
   const canFixMapping = isMapper || isAdmin;
   const canApproveRisk = isApprover || isAdmin;
+  // Security/compliance specialists see within-role conflicts; regular mappers do not
+  const securityRoles = ["security.lead", "compliance.officer"];
+  const canSeeWithinRole = isAdmin || isApprover || (isMapper && securityRoles.includes(userName ?? ""));
 
   // Filtering
   const filtered = conflicts.filter((c) => {
+    // Within-role conflicts are routed to security/compliance — hide from regular mappers
+    if (!canSeeWithinRole && c.conflictType === "within_role") return false;
     if (severityFilter !== "all" && c.severity !== severityFilter) return false;
     if (statusFilter !== "all" && c.resolutionStatus !== statusFilter) return false;
     if (conflictTypeFilter !== "all" && c.conflictType !== conflictTypeFilter) return false;
@@ -150,13 +157,13 @@ export function SodPageClient({
   }
 
   async function requestRiskAcceptance(conflictId: number) {
-    if (!justification.trim()) return;
+    if (!riskJustification.trim()) return;
     setSubmitting(true);
     try {
       const res = await fetch("/api/sod/request-risk-acceptance", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ conflictId, justification: justification.trim() }),
+        body: JSON.stringify({ conflictId, justification: riskJustification.trim() }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -168,7 +175,8 @@ export function SodPageClient({
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
     } finally {
       setSubmitting(false);
-      setJustification("");
+      setRiskJustification("");
+      setEscalateReason("");
       setExpandedId(null);
       router.refresh();
     }
@@ -183,7 +191,7 @@ export function SodPageClient({
         body: JSON.stringify({
           conflictId,
           action: action === "reject" ? "reject" : undefined,
-          justification: justification.trim() || undefined,
+          justification: riskJustification.trim() || undefined,
         }),
       });
       if (!res.ok) {
@@ -197,7 +205,8 @@ export function SodPageClient({
     } finally {
       setSubmitting(false);
       setConfirmDialog(null);
-      setJustification("");
+      setRiskJustification("");
+      setEscalateReason("");
       setExpandedId(null);
       router.refresh();
     }
@@ -379,7 +388,7 @@ export function SodPageClient({
                 {/* Conflict Row */}
                 <div
                   className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-muted/30 transition-colors"
-                  onClick={() => setExpandedId(isExpanded ? null : c.id)}
+                  onClick={() => { setExpandedId(isExpanded ? null : c.id); if (!isExpanded) { setEscalateReason(""); setRiskJustification(""); } }}
                 >
                   {isExpanded ? (
                     <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -474,8 +483,8 @@ export function SodPageClient({
                               </p>
                               <Input
                                 placeholder="Explain why you are escalating (required)..."
-                                value={expandedId === c.id ? justification : ""}
-                                onChange={(e) => setJustification(e.target.value)}
+                                value={expandedId === c.id ? escalateReason : ""}
+                                onChange={(e) => setEscalateReason(e.target.value)}
                                 className="text-xs h-7"
                                 onClick={(e) => e.stopPropagation()}
                               />
@@ -483,10 +492,10 @@ export function SodPageClient({
                                 size="sm"
                                 variant="outline"
                                 className="w-full text-xs h-7 mt-1 border-purple-300 text-purple-700 hover:bg-purple-50"
-                                disabled={!justification.trim() || submitting}
+                                disabled={!escalateReason.trim() || submitting}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  escalateToSecurity(c.id, justification);
+                                  escalateToSecurity(c.id, escalateReason);
                                 }}
                               >
                                 {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : (
@@ -515,8 +524,8 @@ export function SodPageClient({
                                   </p>
                                   <Input
                                     placeholder="Business justification (required)..."
-                                    value={expandedId === c.id ? justification : ""}
-                                    onChange={(e) => setJustification(e.target.value)}
+                                    value={expandedId === c.id ? riskJustification : ""}
+                                    onChange={(e) => setRiskJustification(e.target.value)}
                                     className="text-xs h-7"
                                     onClick={(e) => e.stopPropagation()}
                                   />
@@ -524,7 +533,7 @@ export function SodPageClient({
                                     size="sm"
                                     variant="outline"
                                     className="w-full text-xs h-7 mt-1 border-amber-300 text-amber-700 hover:bg-amber-50"
-                                    disabled={!justification.trim() || submitting}
+                                    disabled={!riskJustification.trim() || submitting}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       requestRiskAcceptance(c.id);
@@ -654,8 +663,8 @@ export function SodPageClient({
                                   </p>
                                   <Input
                                     placeholder="Business justification (required)..."
-                                    value={expandedId === c.id ? justification : ""}
-                                    onChange={(e) => setJustification(e.target.value)}
+                                    value={expandedId === c.id ? riskJustification : ""}
+                                    onChange={(e) => setRiskJustification(e.target.value)}
                                     className="text-xs h-7"
                                     onClick={(e) => e.stopPropagation()}
                                   />
@@ -663,7 +672,7 @@ export function SodPageClient({
                                     size="sm"
                                     variant="outline"
                                     className="w-full text-xs h-7 mt-1 border-amber-300 text-amber-700 hover:bg-amber-50"
-                                    disabled={!justification.trim() || submitting}
+                                    disabled={!riskJustification.trim() || submitting}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       requestRiskAcceptance(c.id);
@@ -843,7 +852,7 @@ export function SodPageClient({
       {/* Confirmation Dialog — Reject Risk */}
       <Dialog
         open={confirmDialog?.type === "reject_risk"}
-        onOpenChange={(open) => { if (!open) { setConfirmDialog(null); setJustification(""); } }}
+        onOpenChange={(open) => { if (!open) { setConfirmDialog(null); setRiskJustification(""); } }}
       >
         <DialogContent>
           <DialogHeader>
@@ -862,8 +871,8 @@ export function SodPageClient({
               <div>
                 <label className="text-sm font-medium">Reason for rejection (optional)</label>
                 <Input
-                  value={justification}
-                  onChange={(e) => setJustification(e.target.value)}
+                  value={riskJustification}
+                  onChange={(e) => setRiskJustification(e.target.value)}
                   placeholder="Explain why this risk cannot be accepted..."
                   className="mt-1"
                 />
@@ -871,7 +880,7 @@ export function SodPageClient({
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setConfirmDialog(null); setJustification(""); }}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setConfirmDialog(null); setRiskJustification(""); }}>Cancel</Button>
             <Button
               variant="destructive"
               disabled={submitting}
