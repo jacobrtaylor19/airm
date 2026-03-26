@@ -230,16 +230,17 @@ export function SodPageClient({
   return (
     <div className="space-y-6">
       {/* Action Bar */}
-      <div className="flex items-center gap-3">
-        <Button onClick={runAnalysis} disabled={running} size="sm" className="bg-teal-500 hover:bg-teal-600 text-white">
-          {running ? (
-            <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
-          ) : (
-            <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
-
-          )}
-        </Button>
-      </div>
+      {userRole && ["system_admin", "admin", "mapper"].includes(userRole) && (
+        <div className="flex items-center gap-3">
+          <Button onClick={runAnalysis} disabled={running} size="sm" className="bg-teal-500 hover:bg-teal-600 text-white">
+            {running ? (
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
+            ) : (
+              <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
+            )}
+          </Button>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -351,15 +352,19 @@ export function SodPageClient({
           <ShieldCheck className="h-12 w-12 text-slate-300 mb-4" />
           <h3 className="text-sm font-semibold text-slate-700 mb-1">No SOD conflicts detected</h3>
           <p className="text-sm text-slate-500 max-w-sm mb-4">
-            Run SOD Analysis to check for segregation of duties violations.
+            {userRole && ["system_admin", "admin", "mapper"].includes(userRole)
+              ? "Run SOD Analysis to check for segregation of duties violations."
+              : "No SOD analysis has been run yet. A mapper or admin needs to run the analysis first."}
           </p>
-          <Button onClick={runAnalysis} disabled={running} className="bg-teal-500 hover:bg-teal-600 text-white">
-            {running ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
-            ) : (
-              <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
-            )}
-          </Button>
+          {userRole && ["system_admin", "admin", "mapper"].includes(userRole) && (
+            <Button onClick={runAnalysis} disabled={running} className="bg-teal-500 hover:bg-teal-600 text-white">
+              {running ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
+              ) : (
+                <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
+              )}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-2">

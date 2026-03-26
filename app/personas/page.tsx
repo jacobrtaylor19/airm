@@ -8,7 +8,7 @@ export default function PersonasPage() {
   const personas = getPersonas();
   const groups = getConsolidatedGroups();
   const currentUser = getSessionUser();
-  const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
+  const userRole = currentUser?.role ?? "viewer";
 
   return (
     <div className="space-y-4">
@@ -18,7 +18,7 @@ export default function PersonasPage() {
       <PersonasPageClient
         personas={personas}
         groups={groups}
-        isAdmin={isAdmin}
+        userRole={userRole}
       />
     </div>
   );

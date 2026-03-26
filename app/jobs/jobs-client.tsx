@@ -324,7 +324,7 @@ export function JobsClient({ initialJobs, hasData, userRole = "viewer" }: { init
                           <ChevronRight className="h-4 w-4" />
                         </Button>
                       </Link>
-                    ) : userRole === "viewer" ? (
+                    ) : !["system_admin", "admin", "mapper"].includes(userRole) ? (
                       <Badge variant="outline" className="text-xs">{status === "completed" ? "Done" : status === "running" ? "Running" : "Pending"}</Badge>
                     ) : (
                       <Button

@@ -204,7 +204,7 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
 
       {/* Tab A: Persona Mapping */}
       <TabsContent value="persona-mapping" className="mt-4">
-        {userRole !== "viewer" && (
+        {userRole && ["system_admin", "admin", "mapper"].includes(userRole) && (
           <div className="flex items-center gap-3 mb-4 flex-wrap">
             <div className="flex items-center gap-3">
               <Button onClick={autoMapAll} disabled={autoMapping || bulkMode} className="bg-teal-500 hover:bg-teal-600 text-white">
