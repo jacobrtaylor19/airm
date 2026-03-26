@@ -2,39 +2,48 @@ import Database from "better-sqlite3";
 import { existsSync, mkdirSync } from "fs";
 import { dirname, resolve } from "path";
 
-const auditDbPath = process.env.AUDIT_DATABASE_URL ?? "./data/audit.db";
-const auditDbDir = dirname(resolve(auditDbPath));
-if (!existsSync(auditDbDir)) {
-  mkdirSync(auditDbDir, { recursive: true });
+// Lazy initialization to avoid SQLITE_BUSY during next build
+let _auditDb: Database.Database | null = null;
+
+function getAuditDb(): Database.Database {
+  if (_auditDb) return _auditDb;
+
+  const auditDbPath = process.env.AUDIT_DATABASE_URL ?? "./data/audit.db";
+  const auditDbDir = dirname(resolve(auditDbPath));
+  if (!existsSync(auditDbDir)) {
+    mkdirSync(auditDbDir, { recursive: true });
+  }
+
+  _auditDb = new Database(auditDbPath);
+  _auditDb.pragma("journal_mode = WAL");
+  _auditDb.pragma("foreign_keys = ON");
+  _auditDb.pragma("busy_timeout = 10000");
+
+  // Create audit_log table if it doesn't exist
+  _auditDb.exec(`
+    CREATE TABLE IF NOT EXISTS audit_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_type TEXT NOT NULL,
+      entity_id INTEGER NOT NULL,
+      action TEXT NOT NULL,
+      old_value TEXT,
+      new_value TEXT,
+      actor_email TEXT,
+      ip_address TEXT,
+      metadata TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  // Create index for common queries
+  _auditDb.exec(`
+    CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log(actor_email);
+    CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+  `);
+
+  return _auditDb;
 }
-
-const auditSqlite = new Database(auditDbPath);
-auditSqlite.pragma("journal_mode = WAL");
-auditSqlite.pragma("foreign_keys = ON");
-auditSqlite.pragma("busy_timeout = 10000");
-
-// Create audit_log table if it doesn't exist
-auditSqlite.exec(`
-  CREATE TABLE IF NOT EXISTS audit_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entity_type TEXT NOT NULL,
-    entity_id INTEGER NOT NULL,
-    action TEXT NOT NULL,
-    old_value TEXT,
-    new_value TEXT,
-    actor_email TEXT,
-    ip_address TEXT,
-    metadata TEXT,
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  )
-`);
-
-// Create index for common queries
-auditSqlite.exec(`
-  CREATE INDEX IF NOT EXISTS idx_audit_log_entity ON audit_log(entity_type, entity_id);
-  CREATE INDEX IF NOT EXISTS idx_audit_log_actor ON audit_log(actor_email);
-  CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
-`);
 
 /**
  * Insert an audit log entry. Only INSERT is exposed — no UPDATE or DELETE
@@ -50,7 +59,8 @@ export function insertAuditEntry(entry: {
   ipAddress?: string | null;
   metadata?: string | null;
 }): void {
-  const stmt = auditSqlite.prepare(`
+  const db = getAuditDb();
+  const stmt = db.prepare(`
     INSERT INTO audit_log (entity_type, entity_id, action, old_value, new_value, actor_email, ip_address, metadata, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
   `);
@@ -77,6 +87,7 @@ export function queryAuditEntries(options?: {
   limit?: number;
   offset?: number;
 }): unknown[] {
+  const db = getAuditDb();
   const conditions: string[] = [];
   const params: unknown[] = [];
 
@@ -101,10 +112,8 @@ export function queryAuditEntries(options?: {
   const limit = options?.limit ?? 1000;
   const offset = options?.offset ?? 0;
 
-  const stmt = auditSqlite.prepare(
+  const stmt = db.prepare(
     `SELECT * FROM audit_log ${where} ORDER BY id DESC LIMIT ? OFFSET ?`
   );
   return stmt.all(...params, limit, offset);
 }
-
-export { auditSqlite };

@@ -5,6 +5,8 @@ import { getSessionUser } from "@/lib/auth";
 import { desc } from "drizzle-orm";
 import crypto from "crypto";
 
+export const dynamic = "force-dynamic";
+
 const ADMIN_ROLES = ["admin", "system_admin"];
 
 // POST /api/review-links — create a new review link

@@ -18,11 +18,17 @@ sqlite.pragma("busy_timeout = 10000");
 
 export const db = drizzle(sqlite, { schema });
 
-// Migrate plaintext sensitive settings to encrypted form on startup
-// Lazy import to avoid circular dependency (settings.ts imports db)
-try {
-  const { migrateSettings } = require("@/lib/settings");
-  migrateSettings();
-} catch {
-  // Settings migration is best-effort on startup — may fail on first run before tables exist
+// Migrate plaintext sensitive settings to encrypted form.
+// Called lazily on first request — NOT at module load time to avoid
+// SQLITE_BUSY during next build (multiple workers import this module concurrently).
+let settingsMigrated = false;
+export function ensureSettingsMigrated(): void {
+  if (settingsMigrated) return;
+  settingsMigrated = true;
+  try {
+    const { migrateSettings } = require("@/lib/settings");
+    migrateSettings();
+  } catch {
+    // Best-effort — may fail on first run before tables exist
+  }
 }

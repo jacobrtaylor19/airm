@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 // POST — accept an exception
 export async function POST(req: NextRequest) {
   const user = requireAuth();
