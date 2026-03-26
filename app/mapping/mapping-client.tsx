@@ -221,7 +221,7 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
     <Tabs defaultValue="persona-mapping">
       <TabsList>
         <TabsTrigger value="persona-mapping">Persona Mapping</TabsTrigger>
-        <TabsTrigger value="refinements">Individual Refinements</TabsTrigger>
+        <TabsTrigger value="refinements">User Role Assignments</TabsTrigger>
         <TabsTrigger value="gap-analysis">Gap Analysis</TabsTrigger>
       </TabsList>
 
@@ -603,13 +603,14 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
         </div>
       </TabsContent>
 
-      {/* Tab B: Individual Refinements */}
+      {/* Tab B: User Role Assignments */}
       <TabsContent value="refinements" className="mt-4">
         <RefinementsTab
           refinementDetails={refinementDetails}
           targetRoles={targetRoles}
           refinementCount={refinementCount}
           totalUsersWithAssignments={totalUsersWithAssignments}
+          userRole={userRole}
         />
       </TabsContent>
 
@@ -626,38 +627,81 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
 }
 
 // ─────────────────────────────────────────────
-// Individual Refinements Tab
+// User Role Assignments Tab
 // ─────────────────────────────────────────────
+
+function getUserStatus(u: UserRefinementDetail): string {
+  const currentWave = u.allAssignments.filter(a => a.releasePhase !== "existing");
+  if (currentWave.length === 0) return "none";
+  const statuses = currentWave.map(a => a.status);
+  if (statuses.some(s => s === "sod_rejected")) return "sod_rejected";
+  if (statuses.every(s => s === "approved")) return "approved";
+  if (statuses.some(s => s === "compliance_approved" || s === "ready_for_approval")) return "sod_clean";
+  if (statuses.some(s => s === "pending_review")) return "pending_review";
+  return "draft";
+}
+
+function StatusBadgeInline({ status }: { status: string }) {
+  switch (status) {
+    case "draft": return <Badge variant="outline" className="text-xs bg-slate-50">Draft</Badge>;
+    case "pending_review": return <Badge className="text-xs bg-indigo-100 text-indigo-700 border-indigo-200">Pending Review</Badge>;
+    case "sod_clean": return <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">SOD Clean</Badge>;
+    case "sod_rejected": return <Badge className="text-xs bg-red-100 text-red-700 border-red-200">SOD Conflict</Badge>;
+    case "approved": return <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">Approved</Badge>;
+    default: return <Badge variant="outline" className="text-xs">{status}</Badge>;
+  }
+}
 
 function RefinementsTab({
   refinementDetails,
   targetRoles,
-  refinementCount,
   totalUsersWithAssignments,
+  userRole,
 }: {
   refinementDetails: UserRefinementDetail[];
   targetRoles: TargetRoleRow[];
-  refinementCount: number;
+  refinementCount?: number;
   totalUsersWithAssignments: number;
+  userRole?: string;
 }) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [deptFilter, setDeptFilter] = useState<string>("all");
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
   const [editRoles, setEditRoles] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [submittingBulk, setSubmittingBulk] = useState(false);
+  const [submittingSingle, setSubmittingSingle] = useState(false);
   const router = useRouter();
 
+  const isExecutor = userRole && ["system_admin", "admin", "mapper"].includes(userRole);
   const selectedUser = refinementDetails.find(u => u.userId === selectedUserId);
+
+  // Unique departments for filter
+  const departments = Array.from(new Set(refinementDetails.map(u => u.department).filter((d): d is string => d !== null))).sort();
+
+  // Status counts
+  const statusCounts = refinementDetails.reduce((acc, u) => {
+    const s = getUserStatus(u);
+    acc[s] = (acc[s] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   // Filter users
   const filteredDetails = refinementDetails.filter(u => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      u.userName.toLowerCase().includes(q) ||
-      (u.department ?? "").toLowerCase().includes(q) ||
-      (u.personaName ?? "").toLowerCase().includes(q)
-    );
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!u.userName.toLowerCase().includes(q) &&
+          !(u.department ?? "").toLowerCase().includes(q) &&
+          !(u.personaName ?? "").toLowerCase().includes(q)) return false;
+    }
+    if (statusFilter !== "all" && getUserStatus(u) !== statusFilter) return false;
+    if (deptFilter !== "all" && u.department !== deptFilter) return false;
+    return true;
   });
+
+  const draftUsers = filteredDetails.filter(u => getUserStatus(u) === "draft");
 
   function openUserPanel(userId: number) {
     const user = refinementDetails.find(u => u.userId === userId);
@@ -671,6 +715,15 @@ function RefinementsTab({
     setEditRoles(prev =>
       prev.includes(roleId) ? prev.filter(r => r !== roleId) : [...prev, roleId]
     );
+  }
+
+  function toggleSelect(userId: number) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
   }
 
   async function saveRefinements() {
@@ -688,9 +741,9 @@ function RefinementsTab({
       });
       if (!res.ok) {
         const data = await res.json();
-        toast.error(data.error || "Failed to save refinements");
+        toast.error(data.error || "Failed to save changes");
       } else {
-        toast.success("Refinements saved successfully");
+        toast.success("Changes saved successfully");
         setSelectedUserId(null);
       }
     } catch (err) {
@@ -701,89 +754,197 @@ function RefinementsTab({
     }
   }
 
+  async function submitUserForReview(userId: number) {
+    setSubmittingSingle(true);
+    try {
+      const user = refinementDetails.find(u => u.userId === userId);
+      if (!user) return;
+      const draftIds = user.allAssignments.filter(a => a.status === "draft").map(a => a.assignmentId);
+      if (draftIds.length === 0) { toast.error("No draft assignments to submit"); return; }
+      const res = await fetch("/api/mapping/submit-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignmentIds: draftIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) toast.error(data.error || "Failed to submit");
+      else { toast.success(`${data.updated} assignment${data.updated === 1 ? "" : "s"} submitted for review`); router.refresh(); }
+    } catch { toast.error("Failed to submit"); }
+    finally { setSubmittingSingle(false); }
+  }
+
+  async function bulkSubmitForReview() {
+    setSubmittingBulk(true);
+    try {
+      const allDraftIds: number[] = [];
+      const selectedArr = Array.from(selectedIds);
+      for (const userId of selectedArr) {
+        const user = refinementDetails.find(u => u.userId === userId);
+        if (user) {
+          allDraftIds.push(...user.allAssignments.filter(a => a.status === "draft").map(a => a.assignmentId));
+        }
+      }
+      if (allDraftIds.length === 0) { toast.error("No draft assignments in selection"); return; }
+      const res = await fetch("/api/mapping/submit-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignmentIds: allDraftIds }),
+      });
+      const data = await res.json();
+      if (!res.ok) toast.error(data.error || "Failed to submit");
+      else { toast.success(`${data.updated} assignment${data.updated === 1 ? "" : "s"} submitted for review`); setSelectedIds(new Set()); router.refresh(); }
+    } catch { toast.error("Failed to submit"); }
+    finally { setSubmittingBulk(false); }
+  }
+
+  const selectedUserStatus = selectedUser ? getUserStatus(selectedUser) : "none";
+  const isEditable = selectedUserStatus === "draft";
+
   return (
     <div className="space-y-4">
-      {/* Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Users with Assignments</p>
-            <p className="text-2xl font-bold mt-1">{totalUsersWithAssignments}</p>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <Card className={statusFilter === "all" ? "ring-1 ring-primary" : "cursor-pointer hover:bg-muted/30"} onClick={() => setStatusFilter("all")}>
+          <CardContent className="pt-3 pb-2">
+            <p className="text-xs text-muted-foreground">Total Assigned</p>
+            <p className="text-xl font-bold mt-0.5">{totalUsersWithAssignments}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Users with Individual Overrides</p>
-            <p className="text-2xl font-bold mt-1">{refinementCount}</p>
+        <Card className={statusFilter === "draft" ? "ring-1 ring-primary" : "cursor-pointer hover:bg-muted/30"} onClick={() => setStatusFilter("draft")}>
+          <CardContent className="pt-3 pb-2">
+            <p className="text-xs text-muted-foreground">Draft</p>
+            <p className="text-xl font-bold mt-0.5">{statusCounts["draft"] || 0}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <p className="text-xs text-muted-foreground">Using Persona Defaults Only</p>
-            <p className="text-2xl font-bold mt-1">{totalUsersWithAssignments - refinementCount}</p>
+        <Card className={statusFilter === "pending_review" ? "ring-1 ring-primary" : "cursor-pointer hover:bg-muted/30"} onClick={() => setStatusFilter("pending_review")}>
+          <CardContent className="pt-3 pb-2">
+            <p className="text-xs text-muted-foreground">Pending Review</p>
+            <p className="text-xl font-bold mt-0.5 text-indigo-600">{statusCounts["pending_review"] || 0}</p>
           </CardContent>
         </Card>
+        <Card className={statusFilter === "sod_rejected" ? "ring-1 ring-primary" : "cursor-pointer hover:bg-muted/30"} onClick={() => setStatusFilter("sod_rejected")}>
+          <CardContent className="pt-3 pb-2">
+            <p className="text-xs text-muted-foreground">SOD Conflicts</p>
+            <p className="text-xl font-bold mt-0.5 text-red-600">{statusCounts["sod_rejected"] || 0}</p>
+          </CardContent>
+        </Card>
+        <Card className={statusFilter === "sod_clean" ? "ring-1 ring-primary" : "cursor-pointer hover:bg-muted/30"} onClick={() => setStatusFilter("sod_clean")}>
+          <CardContent className="pt-3 pb-2">
+            <p className="text-xs text-muted-foreground">SOD Clean</p>
+            <p className="text-xl font-bold mt-0.5 text-emerald-600">{(statusCounts["sod_clean"] || 0) + (statusCounts["approved"] || 0)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Toolbar: search + filters + bulk actions */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search users, departments, personas..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-8 text-sm"
+          />
+        </div>
+        <select
+          value={deptFilter}
+          onChange={(e) => setDeptFilter(e.target.value)}
+          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm h-8"
+        >
+          <option value="all">All Departments</option>
+          {departments.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
+        {isExecutor && selectedIds.size > 0 && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+            onClick={bulkSubmitForReview}
+            disabled={submittingBulk}
+          >
+            {submittingBulk ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-1" />}
+            Submit {selectedIds.size} for Review
+          </Button>
+        )}
+        {isExecutor && draftUsers.length > 0 && selectedIds.size === 0 && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-8 text-xs text-muted-foreground"
+            onClick={() => setSelectedIds(new Set(draftUsers.map(u => u.userId)))}
+          >
+            Select All Draft ({draftUsers.length})
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left: User list */}
         <Card className="lg:col-span-2">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Users with Target Role Assignments</CardTitle>
-            </div>
-            <div className="relative mt-2">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-8 text-sm"
-              />
-            </div>
-          </CardHeader>
           <CardContent className="p-0">
             {filteredDetails.length === 0 ? (
               <div className="py-8 text-center text-sm text-muted-foreground">
                 {refinementDetails.length === 0
                   ? "No users with target role assignments yet. Run auto-mapping from the Persona Mapping tab first."
-                  : "No users match your search."}
+                  : "No users match your filters."}
               </div>
             ) : (
               <div className="max-h-[500px] overflow-y-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {isExecutor && <TableHead className="w-8"></TableHead>}
                       <TableHead>User</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Persona</TableHead>
                       <TableHead>Roles</TableHead>
-                      <TableHead>Overrides</TableHead>
+                      <TableHead>Status</TableHead>
                       <TableHead></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredDetails.map((u) => {
-                      const hasOverrides = u.individualOverrides.length > 0;
+                      const status = getUserStatus(u);
+                      const isDraft = status === "draft";
                       return (
                         <TableRow
                           key={u.userId}
                           className={`cursor-pointer ${selectedUserId === u.userId ? "bg-primary/5" : "hover:bg-muted/50"}`}
                           onClick={() => openUserPanel(u.userId)}
                         >
+                          {isExecutor && (
+                            <TableCell className="pr-0" onClick={(e) => e.stopPropagation()}>
+                              {isDraft && (
+                                <input
+                                  type="checkbox"
+                                  className="h-3.5 w-3.5 accent-primary"
+                                  checked={selectedIds.has(u.userId)}
+                                  onChange={() => toggleSelect(u.userId)}
+                                />
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell className="text-sm font-medium">{u.userName}</TableCell>
                           <TableCell className="text-sm">{u.department ?? "—"}</TableCell>
                           <TableCell className="text-sm">{u.personaName ?? "—"}</TableCell>
                           <TableCell className="text-sm">{u.allAssignments.length}</TableCell>
+                          <TableCell><StatusBadgeInline status={status} /></TableCell>
                           <TableCell>
-                            {hasOverrides ? (
-                              <Badge variant="default" className="text-xs">{u.individualOverrides.length} override{u.individualOverrides.length !== 1 ? "s" : ""}</Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-xs">Default</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            <div className="flex items-center gap-1">
+                              {isExecutor && isDraft && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                  onClick={(e) => { e.stopPropagation(); submitUserForReview(u.userId); }}
+                                  disabled={submittingSingle}
+                                >
+                                  <Send className="h-3 w-3 mr-1" /> Submit
+                                </Button>
+                              )}
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -801,7 +962,10 @@ function RefinementsTab({
             <CardTitle className="text-base">
               {selectedUser ? (
                 <div className="flex items-center justify-between">
-                  <span>{selectedUser.userName}</span>
+                  <div className="flex items-center gap-2">
+                    <span>{selectedUser.userName}</span>
+                    <StatusBadgeInline status={selectedUserStatus} />
+                  </div>
                   <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setSelectedUserId(null)}>
                     <X className="h-4 w-4" />
                   </Button>
@@ -816,6 +980,12 @@ function RefinementsTab({
                   <p><span className="text-muted-foreground">Persona:</span> {selectedUser.personaName ?? "None"}</p>
                   <p><span className="text-muted-foreground">Department:</span> {selectedUser.department ?? "—"}</p>
                 </div>
+
+                {!isEditable && (
+                  <div className="rounded-md bg-muted/50 border px-3 py-2 text-xs text-muted-foreground">
+                    Assignments are locked ({selectedUserStatus === "pending_review" ? "pending SOD review" : selectedUserStatus.replace("_", " ")}). Send back to Draft to edit.
+                  </div>
+                )}
 
                 {/* Existing Production Access (locked, from previous waves) */}
                 {selectedUser.existingAccessRoles.length > 0 && (
@@ -859,10 +1029,10 @@ function RefinementsTab({
                       return (
                         <div
                           key={r.id}
-                          className={`flex items-center justify-between rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${
-                            isAssigned ? "bg-primary/5 border-primary/30" : "hover:bg-muted/50"
-                          }`}
-                          onClick={() => toggleRole(r.id)}
+                          className={`flex items-center justify-between rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                            !isEditable ? "opacity-60" : "cursor-pointer"
+                          } ${isAssigned ? "bg-primary/5 border-primary/30" : isEditable ? "hover:bg-muted/50" : ""}`}
+                          onClick={() => isEditable && toggleRole(r.id)}
                         >
                           <div className="flex items-center gap-2">
                             <div className={`h-3.5 w-3.5 rounded border flex items-center justify-center ${
@@ -882,13 +1052,30 @@ function RefinementsTab({
                   </div>
                 </div>
 
-                <Button onClick={saveRefinements} disabled={saving} className="w-full" size="sm">
-                  {saving ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
-                  ) : (
-                    <><Save className="h-4 w-4 mr-2" /> Save Changes</>
-                  )}
-                </Button>
+                {isEditable && isExecutor && (
+                  <div className="space-y-2">
+                    <Button onClick={saveRefinements} disabled={saving} className="w-full" size="sm">
+                      {saving ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+                      ) : (
+                        <><Save className="h-4 w-4 mr-2" /> Save Changes</>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => submitUserForReview(selectedUser.userId)}
+                      disabled={submittingSingle}
+                      className="w-full border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                      size="sm"
+                    >
+                      {submittingSingle ? (
+                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</>
+                      ) : (
+                        <><Send className="h-4 w-4 mr-2" /> Submit for Review</>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
