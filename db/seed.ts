@@ -11,19 +11,16 @@ const demoArg = process.argv.find((a) => a.startsWith("--demo="));
 const demoPack = demoArg ? demoArg.split("=")[1] : null;
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const CSV_DIR = demoPack
-  ? path.join(DATA_DIR, "demos", demoPack)
-  : DATA_DIR;
+const packName = demoPack ?? "default";
+const CSV_DIR = path.join(DATA_DIR, "demos", packName);
 
-if (demoPack && !existsSync(CSV_DIR)) {
+if (!existsSync(CSV_DIR)) {
   console.error(`❌ Demo pack not found: ${CSV_DIR}`);
   process.exit(1);
 }
 
-if (demoPack) {
-  console.log(`📦 Using demo pack: ${demoPack}`);
-  console.log(`   CSV directory: ${CSV_DIR}\n`);
-}
+console.log(`📦 Using demo pack: ${packName}`);
+console.log(`   CSV directory: ${CSV_DIR}\n`);
 
 const sqlite = new Database(path.join(DATA_DIR, "airm.db"));
 sqlite.pragma("journal_mode = WAL");
@@ -33,17 +30,8 @@ sqlite.pragma("busy_timeout = 5000");
 const db = drizzle(sqlite, { schema });
 
 function readCsv<T>(filename: string): T[] {
-  // Try demo-pack directory first, fall back to main data dir
   const filepath = path.join(CSV_DIR, filename);
   if (!existsSync(filepath)) {
-    // If using a demo pack, try the default data dir as fallback
-    if (demoPack) {
-      const fallback = path.join(DATA_DIR, filename);
-      if (existsSync(fallback)) {
-        const content = readFileSync(fallback, "utf-8");
-        return parse(content, { columns: true, skip_empty_lines: true, trim: true }) as T[];
-      }
-    }
     return [];
   }
   const content = readFileSync(filepath, "utf-8");
@@ -151,19 +139,27 @@ function seed() {
   });
 
   // ─── 1. Users ───
+  const BATCH_SIZE = 500;
   const usersData = readCsv<any>("users.csv");
-  for (const row of usersData) {
-    const dept = row.department?.trim();
-    const ouId = dept ? (deptToOrgUnit.get(dept) ?? null) : null;
-    db.insert(schema.users).values({
-      sourceUserId: row.source_user_id,
-      displayName: row.display_name,
-      email: row.email,
-      jobTitle: row.job_title,
-      department: row.department,
-      orgUnitId: ouId,
-    }).run();
+  for (let i = 0; i < usersData.length; i += BATCH_SIZE) {
+    const batch = usersData.slice(i, i + BATCH_SIZE);
+    for (const row of batch) {
+      const dept = row.department?.trim();
+      const ouId = dept ? (deptToOrgUnit.get(dept) ?? null) : null;
+      db.insert(schema.users).values({
+        sourceUserId: row.source_user_id,
+        displayName: row.display_name,
+        email: row.email,
+        jobTitle: row.job_title,
+        department: row.department,
+        orgUnitId: ouId,
+      }).run();
+    }
+    if (usersData.length > 1000 && i + BATCH_SIZE < usersData.length) {
+      process.stdout.write(`\r  ⏳ Users: ${Math.min(i + BATCH_SIZE, usersData.length)}/${usersData.length}`);
+    }
   }
+  if (usersData.length > 1000) process.stdout.write("\r");
   console.log(`  ✓ ${usersData.length} users`);
 
   // ─── 2. Consolidated Groups (skip if file not in demo pack) ───
@@ -422,11 +418,12 @@ function seed() {
   }
 
   // ─── 11d. Run SOD analysis on seeded assignments ───
-  // The SOD rules reference SAP ECC t-codes (XK01, FB60, etc.) but target roles use
-  // S/4HANA Fiori app IDs (F0717, F0859, etc.). We need target-permission-level SOD rules.
-  // Create target-system SOD rules that reference the actual target permission IDs.
+  // The hardcoded target-system SOD rules reference S/4HANA Fiori app IDs (F0717, F0859, etc.).
+  // Only insert them for SAP/S4HANA packs where these permissions exist.
+  const isSapPack = db.select().from(schema.targetPermissions)
+    .where(eq(schema.targetPermissions.permissionId, "F0717")).get() !== undefined;
 
-  const targetSodRules: { ruleId: string; ruleName: string; permA: string; permB: string; severity: string; riskDesc: string }[] = [
+  const targetSodRules: { ruleId: string; ruleName: string; permA: string; permB: string; severity: string; riskDesc: string }[] = !isSapPack ? [] : [
     // Finance: Invoice creation vs approval
     { ruleId: "T-SOD-AP-001", ruleName: "Create & Approve Invoice", permA: "F0717", permB: "F0859",
       severity: "critical", riskDesc: "A user who can both create supplier invoices (F0717) and approve them (F0859) can post fraudulent invoices and approve their own entries, bypassing the dual-control requirement for accounts payable." },
@@ -503,7 +500,11 @@ function seed() {
       riskDescription: r.riskDesc,
     }).run();
   }
-  console.log(`  ✓ ${targetSodRules.length} target-system SOD rules (S/4HANA Fiori permissions)`);
+  if (targetSodRules.length > 0) {
+    console.log(`  ✓ ${targetSodRules.length} target-system SOD rules (S/4HANA Fiori permissions)`);
+  } else {
+    console.log("  ⊘ Skipped hardcoded S/4HANA SOD rules (non-SAP pack — SOD rules loaded from CSV)");
+  }
 
   // Build permission map for target roles
   const seedRolePerms = new Map<number, Set<string>>();
