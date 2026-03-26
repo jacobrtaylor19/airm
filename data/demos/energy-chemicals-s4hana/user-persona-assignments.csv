@@ -1,0 +1,101 @@
+source_user_id,persona_name,confidence_score,assignment_method
+EC00001,Process Engineer,0.73,ai
+EC00002,Cost Controller,0.78,ai
+EC00003,Maintenance Technician,0.91,ai
+EC00004,HSE Specialist,0.87,ai
+EC00005,GL Accountant,0.73,ai
+EC00006,Procurement Buyer,0.78,ai
+EC00007,Quality Inspector,0.87,ai
+EC00008,Treasury Analyst,0.78,ai
+EC00009,IT Systems Administrator,0.93,ai
+EC00010,IT Systems Administrator,0.92,ai
+EC00011,Process Engineer,0.9,ai
+EC00012,Maintenance Supervisor,0.79,ai
+EC00013,Maintenance Technician,0.97,ai
+EC00014,Reliability Engineer,0.75,ai
+EC00015,Production Coordinator,0.75,ai
+EC00016,Quality Inspector,0.88,ai
+EC00017,Production Coordinator,0.91,ai
+EC00018,HSE Specialist,0.97,ai
+EC00019,Supply Chain Planner,0.74,ai
+EC00020,Reliability Engineer,0.94,ai
+EC00021,Quality Inspector,0.87,ai
+EC00022,Process Engineer,0.73,ai
+EC00023,HSE Specialist,0.92,ai
+EC00024,Maintenance Planner,0.94,ai
+EC00025,Procurement Buyer,0.82,ai
+EC00026,IT Systems Administrator,0.89,ai
+EC00027,Production Coordinator,0.76,ai
+EC00028,Strategic Sourcing Manager,0.77,ai
+EC00029,Reliability Engineer,0.9,ai
+EC00030,Production Coordinator,0.88,ai
+EC00031,Production Coordinator,0.86,ai
+EC00032,Quality Inspector,0.76,ai
+EC00033,Treasury Analyst,0.79,ai
+EC00034,HSE Specialist,0.9,ai
+EC00035,Maintenance Planner,0.78,ai
+EC00036,Procurement Buyer,0.93,ai
+EC00037,Strategic Sourcing Manager,0.79,ai
+EC00038,Process Engineer,0.96,ai
+EC00039,Strategic Sourcing Manager,0.78,ai
+EC00040,HSE Specialist,0.82,ai
+EC00041,Reliability Engineer,0.76,ai
+EC00042,Maintenance Technician,0.78,ai
+EC00043,Reliability Engineer,0.91,ai
+EC00044,Reliability Engineer,0.95,ai
+EC00045,Treasury Analyst,0.81,ai
+EC00046,Maintenance Technician,0.85,ai
+EC00047,Production Coordinator,0.92,ai
+EC00048,HR Administrator,0.76,ai
+EC00049,Production Coordinator,0.93,ai
+EC00050,Production Coordinator,0.88,ai
+EC00051,Turnaround Planner,0.82,ai
+EC00052,Production Coordinator,0.86,ai
+EC00053,Maintenance Planner,0.9,ai
+EC00054,Production Coordinator,0.9,ai
+EC00055,Production Coordinator,0.92,ai
+EC00056,Cost Controller,0.75,ai
+EC00057,Strategic Sourcing Manager,0.76,ai
+EC00058,Maintenance Planner,0.97,ai
+EC00059,IT Systems Administrator,0.97,ai
+EC00060,Supply Chain Planner,0.85,ai
+EC00061,Process Engineer,0.95,ai
+EC00062,Production Coordinator,0.94,ai
+EC00063,IT Systems Administrator,0.76,ai
+EC00064,Process Engineer,0.86,ai
+EC00065,Process Engineer,0.88,ai
+EC00066,IT Systems Administrator,0.73,ai
+EC00067,Reliability Engineer,0.95,ai
+EC00068,Production Coordinator,0.78,ai
+EC00069,HSE Specialist,0.95,ai
+EC00070,HR Administrator,0.74,ai
+EC00071,Supply Chain Planner,0.93,ai
+EC00072,AP Processor,0.75,ai
+EC00073,Supply Chain Planner,0.97,ai
+EC00074,Production Coordinator,0.79,ai
+EC00075,Production Coordinator,0.97,ai
+EC00076,HSE Specialist,0.91,ai
+EC00077,Reliability Engineer,0.98,ai
+EC00078,Production Coordinator,0.83,ai
+EC00079,Reliability Engineer,0.84,ai
+EC00080,HSE Specialist,0.78,ai
+EC00081,Strategic Sourcing Manager,0.73,ai
+EC00082,HR Administrator,0.87,ai
+EC00083,HR Administrator,0.74,ai
+EC00084,Maintenance Planner,0.78,ai
+EC00085,HSE Specialist,0.94,ai
+EC00086,Procurement Buyer,0.85,ai
+EC00087,IT Systems Administrator,0.89,ai
+EC00088,Maintenance Technician,0.86,ai
+EC00089,Turnaround Planner,0.78,ai
+EC00090,Treasury Analyst,0.93,ai
+EC00091,Quality Inspector,0.74,ai
+EC00092,Production Coordinator,0.81,ai
+EC00093,HSE Specialist,0.84,ai
+EC00094,Process Engineer,0.9,ai
+EC00095,HR Administrator,0.74,ai
+EC00096,Maintenance Supervisor,0.93,ai
+EC00097,IT Systems Administrator,0.78,ai
+EC00098,Procurement Buyer,0.86,ai
+EC00099,HSE Specialist,0.83,ai
+EC00100,HSE Specialist,0.84,ai

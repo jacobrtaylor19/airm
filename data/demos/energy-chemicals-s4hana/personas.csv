@@ -1,0 +1,21 @@
+name,description,business_function
+Maintenance Planner,"Plans and schedules preventive and corrective maintenance work orders for rotating equipment, instrumentation, and electrical systems.",Maintenance
+Maintenance Technician,"Executes maintenance orders, records technical findings, and confirms completed work on plant equipment.",Maintenance
+Maintenance Supervisor,"Oversees maintenance operations, approves work orders, manages equipment master data and maintenance budgets.",Maintenance
+Process Engineer,"Designs and optimizes refinery and chemical processing operations, manages engineering change documentation.",Engineering
+Reliability Engineer,"Focuses on equipment reliability analysis, failure tracking, calibration management and predictive maintenance.",Engineering
+GL Accountant,"Performs journal entries, period-end closing activities, and financial reporting for energy operations.",Finance
+AP Processor,"Processes vendor invoices, manages payment runs, and maintains vendor records for contractor and supplier payments.",Finance
+Cost Controller,"Manages cost center accounting, internal orders, project costing, and cost allocation for capital-intensive operations.",Finance
+Treasury Analyst,"Manages cash positions, bank reconciliations, and financial instruments for commodity trading operations.",Finance
+Procurement Buyer,"Creates purchase orders for maintenance materials, MRO supplies, and services. Manages requisitions.",Procurement
+Strategic Sourcing Manager,"Manages long-term vendor contracts, commodity purchasing agreements, and sourcing strategy.",Procurement
+Warehouse Coordinator,"Processes goods receipts and issues for spare parts, manages bin locations and inventory in plant warehouses.",Warehouse
+Inventory Controller,"Manages physical inventory counts, cycle counting, and inventory valuation for high-value spare parts.",Warehouse
+HSE Specialist,"Manages health, safety, and environmental compliance — permits, incident reporting, waste tracking.",HSE
+Quality Inspector,"Performs quality inspections on incoming materials, records results, and manages material certifications.",Quality
+Production Coordinator,"Coordinates shift schedules, production orders, and resource allocation across process units.",Operations
+Supply Chain Planner,"Forecasts demand for chemicals and feedstock, manages safety stock levels and replenishment.",Supply Chain
+IT Systems Administrator,"Manages SAP system users, roles, transport management, and basis administration.",IT
+HR Administrator,"Maintains employee master data, manages organizational structures and personnel actions.",HR
+Turnaround Planner,"Plans and coordinates plant turnaround/shutdown activities — scope, materials, contractor management.",Maintenance
