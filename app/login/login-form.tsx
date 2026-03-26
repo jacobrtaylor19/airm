@@ -132,6 +132,24 @@ export function LoginForm() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
             </Button>
           </form>
+          {/* Demo credentials hint */}
+          <div className="mt-3 pt-3 border-t">
+            <p className="text-xs text-muted-foreground mb-1.5">Demo credentials:</p>
+            <div className="grid grid-cols-2 gap-1 text-xs">
+              <button type="button" className="text-left px-2 py-1 rounded hover:bg-slate-100 text-muted-foreground" onClick={() => { setUsername("demo.admin"); setPassword("DemoGuide2026!"); setError(""); }}>
+                <span className="font-medium text-foreground">demo.admin</span> — Admin
+              </button>
+              <button type="button" className="text-left px-2 py-1 rounded hover:bg-slate-100 text-muted-foreground" onClick={() => { setUsername("demo.mapper.finance"); setPassword("DemoGuide2026!"); setError(""); }}>
+                <span className="font-medium text-foreground">demo.mapper.finance</span>
+              </button>
+              <button type="button" className="text-left px-2 py-1 rounded hover:bg-slate-100 text-muted-foreground" onClick={() => { setUsername("demo.approver"); setPassword("DemoGuide2026!"); setError(""); }}>
+                <span className="font-medium text-foreground">demo.approver</span>
+              </button>
+              <button type="button" className="text-left px-2 py-1 rounded hover:bg-slate-100 text-muted-foreground" onClick={() => { setUsername("demo.viewer"); setPassword("DemoGuide2026!"); setError(""); }}>
+                <span className="font-medium text-foreground">demo.viewer</span>
+              </button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 

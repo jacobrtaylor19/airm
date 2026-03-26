@@ -8,7 +8,6 @@ import { validateBody } from "@/lib/validation";
 import { loginSchema } from "@/lib/validation/auth";
 import { safeError } from "@/lib/errors";
 import { AUTH } from "@/lib/constants";
-import { getSetting } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -42,23 +41,6 @@ export async function POST(req: NextRequest) {
         actorEmail: username,
       }).run();
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
-    }
-
-    // Demo environment isolation
-    const activePack = getSetting("active_demo_pack") || "default";
-    if (user.demoEnvironment === "self-guided" && activePack !== "self-guided") {
-      return NextResponse.json(
-        { error: "This account is only available in the self-guided demo environment." },
-        { status: 401 }
-      );
-    }
-    if (user.demoEnvironment === null && activePack === "self-guided") {
-      if (user.role !== "system_admin" && user.role !== "admin") {
-        return NextResponse.json(
-          { error: "Switch to the self-guided demo environment to use demo accounts." },
-          { status: 401 }
-        );
-      }
     }
 
     // Check account lockout
