@@ -5,6 +5,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { validateBody } from "@/lib/validation";
 import { settingsSchema } from "@/lib/validation/admin";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -48,10 +49,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, updated: entries.length });
   } catch (err: unknown) {
-    const message =
-      process.env.NODE_ENV === "development" && err instanceof Error
-        ? err.message
-        : "Failed to update settings";
+    const message = safeError(err, "Failed to update settings");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

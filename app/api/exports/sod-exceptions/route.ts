@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { generateSodExceptionCsv } from "@/lib/exports/sod-exception-report";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,7 @@ export async function GET() {
       },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Export failed";
+    const message = safeError(err, "Export failed");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -7,6 +7,7 @@ import { cookies } from "next/headers";
 import { checkBulkRate } from "@/lib/rate-limit-middleware";
 import { validateBody } from "@/lib/validation";
 import { bulkDeleteSchema } from "@/lib/validation/admin";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ deleted: ids.length });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = safeError(err, "Unknown error");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

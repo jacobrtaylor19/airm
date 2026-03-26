@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, action: "created", id: Number(result.lastInsertRowid) });
     }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+    const msg = safeError(err, "Unknown error");
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
@@ -127,7 +128,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+    const msg = safeError(err, "Unknown error");
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
@@ -170,7 +171,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+    const msg = safeError(err, "Unknown error");
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }

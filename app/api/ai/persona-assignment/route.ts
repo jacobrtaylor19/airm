@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { runPersonaAssignment } from "@/lib/ai/persona-assignment";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export async function POST() {
 
     return NextResponse.json({ jobId: job.id, ...result });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = safeError(err, "Unknown error");
     db.update(schema.processingJobs).set({
       status: "failed",
       errorLog: message,

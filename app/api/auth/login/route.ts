@@ -6,6 +6,7 @@ import { verifyPassword, createSession } from "@/lib/auth";
 import { checkLoginRate } from "@/lib/rate-limit-middleware";
 import { validateBody } from "@/lib/validation";
 import { loginSchema } from "@/lib/validation/auth";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -124,10 +125,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err: unknown) {
-    const message =
-      process.env.NODE_ENV === "development" && err instanceof Error
-        ? err.message
-        : "Login failed";
+    const message = safeError(err, "Login failed");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

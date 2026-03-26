@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, personaId, roleCount: targetRoleIds.length });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = safeError(err, "Unknown error");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

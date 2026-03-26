@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { safeError } from "@/lib/errors";
 
 const ADMIN_ROLES = ["admin", "system_admin"];
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(release, { status: 201 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = safeError(err, "Unknown error");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -104,7 +105,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(updated);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = safeError(err, "Unknown error");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -125,7 +126,7 @@ export async function DELETE(req: NextRequest) {
     db.delete(schema.releases).where(eq(schema.releases.id, id)).run();
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = safeError(err, "Unknown error");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

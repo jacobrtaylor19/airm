@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getOrgTree, getAllOrgUnits } from "@/lib/org-hierarchy";
 import { getSessionUser } from "@/lib/auth";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,7 @@ export async function GET() {
     return NextResponse.json({ tree, mappers, approvers, allUnits });
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to load org hierarchy" },
+      { error: safeError(error, "Failed to load org hierarchy") },
       { status: 500 }
     );
   }
@@ -102,7 +103,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, orgUnit: inserted });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to create org unit";
+    const message = safeError(err, "Failed to create org unit");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -233,7 +234,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to update org unit";
+    const message = safeError(err, "Failed to update org unit");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
@@ -310,7 +311,7 @@ export async function DELETE(req: NextRequest) {
         : undefined,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to delete org unit";
+    const message = safeError(err, "Failed to delete org unit");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

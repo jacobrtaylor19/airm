@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -106,7 +107,7 @@ export async function POST() {
       assignmentsCreated: created,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = safeError(err, "Unknown error");
     db.update(schema.processingJobs).set({
       status: "failed",
       errorLog: message,

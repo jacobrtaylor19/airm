@@ -6,6 +6,7 @@ import { getSessionUser, verifyPassword, hashPassword } from "@/lib/auth";
 import { validatePassword } from "@/lib/password-policy";
 import { validateBody } from "@/lib/validation";
 import { changePasswordSchema } from "@/lib/validation/auth";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -66,10 +67,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const message =
-      process.env.NODE_ENV === "development" && err instanceof Error
-        ? err.message
-        : "Failed to change password";
+    const message = safeError(err, "Failed to change password");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

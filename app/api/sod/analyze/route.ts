@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { notifyUsersWithRoles } from "@/lib/notifications";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ jobId: job.id, ...result });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Unknown error";
+    const message = safeError(err, "Unknown error");
     db.update(schema.processingJobs).set({
       status: "failed",
       errorLog: message,

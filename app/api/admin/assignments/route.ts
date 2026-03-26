@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, id: created.id });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to create assignment";
+    const message = safeError(err, "Failed to create assignment");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
