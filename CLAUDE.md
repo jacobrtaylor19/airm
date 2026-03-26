@@ -70,8 +70,23 @@ Session cookie: `airm_session` (httpOnly, 24h expiry). Middleware uses an **allo
 | Auto-Map Roles | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Run SOD Analysis | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Pipeline Jobs (run) | ✅ | ✅ | ✅ | badge | badge | badge |
+| Edit Role Assignments | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Submit for Review | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | Approve/Reject | ✅ | ✅ | ❌ | ✅ | ❌ | ❌ |
+| Send Back to Draft | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
 | Bulk Delete | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| See Within-Role SOD | ✅ | ✅ | security.lead | ✅ | ❌ | ❌ |
+
+**Assignment workflow statuses:**
+```
+draft → [Submit for Review] → pending_review → [SOD Analysis] → sod_rejected | compliance_approved → [Approval] → approved
+```
+- `draft` — editable by mapper, not yet submitted
+- `pending_review` — locked, awaiting SOD analysis
+- `sod_rejected` — SOD conflicts found, needs resolution
+- `compliance_approved` — SOD clean, ready for approver
+- `ready_for_approval` — auto-promoted high-confidence assignments
+- `approved` — final, provisioned
 | Admin Console | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ---
