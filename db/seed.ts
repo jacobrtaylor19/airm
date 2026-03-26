@@ -19,10 +19,13 @@ if (!existsSync(CSV_DIR)) {
   process.exit(1);
 }
 
+// Use DATABASE_PATH env var (matches db/index.ts and Render config)
+const dbPath = process.env.DATABASE_PATH ?? path.join(DATA_DIR, "airm.db");
 console.log(`📦 Using demo pack: ${packName}`);
-console.log(`   CSV directory: ${CSV_DIR}\n`);
+console.log(`   CSV directory: ${CSV_DIR}`);
+console.log(`   Database: ${dbPath}\n`);
 
-const sqlite = new Database(path.join(DATA_DIR, "airm.db"));
+const sqlite = new Database(dbPath);
 sqlite.pragma("journal_mode = WAL");
 sqlite.pragma("foreign_keys = ON");
 sqlite.pragma("busy_timeout = 5000");
