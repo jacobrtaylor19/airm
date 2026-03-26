@@ -134,20 +134,24 @@ export function LoginForm() {
           </form>
           {/* Demo credentials hint */}
           <div className="mt-3 pt-3 border-t">
-            <p className="text-xs text-muted-foreground mb-1.5">Demo credentials:</p>
-            <div className="grid grid-cols-2 gap-1 text-xs">
-              <button type="button" className="text-left px-2 py-1 rounded hover:bg-slate-100 text-muted-foreground" onClick={() => { setUsername("demo.admin"); setPassword("DemoGuide2026!"); setError(""); }}>
-                <span className="font-medium text-foreground">demo.admin</span> — Admin
-              </button>
-              <button type="button" className="text-left px-2 py-1 rounded hover:bg-slate-100 text-muted-foreground" onClick={() => { setUsername("demo.mapper.finance"); setPassword("DemoGuide2026!"); setError(""); }}>
-                <span className="font-medium text-foreground">demo.mapper.finance</span>
-              </button>
-              <button type="button" className="text-left px-2 py-1 rounded hover:bg-slate-100 text-muted-foreground" onClick={() => { setUsername("demo.approver"); setPassword("DemoGuide2026!"); setError(""); }}>
-                <span className="font-medium text-foreground">demo.approver</span>
-              </button>
-              <button type="button" className="text-left px-2 py-1 rounded hover:bg-slate-100 text-muted-foreground" onClick={() => { setUsername("demo.viewer"); setPassword("DemoGuide2026!"); setError(""); }}>
-                <span className="font-medium text-foreground">demo.viewer</span>
-              </button>
+            <p className="text-xs text-muted-foreground mb-2">Quick login:</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { user: "demo.admin", label: "Admin" },
+                { user: "demo.mapper.finance", label: "Mapper" },
+                { user: "demo.approver", label: "Approver" },
+                { user: "demo.viewer", label: "Viewer" },
+              ].map((cred) => (
+                <button
+                  key={cred.user}
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors hover:bg-teal-50 hover:border-teal-300 hover:text-teal-700"
+                  onClick={() => { setUsername(cred.user); setPassword("DemoGuide2026!"); setError(""); }}
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
+                  {cred.label}
+                </button>
+              ))}
             </div>
           </div>
         </CardContent>
