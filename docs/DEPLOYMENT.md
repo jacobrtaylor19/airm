@@ -96,6 +96,20 @@ Once environment variables and disk are configured:
 
 ## Environment Configuration
 
+### Full Environment Variable Reference
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NODE_ENV` | Yes | `development` or `production` |
+| `ANTHROPIC_API_KEY` | Yes | Claude API key from console.anthropic.com |
+| `DATABASE_URL` | Yes | SQLite path. Dev: `file:./airm.db`, Prod: `file:///data/airm.db` |
+| `ENCRYPTION_KEY` | Prod | AES-256-GCM key for encrypting sensitive settings. Generate: `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"` |
+| `BACKUP_ENCRYPTION_KEY` | Prod | Passphrase for encrypting database backup files |
+| `AUDIT_DATABASE_URL` | No | Path to audit log DB. Default: `./data/audit.db` |
+| `SENTRY_DSN` | No | Sentry error tracking DSN (optional) |
+
+> **Post-deploy setup:** See `docs/POST_SPRINT_ACTION_ITEMS.md` for step-by-step instructions on configuring encryption keys, backups, Sentry, and GitHub branch protection.
+
 ### Development
 
 ```bash
@@ -103,6 +117,7 @@ Once environment variables and disk are configured:
 NODE_ENV=development
 ANTHROPIC_API_KEY=sk-ant-v4-...
 DATABASE_URL=file:./airm.db
+# ENCRYPTION_KEY is optional in dev — settings stored in plaintext without it
 ```
 
 Run locally:
