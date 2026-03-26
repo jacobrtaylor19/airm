@@ -39,7 +39,6 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
   const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set());
   const [bulkTargetRoleId, setBulkTargetRoleId] = useState<number | null>(null);
   const [bulkAssigning, setBulkAssigning] = useState(false);
-  const [submittingForReview, setSubmittingForReview] = useState(false);
   const router = useRouter();
 
   // Drag-and-drop mapping state
@@ -98,28 +97,6 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
   const [roleSearch, setRoleSearch] = useState("");
   const selectedDetail = selectedPersonaId ? personaDetails[selectedPersonaId] : null;
   const selectedPersona = personas.find(p => p.personaId === selectedPersonaId);
-
-  async function submitAllForReview() {
-    setSubmittingForReview(true);
-    try {
-      const res = await fetch("/api/mapping/submit-review", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ all: true }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Failed to submit for review");
-      } else {
-        toast.success(`${data.updated} assignment${data.updated === 1 ? "" : "s"} submitted for review`);
-        router.refresh();
-      }
-    } catch {
-      toast.error("Failed to submit for review");
-    } finally {
-      setSubmittingForReview(false);
-    }
-  }
 
   async function autoMapAll() {
     setAutoMapping(true);
@@ -251,18 +228,6 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
                 </div>
               )}
             </div>
-            <Button
-              variant="outline"
-              onClick={submitAllForReview}
-              disabled={autoMapping || submittingForReview || bulkMode}
-              className="border-indigo-300 text-indigo-700 hover:bg-indigo-50"
-            >
-              {submittingForReview ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</>
-              ) : (
-                <><Send className="h-4 w-4 mr-2" /> Submit All for Review</>
-              )}
-            </Button>
             <Button variant={bulkMode ? "default" : "outline"} onClick={() => { setBulkMode(!bulkMode); setBulkSelected(new Set()); setBulkTargetRoleId(null); }} disabled={autoMapping}>
               <ListChecks className="h-4 w-4 mr-2" /> {bulkMode ? "Exit Bulk Mode" : "Bulk Assign"}
             </Button>
