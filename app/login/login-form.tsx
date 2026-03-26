@@ -140,6 +140,7 @@ export function LoginForm() {
                 { user: "demo.admin", label: "Admin" },
                 { user: "demo.mapper.finance", label: "Mapper" },
                 { user: "demo.approver", label: "Approver" },
+                { user: "demo.coordinator", label: "Coordinator" },
                 { user: "demo.viewer", label: "Viewer" },
               ].map((cred) => (
                 <button

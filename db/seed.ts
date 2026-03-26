@@ -717,6 +717,7 @@ function seed() {
     { username: "demo.mapper.finance", displayName: "Demo Finance Mapper", role: "mapper", hash: demoHash, orgUnit: "Finance" },
     { username: "demo.mapper.operations", displayName: "Demo Operations Mapper", role: "mapper", hash: demoHash, orgUnit: "Operations" },
     { username: "demo.approver", displayName: "Demo Approver", role: "approver", hash: demoHash, orgUnit: null as string | null },
+    { username: "demo.coordinator", displayName: "Demo Coordinator", role: "coordinator", hash: demoHash, orgUnit: null as string | null },
     { username: "demo.viewer", displayName: "Demo Viewer", role: "viewer", hash: demoHash, orgUnit: null as string | null },
   ];
 
