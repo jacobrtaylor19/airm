@@ -2,7 +2,7 @@
 
 This document outlines planned features and improvements. Sprint 2 is the active build queue. Items below it are prioritised but not yet scheduled.
 
-*Last updated: March 26, 2026 (full roadmap completion — only 3 deferred items remain)*
+*Last updated: March 26, 2026 (evening — security sprint complete, demo environments live, role-based action gating implemented)*
 
 ---
 
@@ -15,16 +15,8 @@ This document outlines planned features and improvements. Sprint 2 is the active
 - Suggests next actions based on workflow state
 - Full PRD: `docs/product/PRD_AGENT_CHATBOT_CURRENT.md`
 
-### 2. Persona confirmation gate (segmented by business structure)
-- After personas are generated (AI) or uploaded (CSV), a mapper or admin must explicitly **confirm** them before proceeding to target role mapping
-- **Confirmation is segmented by org unit** — Finance can confirm their personas while Procurement is still iterating. Each L1/L2 org unit has its own confirmation status.
-- Once an org unit's personas are confirmed, "Generate Personas" and "Re-run Persona Generation" are **disabled for that scope** — personas in that org unit cannot be overwritten without first resetting confirmation
-- Confirmation is a deliberate action (e.g., "Confirm Personas for [Org Unit]" on the Personas page) — not automatic
-- Mappers can confirm for their assigned org unit; admins can confirm for any org unit
-- Reset requires admin/system_admin and shows a warning: "This will clear all downstream mappings, SOD analysis, and approvals for [Org Unit]"
-- Schema: new `personaConfirmations` table (orgUnitId, confirmedAt, confirmedBy, resetAt, resetBy)
-- UI: Personas page shows per-org-unit confirmation status; Jobs page disables persona generation when all in-scope org units are confirmed; pipeline refuses to regenerate confirmed scopes
-- Global view for admin: summary table showing which org units are confirmed vs. pending
+### ~~2. Persona confirmation gate~~ — REMOVED
+- **Decision (2026-03-26):** Removed during demo prep. Added friction without clear value. The persona workflow works better without a gate — mappers generate, review, and proceed to mapping directly. If a quality gate is needed later, revisit as a lighter-weight "lock personas" toggle rather than per-org-unit confirmation.
 
 ### 3. Bulk mapping actions
 - Allow mappers to assign the same target role to multiple personas in a single action
@@ -180,3 +172,9 @@ These are valuable features that are not prioritised for the current sprint. The
 | **R11: SOD rulebook editor (in-app CRUD, compliance access)** | v0.6.0 |
 | **R12: Multi-release project timeline** | v0.6.0 |
 | **R14: GRC export adapters (SAP GRC, ServiceNow, SailPoint)** | v0.6.0 |
+| **Security compliance hardening (SOC 2 readiness)** | v0.6.0 |
+| **Demo data refresh: 9 environments, 1K default, clean demo state** | v0.6.0 |
+| **Self-guided demo environment with 6 demo accounts** | v0.6.0 |
+| **AI pipeline: 2-phase persona generation, fire-and-forget jobs** | v0.6.0 |
+| **Role-based action gating (approver/viewer view-only)** | v0.6.0 |
+| **QA fixes: lockout, password validation, 404 page, UX polish** | v0.6.0 |
