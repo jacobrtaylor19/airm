@@ -302,6 +302,30 @@ export function MappingClient({ personas, personaDetails, refinements, gaps, tar
                               </span>
                             )}
                           </p>
+                          {(p.mlAutoConfirm > 0 || p.mlReview > 0 || p.mlBlock > 0) && (
+                            <div className="flex gap-1 mt-0.5">
+                              {p.mlAutoConfirm > 0 && (
+                                <span className="text-[9px] px-1 py-0 rounded bg-green-100 text-green-700 font-medium">
+                                  {p.mlAutoConfirm} auto
+                                </span>
+                              )}
+                              {p.mlSoftConfirm > 0 && (
+                                <span className="text-[9px] px-1 py-0 rounded bg-blue-100 text-blue-700 font-medium">
+                                  {p.mlSoftConfirm} soft
+                                </span>
+                              )}
+                              {p.mlReview > 0 && (
+                                <span className="text-[9px] px-1 py-0 rounded bg-amber-100 text-amber-700 font-medium">
+                                  {p.mlReview} review
+                                </span>
+                              )}
+                              {p.mlBlock > 0 && (
+                                <span className="text-[9px] px-1 py-0 rounded bg-red-100 text-red-700 font-medium">
+                                  {p.mlBlock} block
+                                </span>
+                              )}
+                            </div>
+                          )}
                           {personaSourceSystems[p.personaId] && personaSourceSystems[p.personaId].length > 0 && (
                             <div className="flex gap-1 mt-0.5">
                               {personaSourceSystems[p.personaId].map((sys) => (
@@ -722,6 +746,7 @@ function RefinementsTab({
                       <TableHead>User</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Persona</TableHead>
+                      <TableHead>Confidence</TableHead>
                       <TableHead>Roles</TableHead>
                       <TableHead>Overrides</TableHead>
                       <TableHead></TableHead>
@@ -739,6 +764,20 @@ function RefinementsTab({
                           <TableCell className="text-sm font-medium">{u.userName}</TableCell>
                           <TableCell className="text-sm">{u.department ?? "—"}</TableCell>
                           <TableCell className="text-sm">{u.personaName ?? "—"}</TableCell>
+                          <TableCell className="text-sm">
+                            {u.mlRecommendation ? (
+                              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                                u.mlRecommendation === "auto_confirm" ? "bg-green-100 text-green-700" :
+                                u.mlRecommendation === "soft_confirm" ? "bg-blue-100 text-blue-700" :
+                                u.mlRecommendation === "review" ? "bg-amber-100 text-amber-700" :
+                                "bg-red-100 text-red-700"
+                              }`}>
+                                {u.compositeConfidence != null ? `${Math.round(u.compositeConfidence)}%` : u.mlRecommendation.replace("_", " ")}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-sm">{u.allAssignments.length}</TableCell>
                           <TableCell>
                             {hasOverrides ? (
@@ -780,6 +819,27 @@ function RefinementsTab({
                 <div className="text-sm space-y-1">
                   <p><span className="text-muted-foreground">Persona:</span> {selectedUser.personaName ?? "None"}</p>
                   <p><span className="text-muted-foreground">Department:</span> {selectedUser.department ?? "—"}</p>
+                  {selectedUser.mlRecommendation && (
+                    <p>
+                      <span className="text-muted-foreground">ML Confidence:</span>{" "}
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                        selectedUser.mlRecommendation === "auto_confirm" ? "bg-green-100 text-green-700" :
+                        selectedUser.mlRecommendation === "soft_confirm" ? "bg-blue-100 text-blue-700" :
+                        selectedUser.mlRecommendation === "review" ? "bg-amber-100 text-amber-700" :
+                        "bg-red-100 text-red-700"
+                      }`}>
+                        {selectedUser.mlRecommendation.replace("_", " ")}
+                      </span>
+                      {selectedUser.compositeConfidence != null && (
+                        <span className="text-muted-foreground ml-1">({Math.round(selectedUser.compositeConfidence)}%)</span>
+                      )}
+                      {selectedUser.mlAgreement && selectedUser.mlAgreement !== "full" && (
+                        <span className="text-xs text-amber-600 ml-1">
+                          {selectedUser.mlAgreement === "disagreement" ? "ML disagrees" : "partial match"}
+                        </span>
+                      )}
+                    </p>
+                  )}
                 </div>
 
                 {/* Existing Production Access (locked, from previous waves) */}

@@ -3,6 +3,13 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getAIProvider } from "@/lib/ai/provider";
 import { getSetting } from "@/lib/settings";
+import {
+  buildMLProfile,
+  enrichConfidence,
+  getPersonaTargetRoles,
+  isMLServiceAvailable,
+  type MLEnrichmentResult,
+} from "@/lib/ai/ml-enrichment";
 
 interface UserAccessProfile {
   sourceUserId: string;
@@ -129,7 +136,7 @@ interface AssignmentResult {
 
 const BATCH_SIZE = 5; // Process 5 users concurrently
 
-export async function runPersonaAssignment(jobId: number): Promise<{ usersAssigned: number; failed: number }> {
+export async function runPersonaAssignment(jobId: number): Promise<{ usersAssigned: number; failed: number; mlEnriched: number }> {
   const provider = getAIProvider();
   const personas = getAvailablePersonas();
   if (personas.length === 0) {
@@ -139,6 +146,21 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
   const users = db.select().from(schema.users).all();
   let usersAssigned = 0;
   let failed = 0;
+  let mlEnriched = 0;
+
+  // Check ML sidecar availability once at start (not per-user)
+  const mlAvailable = await isMLServiceAvailable();
+  if (mlAvailable) {
+    console.log("[ML] Confidence enrichment sidecar is available — will enrich assignments");
+  } else {
+    console.log("[ML] Confidence enrichment sidecar not available — proceeding with Claude-only confidence");
+  }
+
+  // Build a persona ID→name lookup for ML enrichment
+  const personaNameById = new Map<number, string>();
+  for (const p of personas) {
+    personaNameById.set(p.id, p.name);
+  }
 
   // Clear existing assignments
   db.delete(schema.userPersonaAssignments).run();
@@ -178,6 +200,23 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
             ? db.select({ gid: schema.personas.consolidatedGroupId }).from(schema.personas).where(eq(schema.personas.id, personaId)).get()?.gid ?? null
             : null;
 
+          // ML enrichment (non-blocking — skipped if sidecar is down)
+          let mlData: MLEnrichmentResult | null = null;
+          if (mlAvailable && personaId) {
+            const mlProfile = buildMLProfile(user.id);
+            const personaName = personaNameById.get(personaId) || "";
+            const targetRoles = getPersonaTargetRoles(personaId);
+
+            if (mlProfile) {
+              mlData = await enrichConfidence(mlProfile, {
+                persona_name: personaName,
+                confidence: result.confidence,
+                target_roles: targetRoles,
+              });
+              if (mlData) mlEnriched++;
+            }
+          }
+
           db.insert(schema.userPersonaAssignments).values({
             userId: user.id,
             personaId,
@@ -187,6 +226,12 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
             aiModel: provider.name,
             assignmentMethod: "ai_assignment",
             jobRunId: jobId,
+            // ML enrichment fields (null if sidecar unavailable)
+            mlConfidence: mlData?.ml_confidence ?? null,
+            mlPersonaName: mlData?.ml_persona.persona_name ?? null,
+            mlAgreement: mlData?.agreement ?? null,
+            mlRecommendation: mlData?.recommendation ?? null,
+            compositeConfidence: mlData?.composite_confidence ?? null,
           }).run();
 
           usersAssigned++;
@@ -204,5 +249,5 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
     }).where(eq(schema.processingJobs.id, jobId)).run();
   }
 
-  return { usersAssigned, failed };
+  return { usersAssigned, failed, mlEnriched };
 }

@@ -1013,6 +1013,10 @@ export interface PersonaMappingRow {
   userCount: number;
   mappedRoleCount: number;
   sourcePermissionCount: number;
+  mlAutoConfirm: number;
+  mlSoftConfirm: number;
+  mlReview: number;
+  mlBlock: number;
 }
 
 export function getPersonaMappingWorkspace(): PersonaMappingRow[] {
@@ -1032,6 +1036,22 @@ export function getPersonaMappingWorkspace(): PersonaMappingRow[] {
       sourcePermissionCount: sql<number>`(
         SELECT count(*) FROM persona_source_permissions psp
         WHERE psp.persona_id = personas.id
+      )`,
+      mlAutoConfirm: sql<number>`(
+        SELECT count(*) FROM user_persona_assignments upa
+        WHERE upa.persona_id = personas.id AND upa.ml_recommendation = 'auto_confirm'
+      )`,
+      mlSoftConfirm: sql<number>`(
+        SELECT count(*) FROM user_persona_assignments upa
+        WHERE upa.persona_id = personas.id AND upa.ml_recommendation = 'soft_confirm'
+      )`,
+      mlReview: sql<number>`(
+        SELECT count(*) FROM user_persona_assignments upa
+        WHERE upa.persona_id = personas.id AND upa.ml_recommendation = 'review'
+      )`,
+      mlBlock: sql<number>`(
+        SELECT count(*) FROM user_persona_assignments upa
+        WHERE upa.persona_id = personas.id AND upa.ml_recommendation = 'block'
       )`,
     })
     .from(schema.personas)
@@ -1613,6 +1633,9 @@ export interface UserRefinementDetail {
   department: string | null;
   personaName: string | null;
   personaId: number | null;
+  mlRecommendation: string | null;
+  mlAgreement: string | null;
+  compositeConfidence: number | null;
   personaDefaultRoles: { targetRoleId: number; roleName: string; roleId: string }[];
   individualOverrides: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string; releasePhase: string }[];
   allAssignments: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string; releasePhase: string }[];
@@ -1648,6 +1671,9 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
       userId: schema.userPersonaAssignments.userId,
       personaId: schema.userPersonaAssignments.personaId,
       personaName: schema.personas.name,
+      mlRecommendation: schema.userPersonaAssignments.mlRecommendation,
+      mlAgreement: schema.userPersonaAssignments.mlAgreement,
+      compositeConfidence: schema.userPersonaAssignments.compositeConfidence,
     })
     .from(schema.userPersonaAssignments)
     .innerJoin(schema.personas, eq(schema.personas.id, schema.userPersonaAssignments.personaId))
@@ -1696,6 +1722,9 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
       department: first.department,
       personaName: persona?.personaName ?? null,
       personaId: persona?.personaId ?? null,
+      mlRecommendation: persona?.mlRecommendation ?? null,
+      mlAgreement: persona?.mlAgreement ?? null,
+      compositeConfidence: persona?.compositeConfidence ?? null,
       personaDefaultRoles: personaDefaults,
       individualOverrides: currentAssignments
         .filter(a => a.assignmentType !== "persona_default")

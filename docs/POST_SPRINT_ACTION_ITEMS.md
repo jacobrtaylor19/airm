@@ -138,31 +138,35 @@ bash scripts/verify-backup.sh
 
 ---
 
-## 8. Push to GitHub
+## 8. Remove Seed from Build Command
 
-**Why:** Activates the CI/CD pipeline and Dependabot.
+**Why:** After the initial reseed deploy, the build command should NOT include `pnpm db:seed` — otherwise every deploy wipes and re-creates the database.
 
-```bash
-cd airm
-git push origin main
-```
+1. Go to Render Dashboard → your service → **Settings** → **Build Command**
+2. Verify it is set to (no `pnpm db:seed`):
+   ```
+   pnpm install && pnpm db:push && pnpm build
+   ```
+3. If it still has `pnpm db:seed &&`, remove it and save
 
-After pushing:
-- GitHub Actions CI will run on the push (build + lint + security audit)
-- Dependabot will start scanning for dependency updates within 24 hours
-- Verify CI passes at: `https://github.com/<your-org>/airm/actions`
+**To reseed in the future:** Temporarily add `pnpm db:seed &&` before `pnpm build`, deploy, then remove it again.
 
 ---
 
 ## Summary Checklist
 
-| # | Action | Priority | Time |
-|---|--------|----------|------|
-| 1 | Set ENCRYPTION_KEY | **Required** | 2 min |
-| 2 | Set BACKUP_ENCRYPTION_KEY | **Required** | 2 min |
-| 3 | Set up backup cron job | **Required** | 10 min |
-| 4 | Set AUDIT_DATABASE_URL | Optional | 2 min |
-| 5 | Set up Sentry | Recommended | 15 min |
-| 6 | Configure branch protection | Recommended | 5 min |
-| 7 | Notify users to update passwords | Recommended | 5 min |
-| 8 | Push to GitHub | **Required** | 1 min |
+| # | Action | Priority | Status |
+|---|--------|----------|--------|
+| 1 | Set ENCRYPTION_KEY | **Required** | Pending |
+| 2 | Set BACKUP_ENCRYPTION_KEY | **Required** | Pending |
+| 3 | Set up backup cron job | **Required** | Pending |
+| 4 | Set AUDIT_DATABASE_URL | Optional | Pending |
+| 5 | Set up Sentry | Recommended | Pending |
+| 6 | Configure branch protection | Recommended | Pending |
+| 7 | Notify users to update passwords | Recommended | N/A (demo passwords updated in seed) |
+| 8 | Remove seed from build command | **Required** | Pending |
+
+**Already completed:**
+- Pushed to GitHub (CI/CD pipeline + Dependabot active)
+- Deployed to Render with 10K default pack and new passwords
+- Demo credentials documented in CLAUDE_CODE_ONGOING_UPDATES.md

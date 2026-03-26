@@ -153,6 +153,7 @@ These are valuable features that are not prioritised for the current sprint. The
 | **UX overhaul: upload accordion, audit log improvements, teal AI buttons** | v0.5.0 |
 | **UX overhaul: export card accents, empty states, status badges, mapping refinements** | v0.5.0 |
 | **Seed data: 3 demo environments (Default, Energy & Chemicals, Financial Services)** | v0.5.0 |
+| **Demo data refresh: 8 environments, 10K-user enterprise packs, Oracle/Workday/Salesforce** | v0.7.0 |
 | **Sprint 3: Release scoping schema (4 junction tables, context provider, selector)** | v0.6.0 |
 | **Sprint 3: Multi-release seed data (Wave 1 + Wave 2)** | v0.6.0 |
 | **Sprint 3: Release assignment admin UI (CRUD on Assignments page)** | v0.6.0 |
