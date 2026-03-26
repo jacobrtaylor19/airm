@@ -524,6 +524,7 @@ export const appUsers = sqliteTable("app_users", {
   isActive: integer("is_active", { mode: "boolean" }).default(true),
   failedLoginAttempts: integer("failed_login_attempts").default(0),
   lockedUntil: integer("locked_until"),
+  demoEnvironment: text("demo_environment"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });

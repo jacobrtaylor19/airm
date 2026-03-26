@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+S4PM_PLANNER,Maintenance Planner,Predictive maintenance planning in Fiori,S/4HANA,Maintenance
+S4PM_TECH,Maintenance Technician,Mobile work order execution and confirmations,S/4HANA,Maintenance
+S4PM_SUPERVISOR,Maintenance Supervisor,Maintenance operations oversight and approvals,S/4HANA,Maintenance
+S4PS_ENGINEER,Project Engineer,Capital project management in S/4HANA,S/4HANA,Engineering
+S4HSE_COORDINATOR,HSE Coordinator,Incident management and risk assessment,S/4HANA,HSE
+S4HSE_INSPECTOR,HSE Inspector,Safety inspections and permit management,S/4HANA,HSE
+S4MM_BUYER,Procurement Buyer,Source-to-pay processing in Fiori,S/4HANA,Procurement
+S4MM_WAREHOUSE,Warehouse Specialist,Inventory and warehouse management,S/4HANA,Supply Chain
+S4FI_ACCOUNTANT,GL Accountant,Journal entries and financial reporting,S/4HANA,Finance
+S4FI_AP,AP Specialist,Supplier invoice and payment management,S/4HANA,Finance
+S4FI_CONTROLLER,Cost Controller,Cost management and profitability analysis,S/4HANA,Finance
+S4HR_ADMIN,HR Specialist,Employee lifecycle and org management,S/4HANA,HR
+S4HR_PAYROLL,Payroll Specialist,Payroll execution and time management,S/4HANA,HR
+S4QM_INSPECTOR,Quality Inspector,Inspection processing and results management,S/4HANA,Quality
+S4QM_MANAGER,Quality Manager,Quality planning and compliance oversight,S/4HANA,Quality
+S4PP_PLANNER,Production Planner,Production scheduling and MRP,S/4HANA,Operations
+S4SD_SHIPPING,Shipping Specialist,Outbound logistics and delivery management,S/4HANA,Supply Chain
+S4IT_ADMIN,IT Administrator,User management and Fiori administration,S/4HANA,IT

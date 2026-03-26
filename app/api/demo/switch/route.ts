@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { execSync } from "child_process";
 import { existsSync } from "fs";
 import path from "path";
+import { setSetting } from "@/lib/settings";
+import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +11,7 @@ const VALID_DEMOS = [
   "default",
   "energy-chemicals-s4hana",
   "empty-project",
+  "self-guided",
   "financial-services-s4hana",
   "consumer-products-s4hana",
   "manufacturing-s4hana",
@@ -30,7 +33,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify the demo pack directory exists
     const demoDir = path.join(process.cwd(), "data", "demos", demo);
     if (!existsSync(demoDir)) {
       return NextResponse.json(
@@ -39,14 +41,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Run the seed script with the selected demo pack
     const cmd = `npx tsx db/seed.ts --demo=${demo}`;
-
     execSync(cmd, {
       cwd: process.cwd(),
       stdio: "pipe",
-      timeout: 30000,
+      timeout: 60000,
     });
+
+    // Persist the active demo pack so login isolation can check it
+    setSetting("active_demo_pack", demo, "system");
 
     return NextResponse.json({
       success: true,
@@ -54,11 +57,7 @@ export async function POST(req: NextRequest) {
       message: `Successfully switched to ${demo} demo environment`,
     });
   } catch (error) {
-    console.error("Demo switch error:", error);
-    const message = error instanceof Error ? error.message : "Failed to switch demo environment";
-    return NextResponse.json(
-      { error: message },
-      { status: 500 }
-    );
+    const message = safeError(error, "Failed to switch demo environment");
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

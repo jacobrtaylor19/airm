@@ -1,0 +1,31 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-PM-001,Create Maint Order vs Confirm,IW31,IW41,Medium,User who creates and confirms orders can fabricate maintenance work.
+SOD-PM-002,Create Equipment vs Maint Order,IA01,IW31,Low,User who creates equipment and maintenance orders can establish phantom assets.
+SOD-PM-003,Schedule Plan vs Confirm Order,IP10,IW41,Medium,User who schedules and confirms maintenance can fabricate preventive work.
+SOD-PM-004,Change Equipment vs Calibration,IA02,IK01,Medium,User who changes equipment and manages calibration can falsify instrument records.
+SOD-HSE-001,Record Incident vs Risk Assessment,EHSM_INC,EHSM_RA,Low,User who records incidents and assesses risk can manipulate safety metrics.
+SOD-HSE-002,Permit to Work vs HSE Audit,EHSM_PTW,EHSM_AUDIT,High,User who issues permits and audits safety can approve their own work conditions.
+SOD-HSE-003,Risk Assessment vs Permit to Work,EHSM_RA,EHSM_PTW,High,User who assesses risk and issues permits can understate hazards.
+SOD-HSE-004,MOC vs Risk Assessment,EHSM_MOC,EHSM_RA,Medium,User who manages change and assesses risk can minimize change impact.
+SOD-HSE-005,Chemical Inventory vs HSE Audit,EHSM_CHEM,EHSM_AUDIT,Medium,User who manages chemicals and audits compliance can conceal violations.
+SOD-PS-001,Project Budget vs Cost Transfer,CJ30,CJ80,High,User who sets budgets and transfers costs can manipulate project financials.
+SOD-PS-002,Project Builder vs Project Budget,CJ20N,CJ30,Medium,User who creates projects and sets budgets can establish unauthorized projects.
+SOD-AP-001,Vendor Create vs Payment Run,FK01,F110,Critical,User who creates vendors and runs payments can pay fictitious vendors.
+SOD-AP-002,Invoice Entry vs Payment Run,FB60,F110,Critical,User who enters invoices and runs payments can create and pay fraudulent invoices.
+SOD-AP-003,Vendor Create vs Invoice Entry,FK01,FB60,High,User who creates vendors and enters invoices can fabricate vendor relationships.
+SOD-GL-001,Journal Entry vs Period Close,FB01,OB52,Critical,User who posts journals and controls periods can post to closed periods.
+SOD-GL-002,Journal Entry vs Document Reversal,FB01,FB08,High,User who posts and reverses journals can manipulate financial records.
+SOD-GL-003,GL Master vs Journal Entry,FS00,FB01,High,User who creates accounts and posts to them can establish hidden accounts.
+SOD-MM-001,PO Create vs Goods Receipt,ME21N,MIGO,High,User who creates POs and receives goods can fabricate procurement.
+SOD-MM-002,Vendor Create vs PO Create,XK01,ME21N,Critical,User who creates vendors and POs can set up fictitious supply chains.
+SOD-MM-003,Material Create vs Goods Movement,MM01,MIGO,Medium,User who creates materials and moves goods can fabricate stock.
+SOD-WM-001,Goods Receipt vs Inventory Count,MIGO,MI04,High,User who receives goods and counts inventory can conceal discrepancies.
+SOD-HR-001,Employee Data vs Payroll,PA30,PC00_M99_CIPE,Critical,User who maintains records and runs payroll can create ghost employees.
+SOD-HR-002,Employee Data vs Time Entry,PA30,CAT2,High,User who maintains HR data and enters time can inflate compensation.
+SOD-QM-001,Create Inspection vs Usage Decision,QA01,QA11,Medium,User who creates inspections and records decisions can approve their own.
+SOD-IT-001,User Admin vs Role Admin,SU01,PFCG,Critical,User who creates users and roles can grant unlimited access.
+SOD-IT-002,User Admin vs Transport Mgmt,SU01,STMS,Critical,User who manages users and transports can move unauthorized changes.
+SOD-IT-003,Data Browser vs User Admin,SE16,SU01,Critical,User who reads tables and manages users can extract credentials.
+SOD-PM-005,Create Meas Point vs Record Meas,IK01,IK11,Low,User who creates measuring points and records can fabricate readings.
+SOD-PM-006,Change Maint Plan vs Confirm Order,IP02,IW41,Medium,User who modifies plans and confirms work can manipulate schedules.
+SOD-HSE-006,MOC vs Permit to Work,EHSM_MOC,EHSM_PTW,High,User who manages change and issues permits can bypass change controls.

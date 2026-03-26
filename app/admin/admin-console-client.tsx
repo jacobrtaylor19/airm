@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 import {
   Building2,
   Users,
@@ -37,6 +38,7 @@ import {
   Settings,
   Cpu,
   GitBranch,
+  RotateCcw,
 } from "lucide-react";
 
 // ─────────────────────────────────────────────
@@ -549,6 +551,10 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
             <GitBranch className="h-4 w-4" />
             Workflow Settings
           </TabsTrigger>
+          <TabsTrigger value="demo" className="flex items-center gap-1.5">
+            <RotateCcw className="h-4 w-4" />
+            Demo
+          </TabsTrigger>
         </TabsList>
 
         {/* ── ORG HIERARCHY TAB ── */}
@@ -961,6 +967,11 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── DEMO TAB ── */}
+        <TabsContent value="demo" className="mt-4">
+          <DemoResetCard />
+        </TabsContent>
       </Tabs>
 
       {/* ── ADD ORG UNIT DIALOG ── */}
@@ -1135,5 +1146,89 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Demo Reset Card
+// ─────────────────────────────────────────────
+
+function DemoResetCard() {
+  const [resetting, setResetting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [activePack, setActivePack] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((data) => setActivePack(data.active_demo_pack || "default"))
+      .catch(() => setActivePack("default"));
+  }, []);
+
+  async function handleReset() {
+    setResetting(true);
+    try {
+      const res = await fetch("/api/demo/reset", { method: "POST" });
+      if (res.ok) {
+        toast.success("Demo environment reset successfully");
+        setConfirmOpen(false);
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        toast.error(data.error || "Reset failed");
+      }
+    } catch {
+      toast.error("Failed to reset demo environment");
+    } finally {
+      setResetting(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <RotateCcw className="h-4 w-4" />
+          Demo Environment
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-muted-foreground">Active pack:</span>
+          <Badge variant="outline" className="font-mono text-xs">{activePack ?? "loading..."}</Badge>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Reset the demo environment to its initial state. This clears all generated data
+          (personas, mappings, SOD conflicts, approvals) and re-seeds from the demo pack.
+        </p>
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={() => setConfirmOpen(true)}
+          disabled={resetting}
+        >
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Reset Demo Environment
+        </Button>
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Reset Demo Environment?</DialogTitle>
+              <DialogDescription>
+                This will delete all generated data and re-seed the database with the
+                &quot;{activePack}&quot; demo pack. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancel</Button>
+              <Button variant="destructive" onClick={handleReset} disabled={resetting}>
+                {resetting ? <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Resetting...</> : "Reset Now"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
 }

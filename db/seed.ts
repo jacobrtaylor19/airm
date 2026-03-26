@@ -710,6 +710,52 @@ function seed() {
     db.insert(schema.workAssignments).values(a).run();
   }
 
+  // ─── 12b. Self-Guided Demo Accounts (only for self-guided pack) ───
+  if (packName === "self-guided") {
+    const demoHash = bcrypt.hashSync("DemoGuide2026!", 12);
+    const demoUsers = [
+      { username: "demo.admin", displayName: "Demo Administrator", role: "admin", hash: demoHash, orgUnit: null as string | null },
+      { username: "demo.mapper.finance", displayName: "Demo Finance Mapper", role: "mapper", hash: demoHash, orgUnit: "Finance" },
+      { username: "demo.mapper.operations", displayName: "Demo Operations Mapper", role: "mapper", hash: demoHash, orgUnit: "Operations" },
+      { username: "demo.approver", displayName: "Demo Approver", role: "approver", hash: demoHash, orgUnit: null as string | null },
+      { username: "demo.viewer", displayName: "Demo Viewer", role: "viewer", hash: demoHash, orgUnit: null as string | null },
+    ];
+
+    for (const u of demoUsers) {
+      const ouId = u.orgUnit ? (orgUnitIdMap.get(u.orgUnit) ?? null) : null;
+      db.insert(schema.appUsers).values({
+        username: u.username,
+        displayName: u.displayName,
+        passwordHash: u.hash,
+        role: u.role,
+        assignedOrgUnitId: ouId,
+        demoEnvironment: "self-guided",
+      }).run();
+    }
+
+    // Work assignments for demo mapper/approver
+    const demoMapperFin = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.mapper.finance")).get()!;
+    const demoMapperOps = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.mapper.operations")).get()!;
+    const demoApprover = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.approver")).get()!;
+
+    const demoAssignments = [
+      { appUserId: demoMapperFin.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Finance" },
+      { appUserId: demoMapperFin.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Procurement" },
+      { appUserId: demoMapperOps.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Maintenance" },
+      { appUserId: demoMapperOps.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Supply Chain" },
+      { appUserId: demoApprover.id, assignmentType: "approver", scopeType: "department", scopeValue: "Finance" },
+      { appUserId: demoApprover.id, assignmentType: "approver", scopeType: "department", scopeValue: "Maintenance" },
+      { appUserId: demoApprover.id, assignmentType: "approver", scopeType: "department", scopeValue: "Operations" },
+    ];
+
+    for (const a of demoAssignments) {
+      db.insert(schema.workAssignments).values(a).run();
+    }
+
+    console.log(`  ✓ ${demoUsers.length} self-guided demo accounts (demo.admin, demo.mapper.*, demo.approver, demo.viewer)`);
+    console.log("    Password: DemoGuide2026!");
+  }
+
   // ─── 13. Default System Settings ───
   db.delete(schema.systemSettings).run();
   const defaultSettings = [

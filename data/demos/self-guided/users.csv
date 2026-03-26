@@ -1,0 +1,101 @@
+source_user_id,display_name,email,job_title,department
+EC00001,Cheryl Sanders,cheryl.sanders@energycorp.com,Senior Process Engineer,Engineering
+EC00002,Helen Lewis,helen.lewis@energycorp.com,GL Accountant,Finance
+EC00003,Zachary Lopez,zachary.lopez@energycorp.com,Facilities Manager,Facilities
+EC00004,Valentina Price,valentina.price@energycorp.com,HSE Manager,HSE
+EC00005,Beverly Thompson,beverly.thompson@energycorp.com,AR Specialist,Finance
+EC00006,Sanjay Patel,sanjay.patel@energycorp.com,Procurement Director,Procurement
+EC00007,Olga Gray,olga.gray@energycorp.com,Document Control Specialist,Quality
+EC00008,Lauren Eriksson,lauren.eriksson@energycorp.com,AP Clerk,Finance
+EC00009,Jose Sharma,jose.sharma@energycorp.com,IT Support Specialist,IT
+EC00010,Betty Harris,betty.harris@energycorp.com,Security Analyst,IT
+EC00011,Adam Alvarez,adam.alvarez@energycorp.com,Process Engineer,Engineering
+EC00012,Astrid Sato,astrid.sato@energycorp.com,Work Order Coordinator,Maintenance
+EC00013,Amy Edwards,amy.edwards@energycorp.com,Calibration Specialist,Maintenance
+EC00014,Arthur Bennett,arthur.bennett@energycorp.com,Civil Engineer,Engineering
+EC00015,Sandra Nakamura,sandra.nakamura@energycorp.com,Process Engineer,Operations
+EC00016,Logan Ortiz,logan.ortiz@energycorp.com,QC Coordinator,Quality
+EC00017,Deborah Zhang,deborah.zhang@energycorp.com,Process Engineer,Operations
+EC00018,Jeffrey Edwards,jeffrey.edwards@energycorp.com,Safety Inspector,HSE
+EC00019,Steven Reed,steven.reed@energycorp.com,Logistics Manager,Supply Chain
+EC00020,Rahul Silva,rahul.silva@energycorp.com,Mechanical Engineer,Engineering
+EC00021,Pooja Oliveira,pooja.oliveira@energycorp.com,Quality Auditor,Quality
+EC00022,Terry Hughes,terry.hughes@energycorp.com,Senior Process Engineer,Engineering
+EC00023,Michelle Ivanov,michelle.ivanov@energycorp.com,HSE Director,HSE
+EC00024,Vikram Chopra,vikram.chopra@energycorp.com,Maintenance Planner,Maintenance
+EC00025,Aisha Ribeiro,aisha.ribeiro@energycorp.com,Category Manager,Procurement
+EC00026,Lauren Jackson,lauren.jackson@energycorp.com,DevOps Engineer,IT
+EC00027,Ashley Brown,ashley.brown@energycorp.com,Area Supervisor,Operations
+EC00028,Lauren Johnson,lauren.johnson@energycorp.com,Senior Buyer,Procurement
+EC00029,Frances Martin,frances.martin@energycorp.com,Electrical Engineer,Engineering
+EC00030,Kavita Richardson,kavita.richardson@energycorp.com,Process Engineer,Operations
+EC00031,Patrick Gomes,patrick.gomes@energycorp.com,Logistics Coordinator,Operations
+EC00032,Linda Kumar,linda.kumar@energycorp.com,Compliance Specialist,Quality
+EC00033,Andrea Watanabe,andrea.watanabe@energycorp.com,Tax Analyst,Finance
+EC00034,Arjun Griffin,arjun.griffin@energycorp.com,Industrial Hygienist,HSE
+EC00035,Maria Bergstrom,maria.bergstrom@energycorp.com,Predictive Maintenance Analyst,Maintenance
+EC00036,Lauren Gonzales,lauren.gonzales@energycorp.com,Category Manager,Procurement
+EC00037,Angela Aguilar,angela.aguilar@energycorp.com,Procurement Director,Procurement
+EC00038,Kelly Vasquez,kelly.vasquez@energycorp.com,Engineering Manager,Engineering
+EC00039,Gerald Williams,gerald.williams@energycorp.com,Contract Specialist,Procurement
+EC00040,Camila Rogers,camila.rogers@energycorp.com,Safety Officer,HSE
+EC00041,Natasha Bergstrom,natasha.bergstrom@energycorp.com,Mechanical Engineer,Engineering
+EC00042,Marco Cook,marco.cook@energycorp.com,Maintenance Manager,Maintenance
+EC00043,Omar Ortiz,omar.ortiz@energycorp.com,Process Engineer,Engineering
+EC00044,Kimberly Andersson,kimberly.andersson@energycorp.com,Engineering Manager,Engineering
+EC00045,Fatima Fisher,fatima.fisher@energycorp.com,Revenue Analyst,Finance
+EC00046,Debra Eriksson,debra.eriksson@energycorp.com,Maintenance Supervisor,Maintenance
+EC00047,Ahmed Ito,ahmed.ito@energycorp.com,Operations Analyst,Operations
+EC00048,Judith O'Brien,judith.obrien@energycorp.com,Talent Acquisition Lead,HR
+EC00049,Amit Gomez,amit.gomez@energycorp.com,Logistics Coordinator,Operations
+EC00050,Wayne Peterson,wayne.peterson@energycorp.com,Plant Manager,Operations
+EC00051,Evelyn Wood,evelyn.wood@energycorp.com,Predictive Maintenance Analyst,Maintenance
+EC00052,Frances Sharma,frances.sharma@energycorp.com,Operations Director,Operations
+EC00053,Donna Harris,donna.harris@energycorp.com,Maintenance Technician,Maintenance
+EC00054,Sakura Edwards,sakura.edwards@energycorp.com,Operations Director,Operations
+EC00055,Kevin Young,kevin.young@energycorp.com,Plant Operator,Operations
+EC00056,Teresa Cox,teresa.cox@energycorp.com,Treasury Analyst,Finance
+EC00057,Jason Hill,jason.hill@energycorp.com,Senior Buyer,Procurement
+EC00058,Pooja Torres,pooja.torres@energycorp.com,Facilities Manager,Facilities
+EC00059,Jason Jimenez,jason.jimenez@energycorp.com,IT Support Specialist,IT
+EC00060,Lauren Sato,lauren.sato@energycorp.com,Inventory Analyst,Supply Chain
+EC00061,Lucia Hill,lucia.hill@energycorp.com,Mechanical Engineer,Engineering
+EC00062,Jerry Martin,jerry.martin@energycorp.com,Plant Manager,Operations
+EC00063,Kyle Murphy,kyle.murphy@energycorp.com,Security Analyst,IT
+EC00064,Marilyn Eriksson,marilyn.eriksson@energycorp.com,Mechanical Engineer,Engineering
+EC00065,Christopher Hoffmann,christopher.hoffmann@energycorp.com,Chemical Engineer,Engineering
+EC00066,Judy Ward,judy.ward@energycorp.com,DBA,IT
+EC00067,Elizabeth Sousa,elizabeth.sousa@energycorp.com,Electrical Engineer,Engineering
+EC00068,Samuel Ribeiro,samuel.ribeiro@energycorp.com,Shift Supervisor,Operations
+EC00069,Kathleen Russell,kathleen.russell@energycorp.com,HSE Coordinator,HSE
+EC00070,Yuki Nelson,yuki.nelson@energycorp.com,HR Director,HR
+EC00071,Cynthia Price,cynthia.price@energycorp.com,Transportation Planner,Supply Chain
+EC00072,Mason Jimenez,mason.jimenez@energycorp.com,Payroll Specialist,Finance
+EC00073,Deepak Mendoza,deepak.mendoza@energycorp.com,Shipping Coordinator,Supply Chain
+EC00074,Emily Fischer,emily.fischer@energycorp.com,Operations Manager,Operations
+EC00075,Ingrid Aguilar,ingrid.aguilar@energycorp.com,Operations Analyst,Operations
+EC00076,Deborah Turner,deborah.turner@energycorp.com,HSE Director,HSE
+EC00077,Marco Adams,marco.adams@energycorp.com,Mechanical Engineer,Engineering
+EC00078,Harry Patel,harry.patel@energycorp.com,Production Planner,Operations
+EC00079,Christina Jackson,christina.jackson@energycorp.com,Facilities Manager,Facilities
+EC00080,Luis Ward,luis.ward@energycorp.com,Safety Inspector,HSE
+EC00081,Dylan Lundgren,dylan.lundgren@energycorp.com,Category Manager,Procurement
+EC00082,Mason Richardson,mason.richardson@energycorp.com,Employee Relations Specialist,HR
+EC00083,Isabella Wilson,isabella.wilson@energycorp.com,Recruiter,HR
+EC00084,Isabella Flores,isabella.flores@energycorp.com,Reliability Engineer,Maintenance
+EC00085,Lawrence Griffin,lawrence.griffin@energycorp.com,Safety Engineer,HSE
+EC00086,Hannah Long,hannah.long@energycorp.com,Procurement Analyst,Procurement
+EC00087,Joe Foster,joe.foster@energycorp.com,Infrastructure Engineer,IT
+EC00088,Joan Gutierrez,joan.gutierrez@energycorp.com,Facilities Coordinator,Facilities
+EC00089,Benjamin Griffin,benjamin.griffin@energycorp.com,Instrumentation Tech,Maintenance
+EC00090,Hiroshi Cruz,hiroshi.cruz@energycorp.com,AR Specialist,Finance
+EC00091,Sandra Williams,sandra.williams@energycorp.com,QA Analyst,Quality
+EC00092,Charlotte Hall,charlotte.hall@energycorp.com,Operations Manager,Operations
+EC00093,Arjun Fischer,arjun.fischer@energycorp.com,Permit Coordinator,HSE
+EC00094,Logan Koch,logan.koch@energycorp.com,Electrical Engineer,Engineering
+EC00095,Evelyn Nelson,evelyn.nelson@energycorp.com,HRIS Analyst,HR
+EC00096,Andrew Nguyen,andrew.nguyen@energycorp.com,Building Maintenance Tech,Facilities
+EC00097,Jesse Phillips,jesse.phillips@energycorp.com,DBA,IT
+EC00098,Benjamin Takahashi,benjamin.takahashi@energycorp.com,Procurement Manager,Procurement
+EC00099,Lakshmi Williams,lakshmi.williams@energycorp.com,Safety Inspector,HSE
+EC00100,Ravi Sullivan,ravi.sullivan@energycorp.com,HSE Manager,HSE

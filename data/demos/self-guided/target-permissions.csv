@@ -1,0 +1,41 @@
+permission_id,permission_name,description,system,risk_level
+F0893,Create Maintenance Orders,Create and schedule maintenance work orders,S/4HANA,Medium
+F0894,Confirm Maintenance,Record time and material on work orders,S/4HANA,Low
+F0895,Manage Equipment,Create and maintain equipment master records,S/4HANA,Medium
+F0896,Schedule Maint Plans,Configure and schedule maintenance plans,S/4HANA,Medium
+F0897,Monitor Maint Plans,View maintenance plan status and deadlines,S/4HANA,Low
+F4501,Manage Projects,Create WBS elements and manage project budgets,S/4HANA,Medium
+F4502,Project Cost Transfer,Transfer project costs to controlling,S/4HANA,Medium
+F8901,Record HSE Incidents,Create and manage health safety environment incidents,S/4HANA,Medium
+F8902,HSE Risk Assessment,Perform and document risk assessments,S/4HANA,Medium
+F8903,Manage Permits,Create and approve permits to work,S/4HANA,High
+F8904,HSE Auditing,Conduct and document HSE compliance audits,S/4HANA,Medium
+F8905,Management of Change,Create and manage MOC requests,S/4HANA,High
+F8906,Chemical Inventory,Manage chemical inventory and safety data,S/4HANA,Medium
+F1074,Create Purchase Orders,Create and process purchase orders,S/4HANA,Medium
+F1076,Approve Purchase Orders,Approve purchase orders above threshold,S/4HANA,High
+F2093,Post Goods Receipt,Record goods receipts against purchase orders,S/4HANA,Medium
+F2094,Post Goods Issue,Record goods issues for consumption or delivery,S/4HANA,Medium
+F3721,Manage Physical Inventory,Create counts and post inventory adjustments,S/4HANA,Medium
+F0717,Manage Supplier Invoices,Process and post supplier invoices,S/4HANA,Medium
+F2424,Manage Automatic Payments,Configure and run automatic payment programs,S/4HANA,Critical
+F0743,Manage Supplier Master,Create and maintain supplier master data,S/4HANA,High
+F0716,Post Journal Entries,Create and post manual journal entries,S/4HANA,Medium
+F0814,Close Period,Execute period-end closing activities,S/4HANA,Critical
+F2312,Run Financial Reports,Generate financial statements and reports,S/4HANA,Low
+F0719,Reverse Documents,Reverse posted financial documents,S/4HANA,High
+F2313,Manage GL Master,Create and modify GL account master data,S/4HANA,High
+F2872,Manage Cost Centers,Create and maintain cost center master data,S/4HANA,Medium
+F2721,Maintain Employee Data,Create and modify employee master records,S/4HANA,High
+F2722,Run Payroll,Execute payroll calculation and posting,S/4HANA,Critical
+F2723,Time Management,Evaluate and manage employee time records,S/4HANA,Medium
+F5782,Record QM Results,Enter and evaluate quality inspection results,S/4HANA,Low
+F5783,Manage QM Plans,Create quality inspection plans and specs,S/4HANA,Medium
+F5784,QM Notifications,Create and manage quality notifications,S/4HANA,Low
+F6101,Create Production Orders,Create and manage production orders,S/4HANA,Medium
+F6102,Confirm Production,Record production confirmations,S/4HANA,Low
+F3892,Process Deliveries,Create outbound deliveries and post goods issue,S/4HANA,Medium
+F7721,Manage Users,Create and maintain user accounts and roles,S/4HANA,Critical
+F7722,Manage Authorizations,Configure role-based access control,S/4HANA,Critical
+F0898,Calibration Management,Manage calibration orders and measurements,S/4HANA,Medium
+F2095,Manage Materials,Create and maintain material master records,S/4HANA,High
