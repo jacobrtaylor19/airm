@@ -3,6 +3,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { hashPassword } from "@/lib/auth";
 import { validatePassword } from "@/lib/password-policy";
+import { validateBody } from "@/lib/validation";
+import { setupSchema } from "@/lib/validation/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,16 +16,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Setup already completed" }, { status: 400 });
     }
 
-    const { username, displayName, password } = await req.json();
-    if (!username || !displayName || !password) {
-      return NextResponse.json({ error: "All fields required" }, { status: 400 });
-    }
+    const body = await req.json();
+    const validation = validateBody(setupSchema, body);
+    if (!validation.success) return validation.response;
+    const { username, displayName, password } = validation.data;
 
     // Validate password strength
-    const validation = validatePassword(password);
-    if (!validation.valid) {
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.valid) {
       return NextResponse.json(
-        { error: "Password does not meet requirements", details: validation.errors },
+        { error: "Password does not meet requirements", details: pwCheck.errors },
         { status: 400 }
       );
     }

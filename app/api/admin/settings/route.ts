@@ -3,6 +3,8 @@ import { getSessionUser } from "@/lib/auth";
 import { getAllSettings, setSetting } from "@/lib/settings";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { validateBody } from "@/lib/validation";
+import { settingsSchema } from "@/lib/validation/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,9 @@ export async function PUT(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const entries = Object.entries(body) as [string, string][];
+    const validation = validateBody(settingsSchema, body);
+    if (!validation.success) return validation.response;
+    const entries = Object.entries(validation.data) as [string, string][];
 
     for (const [key, value] of entries) {
       setSetting(key, String(value), user.username);

@@ -5,6 +5,8 @@ import { inArray } from "drizzle-orm";
 import { getSessionUserFromToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { checkBulkRate } from "@/lib/rate-limit-middleware";
+import { validateBody } from "@/lib/validation";
+import { bulkDeleteSchema } from "@/lib/validation/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -34,11 +36,9 @@ export async function POST(request: NextRequest) {
   if (rateLimited) return rateLimited;
 
   const body = await request.json();
-  const { entityType, ids } = body as { entityType: string; ids: number[] };
-
-  if (!entityType || !ids || !Array.isArray(ids) || ids.length === 0) {
-    return NextResponse.json({ error: "entityType and ids[] required" }, { status: 400 });
-  }
+  const validation = validateBody(bulkDeleteSchema, body);
+  if (!validation.success) return validation.response;
+  const { entityType, ids } = validation.data;
 
   if (!(entityType in ALLOWED_ENTITIES)) {
     return NextResponse.json({ error: `Invalid entityType: ${entityType}` }, { status: 400 });

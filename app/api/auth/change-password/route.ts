@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser, verifyPassword, hashPassword } from "@/lib/auth";
 import { validatePassword } from "@/lib/password-policy";
+import { validateBody } from "@/lib/validation";
+import { changePasswordSchema } from "@/lib/validation/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -14,14 +16,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { currentPassword, newPassword } = await req.json();
-
-    if (!currentPassword || !newPassword) {
-      return NextResponse.json(
-        { error: "Current password and new password are required" },
-        { status: 400 }
-      );
-    }
+    const body = await req.json();
+    const validation = validateBody(changePasswordSchema, body);
+    if (!validation.success) return validation.response;
+    const { currentPassword, newPassword } = validation.data;
 
     // Get the user's current password hash
     const appUser = db
@@ -41,10 +39,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate new password strength
-    const validation = validatePassword(newPassword);
-    if (!validation.valid) {
+    const pwCheck = validatePassword(newPassword);
+    if (!pwCheck.valid) {
       return NextResponse.json(
-        { error: "New password does not meet requirements", details: validation.errors },
+        { error: "New password does not meet requirements", details: pwCheck.errors },
         { status: 400 }
       );
     }

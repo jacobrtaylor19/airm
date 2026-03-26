@@ -4,6 +4,8 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { verifyPassword, createSession } from "@/lib/auth";
 import { checkLoginRate } from "@/lib/rate-limit-middleware";
+import { validateBody } from "@/lib/validation";
+import { loginSchema } from "@/lib/validation/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,12 +22,12 @@ export async function POST(req: NextRequest) {
   if (rateLimited) return rateLimited;
 
   try {
-    const { username, password } = await req.json();
+    const body = await req.json();
     const ip = getClientIP(req);
 
-    if (!username || !password) {
-      return NextResponse.json({ error: "Username and password required" }, { status: 400 });
-    }
+    const validation = validateBody(loginSchema, body);
+    if (!validation.success) return validation.response;
+    const { username, password } = validation.data;
 
     const user = db.select().from(schema.appUsers)
       .where(and(eq(schema.appUsers.username, username), eq(schema.appUsers.isActive, true)))
