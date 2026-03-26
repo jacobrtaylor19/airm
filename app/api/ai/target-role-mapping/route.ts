@@ -6,7 +6,6 @@ import { runTargetRoleMapping } from "@/lib/ai/target-role-mapping";
 import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
-import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +52,8 @@ export async function POST(req: NextRequest) {
       }).run();
     })
     .catch((err: unknown) => {
-      const message = safeError(err, "Unknown error");
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[target-role-mapping] Job failed:", message);
       db.update(schema.processingJobs).set({
         status: "failed",
         errorLog: message,

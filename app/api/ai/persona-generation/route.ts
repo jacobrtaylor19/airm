@@ -7,7 +7,6 @@ import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { notifyUsersWithRoles } from "@/lib/notifications";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
-import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -64,7 +63,9 @@ export async function POST(req: NextRequest) {
       });
     })
     .catch((err: unknown) => {
-      const message = safeError(err, "Unknown error");
+      // Store the REAL error in the DB for debugging (not sanitized)
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[persona-generation] Job failed:", message);
       db.update(schema.processingJobs).set({
         status: "failed",
         errorLog: message,
