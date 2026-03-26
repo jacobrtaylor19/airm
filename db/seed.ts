@@ -647,14 +647,14 @@ function seed() {
   db.delete(schema.appUsers).run();
 
   // Hash password synchronously using bcryptjs
+  // Passwords meet the 12-char policy: uppercase + lowercase + digit + special char
   const bcrypt = require("bcryptjs");
-  const adminHash = bcrypt.hashSync("admin123", 10);
-
-  const sysadminHash = bcrypt.hashSync("sysadmin123", 10);
-  const testPassword = bcrypt.hashSync("test123", 10);
-  const securityHash = bcrypt.hashSync("security123", 10);
-  const complianceHash = bcrypt.hashSync("compliance123", 10);
-  const grcHash = bcrypt.hashSync("grc123", 10);
+  const sysadminHash = bcrypt.hashSync("Sysadmin@2026!", 12);
+  const adminHash = bcrypt.hashSync("AdminPass@2026!", 12);
+  const testPassword = bcrypt.hashSync("Provisum@2026!", 12);
+  const securityHash = bcrypt.hashSync("Security@2026!", 12);
+  const complianceHash = bcrypt.hashSync("Compliance@2026!", 12);
+  const grcHash = bcrypt.hashSync("GrcAnalyst@2026!", 12);
 
   const testUsers = [
     { username: "sysadmin", displayName: "System Administrator", role: "system_admin", hash: sysadminHash, orgUnit: null as string | null },
@@ -811,17 +811,17 @@ function seed() {
 
   console.log(`  ✓ ${testUsers.length} app users + ${assignments.length} work assignments`);
   console.log("    Credentials:");
-  console.log("    sysadmin / sysadmin123 (system_admin — system settings + full access)");
-  console.log("    admin / admin123 (admin — full access)");
-  console.log("    mapper.finance / test123 (mapper — Finance dept)");
-  console.log("    mapper.maintenance / test123 (mapper — Maintenance + Facilities)");
-  console.log("    mapper.procurement / test123 (mapper — Procurement + Supply Chain + Warehouse)");
-  console.log("    approver.finance / test123 (approver — Finance dept)");
-  console.log("    approver.operations / test123 (approver — Maintenance + Facilities + Procurement + Supply Chain + Warehouse)");
-  console.log("    viewer / test123 (viewer — read-only)");
-  console.log("    security.lead / security123 (mapper — all depts, handles within-role conflicts & role design)");
-  console.log("    compliance.officer / compliance123 (approver — all depts, approves risk acceptances & reviews escalated conflicts)");
-  console.log("    grc.analyst / grc123 (viewer — all depts, read-only audit & reporting)");
+  console.log("    sysadmin / Sysadmin@2026! (system_admin — system settings + full access)");
+  console.log("    admin / AdminPass@2026! (admin — full access)");
+  console.log("    mapper.finance / Provisum@2026! (mapper — Finance dept)");
+  console.log("    mapper.maintenance / Provisum@2026! (mapper — Maintenance + Facilities)");
+  console.log("    mapper.procurement / Provisum@2026! (mapper — Procurement + Supply Chain + Warehouse)");
+  console.log("    approver.finance / Provisum@2026! (approver — Finance dept)");
+  console.log("    approver.operations / Provisum@2026! (approver — Maintenance + Facilities + Procurement + Supply Chain + Warehouse)");
+  console.log("    viewer / Provisum@2026! (viewer — read-only)");
+  console.log("    security.lead / Security@2026! (mapper — all depts, handles within-role conflicts & role design)");
+  console.log("    compliance.officer / Compliance@2026! (approver — all depts, approves risk acceptances & reviews escalated conflicts)");
+  console.log("    grc.analyst / GrcAnalyst@2026! (viewer — all depts, read-only audit & reporting)");
 
   // ─── Verification ───
   console.log("\n📊 Verification:");
