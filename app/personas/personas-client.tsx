@@ -1,26 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable, type Column } from "@/components/shared/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import {
-  CheckCircle2,
-  AlertTriangle,
-  RotateCcw,
   ChevronDown,
   ChevronRight,
   Search,
@@ -32,24 +21,6 @@ import {
 } from "lucide-react";
 import { BulkDeleteBar } from "@/components/shared/bulk-delete-bar";
 import type { PersonaRow, GroupRow } from "@/lib/queries";
-
-interface OrgUnitInfo {
-  id: number;
-  name: string;
-}
-
-interface ConfirmationRow {
-  id: number;
-  orgUnitId: number;
-  orgUnitName: string;
-  confirmedAt: string | null;
-  confirmedBy: number | null;
-  confirmerName: string | null;
-  resetAt: string | null;
-  resetBy: number | null;
-  resetByName: string | null;
-  isActive: boolean;
-}
 
 const groupColumns: Column<GroupRow & Record<string, unknown>>[] = [
   { key: "name", header: "Name", sortable: true },
@@ -83,25 +54,13 @@ const groupColumns: Column<GroupRow & Record<string, unknown>>[] = [
 export function PersonasPageClient({
   personas,
   groups,
-  orgUnits,
   isAdmin = false,
-  isMapper = false,
-  currentUserOrgUnitId,
 }: {
   personas: PersonaRow[];
   groups: GroupRow[];
-  orgUnits: OrgUnitInfo[];
   isAdmin?: boolean;
-  isMapper?: boolean;
-  currentUserOrgUnitId?: number | null;
 }) {
   const router = useRouter();
-  const [confirmations, setConfirmations] = useState<ConfirmationRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [confirmingId, setConfirmingId] = useState<number | null>(null);
-  const [resetDialogOrgUnit, setResetDialogOrgUnit] = useState<OrgUnitInfo | null>(null);
-  const [showResetDialog, setShowResetDialog] = useState(false);
-  const [resetting, setResetting] = useState(false);
 
   // Expandable list state
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -112,25 +71,6 @@ export function PersonasPageClient({
   // Generate personas state
   const [generating, setGenerating] = useState(false);
   const [genProgress, setGenProgress] = useState<{ processed: number; total: number } | null>(null);
-
-  const fetchConfirmations = useCallback(async () => {
-    try {
-      const res = await fetch("/api/personas/confirmations");
-      if (res.ok) {
-        const data = await res.json();
-        setConfirmations(data.confirmations);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchConfirmations();
-  }, [fetchConfirmations]);
-
-  const activeConfirmations = confirmations.filter((c) => c.isActive);
-  const confirmedOrgUnitIds = new Set(activeConfirmations.map((c) => c.orgUnitId));
 
   // Extract unique business functions for filter dropdown
   const businessFunctions = Array.from(
@@ -176,53 +116,6 @@ export function PersonasPageClient({
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(filteredPersonas.map((p) => p.id)));
-    }
-  }
-
-  async function handleConfirm(orgUnitId: number) {
-    setConfirmingId(orgUnitId);
-    try {
-      const res = await fetch("/api/personas/confirm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgUnitId }),
-      });
-      if (res.ok) {
-        toast.success("Personas confirmed for this org unit");
-        await fetchConfirmations();
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to confirm");
-      }
-    } catch {
-      toast.error("Failed to confirm personas");
-    } finally {
-      setConfirmingId(null);
-    }
-  }
-
-  async function handleReset(orgUnitId: number) {
-    setResetting(true);
-    try {
-      const res = await fetch("/api/personas/reset-confirmation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgUnitId }),
-      });
-      if (res.ok) {
-        toast.success("Confirmation reset");
-        setShowResetDialog(false);
-        await fetchConfirmations();
-        router.refresh();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Failed to reset");
-      }
-    } catch {
-      toast.error("Failed to reset confirmation");
-    } finally {
-      setResetting(false);
     }
   }
 
@@ -282,13 +175,6 @@ export function PersonasPageClient({
     }
   }
 
-  // Determine which org units this user can confirm
-  const canConfirmOrgUnits = orgUnits.filter((ou) => {
-    if (isAdmin) return true;
-    if (isMapper && currentUserOrgUnitId === ou.id) return true;
-    return false;
-  });
-
   // ── Empty state: no personas yet ──
   if (personas.length === 0 && !generating) {
     return (
@@ -313,113 +199,6 @@ export function PersonasPageClient({
 
   return (
     <>
-      {/* Persona Confirmation Status — Collapsible */}
-      {orgUnits.length > 0 && (
-        <details className="rounded-lg border bg-card mb-4 group">
-          <summary className="flex items-center justify-between p-4 cursor-pointer select-none list-none">
-            <div className="flex items-center gap-3">
-              <h3 className="text-sm font-semibold">Department Confirmation</h3>
-              {!loading && (
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  confirmedOrgUnitIds.size === orgUnits.length
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-orange-100 text-orange-700"
-                }`}>
-                  {confirmedOrgUnitIds.size}/{orgUnits.length}
-                </span>
-              )}
-            </div>
-            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
-          </summary>
-          <div className="px-4 pb-4 space-y-3">
-            {!loading && (
-              <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                  style={{ width: `${orgUnits.length > 0 ? (confirmedOrgUnitIds.size / orgUnits.length) * 100 : 0}%` }}
-                />
-              </div>
-            )}
-            {loading ? (
-              <p className="text-xs text-muted-foreground">Loading...</p>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                {orgUnits.map((ou) => {
-                  const isConfirmed = confirmedOrgUnitIds.has(ou.id);
-                  const canConfirm = canConfirmOrgUnits.some((c) => c.id === ou.id);
-
-                  return (
-                    <div
-                      key={ou.id}
-                      className={`flex items-center justify-between rounded-md border px-3 py-2 text-xs ${
-                        isConfirmed
-                          ? "border-emerald-200 bg-emerald-50"
-                          : "border-orange-200 bg-orange-50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        {isConfirmed ? (
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
-                        ) : (
-                          <AlertTriangle className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
-                        )}
-                        <span className="font-medium truncate">{ou.name}</span>
-                      </div>
-                      {isConfirmed && isAdmin && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive flex-shrink-0"
-                          onClick={() => {
-                            setResetDialogOrgUnit(ou);
-                            setShowResetDialog(true);
-                          }}
-                        >
-                          <RotateCcw className="h-3 w-3" />
-                        </Button>
-                      )}
-                      {!isConfirmed && canConfirm && (
-                        <Button
-                          size="sm"
-                          className="h-5 px-2 text-[10px] bg-teal-500 hover:bg-teal-600 text-white flex-shrink-0"
-                          disabled={confirmingId === ou.id}
-                          onClick={() => handleConfirm(ou.id)}
-                        >
-                          {confirmingId === ou.id ? "..." : "Confirm"}
-                        </Button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </details>
-      )}
-
-      {/* Reset Confirmation Dialog */}
-      <Dialog open={showResetDialog} onOpenChange={(open) => { if (!open) setShowResetDialog(false); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reset Persona Confirmation</DialogTitle>
-            <DialogDescription>
-              Reset the confirmation for <strong>{resetDialogOrgUnit?.name}</strong>?
-              This will block target role mapping until personas are re-confirmed.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResetDialog(false)}>Cancel</Button>
-            <Button
-              variant="destructive"
-              disabled={resetting}
-              onClick={() => { if (resetDialogOrgUnit) handleReset(resetDialogOrgUnit.id); }}
-            >
-              {resetting ? "Resetting..." : "Reset"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* Generating progress overlay */}
       {generating && (
         <div className="rounded-lg border bg-slate-50 p-4 mb-4 flex items-center gap-3">
