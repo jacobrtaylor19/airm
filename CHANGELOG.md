@@ -4,9 +4,38 @@ All notable feature additions and changes are documented here. Most recent first
 
 ---
 
-## [0.6.0] — 2026-03-25 — Security Compliance Hardening
+## [0.6.0] — 2026-03-26 — Security Compliance Hardening + Demo Overhaul
 
-### Security
+### Demo Data & Self-Guided Environment (2026-03-26)
+- **Demo data refresh**: Default pack scaled to 1,000 users (optimized for API costs)
+- **Clean demo state**: Removed pre-generated personas, target role assignments, and SOD conflicts from seed — full workflow demonstrated live
+- **9 demo environments**: SAP S/4HANA (default, energy-chemicals, consumer-products, financial-services, manufacturing), Oracle Fusion, Workday, Salesforce, ServiceNow
+- **Self-guided demo accounts**: `demo.admin`, `demo.mapper.finance`, `demo.approver`, `demo.viewer`, `demo.coordinator` — password `DemoGuide2026!`
+- **Quick-login pill buttons**: Demo credentials displayed as teal pills on login page
+
+### AI Pipeline Fixes (2026-03-26)
+- **Persona generation**: 2-phase approach — AI analyzes 100-user sample to design personas, then programmatic permission-overlap assignment for all users. Prevents JSON truncation on large datasets
+- **Fire-and-forget jobs**: Persona generation and auto-map run in background; client polls for completion instead of blocking
+- **Auto-map protection**: No longer overwrites manual/approved mappings
+- **Error visibility**: Failed AI jobs now log actual error messages (not sanitized "Unknown error")
+
+### UI/UX Improvements (2026-03-26)
+- **Personas page**: Removed department confirmation section; added business function filter dropdown
+- **Jobs page**: Viewer role sees status badges (Done/Running/Pending) instead of run buttons
+- **Landing page**: Simplified to hero + feature cards + footer; nav bar on all public pages
+- **Releases**: Button text changed from "Set as Current" to "View"
+- **Dashboard strapline**: Shows "Generate Personas" instruction when none exist
+- **Login page**: Demo credentials shown as teal pill buttons; Sign In button matched to brand teal
+
+### QA Fixes (2026-03-26)
+- **Per-account lockout**: Rate limiter now tracks per username (not global IP-based)
+- **Password validation**: Server-side enforcement on user creation and password change
+- **User table rows**: Clickable with navigation to user detail page
+- **Version display**: Footer shows v0.6.0 (was hardcoded to v0.4.0)
+- **404 page**: Branded with Provisum styling and "Go to Dashboard" button
+- **Error clearing**: Login error clears on input change
+
+### Security (2026-03-25)
 - **Encryption at rest**: AES-256-GCM encryption for sensitive settings (API keys, tokens) via `lib/encryption.ts`
 - **Security headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy on all responses
 - **Password policy**: 12-character minimum with uppercase, lowercase, digit, and special character requirements

@@ -57,7 +57,11 @@ requireRole(["admin", "mapper"]);    // throws redirect to /unauthorized if wron
 system_admin: 100 → admin: 80 → approver: 60 → coordinator: 50 → mapper: 40 → viewer: 20
 ```
 
-Session cookie: `airm_session` (httpOnly, 24h expiry). Middleware validates on every request except `/login`, `/setup`, `/api/auth/*`.
+Session cookie: `airm_session` (httpOnly, 24h expiry). Middleware validates on every request except `/login`, `/setup`, `/api/auth/*`, `/api/health`, `/api/demo/*`.
+
+**Password policy:** 12-char minimum, uppercase + lowercase + digit + special character. Validated in `lib/password-policy.ts`. Enforced on user creation and password change.
+
+**Account lockout:** 5 failed attempts per username triggers 5-minute lockout. Tracked in-memory per-account (not global IP-based).
 
 ---
 
@@ -199,6 +203,12 @@ No email is sent — all notifications are stored in the `notifications` table.
 5. **Schema changes require `pnpm db:push`** — don't forget after adding tables or columns.
 
 6. **`force-dynamic`** — any page that reads from the DB or session must have `export const dynamic = "force-dynamic"` or it will be statically cached at build time.
+
+7. **Deployment (current)** — Render at https://airm-npt8.onrender.com. No persistent disk — data reseeds on every deploy via `pnpm db:seed` in build command. `DATABASE_PATH` is NOT set (uses local `./data/airm.db`). Only env vars: `ANTHROPIC_API_KEY`, `PORT`.
+
+8. **AI pipeline** — Persona generation uses a 2-phase approach: AI analyzes a 100-user sample to design personas, then programmatic permission-overlap matching assigns all users. This prevents JSON truncation. Jobs run fire-and-forget in background; client polls `/api/jobs/[id]` for status.
+
+9. **Self-guided demo accounts** — `demo.admin`, `demo.mapper.finance`, `demo.approver`, `demo.viewer`, `demo.coordinator` (all password `DemoGuide2026!`). Always created in every seed. Quick-login pills shown on login page.
 
 ---
 

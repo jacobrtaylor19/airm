@@ -32,24 +32,35 @@ AIRM is designed for rapid deployment on Render.com. This guide assumes a Render
 4. Configure:
    - **Name**: `airm` (or your preference)
    - **Environment**: `Node`
-   - **Build Command**: `pnpm install && pnpm db:push && pnpm build`
+   - **Build Command**: `pnpm install && pnpm db:push && pnpm db:seed && pnpm build`
    - **Start Command**: `pnpm start`
-   - **Instance Type**: Free (or Starter+ for production)
+   - **Instance Type**: Starter or Standard (avoid Free — cold starts break demos)
 5. Click **Create Web Service**
+
+> **Note (demo mode):** The build command includes `pnpm db:seed` which reseeds the database on every deploy. This is intentional for demo environments where fresh data is desired. For production use, remove `pnpm db:seed &&` from the build command and attach a persistent disk (see Step 3).
 
 ### Step 2: Configure Environment Variables
 
 In Render dashboard, go to **Settings** → **Environment** and add:
 
+**Demo mode (no persistent disk):**
+```
+ANTHROPIC_API_KEY=sk-ant-v4-...
+PORT=10000
+```
+
+**Production mode (with persistent disk):**
 ```
 NODE_ENV=production
 ANTHROPIC_API_KEY=sk-ant-v4-...
-DATABASE_URL=file:///data/airm.db
+DATABASE_PATH=/data/airm.db
 ENCRYPTION_KEY=<base64-encoded-32-byte-key>
 BACKUP_ENCRYPTION_KEY=<passphrase-for-backup-encryption>
 SENTRY_DSN=<your-sentry-dsn>
 AUDIT_DATABASE_URL=/data/audit.db
 ```
+
+> **Important:** In demo mode without a persistent disk, do NOT set `DATABASE_PATH`. The app defaults to `./data/airm.db` in the build directory, and the seed in the build command recreates data on every deploy. When you add a persistent disk, set `DATABASE_PATH=/data/airm.db` and remove `pnpm db:seed &&` from the build command.
 
 **Generating encryption keys:**
 ```bash
