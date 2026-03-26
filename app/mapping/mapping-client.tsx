@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AlertTriangle, CheckCircle, Circle, Loader2, Sparkles, Search, ChevronRight, X, Save, GripVertical, TrendingUp, ListChecks, Send } from "lucide-react";
+import { AlertTriangle, CheckCircle, Circle, Loader2, Sparkles, Search, ChevronRight, X, Save, GripVertical, TrendingUp, ListChecks, Send, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, PersonaSodConflict, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
@@ -638,6 +638,7 @@ function RefinementsTab({
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [submittingBulk, setSubmittingBulk] = useState(false);
   const [submittingSingle, setSubmittingSingle] = useState(false);
+  const [roleDomainFilter, setRoleDomainFilter] = useState<string>("all");
   const router = useRouter();
 
   const isExecutor = userRole && ["system_admin", "admin", "mapper"].includes(userRole);
@@ -999,38 +1000,88 @@ function RefinementsTab({
                   </div>
                 )}
 
-                {/* Editable Role Assignments (Current Wave) */}
+                {/* Section 1: Currently Assigned Roles */}
                 <div>
-                  <h4 className="text-xs font-medium text-muted-foreground mb-1.5">Assigned Target Roles</h4>
-                  <div className="space-y-1">
-                    {targetRoles.map(r => {
-                      const isAssigned = editRoles.includes(r.id);
-                      const isDefault = selectedUser.personaDefaultRoles.some(d => d.targetRoleId === r.id);
-                      return (
+                  <h4 className="text-xs font-medium text-muted-foreground mb-1.5">
+                    Assigned Roles ({editRoles.length})
+                  </h4>
+                  {editRoles.length === 0 ? (
+                    <p className="text-xs text-muted-foreground italic py-2">No roles assigned yet. Add roles from the list below.</p>
+                  ) : (
+                    <div className="space-y-1 max-h-[180px] overflow-y-auto">
+                      {targetRoles.filter(r => editRoles.includes(r.id)).map(r => {
+                        const isDefault = selectedUser.personaDefaultRoles.some(d => d.targetRoleId === r.id);
+                        return (
+                          <div
+                            key={r.id}
+                            className={`flex items-center justify-between rounded-md border border-primary/30 bg-primary/5 px-2 py-1.5 text-xs ${isEditable ? "group" : "opacity-60"}`}
+                          >
+                            <div className="flex items-center gap-2">
+                              <CheckCircle className="h-3 w-3 text-primary shrink-0" />
+                              <div>
+                                <span className="font-medium">{r.roleName}</span>
+                                {r.domain && <span className="text-muted-foreground ml-1">· {r.domain}</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {isDefault && <Badge variant="outline" className="text-[10px] h-4 px-1">default</Badge>}
+                              {!isDefault && <Badge variant="default" className="text-[10px] h-4 px-1">override</Badge>}
+                              {isEditable && (
+                                <button
+                                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-500 transition-opacity ml-1"
+                                  onClick={() => toggleRole(r.id)}
+                                  title="Remove role"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Section 2: Available Roles (filterable by function) */}
+                {isEditable && (
+                  <div>
+                    <h4 className="text-xs font-medium text-muted-foreground mb-1.5">Available Roles</h4>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <select
+                        value={roleDomainFilter}
+                        onChange={(e) => setRoleDomainFilter(e.target.value)}
+                        className="rounded-md border border-input bg-background px-2 py-1 text-xs h-7 flex-1"
+                      >
+                        <option value="all">All Functions</option>
+                        {Array.from(new Set(targetRoles.map(r => r.domain).filter((d): d is string => d !== null))).sort().map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                      {targetRoles
+                        .filter(r => !editRoles.includes(r.id))
+                        .filter(r => roleDomainFilter === "all" || r.domain === roleDomainFilter)
+                        .map(r => (
                         <div
                           key={r.id}
-                          className={`flex items-center justify-between rounded-md border px-2 py-1.5 text-xs transition-colors ${
-                            !isEditable ? "opacity-60" : "cursor-pointer"
-                          } ${isAssigned ? "bg-primary/5 border-primary/30" : isEditable ? "hover:bg-muted/50" : ""}`}
-                          onClick={() => isEditable && toggleRole(r.id)}
+                          className="flex items-center justify-between rounded-md border px-2 py-1.5 text-xs cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() => toggleRole(r.id)}
                         >
                           <div className="flex items-center gap-2">
-                            <div className={`h-3.5 w-3.5 rounded border flex items-center justify-center ${
-                              isAssigned ? "bg-primary border-primary text-white" : "border-muted-foreground/30"
-                            }`}>
-                              {isAssigned && <CheckCircle className="h-2.5 w-2.5" />}
+                            <div className="h-3.5 w-3.5 rounded border border-muted-foreground/30" />
+                            <div>
+                              <span>{r.roleName}</span>
+                              {r.domain && <span className="text-muted-foreground ml-1 text-[10px]">{r.domain}</span>}
                             </div>
-                            <span className={isAssigned ? "font-medium" : ""}>{r.roleName}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {isDefault && <Badge variant="outline" className="text-[10px] h-4 px-1">default</Badge>}
-                            {isAssigned && !isDefault && <Badge variant="default" className="text-[10px] h-4 px-1">override</Badge>}
-                          </div>
+                          <Plus className="h-3 w-3 text-muted-foreground" />
                         </div>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {isEditable && isExecutor && (
                   <div className="space-y-2">
