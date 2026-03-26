@@ -1,47 +1,91 @@
 # Security Controls — Provisum v0.6.0
 
-This document summarizes all security controls implemented as part of the SOC 2 Type I readiness sprint.
+This document maps all implemented security controls to SOC 2 Trust Service Criteria.
 
 ---
 
-## Data Encryption
+## SOC 2 Trust Service Criteria Mapping
 
-### Encryption at Rest
+### CC1 — Control Environment
 
-| Layer | Control | Implementation |
-|-------|---------|----------------|
-| Storage Volume | Render uses encrypted EBS volumes by default | Platform-level control (Render infrastructure) |
-| Sensitive Settings | AES-256-GCM field-level encryption | `lib/encryption.ts` — all API keys, tokens, and secrets in `system_settings` table |
-| Session Tokens | Stored as cryptographically random UUIDs | `crypto.randomUUID()` with 24h expiry |
-| Passwords | bcrypt with 12 rounds | `lib/auth.ts` — one-way hash, never stored in plaintext |
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| Organizational structure | Role-based access (7-tier hierarchy) | `lib/auth.ts` ROLE_HIERARCHY |
+| Security policies | Security documentation suite | `docs/security/` directory |
+| Change management | CI/CD pipeline with required checks | `.github/workflows/ci.yml` |
 
-### Encryption in Transit
+### CC2 — Communication and Information
 
-| Control | Implementation |
-|---------|----------------|
-| HTTPS enforcement | HSTS header (`max-age=31536000; includeSubDomains`) in production |
-| Secure cookies | `httpOnly`, `secure` (production), `sameSite: lax` |
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| Audit logging | Immutable separate audit database | `db/audit-db.ts`, `lib/audit.ts` |
+| Audit export | Admin export endpoint (JSON/CSV) | `/api/admin/audit-export` |
+| Incident response | Documented IRP with severity classification | `docs/security/INCIDENT_RESPONSE_PLAN.md` |
 
-### Future Enhancement
+### CC3 — Risk Assessment
 
-Full-database encryption via SQLCipher is planned for the PostgreSQL migration. The current approach (encrypted storage volume + field-level encryption for sensitive columns) provides equivalent protection for the SQLite deployment model.
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| Dependency scanning | GitHub Dependabot + pnpm audit in CI | `.github/dependabot.yml`, CI workflow |
+| Vendor assessment | Documented vendor security reviews | `docs/security/VENDOR_SECURITY.md` |
 
----
+### CC5 — Control Activities
 
-## Evidence Collection Guide
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| Authentication | bcrypt (12 rounds), cookie-based sessions, 24h expiry | `lib/auth.ts` |
+| Password policy | 12-char min, complexity requirements | `lib/password-policy.ts` |
+| Account lockout | 5 attempts, 30-min lockout | Login route handler |
+| Rate limiting | Per-IP login, per-user AI/bulk endpoints | `lib/rate-limit.ts` |
+| Input validation | Zod schemas on all API inputs | `lib/validation/` |
+| Error sanitization | No internal details in production responses | `lib/errors.ts` (safeError) |
+| Encryption at rest | AES-256-GCM for sensitive settings, encrypted EBS volumes | `lib/encryption.ts` |
+| Encryption in transit | HSTS, secure cookies, TLS (Render) | `middleware.ts` |
+| Security headers | CSP, X-Frame-Options, X-Content-Type-Options, etc. | `middleware.ts` |
+| Org-unit scoping | Data access restricted by assigned department | `lib/scope.ts` |
+| Export auth guards | All export endpoints require authentication + audit log | All `/api/exports/` routes |
 
-| Control | Evidence Location |
-|---------|------------------|
-| Encryption at rest | Query `system_settings` table — sensitive values are ciphertext |
-| Security headers | Browser DevTools → Network → Response Headers |
-| Audit log | `audit.db` — immutable append-only database |
-| Rate limiting | Application logs showing 429 responses |
-| Password policy | Attempt weak password via API — returns 400 with policy errors |
-| Account lockout | 5 failed logins → 30-minute lockout with 429 response |
-| Input validation | Send malformed request → structured 400 error |
-| Error sanitization | Trigger server error → generic message with correlation ID |
-| Backups | `/data/backups/` directory with encrypted `.enc` files |
-| CI/CD | GitHub Actions workflow passing on main branch |
+### CC6 — Logical and Physical Access Controls
+
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| Role-based access | 7 roles with hierarchical permissions | `lib/auth.ts` |
+| Session management | httpOnly, secure, sameSite cookies | Login route, middleware |
+| Admin-only routes | system_admin required for settings, user management, GDPR | Admin API routes |
+
+### CC7 — System Operations
+
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| Database backups | Daily encrypted backups with 30-day retention | `scripts/backup.sh` |
+| Backup verification | Monthly integrity and row count checks | `scripts/verify-backup.sh` |
+| Health monitoring | `/api/health` endpoint with DB check | `app/api/health/route.ts` |
+| Monitoring stub | Sentry-ready error reporting module | `lib/monitoring.ts` |
+
+### CC8 — Change Management
+
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| CI/CD pipeline | Build + lint + security audit on every PR | `.github/workflows/ci.yml` |
+| Change categories | Standard, normal, emergency with approval levels | `docs/security/CHANGE_MANAGEMENT.md` |
+| Rollback procedure | Render instant rollback + git revert + DB restore | `docs/security/CHANGE_MANAGEMENT.md` |
+
+### A1 — Availability
+
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| Automated backups | Daily with encryption and retention | `scripts/backup.sh` |
+| Restore procedure | Documented and tested | `scripts/restore.sh` |
+| Health endpoint | Public, no-auth health check | `/api/health` |
+
+### P1 — Privacy (GDPR)
+
+| Control | Implementation | Evidence |
+|---------|----------------|----------|
+| Data inventory | Processing activities documented | `docs/DATA_PROCESSING_INVENTORY.md` |
+| Right of access | DSAR export endpoint | `/api/admin/data-export` |
+| Right to erasure | Anonymization endpoint | `/api/admin/data-deletion` |
+| Data minimization | AI prompts contain statistics only, no raw PII | AI pipeline code |
 
 ---
 
@@ -49,4 +93,8 @@ Full-database encryption via SQLCipher is planned for the PostgreSQL migration. 
 
 All controls are currently owned by **Jacob Taylor** (system_admin).
 
-Review schedule: Quarterly self-assessment, annual external audit.
+## Review Schedule
+
+- **Quarterly:** Self-assessment against this control matrix
+- **Annually:** External audit or penetration test
+- **On incident:** Review affected controls and update procedures
