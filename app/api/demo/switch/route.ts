@@ -5,7 +5,17 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-const VALID_DEMOS = ["default", "energy-chemicals-s4hana", "financial-services-s4hana"];
+const VALID_DEMOS = [
+  "default",
+  "energy-chemicals-s4hana",
+  "financial-services-s4hana",
+  "consumer-products-s4hana",
+  "manufacturing-s4hana",
+  "oracle-fusion",
+  "workday",
+  "salesforce",
+  "servicenow",
+];
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,20 +29,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify the demo pack directory exists (unless it's "default" which uses data/)
-    if (demo !== "default") {
-      const demoDir = path.join(process.cwd(), "data", "demos", demo);
-      if (!existsSync(demoDir)) {
-        return NextResponse.json(
-          { error: `Demo pack not found: ${demo}` },
-          { status: 404 }
-        );
-      }
+    // Verify the demo pack directory exists
+    const demoDir = path.join(process.cwd(), "data", "demos", demo);
+    if (!existsSync(demoDir)) {
+      return NextResponse.json(
+        { error: `Demo pack not found: ${demo}` },
+        { status: 404 }
+      );
     }
 
     // Run the seed script with the selected demo pack
-    const demoFlag = demo === "default" ? "" : `--demo=${demo}`;
-    const cmd = `npx tsx db/seed.ts ${demoFlag}`.trim();
+    const cmd = `npx tsx db/seed.ts --demo=${demo}`;
 
     execSync(cmd, {
       cwd: process.cwd(),
