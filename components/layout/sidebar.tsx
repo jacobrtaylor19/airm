@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   GitCompare,
   Calendar,
+  FlaskConical,
 } from "lucide-react";
 
 interface NavItem {
@@ -97,6 +98,7 @@ const navSections: NavSection[] = [
     sysadminOnly: true,
     items: [
       { href: "/admin", label: "Config Console", icon: Wrench },
+      { href: "/admin/validation", label: "Pipeline Validation", icon: FlaskConical },
     ],
   },
   {
