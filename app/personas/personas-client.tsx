@@ -107,6 +107,7 @@ export function PersonasPageClient({
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [functionFilter, setFunctionFilter] = useState<string>("all");
 
   // Generate personas state
   const [generating, setGenerating] = useState(false);
@@ -131,8 +132,16 @@ export function PersonasPageClient({
   const activeConfirmations = confirmations.filter((c) => c.isActive);
   const confirmedOrgUnitIds = new Set(activeConfirmations.map((c) => c.orgUnitId));
 
-  // Filter personas by search
+  // Extract unique business functions for filter dropdown
+  const businessFunctions = Array.from(
+    new Set(personas.map((p) => p.businessFunction).filter((f): f is string => !!f))
+  ).sort();
+
+  // Filter personas by search and business function
   const filteredPersonas = personas.filter((p) => {
+    // Business function filter
+    if (functionFilter !== "all" && p.businessFunction !== functionFilter) return false;
+    // Search filter
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -450,6 +459,18 @@ export function PersonasPageClient({
                 className="pl-9"
               />
             </div>
+            <select
+              value={functionFilter}
+              onChange={(e) => setFunctionFilter(e.target.value)}
+              className="h-9 rounded-md border border-input bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">All Functions ({personas.length})</option>
+              {businessFunctions.map((fn) => (
+                <option key={fn} value={fn}>
+                  {fn} ({personas.filter((p) => p.businessFunction === fn).length})
+                </option>
+              ))}
+            </select>
             <Button
               onClick={handleGeneratePersonas}
               disabled={generating}
