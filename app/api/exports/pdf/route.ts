@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { generatePdfReport } from "@/lib/exports/pdf-report";
 import { getSessionUser } from "@/lib/auth";
+import { auditLog } from "@/lib/audit";
 import { safeError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,17 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const user = getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    auditLog({
+      entityType: "export",
+      action: "pdf_export",
+      actorEmail: user.email || user.username,
+      metadata: { format: "pdf" },
+    });
+
     const buffer = await generatePdfReport(user?.displayName ?? undefined);
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
