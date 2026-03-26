@@ -266,7 +266,6 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
                 {personas.map((p) => {
                   const isSelected = selectedPersonaId === p.personaId;
                   const isMapped = p.mappedRoleCount > 0;
-                  const hasSodConflicts = (sodConflictsByPersona[p.personaId]?.length ?? 0) > 0;
                   return (
                     <div
                       key={p.personaId}
@@ -285,9 +284,7 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
                             onClick={(e) => e.stopPropagation()}
                           />
                         )}
-                        {hasSodConflicts ? (
-                          <AlertTriangle className="h-3.5 w-3.5 text-red-500 shrink-0" />
-                        ) : isMapped ? (
+                        {isMapped ? (
                           <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
                         ) : (
                           <Circle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -296,11 +293,6 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
                           <p className="font-medium truncate">{p.personaName}</p>
                           <p className="text-xs text-muted-foreground">
                             {p.userCount} users
-                            {hasSodConflicts && (
-                              <span className="text-red-500 ml-1">
-                                ({sodConflictsByPersona[p.personaId].length} SOD conflict{sodConflictsByPersona[p.personaId].length !== 1 ? "s" : ""})
-                              </span>
-                            )}
                           </p>
                           {personaSourceSystems[p.personaId] && personaSourceSystems[p.personaId].length > 0 && (
                             <div className="flex gap-1 mt-0.5">
