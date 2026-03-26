@@ -2,7 +2,7 @@
 
 This document outlines planned features and improvements. Sprint 2 is the active build queue. Items below it are prioritised but not yet scheduled.
 
-*Last updated: March 26, 2026 (evening — security sprint complete, demo environments live, role-based action gating implemented)*
+*Last updated: March 26, 2026 (night — QA pass complete, all HIGH severity items fixed, deploying for demo)*
 
 ---
 
@@ -178,3 +178,5 @@ These are valuable features that are not prioritised for the current sprint. The
 | **AI pipeline: 2-phase persona generation, fire-and-forget jobs** | v0.6.0 |
 | **Role-based action gating (approver/viewer view-only)** | v0.6.0 |
 | **QA fixes: lockout, password validation, 404 page, UX polish** | v0.6.0 |
+| **E2E QA pass: 186 tests, 139 pass, 3 HIGH fixed (Run Pipeline role-gate, public Quick Ref, branded 404)** | v0.6.0 |
+| **Tech debt: centralized constants, auth guard helper, env validation, CSP tightened** | v0.6.0 |

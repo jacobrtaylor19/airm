@@ -57,7 +57,7 @@ requireRole(["admin", "mapper"]);    // throws redirect to /unauthorized if wron
 system_admin: 100 → admin: 80 → approver: 60 → coordinator: 50 → mapper: 40 → viewer: 20
 ```
 
-Session cookie: `airm_session` (httpOnly, 24h expiry). Middleware validates on every request except `/login`, `/setup`, `/api/auth/*`, `/api/health`, `/api/demo/*`.
+Session cookie: `airm_session` (httpOnly, 24h expiry). Middleware uses an **allowlist** of authenticated route prefixes — only known app routes require a session cookie. Unknown routes pass through to Next.js (renders branded 404 page). Public pages: `/`, `/login`, `/setup`, `/methodology`, `/overview`, `/quick-reference`, `/review`, `/api/auth/*`, `/api/health`.
 
 **Password policy:** 12-char minimum, uppercase + lowercase + digit + special character. Validated in `lib/password-policy.ts`. Enforced on user creation and password change.
 
