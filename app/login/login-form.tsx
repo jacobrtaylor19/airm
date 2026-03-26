@@ -134,7 +134,7 @@ export function LoginForm() {
           </form>
           {/* Demo credentials hint */}
           <div className="mt-3 pt-3 border-t">
-            <p className="text-xs text-muted-foreground mb-2">Quick login:</p>
+            <p className="text-xs text-muted-foreground mb-2">Demo credentials:</p>
             <div className="flex flex-wrap gap-2">
               {[
                 { user: "demo.admin", label: "Admin" },
