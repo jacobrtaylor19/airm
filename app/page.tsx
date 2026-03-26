@@ -5,9 +5,6 @@ import {
   Brain,
   ShieldAlert,
   ClipboardCheck,
-  Upload,
-  Sparkles,
-  CheckCircle,
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
 
@@ -44,56 +41,6 @@ export default function Home() {
           >
             Learn More
           </Link>
-        </div>
-
-        {/* Supported Platforms */}
-        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
-          <span className="text-slate-600 font-medium">Supported platforms:</span>
-          <span>SAP S/4HANA</span>
-          <span className="text-slate-700">·</span>
-          <span>Oracle Fusion</span>
-          <span className="text-slate-700">·</span>
-          <span>Workday</span>
-          <span className="text-slate-700">·</span>
-          <span>Salesforce</span>
-          <span className="text-slate-700">·</span>
-          <span>ServiceNow</span>
-        </div>
-      </section>
-
-      {/* How It Works — 3 Steps */}
-      <section className="border-b bg-slate-50 px-6 py-16">
-        <h2 className="text-center text-sm font-semibold uppercase tracking-wider text-slate-400 mb-10">
-          How It Works
-        </h2>
-        <div className="mx-auto grid max-w-4xl gap-8 md:grid-cols-3">
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-teal-600 mb-3">
-              <Upload className="h-5 w-5" />
-            </div>
-            <h3 className="text-sm font-semibold text-slate-900">1. Upload Source Data</h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Import users, roles, and permissions from your legacy system via CSV.
-            </p>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-teal-600 mb-3">
-              <Sparkles className="h-5 w-5" />
-            </div>
-            <h3 className="text-sm font-semibold text-slate-900">2. AI Maps Roles</h3>
-            <p className="mt-1 text-xs text-slate-500">
-              AI generates personas, maps to target roles, and flags SOD conflicts automatically.
-            </p>
-          </div>
-          <div className="flex flex-col items-center text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 text-teal-600 mb-3">
-              <CheckCircle className="h-5 w-5" />
-            </div>
-            <h3 className="text-sm font-semibold text-slate-900">3. Review & Export</h3>
-            <p className="mt-1 text-xs text-slate-500">
-              Approve mappings, resolve conflicts, and export provisioning-ready reports.
-            </p>
-          </div>
         </div>
       </section>
 
