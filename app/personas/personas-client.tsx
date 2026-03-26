@@ -304,83 +304,88 @@ export function PersonasPageClient({
 
   return (
     <>
-      {/* Persona Confirmation Status Banner */}
+      {/* Persona Confirmation Status — Collapsible */}
       {orgUnits.length > 0 && (
-        <div className="rounded-lg border bg-card p-4 space-y-3 mb-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Persona Confirmation Status</h3>
+        <details className="rounded-lg border bg-card mb-4 group">
+          <summary className="flex items-center justify-between p-4 cursor-pointer select-none list-none">
+            <div className="flex items-center gap-3">
+              <h3 className="text-sm font-semibold">Department Confirmation</h3>
+              {!loading && (
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  confirmedOrgUnitIds.size === orgUnits.length
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-orange-100 text-orange-700"
+                }`}>
+                  {confirmedOrgUnitIds.size}/{orgUnits.length}
+                </span>
+              )}
+            </div>
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="px-4 pb-4 space-y-3">
             {!loading && (
-              <span className="text-xs font-medium text-muted-foreground">
-                {confirmedOrgUnitIds.size} of {orgUnits.length} confirmed
-              </span>
+              <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                  style={{ width: `${orgUnits.length > 0 ? (confirmedOrgUnitIds.size / orgUnits.length) * 100 : 0}%` }}
+                />
+              </div>
+            )}
+            {loading ? (
+              <p className="text-xs text-muted-foreground">Loading...</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {orgUnits.map((ou) => {
+                  const isConfirmed = confirmedOrgUnitIds.has(ou.id);
+                  const canConfirm = canConfirmOrgUnits.some((c) => c.id === ou.id);
+
+                  return (
+                    <div
+                      key={ou.id}
+                      className={`flex items-center justify-between rounded-md border px-3 py-2 text-xs ${
+                        isConfirmed
+                          ? "border-emerald-200 bg-emerald-50"
+                          : "border-orange-200 bg-orange-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {isConfirmed ? (
+                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
+                        ) : (
+                          <AlertTriangle className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
+                        )}
+                        <span className="font-medium truncate">{ou.name}</span>
+                      </div>
+                      {isConfirmed && isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 text-muted-foreground hover:text-destructive flex-shrink-0"
+                          onClick={() => {
+                            setResetDialogOrgUnit(ou);
+                            setShowResetDialog(true);
+                          }}
+                        >
+                          <RotateCcw className="h-3 w-3" />
+                        </Button>
+                      )}
+                      {!isConfirmed && canConfirm && (
+                        <Button
+                          size="sm"
+                          className="h-5 px-2 text-[10px] bg-teal-500 hover:bg-teal-600 text-white flex-shrink-0"
+                          disabled={confirmingId === ou.id}
+                          onClick={() => handleConfirm(ou.id)}
+                        >
+                          {confirmingId === ou.id ? "..." : "Confirm"}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
-          {!loading && (
-            <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                style={{ width: `${orgUnits.length > 0 ? (confirmedOrgUnitIds.size / orgUnits.length) * 100 : 0}%` }}
-              />
-            </div>
-          )}
-          {loading ? (
-            <p className="text-xs text-muted-foreground">Loading confirmation status...</p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {orgUnits.map((ou) => {
-                const confirmation = activeConfirmations.find((c) => c.orgUnitId === ou.id);
-                const isConfirmed = confirmedOrgUnitIds.has(ou.id);
-                const canConfirm = canConfirmOrgUnits.some((c) => c.id === ou.id);
-
-                return (
-                  <div
-                    key={ou.id}
-                    className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs ${
-                      isConfirmed
-                        ? "border-emerald-200 bg-emerald-50"
-                        : "border-orange-200 bg-orange-50"
-                    }`}
-                  >
-                    {isConfirmed ? (
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 flex-shrink-0" />
-                    ) : (
-                      <AlertTriangle className="h-3.5 w-3.5 text-orange-600 flex-shrink-0" />
-                    )}
-                    <span className="font-medium">{ou.name}</span>
-                    {isConfirmed && confirmation && (
-                      <span className="text-muted-foreground">
-                        by {confirmation.confirmerName}
-                      </span>
-                    )}
-                    {isConfirmed && isAdmin && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 px-1 text-muted-foreground hover:text-destructive"
-                        onClick={() => {
-                          setResetDialogOrgUnit(ou);
-                          setShowResetDialog(true);
-                        }}
-                      >
-                        <RotateCcw className="h-3 w-3" />
-                      </Button>
-                    )}
-                    {!isConfirmed && canConfirm && (
-                      <Button
-                        size="sm"
-                        className="h-5 px-2 text-[10px] bg-teal-500 hover:bg-teal-600 text-white"
-                        disabled={confirmingId === ou.id}
-                        onClick={() => handleConfirm(ou.id)}
-                      >
-                        {confirmingId === ou.id ? "..." : "Confirm"}
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        </details>
       )}
 
       {/* Reset Confirmation Dialog */}

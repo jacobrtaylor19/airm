@@ -1,5 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { getPersonas, getConsolidatedGroups } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
 import { PersonasPageClient } from "./personas-client";
@@ -13,10 +14,11 @@ export default function PersonasPage() {
   const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
   const isMapper = currentUser?.role === "mapper";
 
-  // Fetch org units for confirmation banner
+  // Fetch L2 org units only for confirmation banner (L2 = department level)
   const orgUnits = db
     .select({ id: schema.orgUnits.id, name: schema.orgUnits.name })
     .from(schema.orgUnits)
+    .where(eq(schema.orgUnits.level, "L2"))
     .all();
 
   return (
