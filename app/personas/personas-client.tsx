@@ -143,35 +143,47 @@ export function PersonasPageClient({
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Persona generation failed");
+        setGenerating(false);
         return;
       }
 
-      // Start progress polling
-      if (data.jobId) {
-        const pollTimer = setInterval(async () => {
-          try {
-            const statusRes = await fetch(`/api/jobs/${data.jobId}`);
-            if (statusRes.ok) {
-              const status = await statusRes.json();
-              setGenProgress({
-                processed: status.processed || 0,
-                total: status.totalRecords || 0,
-              });
-              if (status.status === "completed" || status.status === "failed") {
-                clearInterval(pollTimer);
-              }
-            }
-          } catch { /* ignore */ }
-        }, 1500);
+      if (!data.jobId) {
+        toast.error("No job ID returned");
+        setGenerating(false);
+        return;
       }
 
-      toast.success(`Generated ${data.personasCreated} personas, assigned ${data.usersAssigned} users`);
+      // Poll for job completion
+      const pollTimer = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/jobs/${data.jobId}`);
+          if (!statusRes.ok) return;
+          const status = await statusRes.json();
+
+          setGenProgress({
+            processed: status.processed || 0,
+            total: status.totalRecords || 0,
+          });
+
+          if (status.status === "completed") {
+            clearInterval(pollTimer);
+            const created = status.totalRecords || 0;
+            toast.success(`Persona generation complete — ${created} users processed`);
+            setGenerating(false);
+            setGenProgress(null);
+            router.refresh();
+          } else if (status.status === "failed") {
+            clearInterval(pollTimer);
+            toast.error(status.errorLog || "Persona generation failed");
+            setGenerating(false);
+            setGenProgress(null);
+          }
+        } catch { /* ignore polling errors */ }
+      }, 2000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Generation failed");
-    } finally {
       setGenerating(false);
       setGenProgress(null);
-      router.refresh();
     }
   }
 
