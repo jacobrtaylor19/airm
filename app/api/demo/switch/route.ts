@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 const VALID_DEMOS = [
   "default",
   "energy-chemicals-s4hana",
+  "empty-project",
   "financial-services-s4hana",
   "consumer-products-s4hana",
   "manufacturing-s4hana",

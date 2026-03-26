@@ -294,7 +294,7 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                     <div className="flex gap-2 mt-3 pt-3 border-t">
                       {!r.isActive && r.status !== "archived" && (
                         <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => setActive(r)}>
-                          <Star className="h-3 w-3" /> Set Active
+                          <Star className="h-3 w-3" /> Set as Current
                         </Button>
                       )}
                       <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openEdit(r)}>

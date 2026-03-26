@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Database, ChevronDown } from "lucide-react";
 
 const DEMO_ENVIRONMENTS = [
-  { value: "default", label: "SAP S/4HANA (Default)", available: true },
-  { value: "energy-chemicals-s4hana", label: "SAP S/4HANA — Energy & Chemicals", available: true },
+  { value: "default", label: "SAP S/4HANA — 1K Users (Generate Personas Live)", available: true },
+  { value: "energy-chemicals-s4hana", label: "SAP S/4HANA — Energy & Chemicals (Pre-loaded)", available: true },
+  { value: "empty-project", label: "Empty Project (Start from Scratch)", available: true },
   { value: "financial-services-s4hana", label: "SAP S/4HANA — Financial Services", available: true },
   { value: "consumer-products-s4hana", label: "SAP S/4HANA — Consumer Products", available: true },
   { value: "manufacturing-s4hana", label: "SAP S/4HANA — Manufacturing", available: true },

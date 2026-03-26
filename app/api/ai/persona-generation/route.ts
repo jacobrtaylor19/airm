@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
   const rateLimited = checkAIRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
-  // Capture user scope at enqueue time for job isolation (WORKFLOW.md Note 6)
+  // Capture user scope at enqueue time for job isolation
   const scopedUserIds = getUserScope(user);
 
   const job = db.insert(schema.processingJobs).values({
@@ -33,45 +33,45 @@ export async function POST(req: NextRequest) {
     config: JSON.stringify({
       triggeredBy: user.username,
       triggeredByRole: user.role,
-      scopedUserIds: scopedUserIds, // null = all users (admin)
+      scopedUserIds: scopedUserIds,
     }),
   }).returning().get();
 
-  try {
-    const result = await runPersonaGeneration(job.id);
+  // Fire-and-forget: run generation in background, return job ID immediately.
+  // This allows the user to navigate away without killing the process.
+  runPersonaGeneration(job.id)
+    .then((result) => {
+      db.update(schema.processingJobs).set({
+        status: "completed",
+        totalRecords: result.usersAssigned,
+        processed: result.usersAssigned,
+        completedAt: new Date().toISOString(),
+      }).where(eq(schema.processingJobs.id, job.id)).run();
 
-    db.update(schema.processingJobs).set({
-      status: "completed",
-      totalRecords: result.usersAssigned,
-      processed: result.usersAssigned,
-      completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id)).run();
+      db.insert(schema.auditLog).values({
+        entityType: "processingJob",
+        entityId: job.id,
+        action: "persona_generation_completed",
+        newValue: JSON.stringify(result),
+      }).run();
 
-    db.insert(schema.auditLog).values({
-      entityType: "processingJob",
-      entityId: job.id,
-      action: "persona_generation_completed",
-      newValue: JSON.stringify(result),
-    }).run();
-
-    // Notify coordinators and admins that persona generation is complete
-    notifyUsersWithRoles({
-      roles: ["coordinator", "admin", "system_admin"],
-      notificationType: "workflow_event",
-      subject: "Persona generation complete",
-      message: `Persona generation finished: ${result.personasCreated ?? 0} personas created, ${result.usersAssigned ?? 0} users assigned.`,
-      actionUrl: "/personas",
+      notifyUsersWithRoles({
+        roles: ["coordinator", "admin", "system_admin"],
+        notificationType: "workflow_event",
+        subject: "Persona generation complete",
+        message: `Persona generation finished: ${result.personasCreated ?? 0} personas created, ${result.usersAssigned ?? 0} users assigned.`,
+        actionUrl: "/personas",
+      });
+    })
+    .catch((err: unknown) => {
+      const message = safeError(err, "Unknown error");
+      db.update(schema.processingJobs).set({
+        status: "failed",
+        errorLog: message,
+        completedAt: new Date().toISOString(),
+      }).where(eq(schema.processingJobs.id, job.id)).run();
     });
 
-    return NextResponse.json({ jobId: job.id, ...result });
-  } catch (err: unknown) {
-    const message = safeError(err, "Unknown error");
-    db.update(schema.processingJobs).set({
-      status: "failed",
-      errorLog: message,
-      completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id)).run();
-
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  // Return immediately — client polls /api/jobs/[id] for status
+  return NextResponse.json({ jobId: job.id, status: "running" });
 }

@@ -22,7 +22,6 @@ export async function POST(req: NextRequest) {
   const rateLimited = checkAIRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
-  // Capture user scope at enqueue time for job isolation (WORKFLOW.md Note 6)
   const scopedUserIds = getUserScope(user);
 
   const job = db.insert(schema.processingJobs).values({
@@ -36,32 +35,31 @@ export async function POST(req: NextRequest) {
     }),
   }).returning().get();
 
-  try {
-    const result = await runTargetRoleMapping(job.id);
+  // Fire-and-forget: run in background so navigation doesn't kill it
+  runTargetRoleMapping(job.id)
+    .then((result) => {
+      db.update(schema.processingJobs).set({
+        status: "completed",
+        totalRecords: result.personasMapped,
+        processed: result.personasMapped,
+        completedAt: new Date().toISOString(),
+      }).where(eq(schema.processingJobs.id, job.id)).run();
 
-    db.update(schema.processingJobs).set({
-      status: "completed",
-      totalRecords: result.personasMapped,
-      processed: result.personasMapped,
-      completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id)).run();
+      db.insert(schema.auditLog).values({
+        entityType: "processingJob",
+        entityId: job.id,
+        action: "target_role_mapping_completed",
+        newValue: JSON.stringify(result),
+      }).run();
+    })
+    .catch((err: unknown) => {
+      const message = safeError(err, "Unknown error");
+      db.update(schema.processingJobs).set({
+        status: "failed",
+        errorLog: message,
+        completedAt: new Date().toISOString(),
+      }).where(eq(schema.processingJobs.id, job.id)).run();
+    });
 
-    db.insert(schema.auditLog).values({
-      entityType: "processingJob",
-      entityId: job.id,
-      action: "target_role_mapping_completed",
-      newValue: JSON.stringify(result),
-    }).run();
-
-    return NextResponse.json({ jobId: job.id, ...result });
-  } catch (err: unknown) {
-    const message = safeError(err, "Unknown error");
-    db.update(schema.processingJobs).set({
-      status: "failed",
-      errorLog: message,
-      completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id)).run();
-
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  return NextResponse.json({ jobId: job.id, status: "running" });
 }
