@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { getReleasesForAppUser } from "@/lib/releases";
 import { getUnreadNotificationCount } from "@/lib/notifications";
 import { validateEnv } from "@/lib/validate-env";
+import { ShieldCheck } from "lucide-react";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -27,11 +28,22 @@ export default function RootLayout({
   validateEnv();
   const user = getSessionUser();
 
-  // If no user (login/setup pages), render without sidebar
+  // If no user (login/setup/public pages), render with minimal nav
   if (!user) {
     return (
       <html lang="en">
         <body className={`${inter.variable} font-sans antialiased`}>
+          <nav className="flex items-center justify-between px-6 py-3 border-b bg-background">
+            <a href="/" className="flex items-center gap-2 text-sm font-semibold">
+              <ShieldCheck className="h-5 w-5 text-teal-500" />
+              Provisum
+            </a>
+            <div className="flex items-center gap-4 text-sm">
+              <a href="/methodology" className="text-muted-foreground hover:text-foreground">How It Works</a>
+              <a href="/overview" className="text-muted-foreground hover:text-foreground">Overview</a>
+              <a href="/login" className="text-teal-600 font-medium hover:text-teal-700">Sign In</a>
+            </div>
+          </nav>
           {children}
         </body>
       </html>
