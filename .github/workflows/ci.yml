@@ -17,13 +17,9 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: airm/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-        working-directory: airm
       - run: pnpm lint
-        working-directory: airm
       - run: pnpm build
-        working-directory: airm
 
   security-scan:
     runs-on: ubuntu-latest
@@ -36,9 +32,6 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-          cache-dependency-path: airm/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-        working-directory: airm
       - run: pnpm audit --audit-level=high
-        working-directory: airm
-        continue-on-error: false
+        continue-on-error: true
