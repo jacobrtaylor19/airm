@@ -1,5 +1,4 @@
-import { db } from "@/db";
-import * as schema from "@/db/schema";
+import { insertAuditEntry } from "@/db/audit-db";
 
 export interface AuditEntry {
   entityType: string;
@@ -14,23 +13,22 @@ export interface AuditEntry {
 }
 
 /**
- * Write an audit log entry. This is the single entry point for all audit logging.
+ * Write an audit log entry to the separate immutable audit database.
+ * This is the single entry point for all audit logging.
  * All state-changing operations and security events should call this function.
  */
 export function auditLog(entry: AuditEntry): void {
   try {
-    db.insert(schema.auditLog)
-      .values({
-        entityType: entry.entityType,
-        entityId: entry.entityId ?? 0,
-        action: entry.action,
-        oldValue: entry.oldValue ?? null,
-        newValue: entry.newValue ?? null,
-        actorEmail: entry.actorEmail,
-        ipAddress: entry.ipAddress ?? null,
-        metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
-      })
-      .run();
+    insertAuditEntry({
+      entityType: entry.entityType,
+      entityId: entry.entityId ?? 0,
+      action: entry.action,
+      oldValue: entry.oldValue ?? null,
+      newValue: entry.newValue ?? null,
+      actorEmail: entry.actorEmail,
+      ipAddress: entry.ipAddress ?? null,
+      metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
+    });
   } catch (err) {
     // Audit logging should never break the main operation
     console.error("Failed to write audit log:", err);
