@@ -1,10 +1,70 @@
-# AIRM Changelog
+# Provisum Changelog
 
 All notable feature additions and changes are documented here. Most recent first.
 
 ---
 
-## [Unreleased] — Current Session
+## [0.6.0] — 2026-03-25 — Security Compliance Hardening
+
+### Security
+- **Encryption at rest**: AES-256-GCM encryption for sensitive settings (API keys, tokens) via `lib/encryption.ts`
+- **Security headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy on all responses
+- **Password policy**: 12-character minimum with uppercase, lowercase, digit, and special character requirements
+- **Account lockout**: 5 failed login attempts triggers 30-minute lockout with audit trail
+- **Rate limiting**: Login (5/15min per IP), AI endpoints (10/min per user), bulk operations (5/min per user)
+- **Input validation**: Zod schemas on all critical API request bodies
+- **Error sanitization**: Production responses return generic messages with correlation IDs, no stack traces
+- **Bcrypt rounds**: Increased from 10 to 12
+
+### Infrastructure
+- **Audit log separation**: Immutable audit entries in separate SQLite database (`audit.db`)
+- **Audit export**: Admin endpoint for CSV/JSON audit log exports with filtering
+- **Health endpoint**: `/api/health` with database connectivity check (no auth required)
+- **Backup scripts**: Encrypted daily backups with 30-day retention and monthly verification
+- **CI/CD pipeline**: GitHub Actions with build, lint, and `pnpm audit` security scanning
+- **Dependabot**: Weekly automated dependency updates
+
+### GDPR Compliance
+- **Data export endpoint**: Article 15 — DSAR export of all user-associated data
+- **Data deletion endpoint**: Article 17 — PII anonymization while preserving audit integrity
+- **Data Processing Inventory**: Article 30 — documented data categories, retention, processors
+
+### Documentation
+- **Incident Response Plan**: Severity classification, escalation paths, communication templates
+- **Change Management**: Change categories, approval process, rollback procedures
+- **Vendor Security**: Anthropic and Render assessments with evaluation template
+- **Security Controls**: Full SOC 2 trust service criteria mapping
+
+### Added
+- `lib/encryption.ts` — AES-256-GCM encrypt/decrypt with key validation
+- `lib/password-policy.ts` — configurable password strength validation
+- `lib/rate-limit.ts` + `lib/rate-limit-middleware.ts` — in-memory rate limiter
+- `lib/validation/` — Zod schemas for auth, admin, mapping operations
+- `lib/errors.ts` — safeError() for production error sanitization
+- `lib/audit.ts` — centralized audit logging interface
+- `lib/monitoring.ts` — Sentry-ready error reporting module
+- `db/audit-db.ts` — separate immutable audit database
+- `app/api/health/route.ts` — health check endpoint
+- `app/api/auth/change-password/route.ts` — password change with policy validation
+- `app/api/admin/audit-export/route.ts` — audit log export (JSON/CSV)
+- `app/api/admin/data-export/route.ts` — GDPR Article 15 data export
+- `app/api/admin/data-deletion/route.ts` — GDPR Article 17 data erasure
+- `scripts/backup.sh`, `scripts/restore.sh`, `scripts/verify-backup.sh`
+- `.github/workflows/ci.yml`, `.github/dependabot.yml`
+- `docs/security/` — INCIDENT_RESPONSE_PLAN, CHANGE_MANAGEMENT, VENDOR_SECURITY
+- `docs/SECURITY_CONTROLS.md`, `docs/DATA_PROCESSING_INVENTORY.md`
+
+### Changed
+- `db/schema.ts` — added `failedLoginAttempts`, `lockedUntil` to appUsers; `ipAddress`, `metadata` to auditLog
+- `lib/auth.ts` — bcrypt rounds 10→12
+- `lib/settings.ts` — transparent encryption/decryption of sensitive values
+- `middleware.ts` — security headers on all responses, `/api/health` in public paths
+- All 30 API routes — error responses use `safeError()` instead of raw `err.message`
+- All 7 export routes — auth guards and audit logging added
+
+---
+
+## [Unreleased] — Previous Session
 
 ### Dashboard — Provisioning Alerts (consolidated)
 - Removed "Least Access" from the sidebar nav — over-provisioning analysis now lives directly on the dashboard
