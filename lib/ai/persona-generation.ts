@@ -105,11 +105,11 @@ ${deptSummary}
 ### Common Role Assignment Patterns
 ${rolePatterns}
 
-## Detailed User Profiles
-${profiles.map(u => `
+## Sample User Profiles (representative sample of ${profiles.length} total users)
+${profiles.slice(0, 100).map(u => `
 - ${u.sourceUserId} | ${u.displayName} | ${u.jobTitle || "No title"} | ${u.department || "No dept"}
   Roles: ${u.roles.length > 0 ? u.roles.map(r => r.roleId).join(", ") : "None assigned"}
-  Permissions: ${u.permissions.length > 0 ? u.permissions.slice(0, 20).join(", ") + (u.permissions.length > 20 ? ` (+${u.permissions.length - 20} more)` : "") : "None"}
+  Permissions: ${u.permissions.length > 0 ? u.permissions.slice(0, 10).join(", ") + (u.permissions.length > 10 ? ` (+${u.permissions.length - 10} more)` : "") : "None"}
 `).join("")}
 
 ## Task
@@ -122,13 +122,14 @@ For each persona:
 4. List the characteristic permissions (legacy T-codes/functions) that define this persona
 5. Suggest a consolidated security group this persona belongs to
 
-Also assign each user to exactly one persona with a confidence score (0-100).
-
 Design principles:
 - Aim for the minimum number of personas that accurately represent the population
 - Users with identical or near-identical role assignments should share a persona
 - Each persona should be distinguishable by its permission profile
 - Personas should align with business functions, not individual role names
+- Generate 15-30 personas typically for a population of this size
+
+Do NOT assign individual users. Just define the personas and groups.
 
 Respond with ONLY a JSON object (no markdown, no explanation):
 {
@@ -147,14 +148,6 @@ Respond with ONLY a JSON object (no markdown, no explanation):
       "description": "string",
       "access_level": "string"
     }
-  ],
-  "user_assignments": [
-    {
-      "source_user_id": "string",
-      "persona_name": "string",
-      "confidence": 85,
-      "reasoning": "string"
-    }
   ]
 }`;
 }
@@ -162,7 +155,6 @@ Respond with ONLY a JSON object (no markdown, no explanation):
 interface GenerationResult {
   personas: { name: string; description: string; business_function: string; characteristic_permissions: string[]; suggested_group: string }[];
   consolidated_groups: { name: string; description: string; access_level: string }[];
-  user_assignments: { source_user_id: string; persona_name: string; confidence: number; reasoning: string }[];
 }
 
 export async function runPersonaGeneration(jobId: number): Promise<{ personasCreated: number; usersAssigned: number }> {
@@ -227,31 +219,106 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
     }
   }
 
-  // Assign users to personas
-  let usersAssigned = 0;
-  for (const assignment of result.user_assignments) {
-    const user = db.select().from(schema.users)
-      .where(eq(schema.users.sourceUserId, assignment.source_user_id)).get();
-    const personaId = personaMap.get(assignment.persona_name) ?? null;
+  // Phase 2: Assign users to personas programmatically by department/role matching
+  // Build a map of business_function → persona for matching
+  const funcToPersonas = new Map<string, { id: number; name: string; permissions: Set<string> }[]>();
+  for (const persona of result.personas) {
+    const func = persona.business_function.toLowerCase();
+    if (!funcToPersonas.has(func)) funcToPersonas.set(func, []);
+    funcToPersonas.get(func)!.push({
+      id: personaMap.get(persona.name)!,
+      name: persona.name,
+      permissions: new Set(persona.characteristic_permissions),
+    });
+  }
 
-    if (user) {
-      const groupId = personaId
-        ? db.select({ gid: schema.personas.consolidatedGroupId }).from(schema.personas).where(eq(schema.personas.id, personaId)).get()?.gid ?? null
-        : null;
+  // Get all personas as flat list for fallback matching
+  const allPersonas = Array.from(personaMap.entries()).map(([name, id]) => {
+    const p = result.personas.find(rp => rp.name === name)!;
+    return { id, name, func: p.business_function.toLowerCase(), permissions: new Set(p.characteristic_permissions) };
+  });
+
+  let usersAssigned = 0;
+  const totalUsers = profiles.length;
+
+  // Update job progress
+  db.update(schema.processingJobs).set({ totalRecords: totalUsers }).where(eq(schema.processingJobs.id, jobId)).run();
+
+  for (let i = 0; i < profiles.length; i++) {
+    const profile = profiles[i];
+    const dept = (profile.department || "").toLowerCase();
+    const userPerms = new Set(profile.permissions);
+
+    // Find best matching persona: first by department/function, then by permission overlap
+    let bestPersona: { id: number; name: string } | null = null;
+    let bestScore = -1;
+
+    // Try matching by department → business function
+    const candidates = funcToPersonas.get(dept) || allPersonas;
+
+    for (const persona of candidates) {
+      // Score = number of overlapping permissions
+      let overlap = 0;
+      const permArr = Array.from(persona.permissions);
+      for (const p of permArr) {
+        if (userPerms.has(p)) overlap++;
+      }
+      if (overlap > bestScore) {
+        bestScore = overlap;
+        bestPersona = persona;
+      }
+    }
+
+    // If no match by department, try all personas
+    if (bestScore === 0) {
+      for (const persona of allPersonas) {
+        let overlap = 0;
+        const permArr = Array.from(persona.permissions);
+        for (const p of permArr) {
+          if (userPerms.has(p)) overlap++;
+        }
+        if (overlap > bestScore) {
+          bestScore = overlap;
+          bestPersona = persona;
+        }
+      }
+    }
+
+    // Fallback: assign to first persona matching department, or first persona overall
+    if (!bestPersona) {
+      bestPersona = allPersonas[0];
+    }
+
+    const user = db.select().from(schema.users)
+      .where(eq(schema.users.sourceUserId, profile.sourceUserId)).get();
+
+    if (user && bestPersona) {
+      const groupId = db.select({ gid: schema.personas.consolidatedGroupId })
+        .from(schema.personas).where(eq(schema.personas.id, bestPersona.id)).get()?.gid ?? null;
+
+      const confidence = bestScore > 0 ? Math.min(95, 60 + bestScore * 5) : 70;
 
       db.insert(schema.userPersonaAssignments).values({
         userId: user.id,
-        personaId,
+        personaId: bestPersona.id,
         consolidatedGroupId: groupId,
-        confidenceScore: assignment.confidence,
-        aiReasoning: assignment.reasoning,
+        confidenceScore: confidence,
+        aiReasoning: `Matched to "${bestPersona.name}" by ${bestScore > 0 ? "permission overlap" : "department"} (${dept || "unspecified"})`,
         aiModel: provider.name,
         assignmentMethod: "ai_generation",
         jobRunId: jobId,
       }).run();
       usersAssigned++;
     }
+
+    // Update progress every 50 users
+    if (i % 50 === 0) {
+      db.update(schema.processingJobs).set({ processed: i + 1 }).where(eq(schema.processingJobs.id, jobId)).run();
+    }
   }
+
+  // Final progress update
+  db.update(schema.processingJobs).set({ processed: usersAssigned }).where(eq(schema.processingJobs.id, jobId)).run();
 
   return { personasCreated: result.personas.length, usersAssigned };
 }
