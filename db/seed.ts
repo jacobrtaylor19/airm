@@ -490,6 +490,37 @@ function seed() {
     // Inventory: Physical inventory + posting differences
     { ruleId: "T-SOD-INV-001", ruleName: "Physical Inventory & Post Differences", permA: "F3737", permB: "F3738",
       severity: "critical", riskDesc: "A user who can conduct physical inventory counts and post the resulting adjustments has full control over inventory variance recognition, enabling concealment of theft." },
+    // --- Additional rules using ACTUAL target role permission IDs for demo coverage ---
+    // High: GL posting (F0716) vs Supplier invoice (F0717)
+    { ruleId: "T-SOD-GL-003", ruleName: "GL Posting & Supplier Invoices", permA: "F0716", permB: "F0717",
+      severity: "high", riskDesc: "A user who can post journal entries and process supplier invoices can manipulate both the sub-ledger and general ledger, making it difficult to detect financial statement fraud." },
+    // High: PO Create (F1074) vs Goods Receipt (F2093)
+    { ruleId: "T-SOD-MM-006", ruleName: "Purchase Order & Goods Receipt", permA: "F1074", permB: "F2093",
+      severity: "high", riskDesc: "A user who can create purchase orders and post goods receipts can fabricate procurement transactions and falsely confirm delivery without independent oversight." },
+    // Medium: Goods Receipt (F2093) vs Goods Issue (F2094) — within WH/Inv roles
+    { ruleId: "T-SOD-WH-002", ruleName: "Goods Receipt & Goods Issue", permA: "F2093", permB: "F2094",
+      severity: "medium", riskDesc: "A user who can process both goods receipts and goods issues can manipulate inventory levels without independent confirmation of inbound and outbound material flows." },
+    // Critical: Employee Data (F2721) vs Payroll (F2722) — HR within-role
+    { ruleId: "T-SOD-HR-001", ruleName: "Employee Data & Payroll Execution", permA: "F2721", permB: "F2722",
+      severity: "critical", riskDesc: "A user who maintains employee records and runs payroll can create ghost employees and inflate payroll, representing one of the highest-risk HR SOD conflicts." },
+    // Critical: User Admin (F7721) vs Authorization Admin (F7722) — IT within-role
+    { ruleId: "T-SOD-IT-001", ruleName: "User Admin & Authorization Admin", permA: "F7721", permB: "F7722",
+      severity: "critical", riskDesc: "A user who can create user accounts and configure authorization roles can grant themselves unlimited access to any system function, bypassing all other controls." },
+    // Medium: Maintenance Create (F0893) vs Maintenance Confirm (F0894)
+    { ruleId: "T-SOD-PM-004", ruleName: "Create & Confirm Maintenance", permA: "F0893", permB: "F0894",
+      severity: "medium", riskDesc: "A user who can create maintenance work orders and confirm their completion can fabricate maintenance activity, enabling labor fraud and false productivity reporting." },
+    // High: PO Approve (F1076) vs Supplier Master (F0743)
+    { ruleId: "T-SOD-MM-007", ruleName: "PO Approval & Supplier Master", permA: "F1076", permB: "F0743",
+      severity: "high", riskDesc: "A user who can approve purchase orders and maintain supplier master data can set up preferred vendors and approve their own procurement transactions." },
+    // Medium: Document Reversal (F0719) vs Account Clearing (F0720)
+    { ruleId: "T-SOD-GL-004", ruleName: "Document Reversal & Account Clearing", permA: "F0719", permB: "F0720",
+      severity: "medium", riskDesc: "A user who can reverse documents and clear accounts can manipulate financial records by reversing and re-clearing entries to hide discrepancies." },
+    // High: Automatic Payments (F2424) vs Customer Payments (F2625)
+    { ruleId: "T-SOD-TR-001", ruleName: "Automatic Payments & Customer Payments", permA: "F2424", permB: "F2625",
+      severity: "high", riskDesc: "A user who controls both outgoing automatic payments and incoming customer payment processing can divert funds by manipulating payment flows in both directions." },
+    // Low: Cost Centers (F2872) vs Financial Reports (F2312)
+    { ruleId: "T-SOD-CO-001", ruleName: "Cost Center Maintenance & Financial Reporting", permA: "F2872", permB: "F2312",
+      severity: "low", riskDesc: "A user who maintains cost center master data and generates financial reports can manipulate cost allocations and then generate reports that conceal the misallocation." },
   ];
 
   // Insert target-system SOD rules
