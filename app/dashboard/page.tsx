@@ -100,7 +100,11 @@ export default function DashboardPage() {
     {
       label: "Mapping", href: "/mapping", icon: Route,
       status: hasMappings ? (stats.personasWithMapping >= stats.totalPersonas ? "complete" : "active") : "not_started",
-      detail: hasMappings ? `${stats.personasWithMapping}/${stats.totalPersonas} mapped` : "Map target roles",
+      detail: hasMappings
+        ? (stats.draftAssignments > 0
+          ? `${stats.draftAssignments} draft, ${stats.pendingReview} pending review`
+          : `${stats.personasWithMapping}/${stats.totalPersonas} mapped`)
+        : "Map target roles",
     },
     {
       label: "SOD Analysis", href: "/sod", icon: ShieldAlert,

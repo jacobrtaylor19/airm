@@ -42,7 +42,13 @@ export const AI = {
 
 export const WORKFLOW = {
   /** Assignment statuses that can be approved */
-  APPROVABLE_STATUSES: ["ready_for_approval", "compliance_approved"] as readonly string[],
+  APPROVABLE_STATUSES: ["ready_for_approval", "compliance_approved", "sod_risk_accepted"] as readonly string[],
+  /** Statuses that can be submitted for review */
+  SUBMITTABLE_STATUSES: ["draft"] as readonly string[],
+  /** Statuses that SOD analysis operates on */
+  SOD_ANALYZABLE_STATUSES: ["pending_review"] as readonly string[],
+  /** Statuses where role assignments can be edited */
+  EDITABLE_STATUSES: ["draft"] as readonly string[],
   /** Over-provisioning threshold default (%) */
   DEFAULT_LEAST_ACCESS_THRESHOLD: 30,
 } as const;

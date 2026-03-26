@@ -27,7 +27,7 @@ export async function GET() {
   const releasesWithStats = releases.map((r) => {
     const assignments = allAssignments.filter((a) => a.releaseId === r.id);
     const approved = assignments.filter((a) => a.status === "approved").length;
-    const pending = assignments.filter((a) => a.status === "draft" || a.status === "pending_approval").length;
+    const pending = assignments.filter((a) => a.status === "draft" || a.status === "pending_review" || a.status === "pending_approval").length;
     const total = assignments.length;
     return { ...r, stats: { total, approved, pending } };
   });

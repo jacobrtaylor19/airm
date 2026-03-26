@@ -569,9 +569,15 @@ function seed() {
   // Load all active SOD rules (including the target-system ones we just inserted)
   const activeRules = db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true)).all();
 
-  // Group assignments by user — include both draft (current) and existing (previous wave) for SOD
+  // Promote draft assignments to pending_review before SOD analysis
+  db.update(schema.userTargetRoleAssignments)
+    .set({ status: "pending_review", updatedAt: new Date().toISOString() })
+    .where(eq(schema.userTargetRoleAssignments.status, "draft"))
+    .run();
+
+  // Group assignments by user — include both pending_review (current) and existing (previous wave) for SOD
   const seedAssignments = db.select().from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "draft")).all();
+    .where(eq(schema.userTargetRoleAssignments.status, "pending_review")).all();
   const seedExistingAssignments = db.select().from(schema.userTargetRoleAssignments)
     .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing")).all();
 
@@ -666,7 +672,7 @@ function seed() {
         and(
           eq(schema.userTargetRoleAssignments.userId, userId),
           eq(schema.userTargetRoleAssignments.targetRoleId, roleId),
-          eq(schema.userTargetRoleAssignments.status, "draft"),
+          eq(schema.userTargetRoleAssignments.status, "pending_review"),
         )
       ).run();
     }

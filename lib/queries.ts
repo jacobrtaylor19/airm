@@ -92,6 +92,18 @@ export function getDashboardStats() {
     .where(eq(schema.userTargetRoleAssignments.status, "ready_for_approval"))
     .get()!.count;
 
+  const pendingReview = db
+    .select({ count: count() })
+    .from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.status, "pending_review"))
+    .get()!.count;
+
+  const draftAssignments = db
+    .select({ count: count() })
+    .from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.status, "draft"))
+    .get()!.count;
+
   const sourcePermissions = db.select({ count: count() }).from(schema.sourcePermissions).get()!.count;
   const rolePermissions = db.select({ count: count() }).from(schema.sourceRolePermissions).get()!.count;
   const sodRulesCount = db.select({ count: count() }).from(schema.sodRules).get()!.count;
@@ -162,6 +174,8 @@ export function getDashboardStats() {
     complianceApproved,
     sodRejected,
     readyForApproval,
+    pendingReview,
+    draftAssignments,
     sourcePermissions,
     rolePermissions,
     sodRulesCount,

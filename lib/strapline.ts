@@ -13,6 +13,8 @@ interface StraplineStats {
   totalAssignments: number;
   approvedAssignments: number;
   readyForApproval: number;
+  pendingReview: number;
+  draftAssignments: number;
   sodRulesCount: number;
   sodConflictsBySeverity: { severity: string; count: number }[];
   lowConfidence: number;
@@ -121,6 +123,18 @@ function projectStrapline(stats: StraplineStats, role: string): { text: string; 
       return {
         text: `${n(unmapped, "persona")} need${unmapped === 1 ? "s" : ""} target role assignments. Head to Role Mapping to continue. ${mappedPercent}% complete.`,
         tone: "action",
+      };
+    }
+    if (stats.draftAssignments > 0) {
+      return {
+        text: `${n(stats.draftAssignments, "assignment")} in Draft — review and submit for SOD analysis when ready.`,
+        tone: "action",
+      };
+    }
+    if (stats.pendingReview > 0) {
+      return {
+        text: `${n(stats.pendingReview, "assignment")} pending SOD review. Run SOD Analysis from Jobs to continue.`,
+        tone: "warning",
       };
     }
     if (lowConfidence > 0) {

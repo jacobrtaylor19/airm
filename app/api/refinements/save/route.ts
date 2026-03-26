@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 import { safeError } from "@/lib/errors";
+import { WORKFLOW } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    if (user.role !== "mapper" && user.role !== "admin") {
+    if (user.role !== "mapper" && user.role !== "admin" && user.role !== "system_admin") {
       return NextResponse.json({ error: "Only mappers can save refinements" }, { status: 403 });
     }
 
@@ -29,6 +30,17 @@ export async function POST(req: NextRequest) {
       .from(schema.userTargetRoleAssignments)
       .where(eq(schema.userTargetRoleAssignments.userId, userId))
       .all();
+
+    // Gate: only allow edits when all assignments are in an editable status
+    const nonEditableAssignments = currentAssignments.filter(
+      (a) => !WORKFLOW.EDITABLE_STATUSES.includes(a.status)
+    );
+    if (nonEditableAssignments.length > 0) {
+      return NextResponse.json(
+        { error: "Assignments can only be edited while in Draft status. Send back to Draft first." },
+        { status: 400 }
+      );
+    }
 
     const currentRoleIds = new Set(currentAssignments.map(a => a.targetRoleId));
     const desiredRoleIds = new Set<number>(targetRoleIds);

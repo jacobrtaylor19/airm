@@ -15,10 +15,10 @@ export function runSodAnalysis(): SodAnalysisResult {
   const rules = db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true)).all();
 
   if (rules.length === 0) {
-    // No SOD rules — mark all draft assignments as compliance_approved
+    // No SOD rules — mark all pending_review assignments as compliance_approved
     db.update(schema.userTargetRoleAssignments)
       .set({ status: "compliance_approved", updatedAt: new Date().toISOString() })
-      .where(eq(schema.userTargetRoleAssignments.status, "draft"))
+      .where(eq(schema.userTargetRoleAssignments.status, "pending_review"))
       .run();
 
     const totalDraft = db.select().from(schema.userTargetRoleAssignments).all();
@@ -30,10 +30,10 @@ export function runSodAnalysis(): SodAnalysisResult {
     };
   }
 
-  // 2. Load ALL user target role assignments — both "current" (draft) and "existing" (approved from previous waves)
+  // 2. Load ALL user target role assignments — both "current" (pending_review) and "existing" (approved from previous waves)
   //    SOD must check the complete picture: existing + current together
   const draftAssignments = db.select().from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "draft"))
+    .where(eq(schema.userTargetRoleAssignments.status, "pending_review"))
     .all();
 
   const existingAssignments = db.select().from(schema.userTargetRoleAssignments)
@@ -140,7 +140,7 @@ export function runSodAnalysis(): SodAnalysisResult {
           and(
             eq(schema.userTargetRoleAssignments.userId, userId),
             eq(schema.userTargetRoleAssignments.targetRoleId, roleId),
-            eq(schema.userTargetRoleAssignments.status, "draft")
+            eq(schema.userTargetRoleAssignments.status, "pending_review")
           )
         )
         .run();
