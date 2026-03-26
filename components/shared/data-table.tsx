@@ -197,7 +197,7 @@ export function DataTable<T extends Record<string, unknown>>({
                 <TableRow
                   key={i}
                   className={cn(
-                    onRowClick && "cursor-pointer",
+                    onRowClick && "cursor-pointer hover:bg-slate-50",
                     selectable && selectedIds.has(row.id as number) && "bg-primary/5"
                   )}
                 >

@@ -54,8 +54,9 @@ export async function POST(req: NextRequest) {
         newValue: JSON.stringify({ ip, lockedUntil: unlockTime }),
         actorEmail: user.email || user.username,
       }).run();
+      const minutesLeft = Math.ceil((user.lockedUntil - Date.now()) / 60000);
       return NextResponse.json(
-        { error: `Account locked. Try again after ${new Date(user.lockedUntil).toLocaleTimeString()}.` },
+        { error: `Account locked. Please try again in ${minutesLeft} minute${minutesLeft !== 1 ? "s" : ""} or contact your administrator.` },
         { status: 429 }
       );
     }
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
 
       if (attempts >= AUTH.MAX_LOGIN_ATTEMPTS) {
         return NextResponse.json(
-          { error: "Account locked due to too many failed attempts. Try again in 30 minutes." },
+          { error: "Account locked due to too many failed attempts. Please try again in 5 minutes or contact your administrator." },
           { status: 429 }
         );
       }

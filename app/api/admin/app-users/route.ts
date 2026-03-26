@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser, hashPassword } from "@/lib/auth";
 import { safeError } from "@/lib/errors";
+import { validatePassword } from "@/lib/password-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,11 @@ export async function POST(req: NextRequest) {
     const { username, displayName, email, password, role } = await req.json();
     if (!username || !displayName || !password || !role) {
       return NextResponse.json({ error: "Username, display name, password, and role required" }, { status: 400 });
+    }
+
+    const pwCheck = validatePassword(password);
+    if (!pwCheck.valid) {
+      return NextResponse.json({ error: "Password does not meet requirements", details: pwCheck.errors }, { status: 400 });
     }
 
     const existing = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, username)).get();

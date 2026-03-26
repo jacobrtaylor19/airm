@@ -204,7 +204,7 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
           </div>
         </div>
         <p className="mt-2 text-[10px] text-slate-600 text-center">
-          Provisum v0.4.0
+          Provisum v0.6.0
         </p>
       </div>
     </aside>

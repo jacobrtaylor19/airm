@@ -134,6 +134,14 @@ These are valuable features that are not prioritised for the current sprint. The
 - AIRM fires events to external URLs when things happen — e.g., "all approvals complete for Release 1" triggers a Jira ticket, or "new critical SOD conflict" pings a Slack channel
 - Deferred: not needed right now
 
+### ML confidence enrichment layer (XGBoost sidecar)
+- XGBoost model trained on 411K+ synthetic users, validated with three-tier holdout evaluation (99.6% easy, 92% novel titles, 97.4% adversarial)
+- Runs as a Python HTTP sidecar alongside the Next.js app, enriching Claude zero-shot persona assignments with a second opinion
+- Produces composite confidence scores and actionable recommendations (auto_confirm / soft_confirm / review / block)
+- Full integration code was prototyped and tested (schema changes, sidecar client, pipeline hook, UI badges) then reverted — ready to wire in when real client data is available to validate
+- Model code, training scripts, and eval results live in `ml/`. See `ml/ML_CONFIDENCE_ENRICHMENT.md` for full documentation.
+- **Blocked on:** Real client data to validate model beyond synthetic distributions. Current synthetic-only training ceiling means integration adds complexity without provable lift. Revisit after first real deployment with client user data.
+
 ---
 
 ## Completed (see CHANGELOG.md for detail)

@@ -107,7 +107,7 @@ export function LoginForm() {
               <label className="text-sm font-medium">Username</label>
               <Input
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => { setUsername(e.target.value); setError(""); }}
                 placeholder="Enter your username"
                 className="mt-1"
                 autoFocus
@@ -118,7 +118,7 @@ export function LoginForm() {
               <Input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { setPassword(e.target.value); setError(""); }}
                 placeholder="Enter your password"
                 className="mt-1"
               />
@@ -126,7 +126,7 @@ export function LoginForm() {
             {error && (
               <p className="text-sm text-destructive">{error}</p>
             )}
-            <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white" disabled={loading || switching || !username || !password}>
+            <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700 text-white" disabled={loading || switching || !username || !password}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
             </Button>
           </form>

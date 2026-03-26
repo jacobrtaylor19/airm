@@ -153,7 +153,7 @@ export default function DashboardPage() {
       {/* Global KPI Cards */}
       <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Project Role Mapping Progress</h3>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <KpiCard title="Total Users" value={stats.totalUsers} subtitle={`${stats.totalSourceRoles} source roles`} />
+        <KpiCard title="Total Users" value={stats.totalUsers} subtitle={needsScopeStats ? `${stats.totalSourceRoles} source roles (project-wide)` : `${stats.totalSourceRoles} source roles`} />
         <KpiCard title="Personas Generated" value={stats.totalPersonas} subtitle={`${stats.totalGroups} consolidated groups`} />
         <KpiCard
           title="Persona Coverage"

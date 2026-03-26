@@ -6,8 +6,8 @@
 export const AUTH = {
   /** Maximum failed login attempts before lockout */
   MAX_LOGIN_ATTEMPTS: 5,
-  /** Lockout duration in milliseconds (30 minutes) */
-  LOCKOUT_DURATION_MS: 30 * 60 * 1000,
+  /** Lockout duration in milliseconds (5 minutes) */
+  LOCKOUT_DURATION_MS: 5 * 60 * 1000,
   /** Session cookie duration in milliseconds (24 hours) */
   SESSION_DURATION_MS: 24 * 60 * 60 * 1000,
   /** Session cookie max age in seconds (24 hours) */
@@ -19,10 +19,10 @@ export const AUTH = {
 } as const;
 
 export const RATE_LIMITS = {
-  /** Login attempts per IP within the window */
-  LOGIN_LIMIT: 5,
-  /** Login rate limit window in ms (15 minutes) */
-  LOGIN_WINDOW_MS: 15 * 60 * 1000,
+  /** Global IP rate limit — high threshold, secondary defense only */
+  LOGIN_LIMIT: 50,
+  /** Login rate limit window in ms (1 minute) */
+  LOGIN_WINDOW_MS: 60 * 1000,
   /** AI endpoint requests per user within the window */
   AI_LIMIT: 10,
   /** AI rate limit window in ms (1 minute) */
