@@ -6,8 +6,10 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 
-const COOKIE_NAME = "airm_session";
-const SESSION_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+import { AUTH } from "@/lib/constants";
+
+const COOKIE_NAME = AUTH.COOKIE_NAME;
+const SESSION_DURATION_MS = AUTH.SESSION_DURATION_MS;
 
 export interface AppUser {
   id: number;
@@ -18,10 +20,8 @@ export interface AppUser {
   assignedOrgUnitId: number | null;
 }
 
-const BCRYPT_ROUNDS = 12;
-
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, BCRYPT_ROUNDS);
+  return bcrypt.hash(password, AUTH.BCRYPT_ROUNDS);
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {

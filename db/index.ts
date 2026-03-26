@@ -4,8 +4,28 @@ import * as schema from "./schema";
 import { existsSync, mkdirSync } from "fs";
 import { dirname, resolve } from "path";
 
-// Allow DB path override via env var (used on Render with a persistent disk)
-const dbPath = process.env.DATABASE_PATH ?? "./data/airm.db";
+// During Render build phase, DATABASE_PATH points to /data/airm.db but the
+// persistent disk isn't mounted. Fall back to a local path for build-time
+// schema operations (db:push) and page collection.
+function resolveDbPath(): string {
+  const envPath = process.env.DATABASE_PATH;
+  if (!envPath) return "./data/airm.db";
+
+  const dir = dirname(resolve(envPath));
+  // If the target directory doesn't exist and can't be created (e.g., /data
+  // on Render build), fall back to local path
+  if (!existsSync(dir)) {
+    try {
+      mkdirSync(dir, { recursive: true });
+    } catch {
+      console.warn(`⚠️  Cannot create ${dir} — falling back to ./data/airm.db (build phase?)`);
+      return "./data/airm.db";
+    }
+  }
+  return envPath;
+}
+
+const dbPath = resolveDbPath();
 const dbDir = dirname(resolve(dbPath));
 if (!existsSync(dbDir)) {
   mkdirSync(dbDir, { recursive: true });

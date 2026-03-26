@@ -10,6 +10,7 @@ import { WelcomeTour } from "@/components/onboarding/welcome-tour";
 import { cookies } from "next/headers";
 import { getReleasesForAppUser } from "@/lib/releases";
 import { getUnreadNotificationCount } from "@/lib/notifications";
+import { validateEnv } from "@/lib/validate-env";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -23,6 +24,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  validateEnv();
   const user = getSessionUser();
 
   // If no user (login/setup pages), render without sidebar

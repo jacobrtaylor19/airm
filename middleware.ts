@@ -39,13 +39,15 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     );
   }
 
-  // CSP: allow unsafe-inline for Tailwind/shadcn styles, unsafe-eval for Next.js dev
-  // TODO: In production, test removing unsafe-eval from script-src
+  const scriptSrc = process.env.NODE_ENV === "production"
+    ? "script-src 'self' 'unsafe-inline'"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+
   response.headers.set(
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      scriptSrc,
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",

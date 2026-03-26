@@ -7,11 +7,9 @@ import { checkLoginRate } from "@/lib/rate-limit-middleware";
 import { validateBody } from "@/lib/validation";
 import { loginSchema } from "@/lib/validation/auth";
 import { safeError } from "@/lib/errors";
+import { AUTH } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
-
-const MAX_FAILED_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
 function getClientIP(req: NextRequest): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -69,8 +67,8 @@ export async function POST(req: NextRequest) {
         failedLoginAttempts: attempts,
       };
 
-      if (attempts >= MAX_FAILED_ATTEMPTS) {
-        updateData.lockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+      if (attempts >= AUTH.MAX_LOGIN_ATTEMPTS) {
+        updateData.lockedUntil = Date.now() + AUTH.LOCKOUT_DURATION_MS;
       }
 
       db.update(schema.appUsers)
@@ -82,12 +80,12 @@ export async function POST(req: NextRequest) {
       db.insert(schema.auditLog).values({
         entityType: "auth",
         entityId: user.id,
-        action: attempts >= MAX_FAILED_ATTEMPTS ? "account_locked" : "login_failure",
+        action: attempts >= AUTH.MAX_LOGIN_ATTEMPTS ? "account_locked" : "login_failure",
         newValue: JSON.stringify({ ip, attempts }),
         actorEmail: user.email || user.username,
       }).run();
 
-      if (attempts >= MAX_FAILED_ATTEMPTS) {
+      if (attempts >= AUTH.MAX_LOGIN_ATTEMPTS) {
         return NextResponse.json(
           { error: "Account locked due to too many failed attempts. Try again in 30 minutes." },
           { status: 429 }

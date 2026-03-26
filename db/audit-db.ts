@@ -8,10 +8,19 @@ let _auditDb: Database.Database | null = null;
 function getAuditDb(): Database.Database {
   if (_auditDb) return _auditDb;
 
-  const auditDbPath = process.env.AUDIT_DATABASE_URL ?? "./data/audit.db";
+  let auditDbPath = process.env.AUDIT_DATABASE_URL ?? "./data/audit.db";
   const auditDbDir = dirname(resolve(auditDbPath));
   if (!existsSync(auditDbDir)) {
-    mkdirSync(auditDbDir, { recursive: true });
+    try {
+      mkdirSync(auditDbDir, { recursive: true });
+    } catch {
+      // Fall back to local path (build phase — /data not mounted)
+      auditDbPath = "./data/audit.db";
+      const fallbackDir = dirname(resolve(auditDbPath));
+      if (!existsSync(fallbackDir)) {
+        mkdirSync(fallbackDir, { recursive: true });
+      }
+    }
   }
 
   _auditDb = new Database(auditDbPath);
