@@ -87,7 +87,6 @@ draft → [Submit for Review] → pending_review → [SOD Analysis] → sod_reje
 - `compliance_approved` — SOD clean, ready for approver
 - `ready_for_approval` — auto-promoted high-confidence assignments
 - `approved` — final, provisioned
-| Admin Console | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -165,6 +164,8 @@ Central file for all shared DB queries. Key functions:
 | `getLeastAccessAnalysis(threshold)` | Over-provisioned mappings with exception status |
 | `getPersonaIdsForUsers(userIds)` | Persona IDs belonging to a set of users |
 | `getPersonaDetail(personaId)` | Full persona with mapped roles and excess % |
+| `getUserGapAnalysis(userId)` | Source vs target permission gaps per user |
+| `getUserRefinementDetails()` | All users with assignments, overrides, status for mapping tab |
 
 When adding new queries, add them here (not inline in page files) unless they're trivial single-row lookups.
 
@@ -200,6 +201,25 @@ No email is sent — all notifications are stored in the `notifications` table.
 - Unread count shown as a badge in the sidebar (computed client-side from inbox length).
 - `POST /api/notifications` — send (accepts array of `toUserIds`)
 - `PATCH /api/notifications` — mark as read
+
+---
+
+## Pipeline Validation (due diligence)
+
+System-admin-only feature at `/admin/validation` for proving the platform works as described. Not part of the product workflow — intended for due diligence, partner demos, and accuracy audits.
+
+**Dashboard** (`app/admin/validation/validation-dashboard.tsx`):
+- **Overview tab** — Pipeline flow visualization (users → personas → roles → SOD), stat cards, persona distribution chart, confidence histogram, status breakdown, edge case panel
+- **Users tab** — Full searchable/filterable user table. Click any row to open a detail modal showing the complete attribution chain: source attributes → persona (with AI reasoning + confidence) → target roles (with status) → SOD conflicts
+- **Personas tab** — Per-persona cards with user counts, confidence stats, and mapped target roles
+
+**Filters**: search by name/ID/department/persona, filter by specific persona, filter by edge case category (no persona, low confidence, high SOD, complex user, etc.)
+
+**Excel export** (`/api/admin/validation/export`): 5-tab XLSX — Validation Summary, Full Attribution Chain (all users × 17 columns with validation flags), Persona Distribution, SOD Conflicts, Methodology.
+
+**API** (`/api/admin/validation`): Returns the full enriched dataset including per-user chain, distribution stats, confidence buckets, edge case counts, and persona-role mappings.
+
+**Access**: `system_admin` only. Sidebar link under SYSTEM section. Auth handled by existing `/admin` prefix in middleware.
 
 ---
 
@@ -248,5 +268,6 @@ No email is sent — all notifications are stored in the `notifications` table.
 | New dashboard section | `app/dashboard/page.tsx` (data), `app/dashboard/dashboard-filtered.tsx` (UI) |
 | New sidebar nav item | `components/layout/sidebar.tsx` |
 | New API mutation | `app/api/<path>/route.ts` |
+| Validation dashboard | `app/admin/validation/`, `app/api/admin/validation/` |
 | Change strapline language | `lib/strapline.ts` |
 | Change notification template | `app/notifications/notifications-client.tsx` (QUICK_MESSAGES) |

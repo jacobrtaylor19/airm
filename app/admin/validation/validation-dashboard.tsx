@@ -31,10 +31,7 @@ import {
   AlertTriangle,
   XCircle,
   BarChart3,
-  ChevronDown,
-  ChevronRight,
   Eye,
-  Filter,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -489,7 +486,7 @@ function UserDetailModal({ user, personaRoleMappings, onClose }: { user: Enriche
         {mappingsForPersona.length > 0 && (
           <div className="rounded-lg border border-teal-200 bg-teal-50/50 p-3">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-              Persona → Role Mapping (what "{user.personaName}" maps to)
+              Persona → Role Mapping (what &ldquo;{user.personaName}&rdquo; maps to)
             </h4>
             <div className="space-y-1.5">
               {mappingsForPersona.map((m) => (

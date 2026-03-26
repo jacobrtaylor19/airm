@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, count, sql, isNotNull } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import { getSessionUserFromToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { AUTH } from "@/lib/constants";
@@ -11,9 +11,14 @@ export const dynamic = "force-dynamic";
 
 const HEADER_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E293B" } };
 const HEADER_FONT: Partial<ExcelJS.Font> = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+// Color fills for conditional formatting (available for future use)
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const TEAL_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D9488" } };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const RED_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEF4444" } };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const AMBER_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF59E0B" } };
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const GREEN_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FF22C55E" } };
 
 function applyHeaderRow(sheet: ExcelJS.Worksheet, headers: string[]) {

@@ -4,6 +4,21 @@ All notable feature additions and changes are documented here. Most recent first
 
 ---
 
+## [Unreleased] — 2026-03-26
+
+### Pipeline Validation (Due Diligence)
+- **Validation dashboard** (`/admin/validation`): Interactive, system-admin-only tool for proving the platform works as described. Three tabs: Overview (pipeline flow, distribution charts, confidence histogram, edge case panel), Users (searchable/filterable table with click-to-inspect detail modals showing full attribution chain), Personas (per-persona cards with mapped target roles)
+- **Attribution chain tracing**: Click any user to see source attributes → persona assignment (with AI reasoning + confidence score) → target role derivation → SOD conflict status in a single modal
+- **Edge case detection**: Flags users with no persona, low confidence, missing target roles, high SOD conflicts, or unusually complex source role sets
+- **Excel validation export**: One-click download of 5-tab XLSX — Validation Summary, Full Attribution Chain (17 columns with validation flags), Persona Distribution, SOD Conflicts, Methodology
+- **Sidebar link**: Added "Pipeline Validation" under SYSTEM section (FlaskConical icon)
+
+### Other Improvements
+- **Persona cascade override flag**: Detect and display preserved overrides
+- **User-level permission gap analysis**: Added to user detail page
+
+---
+
 ## [0.6.0] — 2026-03-26 — Security Compliance Hardening + Demo Overhaul
 
 ### Demo Data & Self-Guided Environment (2026-03-26)

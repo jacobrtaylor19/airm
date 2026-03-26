@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, count, sql, isNull, isNotNull } from "drizzle-orm";
+import { eq, count, sql, isNotNull } from "drizzle-orm";
 import { getSessionUserFromToken } from "@/lib/auth";
 import { cookies } from "next/headers";
 import { AUTH } from "@/lib/constants";
