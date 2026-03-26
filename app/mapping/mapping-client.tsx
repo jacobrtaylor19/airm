@@ -925,7 +925,16 @@ function RefinementsTab({
                               )}
                             </TableCell>
                           )}
-                          <TableCell className="text-sm font-medium">{u.userName}</TableCell>
+                          <TableCell className="text-sm font-medium">
+                            <span className="flex items-center gap-1">
+                              {u.userName}
+                              {u.hasPersonaCascadeFlag && (
+                                <Badge variant="outline" className="text-[10px] h-4 px-1 bg-amber-50 text-amber-700 border-amber-200" title="Persona mapping changed but individual override preserved">
+                                  override kept
+                                </Badge>
+                              )}
+                            </span>
+                          </TableCell>
                           <TableCell className="text-sm">{u.department ?? "—"}</TableCell>
                           <TableCell className="text-sm">{u.personaName ?? "—"}</TableCell>
                           <TableCell className="text-sm">{u.allAssignments.length}</TableCell>
@@ -984,6 +993,12 @@ function RefinementsTab({
                 {!isEditable && (
                   <div className="rounded-md bg-muted/50 border px-3 py-2 text-xs text-muted-foreground">
                     Assignments are locked ({selectedUserStatus === "pending_review" ? "pending SOD review" : selectedUserStatus.replace("_", " ")}). Send back to Draft to edit.
+                  </div>
+                )}
+
+                {selectedUser.hasPersonaCascadeFlag && (
+                  <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-700">
+                    <span className="font-medium">Persona mapping changed</span> — this user has individual overrides that were preserved when the persona-level mapping was updated. Review the overrides below to ensure they are still appropriate.
                   </div>
                 )}
 

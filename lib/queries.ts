@@ -1758,8 +1758,9 @@ export interface UserRefinementDetail {
   personaName: string | null;
   personaId: number | null;
   personaDefaultRoles: { targetRoleId: number; roleName: string; roleId: string }[];
-  individualOverrides: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string; releasePhase: string }[];
-  allAssignments: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string; releasePhase: string }[];
+  individualOverrides: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string; releasePhase: string; personaMappingChangedAt: string | null }[];
+  allAssignments: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string; assignmentType: string; status: string; releasePhase: string; personaMappingChangedAt: string | null }[];
+  hasPersonaCascadeFlag: boolean;
   existingAccessRoles: { assignmentId: number; targetRoleId: number; roleName: string; roleId: string }[];
 }
 
@@ -1781,6 +1782,7 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
       status: schema.userTargetRoleAssignments.status,
       derivedFromPersonaId: schema.userTargetRoleAssignments.derivedFromPersonaId,
       releasePhase: schema.userTargetRoleAssignments.releasePhase,
+      personaMappingChangedAt: schema.userTargetRoleAssignments.personaMappingChangedAt,
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
@@ -1843,8 +1845,9 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
       personaDefaultRoles: personaDefaults,
       individualOverrides: currentAssignments
         .filter(a => a.assignmentType !== "persona_default")
-        .map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status, releasePhase: a.releasePhase })),
-      allAssignments: currentAssignments.map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status, releasePhase: a.releasePhase })),
+        .map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status, releasePhase: a.releasePhase, personaMappingChangedAt: a.personaMappingChangedAt ?? null })),
+      allAssignments: currentAssignments.map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId, assignmentType: a.assignmentType, status: a.status, releasePhase: a.releasePhase, personaMappingChangedAt: a.personaMappingChangedAt ?? null })),
+      hasPersonaCascadeFlag: currentAssignments.some(a => a.personaMappingChangedAt !== null),
       existingAccessRoles: existingRoles.map(a => ({ assignmentId: a.assignmentId, targetRoleId: a.targetRoleId, roleName: a.roleName, roleId: a.roleId })),
     });
   }

@@ -348,6 +348,7 @@ export const userTargetRoleAssignments = sqliteTable("user_target_role_assignmen
   approvedAt: text("approved_at"),
   sentBackReason: text("sent_back_reason"),
   mappedBy: text("mapped_by"),
+  personaMappingChangedAt: text("persona_mapping_changed_at"), // set when persona-level change was pushed but individual override preserved
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });

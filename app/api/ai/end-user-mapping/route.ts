@@ -49,28 +49,24 @@ export async function POST() {
       personaRoleMap.set(m.personaId, existing);
     }
 
-    // Create user-target role assignments
+    // Pre-load all existing assignments for fast lookup
+    const allExisting = db.select().from(schema.userTargetRoleAssignments).all();
+    const existingMap = new Map<string, typeof allExisting[0]>();
+    for (const a of allExisting) {
+      existingMap.set(`${a.userId}-${a.targetRoleId}`, a);
+    }
+
+    // Create user-target role assignments, detect override preservation
     let created = 0;
+    let overridesPreserved = 0;
+    const now = new Date().toISOString();
+
     for (const ua of userAssignments) {
       if (!ua.personaId) continue;
       const targetRoleIds = personaRoleMap.get(ua.personaId) ?? [];
       for (const targetRoleId of targetRoleIds) {
-        // Check if assignment already exists
-        const existing = db
-          .select({ id: schema.userTargetRoleAssignments.id })
-          .from(schema.userTargetRoleAssignments)
-          .where(
-            eq(schema.userTargetRoleAssignments.userId, ua.userId)
-          )
-          .all()
-          .find((e) => {
-            const full = db
-              .select()
-              .from(schema.userTargetRoleAssignments)
-              .where(eq(schema.userTargetRoleAssignments.id, e.id))
-              .get();
-            return full?.targetRoleId === targetRoleId;
-          });
+        const key = `${ua.userId}-${targetRoleId}`;
+        const existing = existingMap.get(key);
 
         if (!existing) {
           db.insert(schema.userTargetRoleAssignments)
@@ -83,6 +79,13 @@ export async function POST() {
             })
             .run();
           created++;
+        } else if (existing.assignmentType === "individual_override") {
+          // Persona mapping pushed but individual override exists — flag it
+          db.update(schema.userTargetRoleAssignments)
+            .set({ personaMappingChangedAt: now })
+            .where(eq(schema.userTargetRoleAssignments.id, existing.id))
+            .run();
+          overridesPreserved++;
         }
       }
     }
@@ -98,7 +101,7 @@ export async function POST() {
       entityType: "processingJob",
       entityId: job.id,
       action: "end_user_mapping_completed",
-      newValue: JSON.stringify({ usersProcessed: userAssignments.length, assignmentsCreated: created }),
+      newValue: JSON.stringify({ usersProcessed: userAssignments.length, assignmentsCreated: created, overridesPreserved }),
     }).run();
 
     return NextResponse.json({
