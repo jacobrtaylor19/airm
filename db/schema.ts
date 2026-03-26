@@ -140,12 +140,6 @@ export const userPersonaAssignments = sqliteTable("user_persona_assignments", {
   aiModel: text("ai_model"),
   assignmentMethod: text("assignment_method"),
   jobRunId: integer("job_run_id").references(() => processingJobs.id),
-  // ML enrichment layer fields
-  mlConfidence: real("ml_confidence"),
-  mlPersonaName: text("ml_persona_name"),
-  mlAgreement: text("ml_agreement"), // "full" | "partial" | "disagreement"
-  mlRecommendation: text("ml_recommendation"), // "auto_confirm" | "soft_confirm" | "review" | "block"
-  compositeConfidence: real("composite_confidence"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
