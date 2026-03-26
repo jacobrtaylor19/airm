@@ -15,11 +15,14 @@ export async function POST() {
   try {
     const activePack = getSetting("active_demo_pack") || "default";
 
-    const cmd = `npx tsx db/seed.ts --demo=${activePack}`;
+    // Use pnpm db:seed for reliability — npx tsx may not resolve on Render
+    const cmd = activePack === "default"
+      ? "pnpm db:seed"
+      : `pnpm db:seed -- --demo=${activePack}`;
     execSync(cmd, {
       cwd: process.cwd(),
       stdio: "pipe",
-      timeout: 60000,
+      timeout: 120000, // 2 min — bcrypt hashing for 16 accounts takes time
     });
 
     return NextResponse.json({

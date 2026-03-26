@@ -41,11 +41,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const cmd = `npx tsx db/seed.ts --demo=${demo}`;
+    // Use pnpm db:seed for reliability — npx tsx may not resolve on Render
+    const cmd = demo === "default"
+      ? "pnpm db:seed"
+      : `pnpm db:seed -- --demo=${demo}`;
     execSync(cmd, {
       cwd: process.cwd(),
       stdio: "pipe",
-      timeout: 60000,
+      timeout: 120000, // 2 min — bcrypt hashing for accounts takes time
     });
 
     // Persist the active demo pack so login isolation can check it
