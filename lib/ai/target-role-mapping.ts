@@ -51,21 +51,23 @@ export async function runTargetRoleMapping(jobId: number): Promise<{ personasMap
     throw new Error("No target roles available. Upload target roles first.");
   }
 
-  // Clear existing mappings
-  db.delete(schema.personaTargetRoleMappings).run();
-  db.delete(schema.userTargetRoleAssignments).run();
+  // Find personas that already have manual mappings — skip them
+  const existingMappings = db.select({ personaId: schema.personaTargetRoleMappings.personaId })
+    .from(schema.personaTargetRoleMappings).all();
+  const mappedPersonaIds = new Set(existingMappings.map(m => m.personaId));
+  const unmappedPersonas = personas.filter(p => !mappedPersonaIds.has(p.id));
 
   // Update total records for progress tracking
   db.update(schema.processingJobs).set({
-    totalRecords: personas.length,
+    totalRecords: unmappedPersonas.length,
   }).where(eq(schema.processingJobs.id, jobId)).run();
 
   let personasMapped = 0;
   let totalMappings = 0;
 
-  // Process personas in parallel batches
-  for (let i = 0; i < personas.length; i += BATCH_SIZE) {
-    const batch = personas.slice(i, i + BATCH_SIZE);
+  // Process only unmapped personas in parallel batches
+  for (let i = 0; i < unmappedPersonas.length; i += BATCH_SIZE) {
+    const batch = unmappedPersonas.slice(i, i + BATCH_SIZE);
 
     const results = await Promise.allSettled(
       batch.map(async (persona) => {
