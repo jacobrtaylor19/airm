@@ -169,9 +169,10 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
               {section.items
                 .filter((item) => !item.minRole || item.minRole.includes(userRole))
                 .map((item) => {
+                const exactMatchOnly = ["/dashboard", "/admin"];
                 const isActive =
                   pathname === item.href ||
-                  (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
+                  (!exactMatchOnly.includes(item.href) && pathname.startsWith(item.href + "/"));
                 return (
                   <Link
                     key={item.href}
