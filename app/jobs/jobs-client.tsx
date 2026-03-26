@@ -244,19 +244,23 @@ export function JobsClient({ initialJobs, hasData, userRole = "viewer" }: { init
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-teal-500" /> Pipeline
             </CardTitle>
-            <Button onClick={runFullPipeline} disabled={pipelineRunning || !!runningJob} size="sm" className="bg-teal-500 hover:bg-teal-600 text-white">
-              {pipelineRunning ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Running Pipeline...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Run Full Pipeline
-                </>
-              )}
-            </Button>
+            {["system_admin", "admin", "mapper"].includes(userRole) ? (
+              <Button onClick={runFullPipeline} disabled={pipelineRunning || !!runningJob} size="sm" className="bg-teal-500 hover:bg-teal-600 text-white">
+                {pipelineRunning ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Running Pipeline...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Run Full Pipeline
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Badge variant="outline" className="text-xs">View Only</Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             Run Full Pipeline executes steps 2-6 sequentially.
