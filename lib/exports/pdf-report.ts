@@ -34,8 +34,10 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     doc.fontSize(20).font("Helvetica-Bold").text("Role Mapping Audit Report", { align: "center" });
     doc.moveDown(1);
 
-    // Divider line
-    doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#CBD5E1").stroke();
+    // Branded accent line (indigo)
+    doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#4F46E5").lineWidth(2).stroke();
+    doc.moveDown(0.3);
+    doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#14B8A6").lineWidth(1).stroke();
     doc.moveDown(1);
 
     doc.fontSize(11).font("Helvetica");
@@ -62,7 +64,8 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     // EXECUTIVE SUMMARY (new page)
     // ─────────────────────────────────────────────
     doc.addPage();
-    doc.fontSize(20).font("Helvetica-Bold").text("Executive Summary");
+    doc.fontSize(20).font("Helvetica-Bold").fillColor("#4F46E5").text("Executive Summary");
+    doc.fillColor("#000000");
     doc.moveDown(1);
 
     // Key metrics
@@ -139,13 +142,40 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     // DETAIL SECTIONS (existing content, on new pages)
     // ─────────────────────────────────────────────
     doc.addPage();
-    doc.fontSize(16).font("Helvetica-Bold").text("Persona Summary");
+    doc.fontSize(16).font("Helvetica-Bold").fillColor("#4F46E5").text("Persona Summary");
+    doc.fillColor("#000000");
     doc.moveDown(0.5);
 
     const personas = db.select().from(schema.personas).all();
     doc.fontSize(11).font("Helvetica");
     for (const p of personas) {
       doc.text(`${p.name} \u2014 ${p.businessFunction ?? "General"} (${p.source})`);
+    }
+
+    // Add branded footer to all pages
+    const range = doc.bufferedPageRange();
+    for (let i = range.start; i < range.start + range.count; i++) {
+      doc.switchToPage(i);
+      const pageNum = i + 1;
+      const totalPages = range.count;
+
+      // Footer divider
+      doc.moveTo(50, doc.page.height - 60).lineTo(doc.page.width - 50, doc.page.height - 60)
+        .strokeColor("#E2E8F0").lineWidth(0.5).stroke();
+
+      // Footer text
+      doc.fontSize(8).font("Helvetica").fillColor("#94A3B8");
+      doc.text(
+        "Provisum — Intelligent Role Mapping for Enterprise Migrations",
+        50, doc.page.height - 50,
+        { width: 300, align: "left" }
+      );
+      doc.text(
+        `Page ${pageNum} of ${totalPages}`,
+        doc.page.width - 150, doc.page.height - 50,
+        { width: 100, align: "right" }
+      );
+      doc.fillColor("#000000"); // Reset
     }
 
     doc.end();

@@ -345,10 +345,43 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
 
 function styleHeader(sheet: ExcelJS.Worksheet) {
   const headerRow = sheet.getRow(1);
-  headerRow.font = { bold: true };
+  headerRow.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
   headerRow.fill = {
     type: "pattern",
     pattern: "solid",
-    fgColor: { argb: "FFE2E8F0" },
+    fgColor: { argb: "FF4F46E5" }, // Indigo — brand primary
   };
+  headerRow.alignment = { vertical: "middle" };
+  headerRow.height = 24;
+
+  // Freeze header row
+  sheet.views = [{ state: "frozen", ySplit: 1 }];
+
+  // Alternating row colors for readability
+  const rowCount = sheet.rowCount;
+  for (let i = 2; i <= rowCount; i++) {
+    const row = sheet.getRow(i);
+    if (i % 2 === 0) {
+      row.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFF8FAFC" }, // Slate 50
+      };
+    }
+    // Light borders
+    row.eachCell((cell) => {
+      cell.border = {
+        bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+      };
+    });
+  }
+
+  // Auto-filter on header
+  if (rowCount > 1) {
+    const lastCol = sheet.columnCount;
+    sheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: lastCol },
+    };
+  }
 }
