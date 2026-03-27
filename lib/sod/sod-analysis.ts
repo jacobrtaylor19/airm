@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { getSetting } from "@/lib/settings";
 
 interface SodAnalysisResult {
@@ -10,7 +10,7 @@ interface SodAnalysisResult {
   usersClean: number;
 }
 
-export function runSodAnalysis(): SodAnalysisResult {
+export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResult {
   // 1. Load all active SOD rules
   const rules = db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true)).all();
 
@@ -30,15 +30,24 @@ export function runSodAnalysis(): SodAnalysisResult {
     };
   }
 
-  // 2. Load ALL user target role assignments — both "current" (pending_review) and "existing" (approved from previous waves)
+  // 2. Load user target role assignments — both "current" (pending_review) and "existing" (approved from previous waves)
   //    SOD must check the complete picture: existing + current together
-  const draftAssignments = db.select().from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "pending_review"))
-    .all();
+  //    Scope-filtered when called by a scoped user (mapper/approver)
+  const draftAssignments = scopedUserIds
+    ? db.select().from(schema.userTargetRoleAssignments)
+        .where(and(eq(schema.userTargetRoleAssignments.status, "pending_review"), inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)))
+        .all()
+    : db.select().from(schema.userTargetRoleAssignments)
+        .where(eq(schema.userTargetRoleAssignments.status, "pending_review"))
+        .all();
 
-  const existingAssignments = db.select().from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
-    .all();
+  const existingAssignments = scopedUserIds
+    ? db.select().from(schema.userTargetRoleAssignments)
+        .where(and(eq(schema.userTargetRoleAssignments.releasePhase, "existing"), inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)))
+        .all()
+    : db.select().from(schema.userTargetRoleAssignments)
+        .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
+        .all();
 
   // 3. Group ALL assignments by user (both existing and current draft)
   const userAllRoles = new Map<number, Set<number>>();

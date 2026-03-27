@@ -27,15 +27,23 @@ export async function POST() {
 
     const personaPermissions = new Map<number, Set<string>>();
     const personaInfo = new Map<number, { name: string; func: string }>();
+
+    // Bulk load all persona permissions in one query (avoids N+1)
+    const allPersonaPerms = db
+      .select({
+        personaId: schema.personaSourcePermissions.personaId,
+        permId: schema.sourcePermissions.permissionId,
+      })
+      .from(schema.personaSourcePermissions)
+      .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
+      .all();
+
     for (const p of personas) {
-      const perms = db
-        .select({ permId: schema.sourcePermissions.permissionId })
-        .from(schema.personaSourcePermissions)
-        .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
-        .where(eq(schema.personaSourcePermissions.personaId, p.id))
-        .all();
-      personaPermissions.set(p.id, new Set(perms.map(x => x.permId)));
+      personaPermissions.set(p.id, new Set());
       personaInfo.set(p.id, { name: p.name, func: (p.businessFunction || "").toLowerCase() });
+    }
+    for (const pp of allPersonaPerms) {
+      personaPermissions.get(pp.personaId)?.add(pp.permId);
     }
 
     // Build function → personas map for department matching

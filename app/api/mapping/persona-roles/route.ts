@@ -3,6 +3,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
+import { getSessionUser } from "@/lib/auth";
+import { MAPPER_ROLES } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +12,10 @@ export const dynamic = "force-dynamic";
 // Body: { personaId: number, targetRoleIds: number[] }
 // Replaces all manually-managed mappings for a persona, preserving AI-generated ones that aren't in the list
 export async function PUT(req: NextRequest) {
+  const user = getSessionUser();
+  if (!user || !(MAPPER_ROLES as readonly string[]).includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
   try {
     const body = await req.json();
     const { personaId, targetRoleIds } = body as { personaId: number; targetRoleIds: number[] };

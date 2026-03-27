@@ -56,8 +56,8 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   }
 
   const scriptSrc = process.env.NODE_ENV === "production"
-    ? "script-src 'self' 'unsafe-inline'"
-    : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
+    ? "script-src 'self'"
+    : "script-src 'self' 'unsafe-eval'"; // unsafe-eval needed for Next.js dev mode only
 
   response.headers.set(
     "Content-Security-Policy",

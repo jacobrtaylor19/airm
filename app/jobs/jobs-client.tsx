@@ -215,7 +215,6 @@ export function JobsClient({ initialJobs, hasData, userRole = "viewer" }: { init
     const start = Date.now();
 
     while (Date.now() - start < maxWait) {
-      await new Promise((r) => setTimeout(r, pollInterval));
       try {
         const res = await fetch(`/api/jobs/${jobId}`);
         if (!res.ok) continue;
@@ -228,6 +227,7 @@ export function JobsClient({ initialJobs, hasData, userRole = "viewer" }: { init
       } catch {
         // Network error — retry
       }
+      await new Promise((r) => setTimeout(r, pollInterval));
     }
     alert(`Pipeline timed out at ${stepLabel}`);
     return false;

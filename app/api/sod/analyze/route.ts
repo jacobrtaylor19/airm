@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   }).returning().get();
 
   try {
-    const result = runSodAnalysis();
+    const result = runSodAnalysis(scopedUserIds);
 
     db.update(schema.processingJobs).set({
       status: "completed",

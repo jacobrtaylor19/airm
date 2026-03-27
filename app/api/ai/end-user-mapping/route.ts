@@ -1,12 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
+import { getSessionUser } from "@/lib/auth";
+import { checkAIRate } from "@/lib/rate-limit-middleware";
+import { MAPPER_ROLES } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const user = getSessionUser();
+  if (!user || !(MAPPER_ROLES as readonly string[]).includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const rateLimited = checkAIRate(req, String(user.id));
+  if (rateLimited) return rateLimited;
   const job = db.insert(schema.processingJobs).values({
     jobType: "end_user_mapping",
     status: "running",

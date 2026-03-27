@@ -3,10 +3,22 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
+import { getSessionUser } from "@/lib/auth";
+import { checkBulkRate } from "@/lib/rate-limit-middleware";
 
 export const dynamic = "force-dynamic";
 
+const SEND_BACK_ROLES = ["system_admin", "admin", "mapper", "approver"];
+
 export async function POST(req: NextRequest) {
+  const user = getSessionUser();
+  if (!user || !SEND_BACK_ROLES.includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const rateLimited = checkBulkRate(req, String(user.id));
+  if (rateLimited) return rateLimited;
+
   try {
     const { assignmentId, reason } = await req.json();
     if (!assignmentId || !reason) {
@@ -29,6 +41,7 @@ export async function POST(req: NextRequest) {
       entityType: "userTargetRoleAssignment",
       entityId: assignmentId,
       action: "sent_back",
+      actorEmail: user.username,
       oldValue: JSON.stringify({ status: assignment.status }),
       newValue: JSON.stringify({ status: "draft", reason }),
     }).run();

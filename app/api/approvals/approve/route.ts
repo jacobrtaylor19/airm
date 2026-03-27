@@ -3,10 +3,22 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
+import { getSessionUser } from "@/lib/auth";
+import { checkBulkRate } from "@/lib/rate-limit-middleware";
 
 export const dynamic = "force-dynamic";
 
+const APPROVER_ROLES = ["system_admin", "admin", "approver"];
+
 export async function POST(req: NextRequest) {
+  const user = getSessionUser();
+  if (!user || !APPROVER_ROLES.includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const rateLimited = checkBulkRate(req, String(user.id));
+  if (rateLimited) return rateLimited;
+
   try {
     const { assignmentId } = await req.json();
     if (!assignmentId) {
@@ -24,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     db.update(schema.userTargetRoleAssignments).set({
       status: "approved",
-      approvedBy: "system_user",
+      approvedBy: user.username,
       approvedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     }).where(eq(schema.userTargetRoleAssignments.id, assignmentId)).run();
@@ -33,8 +45,9 @@ export async function POST(req: NextRequest) {
       entityType: "userTargetRoleAssignment",
       entityId: assignmentId,
       action: "approved",
+      actorEmail: user.username,
       oldValue: JSON.stringify({ status: "ready_for_approval" }),
-      newValue: JSON.stringify({ status: "approved" }),
+      newValue: JSON.stringify({ status: "approved", approvedBy: user.username }),
     }).run();
 
     return NextResponse.json({ success: true });
