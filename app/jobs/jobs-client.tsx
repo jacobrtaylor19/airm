@@ -182,21 +182,22 @@ export function JobsClient({ initialJobs, hasData, userRole = "viewer" }: { init
       for (const step of actionSteps) {
         setRunningJob(step.jobType!);
         setJobProgress(null);
-        let pollTimer: ReturnType<typeof setInterval> | null = null;
 
         const res = await fetch(step.endpoint!, { method: "POST" });
         const data = await res.json();
 
-        if (data.jobId) {
-          pollTimer = startProgressPolling(data.jobId);
-        }
-
         if (!res.ok) {
-          if (pollTimer) clearInterval(pollTimer);
           alert(`Pipeline failed at ${step.label}: ${data.error}`);
           break;
         }
-        if (pollTimer) clearInterval(pollTimer);
+
+        // If the step returned a jobId, poll until it completes before moving on
+        if (data.jobId) {
+          const pollTimer = startProgressPolling(data.jobId);
+          const completed = await waitForJobCompletion(data.jobId, step.label);
+          clearInterval(pollTimer);
+          if (!completed) break;
+        }
       }
     } catch (err) {
       alert(`Pipeline failed: ${err instanceof Error ? err.message : "Unknown error"}`);
@@ -206,6 +207,30 @@ export function JobsClient({ initialJobs, hasData, userRole = "viewer" }: { init
       setPipelineRunning(false);
       router.refresh();
     }
+  }
+
+  async function waitForJobCompletion(jobId: number, stepLabel: string): Promise<boolean> {
+    const maxWait = 300000; // 5 minutes max
+    const pollInterval = 2000; // 2 seconds
+    const start = Date.now();
+
+    while (Date.now() - start < maxWait) {
+      await new Promise((r) => setTimeout(r, pollInterval));
+      try {
+        const res = await fetch(`/api/jobs/${jobId}`);
+        if (!res.ok) continue;
+        const job = await res.json();
+        if (job.status === "completed") return true;
+        if (job.status === "failed") {
+          alert(`Pipeline failed at ${stepLabel}: ${job.errorLog || "Unknown error"}`);
+          return false;
+        }
+      } catch {
+        // Network error — retry
+      }
+    }
+    alert(`Pipeline timed out at ${stepLabel}`);
+    return false;
   }
 
   function formatDuration(started: string | null, completed: string | null): string {
