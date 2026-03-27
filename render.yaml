@@ -1,27 +1,23 @@
 # Render deployment blueprint — https://render.com/docs/blueprint-spec
 # Connect your repo in the Render dashboard; it will detect this file automatically.
+#
+# Current deployment: Standard plan, NO persistent disk.
+# Data reseeds on every deploy — intentional for demo.
 
 services:
   - type: web
     name: airm
     env: node
     region: oregon
-    plan: starter          # upgrade to standard if build RAM is insufficient
-    buildCommand: pnpm install && pnpm build
-    startCommand: sh scripts/start.sh
-    healthCheckPath: /dashboard
+    plan: standard
+    buildCommand: corepack enable && pnpm install && pnpm db:push && pnpm db:seed && pnpm build
+    startCommand: corepack enable && pnpm start
+    healthCheckPath: /api/health
 
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
         value: "20"
-      - key: DATABASE_PATH
-        value: /data/airm.db     # must match disk mountPath below
       - key: ANTHROPIC_API_KEY
         sync: false              # set this manually in the Render dashboard
-
-    disk:
-      name: airm-db
-      mountPath: /data           # SQLite file persists here across deploys & restarts
-      sizeGB: 1
