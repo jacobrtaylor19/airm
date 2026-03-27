@@ -1,0 +1,40 @@
+permission_id,permission_name,description,system,risk_level
+FB60,Enter Invoice,Post vendor invoices to accounts payable,SAP ECC,Medium
+FB65,Park Invoice,Enter vendor invoices as parked documents,SAP ECC,Low
+FBL1N,Vendor Line Items,Display vendor open items and history,SAP ECC,Low
+F110,Automatic Payment,Execute automatic payment program,SAP ECC,Critical
+FK01,Create Vendor,Create new vendor master records,SAP ECC,High
+FK02,Change Vendor,Modify vendor master data,SAP ECC,Medium
+FB01,Post Document,Post general ledger journal entries,SAP ECC,High
+FS10N,GL Balance Display,Display GL account balances,SAP ECC,Low
+F.01,Financial Statements,Run financial statement reports,SAP ECC,Low
+FB08,Reverse Document,Reverse posted accounting documents,SAP ECC,High
+FB03,Display Document,Display accounting documents,SAP ECC,Low
+FBL5N,Customer Line Items,Display customer open items and history,SAP ECC,Low
+F-28,Customer Payment,Post incoming customer payments,SAP ECC,Medium
+FD01,Create Customer,Create customer master records,SAP ECC,Medium
+KSB1,Cost Center Report,Display cost center actual/plan reports,SAP ECC,Low
+KS02,Change Cost Center,Maintain cost center master data,SAP ECC,Medium
+FF7A,Cash Position,Display cash position overview,SAP ECC,Low
+ME21N,Create PO,Create purchase orders,SAP ECC,High
+ME29N,Release PO,Approve and release purchase orders,SAP ECC,High
+ME23N,Display PO,Display purchase order details,SAP ECC,Low
+XK01,Create Vendor Central,Create vendor master (central),SAP ECC,High
+MIGO,Goods Movement,Post goods receipt and goods issue,SAP ECC,Medium
+MIGO_GR,Goods Receipt,Post goods receipt for purchase order,SAP ECC,Medium
+MIGO_GI,Goods Issue,Post goods issue for cost center or order,SAP ECC,Medium
+MI01,Physical Inventory,Create physical inventory document,SAP ECC,Medium
+MI07,Post Differences,Post physical inventory differences,SAP ECC,High
+MM02,Change Material,Maintain material master data,SAP ECC,Medium
+IW31,Create Maint Order,Create maintenance work orders,SAP ECC,Medium
+IW41,Confirm Maint Order,Enter maintenance order confirmations,SAP ECC,Medium
+IP10,Schedule Maint Plan,Schedule preventive maintenance plans,SAP ECC,Low
+IE02,Change Equipment,Maintain equipment master records,SAP ECC,Medium
+QA01,Create Inspection Lot,Create quality inspection lots,SAP ECC,Low
+QA11,Record Results,Record quality inspection results,SAP ECC,Low
+QM02,Change Notification,Process quality notifications,SAP ECC,Low
+CO01,Create Prod Order,Create production orders,SAP ECC,Medium
+SU01,User Maintenance,Create and modify user accounts,SAP ECC,Critical
+PFCG,Role Maintenance,Create and modify authorization roles,SAP ECC,Critical
+PA30,Maintain HR Data,Maintain employee personnel data,SAP ECC,High
+PC00_M99,Run Payroll,Execute payroll calculation,SAP ECC,Critical

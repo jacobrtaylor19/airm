@@ -1,1 +1,4 @@
-role_id (required),role_name (required),description,domain,system,role_type,is_composite
+role_id,role_name,description,domain,system,role_type,is_composite
+SAP_AP_CLERK,AP Clerk,Accounts payable invoice entry and processing,Finance,SAP ECC,single,false
+SAP_BUYER,Buyer,Purchase order creation and vendor management,Procurement,SAP ECC,single,false
+SAP_MAINT_PLAN,Maintenance Planner,Create and schedule maintenance work orders,Maintenance,SAP ECC,single,false

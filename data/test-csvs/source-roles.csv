@@ -1,0 +1,22 @@
+role_id,role_name,description,system,domain
+SAP_AP_CLERK,AP Clerk,Basic accounts payable invoice entry and processing,SAP ECC,Finance
+SAP_AP_MANAGER,AP Manager,Full AP management including payment runs and approvals,SAP ECC,Finance
+SAP_AR_CLERK,AR Clerk,Accounts receivable invoicing and collections,SAP ECC,Finance
+SAP_GL_ACCT,GL Accountant,General ledger posting and period-end close,SAP ECC,Finance
+SAP_GL_MANAGER,GL Manager,GL management including financial reporting,SAP ECC,Finance
+SAP_COST_CTRL,Cost Controller,Cost center maintenance and reporting,SAP ECC,Finance
+SAP_TREASURY,Treasury Analyst,Cash management and bank account reconciliation,SAP ECC,Finance
+SAP_BUYER,Buyer,Purchase order creation and vendor management,SAP ECC,Procurement
+SAP_PURCH_MGR,Purchasing Manager,PO approval and procurement oversight,SAP ECC,Procurement
+SAP_WH_CLERK,Warehouse Clerk,Goods receipt and goods issue processing,SAP ECC,Supply Chain
+SAP_WH_MANAGER,Warehouse Manager,Full warehouse operations including inventory,SAP ECC,Supply Chain
+SAP_INV_MGMT,Inventory Manager,Physical inventory counts and adjustments,SAP ECC,Supply Chain
+SAP_MAINT_PLAN,Maintenance Planner,Create and schedule maintenance orders,SAP ECC,Maintenance
+SAP_MAINT_TECH,Maintenance Technician,Confirm maintenance orders and time entry,SAP ECC,Maintenance
+SAP_PLANT_ENG,Plant Engineer,Equipment master and technical object management,SAP ECC,Maintenance
+SAP_QA_INSP,Quality Inspector,Quality inspection lots and results recording,SAP ECC,Quality
+SAP_QA_MANAGER,QA Manager,Quality planning and certificate management,SAP ECC,Quality
+SAP_PROD_PLAN,Production Planner,Production order creation and scheduling,SAP ECC,Operations
+SAP_IT_ADMIN,IT Administrator,User administration and authorization management,SAP ECC,IT
+SAP_HR_COORD,HR Coordinator,Employee master data maintenance,SAP ECC,Human Resources
+SAP_PAYROLL,Payroll Specialist,Payroll processing and wage type configuration,SAP ECC,Human Resources

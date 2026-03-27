@@ -1,0 +1,19 @@
+role_id,role_name,description,system,domain
+S4_AP_INV_PROC,AP Invoice Processor,Process and post supplier invoices in Fiori,S/4HANA,Finance
+S4_AP_PAY_SPEC,AP Payment Specialist,Execute payment runs and manage payment methods,S/4HANA,Finance
+S4_AR_BILLING,AR Billing Specialist,Customer invoicing and payment processing,S/4HANA,Finance
+S4_GL_ACCOUNTANT,GL Accountant,General ledger posting and financial close,S/4HANA,Finance
+S4_COST_ANALYST,Cost Analyst,Cost center reporting and analysis,S/4HANA,Finance
+S4_TREASURY_MGR,Treasury Manager,Cash management and bank operations,S/4HANA,Finance
+S4_PROC_BUYER,Procurement Buyer,Create purchase orders and manage sourcing,S/4HANA,Procurement
+S4_PROC_MANAGER,Procurement Manager,Approve POs and manage supplier relationships,S/4HANA,Procurement
+S4_WH_OPERATOR,Warehouse Operator,Goods receipt and goods issue processing,S/4HANA,Supply Chain
+S4_INV_SPECIALIST,Inventory Specialist,Physical inventory and stock adjustments,S/4HANA,Supply Chain
+S4_MAINT_PLANNER,Maintenance Planner,Create and schedule maintenance work,S/4HANA,Maintenance
+S4_MAINT_TECH,Maintenance Technician,Execute and confirm maintenance tasks,S/4HANA,Maintenance
+S4_QUALITY_SPEC,Quality Specialist,Inspection and quality management,S/4HANA,Quality
+S4_PROD_PLANNER,Production Planner,Production scheduling and execution,S/4HANA,Operations
+S4_IT_ADMIN,IT Administrator,User and authorization management,S/4HANA,IT
+S4_HR_SPECIALIST,HR Specialist,Employee data management,S/4HANA,Human Resources
+S4_PAYROLL_ADMIN,Payroll Administrator,Payroll processing and reporting,S/4HANA,Human Resources
+S4_FIN_CONTROLLER,Financial Controller,Cross-functional financial oversight and reporting,S/4HANA,Finance

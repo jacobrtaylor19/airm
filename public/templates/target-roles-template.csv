@@ -1,1 +1,4 @@
-role_id (required),role_name (required),description,domain,system,role_type,role_owner
+role_id,role_name,description,domain,system,role_type,role_owner
+S4_AP_INV_PROC,AP Invoice Processor,Process and post supplier invoices in Fiori,Finance,S/4HANA,single,AP Manager
+S4_PROC_BUYER,Procurement Buyer,Create purchase orders and manage sourcing,Procurement,S/4HANA,single,Procurement Lead
+S4_MAINT_PLANNER,Maintenance Planner,Create and schedule maintenance work,Maintenance,S/4HANA,single,Plant Manager

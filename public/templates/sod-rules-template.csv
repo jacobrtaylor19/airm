@@ -1,1 +1,4 @@
-rule_id (required),rule_name (required),permission_a (required),permission_b (required),severity (required: critical|high|medium|low),risk_description
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-AP-001,Vendor Create vs Payment,FK01,F110,Critical,User who can create vendors and execute payments can create fictitious vendors and pay them.
+SOD-MM-001,Create PO vs Goods Receipt,ME21N,MIGO_GR,Critical,User who creates POs and receives goods can fabricate procurement transactions.
+SOD-GL-001,Post vs Reverse Journal,FB01,FB08,High,User who can post and reverse journal entries can manipulate financial records.

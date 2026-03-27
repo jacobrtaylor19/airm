@@ -1,1 +1,4 @@
-name (required),level (required: L1|L2|L3),parent_name,description
+name,level,parent_name,description
+Corporate Services,L1,,Top-level corporate functions
+Finance,L2,Corporate Services,Financial accounting and reporting
+Accounts Payable,L3,Finance,Invoice processing and payments

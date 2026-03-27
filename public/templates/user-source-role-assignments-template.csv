@@ -1,1 +1,4 @@
-source_user_id (required),role_id (required),system,assigned_date
+source_user_id,role_id,system,assigned_date
+USR001,SAP_AP_CLERK,SAP ECC,2024-01-15
+USR001,SAP_GL_ACCT,SAP ECC,2024-03-01
+USR002,SAP_BUYER,SAP ECC,2023-06-20

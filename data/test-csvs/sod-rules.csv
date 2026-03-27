@@ -1,0 +1,11 @@
+rule_id,rule_name,permission_a,permission_b,severity,risk_description
+SOD-AP-001,Vendor Create vs Payment,FK01,F110,Critical,User who can create vendors and execute payments can create fictitious vendors and pay them.
+SOD-AP-002,Invoice Entry vs Payment,FB60,F110,Critical,User who enters invoices and runs payments can create and pay fraudulent invoices.
+SOD-AP-003,Vendor Create vs Invoice,FK01,FB60,High,User who creates vendors and enters invoices can fabricate vendor relationships.
+SOD-GL-001,Post vs Reverse Journal,FB01,FB08,High,User who can post and reverse journal entries can manipulate financial records.
+SOD-MM-001,Create PO vs Goods Receipt,ME21N,MIGO_GR,Critical,User who creates POs and receives goods can fabricate procurement transactions.
+SOD-MM-002,Create vs Release PO,ME21N,ME29N,High,User who creates and approves POs bypasses purchasing authorization controls.
+SOD-INV-001,Physical Count vs Post Diff,MI01,MI07,Critical,User who counts inventory and posts differences can conceal theft.
+SOD-PM-001,Create vs Confirm Maint,IW31,IW41,Medium,User who creates and confirms maintenance can fabricate work completion.
+SOD-IT-001,User Admin vs Auth Admin,SU01,PFCG,Critical,User who manages accounts and roles can grant unlimited system access.
+SOD-HR-001,HR Data vs Payroll,PA30,PC00_M99,Critical,User who maintains employee data and runs payroll can create ghost employees.

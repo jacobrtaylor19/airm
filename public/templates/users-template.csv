@@ -1,1 +1,4 @@
-source_user_id (required),display_name (required),email,department,job_title,manager_name,location,cost_center
+source_user_id,display_name,email,department,job_title,manager_name,location,cost_center
+USR001,John Smith,john.smith@company.com,Finance,AP Manager,Jane Doe,New York,CC1001
+USR002,Maria Garcia,maria.garcia@company.com,Procurement,Buyer,Tom Wilson,Chicago,CC2001
+USR003,David Kim,david.kim@company.com,Maintenance,Planner,Sarah Chen,Houston,CC3001

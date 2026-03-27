@@ -1,1 +1,4 @@
-permission_id (required),permission_name (required),description,permission_type,t_code,domain
+permission_id,permission_name,description,system,risk_level
+FB60,Enter Invoice,Post vendor invoices to accounts payable,SAP ECC,Medium
+F110,Automatic Payment,Execute automatic payment program,SAP ECC,Critical
+ME21N,Create PO,Create purchase orders,SAP ECC,High

@@ -1,3 +1,4 @@
 source_user_id,target_role_id,release_phase
-USR001,S4-FIN-AP-CLERK,existing
-USR002,S4-FIN-GL-ACCOUNTANT,existing
+USR001,S4_AP_INV_PROC,existing
+USR002,S4_GL_ACCOUNTANT,existing
+USR003,S4_PROC_BUYER,existing

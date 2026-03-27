@@ -1,0 +1,26 @@
+source_user_id,display_name,email,job_title,department
+T001,Sarah Chen,sarah.chen@acme.com,AP Manager,Finance
+T002,Michael Torres,michael.torres@acme.com,AP Clerk,Finance
+T003,Lisa Park,lisa.park@acme.com,AR Specialist,Finance
+T004,James Wilson,james.wilson@acme.com,GL Accountant,Finance
+T005,Rachel Adams,rachel.adams@acme.com,Cost Controller,Finance
+T006,David Kim,david.kim@acme.com,Treasury Analyst,Finance
+T007,Jennifer Liu,jennifer.liu@acme.com,Procurement Manager,Procurement
+T008,Robert Singh,robert.singh@acme.com,Buyer,Procurement
+T009,Amanda Foster,amanda.foster@acme.com,Purchasing Clerk,Procurement
+T010,Chris Martinez,chris.martinez@acme.com,Warehouse Manager,Supply Chain
+T011,Nicole Brown,nicole.brown@acme.com,Inventory Clerk,Supply Chain
+T012,Steven Lee,steven.lee@acme.com,Shipping Coordinator,Supply Chain
+T013,Emily Zhang,emily.zhang@acme.com,Maintenance Planner,Maintenance
+T014,Kevin O'Brien,kevin.obrien@acme.com,Maintenance Technician,Maintenance
+T015,Maria Garcia,maria.garcia@acme.com,Plant Engineer,Maintenance
+T016,Tom Nakamura,tom.nakamura@acme.com,Quality Inspector,Quality
+T017,Angela White,angela.white@acme.com,QA Manager,Quality
+T018,Brian Thompson,brian.thompson@acme.com,Production Planner,Operations
+T019,Diana Patel,diana.patel@acme.com,MES Operator,Operations
+T020,Frank Miller,frank.miller@acme.com,IT Administrator,IT
+T021,Grace Huang,grace.huang@acme.com,HR Coordinator,Human Resources
+T022,Henry Davis,henry.davis@acme.com,Payroll Specialist,Human Resources
+T023,Isabel Cruz,isabel.cruz@acme.com,Finance Director,Finance
+T024,Jason Reed,jason.reed@acme.com,Supply Chain Director,Supply Chain
+T025,Karen Murphy,karen.murphy@acme.com,Operations Director,Operations

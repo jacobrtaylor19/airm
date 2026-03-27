@@ -1,1 +1,3 @@
-name (required),description,status (planning|active|completed),release_type (initial|incremental),target_system,target_date (YYYY-MM-DD),is_active (true|false)
+name,description,status,release_type,target_system,target_date,is_active
+Wave 1 - Finance,Finance module migration,active,initial,S/4HANA,2026-06-30,true
+Wave 2 - Procurement,Procurement and supply chain,planning,incremental,S/4HANA,2026-12-31,false

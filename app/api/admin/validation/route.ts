@@ -12,8 +12,8 @@ export async function GET() {
   const token = cookies().get(AUTH.COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const user = getSessionUserFromToken(token);
-  if (!user || user.role !== "system_admin") {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // ─────────────────────────────────────────────

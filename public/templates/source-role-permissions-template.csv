@@ -1,1 +1,5 @@
-role_id (required),permission_id (required)
+role_id,permission_id
+SAP_AP_CLERK,FB60
+SAP_AP_CLERK,FB65
+SAP_BUYER,ME21N
+SAP_BUYER,ME23N

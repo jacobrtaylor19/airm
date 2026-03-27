@@ -1,0 +1,30 @@
+permission_id,permission_name,description,system,risk_level
+F0717,Manage Supplier Invoices,Process and post supplier invoices in Fiori,S/4HANA,Medium
+F0718,Approve Supplier Invoices,Approve invoices above threshold,S/4HANA,High
+F0743,Manage Supplier Master,Create and maintain supplier master data,S/4HANA,High
+F2424,Manage Automatic Payments,Configure and run automatic payment programs,S/4HANA,Critical
+F0716,Post Journal Entry,Post general ledger journal entries,S/4HANA,High
+F0719,Reverse Documents,Reverse posted financial documents,S/4HANA,High
+F0720,Clear Accounts,Clear open items on GL accounts,S/4HANA,Medium
+F2312,Financial Reports,Run financial statement reports,S/4HANA,Low
+F2872,Manage Cost Centers,Maintain cost center master data,S/4HANA,Medium
+F1603,Process Customer Payments,Post incoming customer payments,S/4HANA,Medium
+F2625,Manage Customer Invoices,Create and post customer invoices,S/4HANA,Medium
+F2170,Manage Cash Position,Display and manage cash positions,S/4HANA,Low
+F1074,Create Purchase Order,Create purchase requisitions and orders,S/4HANA,High
+F1076,Approve Purchase Order,Release and approve purchase orders,S/4HANA,High
+F2093,Post Goods Receipt,Receive goods against purchase orders,S/4HANA,Medium
+F2094,Post Goods Issue,Issue goods to cost centers or orders,S/4HANA,Medium
+F3737,Conduct Physical Inventory,Create and execute physical inventory counts,S/4HANA,Medium
+F3738,Post Inventory Differences,Post adjustments from physical inventory,S/4HANA,High
+F3814,Manage Material Master,Maintain material master data,S/4HANA,Medium
+F0893,Create Maintenance Order,Create and plan maintenance work orders,S/4HANA,Medium
+F0894,Confirm Maintenance Order,Confirm completion of maintenance tasks,S/4HANA,Medium
+F4590,Manage Equipment Master,Maintain equipment and technical objects,S/4HANA,Medium
+F5001,Manage Inspection Lots,Create and process quality inspection lots,S/4HANA,Low
+F5002,Record Inspection Results,Enter quality inspection results,S/4HANA,Low
+F6001,Create Production Order,Create and release production orders,S/4HANA,Medium
+F7721,Manage User Accounts,Create and modify user accounts,S/4HANA,Critical
+F7722,Manage Authorizations,Create and modify authorization roles,S/4HANA,Critical
+F2721,Manage Employee Data,Maintain employee master records,S/4HANA,High
+F2722,Execute Payroll,Run payroll calculation and posting,S/4HANA,Critical

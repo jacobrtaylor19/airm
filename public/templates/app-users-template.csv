@@ -1,1 +1,4 @@
-username (required),password (required),display_name (required),role (required: admin|mapper|approver|coordinator|viewer),email,org_unit_name
+username,password,display_name,role,email,org_unit_name
+mapper.finance,SecurePass@2026!,Finance Mapper,mapper,mapper@company.com,Finance
+approver.ops,SecurePass@2026!,Operations Approver,approver,approver@company.com,Operations
+viewer.audit,SecurePass@2026!,Audit Viewer,viewer,viewer@company.com,

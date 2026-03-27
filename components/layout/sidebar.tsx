@@ -72,6 +72,7 @@ const navSections: NavSection[] = [
     label: "REPORTS",
     items: [
       { href: "/exports", label: "Exports", icon: FileText },
+      { href: "/admin/validation", label: "Validation", icon: FlaskConical },
       { href: "/releases/compare", label: "Release Comparison", icon: GitCompare, minRole: ["admin", "system_admin", "project_manager"] },
       { href: "/releases/timeline", label: "Project Timeline", icon: Calendar, minRole: ["admin", "system_admin", "project_manager"] },
       { href: "/audit-log", label: "Audit Log", icon: Activity },
@@ -98,7 +99,6 @@ const navSections: NavSection[] = [
     sysadminOnly: true,
     items: [
       { href: "/admin", label: "Config Console", icon: Wrench },
-      { href: "/admin/validation", label: "Pipeline Validation", icon: FlaskConical },
     ],
   },
   {
