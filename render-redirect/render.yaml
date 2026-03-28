@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: provisum-redirect
+    runtime: static
+    buildCommand: echo "Static redirect page"
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
