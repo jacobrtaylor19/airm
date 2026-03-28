@@ -4,6 +4,7 @@ import { getUserScope } from "@/lib/scope";
 import { RiskAnalysisClient } from "./risk-analysis-client";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function RiskAnalysisPage() {
   const user = await requireAuth();

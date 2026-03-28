@@ -19,6 +19,7 @@ import { cookies } from "next/headers";
 import { MappingClient } from "./mapping-client";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function MappingPage() {
   const user = await requireAuth();

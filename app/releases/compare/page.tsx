@@ -5,6 +5,7 @@ import { requireRole } from "@/lib/auth";
 import { CompareClient } from "./compare-client";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const ALLOWED_ROLES = ["system_admin", "admin", "project_manager"];
 

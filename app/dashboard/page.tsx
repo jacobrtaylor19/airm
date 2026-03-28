@@ -15,6 +15,7 @@ import * as schema from "@/db/schema";
 import { inArray, count, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 export default async function DashboardPage() {
   const user = await requireAuth();
@@ -38,45 +39,49 @@ export default async function DashboardPage() {
   const needsScopeStats = ["mapper", "approver", "coordinator"].includes(user.role);
   const scopedUserIds = await getUserScope(user); // null for admins (unrestricted)
 
-  // Run risk analysis and provisioning alerts in parallel
-  const [riskAnalysis, overprovisioningThreshold] = await Promise.all([
+  // Fetch threshold first (single-row lookup, fast), then run all heavy queries in parallel
+  const overprovisioningThreshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
+
+  const [riskAnalysis, scopedStatsData, overprovisioningAlertsRaw] = await Promise.all([
     getAggregateRiskAnalysis(scopedUserIds),
-    getSetting("least_access_threshold").then(v => parseInt(v ?? "30", 10)),
+    // Scoped stats for strapline
+    (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0)
+      ? (async () => {
+          const depts = scopeDepts ?? [];
+          const [scopedPersonaRows, pendingApprovalsResult] = await Promise.all([
+            db.select({ personaId: schema.userPersonaAssignments.personaId })
+              .from(schema.userPersonaAssignments)
+              .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds!)),
+            db.select({ count: count() })
+              .from(schema.userTargetRoleAssignments)
+              .where(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds!)),
+          ]);
+          const scopedPersonaIds = Array.from(new Set(scopedPersonaRows.map(r => r.personaId).filter((id): id is number => id !== null)));
+          const mappedPersonaCount = scopedPersonaIds.length > 0
+            ? Number((await db.select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
+                .from(schema.personaTargetRoleMappings)
+                .where(inArray(schema.personaTargetRoleMappings.personaId, scopedPersonaIds)))?.[0]?.count ?? 0)
+            : 0;
+          const pendingApprovals = pendingApprovalsResult?.[0]?.count ?? 0;
+          return {
+            deptCount: depts.length,
+            userCount: scopedUserIds!.length,
+            mappedPersonaCount,
+            totalPersonaCount: scopedPersonaIds.length,
+            pendingApprovals,
+          };
+        })()
+      : Promise.resolve(null),
+    // Overprovisioning alerts
+    getLeastAccessAnalysis(overprovisioningThreshold),
   ]);
 
-  // Build scoped stats for strapline (mapper/approver/coordinator)
-  let scopedStats = null;
-  if (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0) {
-    const depts = scopeDepts ?? [];
-    // Run scoped persona + approval queries in parallel
-    const [scopedPersonaRows, pendingApprovalsResult] = await Promise.all([
-      db.select({ personaId: schema.userPersonaAssignments.personaId })
-        .from(schema.userPersonaAssignments)
-        .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds)),
-      db.select({ count: count() })
-        .from(schema.userTargetRoleAssignments)
-        .where(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)),
-    ]);
-    const scopedPersonaIds = Array.from(new Set(scopedPersonaRows.map(r => r.personaId).filter((id): id is number => id !== null)));
-    const mappedPersonaCount = scopedPersonaIds.length > 0
-      ? Number((await db.select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
-          .from(schema.personaTargetRoleMappings)
-          .where(inArray(schema.personaTargetRoleMappings.personaId, scopedPersonaIds)))?.[0]?.count ?? 0)
-      : 0;
-    const pendingApprovals = pendingApprovalsResult?.[0]?.count ?? 0;
-    scopedStats = {
-      deptCount: depts.length,
-      userCount: scopedUserIds.length,
-      mappedPersonaCount,
-      totalPersonaCount: scopedPersonaIds.length,
-      pendingApprovals,
-    };
-  }
+  const scopedStats = scopedStatsData;
 
   const strapline = generateStrapline(stats, user.role, scopedStats, user.displayName);
 
-  // Provisioning alerts
-  let overprovisioningAlerts = await getLeastAccessAnalysis(overprovisioningThreshold);
+  // Filter provisioning alerts by threshold and scope
+  let overprovisioningAlerts = overprovisioningAlertsRaw;
   if (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0) {
     const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
     overprovisioningAlerts = overprovisioningAlerts.filter(r => scopedPersonaIds.has(r.personaId));

@@ -1960,28 +1960,55 @@ export async function getAggregateRiskAnalysis(
     };
   }
 
-  // 2. Bulk load: source role assignments → source permissions per user
-  const sourceRoleAssignments = await db
-    .select({
+  // 2-4. Bulk load source assignments, target assignments, and SOD conflicts in PARALLEL
+  const [sourceRoleAssignments, targetRoleAssignments, sodConflictRows] = await Promise.all([
+    db.select({
       userId: schema.userSourceRoleAssignments.userId,
       sourceRoleId: schema.userSourceRoleAssignments.sourceRoleId,
     })
     .from(schema.userSourceRoleAssignments)
-    .where(inArray(schema.userSourceRoleAssignments.userId, userIds));
+    .where(inArray(schema.userSourceRoleAssignments.userId, userIds)),
 
+    db.select({
+      userId: schema.userTargetRoleAssignments.userId,
+      targetRoleId: schema.userTargetRoleAssignments.targetRoleId,
+    })
+    .from(schema.userTargetRoleAssignments)
+    .where(inArray(schema.userTargetRoleAssignments.userId, userIds)),
+
+    db.select({
+      userId: schema.sodConflicts.userId,
+      count: count(),
+    })
+    .from(schema.sodConflicts)
+    .where(inArray(schema.sodConflicts.userId, userIds))
+    .groupBy(schema.sodConflicts.userId),
+  ]);
+
+  // Load source and target permission mappings in parallel
   const allSourceRoleIds = Array.from(new Set(sourceRoleAssignments.map(a => a.sourceRoleId)));
+  const allTargetRoleIds = Array.from(new Set(targetRoleAssignments.map(a => a.targetRoleId)));
 
-  // Source role → permission IDs
-  const sourceRolePermRows = allSourceRoleIds.length > 0
-    ? await db
-        .select({
+  const [sourceRolePermRows, targetRolePermRows] = await Promise.all([
+    allSourceRoleIds.length > 0
+      ? db.select({
           sourceRoleId: schema.sourceRolePermissions.sourceRoleId,
           permissionId: schema.sourcePermissions.permissionId,
         })
         .from(schema.sourceRolePermissions)
         .innerJoin(schema.sourcePermissions, eq(schema.sourceRolePermissions.sourcePermissionId, schema.sourcePermissions.id))
         .where(inArray(schema.sourceRolePermissions.sourceRoleId, allSourceRoleIds))
-    : [];
+      : Promise.resolve([]),
+    allTargetRoleIds.length > 0
+      ? db.select({
+          targetRoleId: schema.targetRolePermissions.targetRoleId,
+          permissionId: schema.targetPermissions.permissionId,
+        })
+        .from(schema.targetRolePermissions)
+        .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
+        .where(inArray(schema.targetRolePermissions.targetRoleId, allTargetRoleIds))
+      : Promise.resolve([]),
+  ]);
 
   // Build: sourceRoleId → Set<permissionId>
   const sourceRolePermMap = new Map<number, Set<string>>();
@@ -2000,28 +2027,6 @@ export async function getAggregateRiskAnalysis(
     }
   }
 
-  // 3. Bulk load: target role assignments → target permissions per user
-  const targetRoleAssignments = await db
-    .select({
-      userId: schema.userTargetRoleAssignments.userId,
-      targetRoleId: schema.userTargetRoleAssignments.targetRoleId,
-    })
-    .from(schema.userTargetRoleAssignments)
-    .where(inArray(schema.userTargetRoleAssignments.userId, userIds));
-
-  const allTargetRoleIds = Array.from(new Set(targetRoleAssignments.map(a => a.targetRoleId)));
-
-  const targetRolePermRows = allTargetRoleIds.length > 0
-    ? await db
-        .select({
-          targetRoleId: schema.targetRolePermissions.targetRoleId,
-          permissionId: schema.targetPermissions.permissionId,
-        })
-        .from(schema.targetRolePermissions)
-        .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
-        .where(inArray(schema.targetRolePermissions.targetRoleId, allTargetRoleIds))
-    : [];
-
   const targetRolePermMap = new Map<number, Set<string>>();
   for (const r of targetRolePermRows) {
     if (!targetRolePermMap.has(r.targetRoleId)) targetRolePermMap.set(r.targetRoleId, new Set());
@@ -2036,16 +2041,6 @@ export async function getAggregateRiskAnalysis(
       for (const p of Array.from(perms)) userTargetPerms.get(a.userId)!.add(p);
     }
   }
-
-  // 4. Bulk load: SOD conflicts per user
-  const sodConflictRows = await db
-    .select({
-      userId: schema.sodConflicts.userId,
-      count: count(),
-    })
-    .from(schema.sodConflicts)
-    .where(inArray(schema.sodConflicts.userId, userIds))
-    .groupBy(schema.sodConflicts.userId);
 
   const userSodCounts = new Map<number, number>();
   for (const r of sodConflictRows) {
