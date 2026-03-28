@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -118,6 +120,14 @@ interface SidebarProps {
 
 export function Sidebar({ userRole, userName }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [, startTransition] = useTransition();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  // Clear pending state when the pathname actually changes
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   const initials = userName
     ? userName
@@ -175,18 +185,29 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
                 const isActive =
                   pathname === item.href ||
                   (!exactMatchOnly.includes(item.href) && pathname.startsWith(item.href + "/"));
+                const isPendingThis = pendingHref === item.href;
+                const showActive = isActive || isPendingThis;
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={(e) => {
+                      if (isActive) return; // Already on this page
+                      e.preventDefault();
+                      setPendingHref(item.href);
+                      startTransition(() => {
+                        router.push(item.href);
+                      });
+                    }}
                     className={cn(
                       "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
-                      isActive
+                      showActive
                         ? "bg-slate-800 text-white border-l-2 border-indigo-500"
-                        : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                        : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                      isPendingThis && "opacity-80"
                     )}
                   >
-                    <item.icon className={cn("h-4 w-4", isActive ? "text-white" : "text-slate-400")} />
+                    <item.icon className={cn("h-4 w-4", showActive ? "text-white" : "text-slate-400", isPendingThis && "animate-pulse")} />
                     {item.label}
                   </Link>
                 );

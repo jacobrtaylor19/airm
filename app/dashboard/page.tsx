@@ -18,68 +18,68 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await requireAuth();
-  const stats = await getDashboardStats();
-  const allDeptStatus = await getDepartmentMappingStatus();
-  const sourceSystemStats = await getSourceSystemStats();
+
+  // Run all independent data fetches in parallel
+  const [stats, allDeptStatus, sourceSystemStats, scopeDepts] = await Promise.all([
+    getDashboardStats(),
+    getDepartmentMappingStatus(),
+    getSourceSystemStats(),
+    getUserScopeDepartments(user),
+  ]);
 
   const mappedPercent = stats.totalPersonas > 0
     ? Math.round((stats.personasWithMapping / stats.totalPersonas) * 100) : 0;
   const approvedPercent = stats.totalAssignments > 0
     ? Math.round((stats.approvedAssignments / stats.totalAssignments) * 100) : 0;
 
-  // Determine assigned departments for mapper/approver via org hierarchy
-  const scopeDepts = await getUserScopeDepartments(user);
   const assignedDepartments = scopeDepts && scopeDepts.length > 0 ? scopeDepts : null;
 
-  // Build scoped stats for strapline (mapper/approver/coordinator)
+  // Single getUserScope call for all scoped features
   const needsScopeStats = ["mapper", "approver", "coordinator"].includes(user.role);
+  const scopedUserIds = await getUserScope(user); // null for admins (unrestricted)
+
+  // Run risk analysis and provisioning alerts in parallel
+  const [riskAnalysis, overprovisioningThreshold] = await Promise.all([
+    getAggregateRiskAnalysis(scopedUserIds),
+    getSetting("least_access_threshold").then(v => parseInt(v ?? "30", 10)),
+  ]);
+
+  // Build scoped stats for strapline (mapper/approver/coordinator)
   let scopedStats = null;
-  if (needsScopeStats) {
-    const scopedUserIds = await getUserScope(user);
-    if (scopedUserIds !== null && scopedUserIds.length > 0) {
-      const depts = scopeDepts ?? [];
-      // Count personas mapped in this scope
-      const scopedPersonaRows = scopedUserIds.length > 0
-        ? await db.select({ personaId: schema.userPersonaAssignments.personaId })
-            .from(schema.userPersonaAssignments)
-            .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds))
-        : [];
-      const scopedPersonaIds = Array.from(new Set(scopedPersonaRows.map(r => r.personaId).filter((id): id is number => id !== null)));
-      const mappedPersonaCount = scopedPersonaIds.length > 0
-        ? Number((await db.select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
-            .from(schema.personaTargetRoleMappings)
-            .where(inArray(schema.personaTargetRoleMappings.personaId, scopedPersonaIds)))?.[0]?.count ?? 0)
-        : 0;
-      const pendingApprovals = scopedUserIds.length > 0
-        ? (await db.select({ count: count() })
-            .from(schema.userTargetRoleAssignments)
-            .where(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)))?.[0]?.count ?? 0
-        : 0;
-      scopedStats = {
-        deptCount: depts.length,
-        userCount: scopedUserIds.length,
-        mappedPersonaCount,
-        totalPersonaCount: scopedPersonaIds.length,
-        pendingApprovals,
-      };
-    }
+  if (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0) {
+    const depts = scopeDepts ?? [];
+    // Run scoped persona + approval queries in parallel
+    const [scopedPersonaRows, pendingApprovalsResult] = await Promise.all([
+      db.select({ personaId: schema.userPersonaAssignments.personaId })
+        .from(schema.userPersonaAssignments)
+        .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds)),
+      db.select({ count: count() })
+        .from(schema.userTargetRoleAssignments)
+        .where(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)),
+    ]);
+    const scopedPersonaIds = Array.from(new Set(scopedPersonaRows.map(r => r.personaId).filter((id): id is number => id !== null)));
+    const mappedPersonaCount = scopedPersonaIds.length > 0
+      ? Number((await db.select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
+          .from(schema.personaTargetRoleMappings)
+          .where(inArray(schema.personaTargetRoleMappings.personaId, scopedPersonaIds)))?.[0]?.count ?? 0)
+      : 0;
+    const pendingApprovals = pendingApprovalsResult?.[0]?.count ?? 0;
+    scopedStats = {
+      deptCount: depts.length,
+      userCount: scopedUserIds.length,
+      mappedPersonaCount,
+      totalPersonaCount: scopedPersonaIds.length,
+      pendingApprovals,
+    };
   }
 
   const strapline = generateStrapline(stats, user.role, scopedStats, user.displayName);
 
-  // Risk analysis — scoped to user's area
-  const riskScopeIds = await getUserScope(user);
-  const riskAnalysis = await getAggregateRiskAnalysis(riskScopeIds);
-
-  // Provisioning alerts — scoped to user's area
-  const overprovisioningThreshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
+  // Provisioning alerts
   let overprovisioningAlerts = await getLeastAccessAnalysis(overprovisioningThreshold);
-  if (["mapper", "approver", "coordinator"].includes(user.role)) {
-    const scopedUserIds = await getUserScope(user);
-    if (scopedUserIds !== null) {
-      const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
-      overprovisioningAlerts = overprovisioningAlerts.filter(r => scopedPersonaIds.has(r.personaId));
-    }
+  if (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0) {
+    const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
+    overprovisioningAlerts = overprovisioningAlerts.filter(r => scopedPersonaIds.has(r.personaId));
   }
 
   // Workflow stages

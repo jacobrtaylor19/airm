@@ -6,14 +6,14 @@ const PUBLIC_PATHS = ["/", "/login", "/setup", "/methodology", "/overview", "/qu
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow public paths
-  if (pathname === "/" || PUBLIC_PATHS.some((p) => p !== "/" && pathname.startsWith(p))) {
-    return addSecurityHeaders(await updateSession(request, NextResponse.next()));
-  }
-
-  // Allow static assets and Next.js internals
+  // Allow static assets and Next.js internals (no Supabase call needed)
   if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".")) {
     return NextResponse.next();
+  }
+
+  // Allow public paths — still refresh session (keeps JWT fresh for subsequent nav)
+  if (pathname === "/" || PUBLIC_PATHS.some((p) => p !== "/" && pathname.startsWith(p))) {
+    return addSecurityHeaders(await updateSession(request, NextResponse.next()));
   }
 
   // Known authenticated routes — only redirect to login for these
@@ -31,19 +31,14 @@ export async function middleware(request: NextRequest) {
 
   const isAuthRoute = AUTHENTICATED_PREFIXES.some((p) => pathname.startsWith(p));
 
-  // Refresh Supabase session on every request (keeps JWT fresh)
+  // Single Supabase call: refresh session AND check auth in one pass
   let response = NextResponse.next({ request });
-  response = await updateSession(request, response);
+  const supabase = createSupabaseMiddlewareClient(request, response);
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (isAuthRoute) {
-    // Check if we have a valid Supabase session
-    const supabase = createSupabaseMiddlewareClient(request, response);
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-      const loginUrl = new URL("/login", request.url);
-      return addSecurityHeaders(NextResponse.redirect(loginUrl));
-    }
+  if (isAuthRoute && !user) {
+    const loginUrl = new URL("/login", request.url);
+    return addSecurityHeaders(NextResponse.redirect(loginUrl));
   }
 
   return addSecurityHeaders(response);
@@ -73,12 +68,10 @@ function createSupabaseMiddlewareClient(request: NextRequest, response: NextResp
 }
 
 /**
- * Refreshes the Supabase session by reading cookies from the request and
- * writing updated tokens back to the response.
+ * Refreshes the Supabase session for public paths (keeps JWT fresh for subsequent nav).
  */
 async function updateSession(request: NextRequest, response: NextResponse): Promise<NextResponse> {
   const supabase = createSupabaseMiddlewareClient(request, response);
-  // This refreshes the session if needed and updates the cookies
   await supabase.auth.getUser();
   return response;
 }
