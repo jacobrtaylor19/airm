@@ -2,7 +2,7 @@
 
 **Prepared:** 2026-03-28
 **Application:** Provisum (Intelligent Role Mapping for Enterprise Migrations)
-**Live URL:** https://airm-beige.vercel.app
+**Live URL:** https://demo.provisum.io
 **Stack:** Next.js 14, Supabase Postgres (Drizzle ORM), Supabase Auth, Vercel deployment
 
 ---
@@ -17,8 +17,8 @@ Validate every user-facing feature, API endpoint, role-based access control, dat
 
 | Environment | URL | Purpose |
 |---|---|---|
-| Production | https://airm-beige.vercel.app | Primary test target |
-| Health Check | https://airm-beige.vercel.app/api/health | Infrastructure verification |
+| Production | https://demo.provisum.io | Primary test target |
+| Health Check | https://demo.provisum.io/api/health | Infrastructure verification |
 
 ### 1.3 Test Accounts
 
@@ -62,7 +62,7 @@ The database is seeded with:
 #### AUTH-001: Successful Login with Demo Admin
 - **Preconditions:** Not logged in, on /login page
 - **Steps:**
-  1. Navigate to https://airm-beige.vercel.app/login
+  1. Navigate to https://demo.provisum.io/login
   2. Verify the Provisum branding is displayed (left panel on desktop, top on mobile)
   3. Verify quick-login pill buttons are displayed with demo account names
   4. Click the "demo.admin" pill button (or type "demo.admin" in username field)
@@ -1166,7 +1166,7 @@ The database is seeded with:
 #### PUB-001: Landing Page
 - **Preconditions:** Not logged in
 - **Steps:**
-  1. Navigate to https://airm-beige.vercel.app/
+  1. Navigate to https://demo.provisum.io/
 - **Expected Result:** Landing page with hero section, feature cards, footer. Provisum branding. Navigation to /login available.
 
 #### PUB-002: Methodology Page
@@ -1335,7 +1335,7 @@ The database is seeded with:
 #### SEC-008: Frame Embedding Prevention
 - **Preconditions:** None
 - **Steps:**
-  1. Create an HTML page with `<iframe src="https://airm-beige.vercel.app/dashboard">`
+  1. Create an HTML page with `<iframe src="https://demo.provisum.io/dashboard">`
   2. Open in browser
 - **Expected Result:** iframe refuses to load (X-Frame-Options: DENY, CSP frame-ancestors: 'none').
 
@@ -1464,7 +1464,7 @@ The following prompt is designed to be pasted directly into Cowork (or any AI br
 ---
 
 ```
-You are a QA tester for Provisum, an enterprise role mapping application deployed at https://airm-beige.vercel.app. Execute the following comprehensive test plan.
+You are a QA tester for Provisum, an enterprise role mapping application deployed at https://demo.provisum.io. Execute the following comprehensive test plan.
 
 ## Application Context
 Provisum is a Next.js 14 web application for managing SAP ECC to S/4HANA role migrations. It supports: data upload, AI persona generation, role mapping, SOD (Segregation of Duties) conflict analysis, approval workflows, risk analysis, exports, notifications, and admin configuration. The app uses Supabase Auth for authentication with JWT cookies.
@@ -1483,7 +1483,7 @@ Provisum is a Next.js 14 web application for managing SAP ECC to S/4HANA role mi
 ## Test Execution Instructions
 
 ### Phase 1: Authentication & Navigation
-1. Go to https://airm-beige.vercel.app/login
+1. Go to https://demo.provisum.io/login
 2. Verify the login page shows Provisum branding (left panel on desktop: teal shield icon, "Provisum" text, "Intelligent Role Mapping" subtitle)
 3. Verify quick-login pill buttons are shown for demo accounts
 4. Click the "demo.admin" pill button and verify the username field is populated
@@ -1568,7 +1568,7 @@ For each of these accounts, log in and verify:
 
 ### Phase 6: Public Pages
 1. Log out completely
-2. Navigate to https://airm-beige.vercel.app/ -- verify landing page loads
+2. Navigate to https://demo.provisum.io/ -- verify landing page loads
 3. Navigate to /methodology -- verify it loads without login
 4. Navigate to /overview -- verify it loads without login
 5. Navigate to /quick-reference -- verify it loads without login
