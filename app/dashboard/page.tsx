@@ -18,11 +18,13 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 export default async function DashboardPage() {
+  // Auth check outside try/catch — requireAuth() throws a redirect (not an error)
+  // and must not be caught by the dashboard error boundary
   const user = await requireAuth();
 
   try {
     return await renderDashboard(user);
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("[dashboard] Server-side error:", err);
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
