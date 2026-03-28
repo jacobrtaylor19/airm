@@ -1,17 +1,10 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { getAIProvider } from "@/lib/ai/provider";
 import { getSetting } from "@/lib/settings";
-
-interface UserAccessProfile {
-  sourceUserId: string;
-  displayName: string;
-  jobTitle: string | null;
-  department: string | null;
-  roles: { roleId: string; roleName: string; domain: string | null }[];
-  permissions: string[];
-}
+import type { UserAccessProfile } from "./types";
+import { loadUserProfiles } from "./load-user-profiles";
 
 interface PersonaInfo {
   id: number;
@@ -22,58 +15,32 @@ interface PersonaInfo {
 
 async function getAvailablePersonas(): Promise<PersonaInfo[]> {
   const personas = await db.select().from(schema.personas);
-  return Promise.all(
-    personas.map(async (p) => {
-      const perms = await db
-        .select({ permId: schema.sourcePermissions.permissionId })
-        .from(schema.personaSourcePermissions)
-        .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
-        .where(eq(schema.personaSourcePermissions.personaId, p.id));
-      return {
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        characteristicPermissions: perms.map((x) => x.permId),
-      };
-    })
-  );
-}
+  if (personas.length === 0) return [];
 
-async function getUserProfile(userId: number): Promise<UserAccessProfile | null> {
-  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
-  if (!user) return null;
+  // Bulk-load all persona permissions in 2 queries instead of N
+  const personaIds = personas.map((p) => p.id);
 
-  const roleAssignments = await db
+  const allPerms = await db
     .select({
-      roleId: schema.sourceRoles.roleId,
-      roleName: schema.sourceRoles.roleName,
-      domain: schema.sourceRoles.domain,
+      personaId: schema.personaSourcePermissions.personaId,
+      permId: schema.sourcePermissions.permissionId,
     })
-    .from(schema.userSourceRoleAssignments)
-    .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
-    .where(eq(schema.userSourceRoleAssignments.userId, userId));
+    .from(schema.personaSourcePermissions)
+    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
+    .where(inArray(schema.personaSourcePermissions.personaId, personaIds));
 
-  const permissions: string[] = [];
-  for (const role of roleAssignments) {
-    const perms = await db
-      .select({ permissionId: schema.sourcePermissions.permissionId })
-      .from(schema.sourceRolePermissions)
-      .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.sourceRolePermissions.sourcePermissionId))
-      .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.sourceRolePermissions.sourceRoleId))
-      .where(eq(schema.sourceRoles.roleId, role.roleId));
-    for (const p of perms) {
-      if (!permissions.includes(p.permissionId)) permissions.push(p.permissionId);
-    }
+  const permsByPersona = new Map<number, string[]>();
+  for (const row of allPerms) {
+    if (!permsByPersona.has(row.personaId)) permsByPersona.set(row.personaId, []);
+    permsByPersona.get(row.personaId)!.push(row.permId);
   }
 
-  return {
-    sourceUserId: user.sourceUserId,
-    displayName: user.displayName,
-    jobTitle: user.jobTitle,
-    department: user.department,
-    roles: roleAssignments,
-    permissions,
-  };
+  return personas.map((p) => ({
+    id: p.id,
+    name: p.name,
+    description: p.description,
+    characteristicPermissions: permsByPersona.get(p.id) || [],
+  }));
 }
 
 function buildPrompt(user: UserAccessProfile, personas: PersonaInfo[]): string {
@@ -136,6 +103,14 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
   }
 
   const users = await db.select().from(schema.users);
+
+  // Bulk-load all user profiles upfront (3 queries instead of N+1)
+  const allProfiles = await loadUserProfiles(users);
+  const profileBySourceUserId = new Map<string, UserAccessProfile>();
+  for (const p of allProfiles) {
+    profileBySourceUserId.set(p.sourceUserId, p);
+  }
+
   let usersAssigned = 0;
   let failed = 0;
 
@@ -153,7 +128,7 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
 
     const results = await Promise.allSettled(
       batch.map(async (user) => {
-        const profile = await getUserProfile(user.id);
+        const profile = profileBySourceUserId.get(user.sourceUserId);
         if (!profile) throw new Error("no_profile");
 
         const prompt = buildPrompt(profile, personas);

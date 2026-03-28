@@ -16,27 +16,12 @@ export async function middleware(request: NextRequest) {
     return addSecurityHeaders(await updateSession(request, NextResponse.next()));
   }
 
-  // Known authenticated routes — only redirect to login for these
-  const AUTHENTICATED_PREFIXES = [
-    "/dashboard", "/admin", "/personas", "/mapping", "/sod", "/sod-rules",
-    "/approvals", "/users", "/upload", "/data", "/exports", "/jobs",
-    "/source-roles", "/target-roles", "/releases", "/audit-log",
-    "/least-access", "/risk-analysis", "/inbox", "/notifications", "/unauthorized",
-    "/api/admin", "/api/ai", "/api/approvals", "/api/assistant",
-    "/api/exports", "/api/jobs", "/api/least-access", "/api/mapping",
-    "/api/notifications", "/api/org-hierarchy", "/api/personas",
-    "/api/refinements", "/api/releases", "/api/review-links",
-    "/api/settings", "/api/sod", "/api/sod-rules", "/api/upload",
-  ];
-
-  const isAuthRoute = AUTHENTICATED_PREFIXES.some((p) => pathname.startsWith(p));
-
-  // Single Supabase call: refresh session AND check auth in one pass
+  // All non-public, non-static routes require authentication
   let response = NextResponse.next({ request });
   const supabase = createSupabaseMiddlewareClient(request, response);
   const { data: { user } } = await supabase.auth.getUser();
 
-  if (isAuthRoute && !user) {
+  if (!user) {
     const loginUrl = new URL("/login", request.url);
     return addSecurityHeaders(NextResponse.redirect(loginUrl));
   }

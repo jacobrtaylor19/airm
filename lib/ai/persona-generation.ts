@@ -2,58 +2,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getAIProvider } from "@/lib/ai/provider";
-
-interface UserAccessProfile {
-  sourceUserId: string;
-  displayName: string;
-  jobTitle: string | null;
-  department: string | null;
-  roles: { roleId: string; roleName: string; domain: string | null }[];
-  permissions: string[];
-}
-
-async function assembleUserProfiles(): Promise<UserAccessProfile[]> {
-  const users = await db.select().from(schema.users);
-  const profiles: UserAccessProfile[] = [];
-
-  for (const user of users) {
-    const roleAssignments = await db
-      .select({
-        roleId: schema.sourceRoles.roleId,
-        roleName: schema.sourceRoles.roleName,
-        domain: schema.sourceRoles.domain,
-      })
-      .from(schema.userSourceRoleAssignments)
-      .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
-      .where(eq(schema.userSourceRoleAssignments.userId, user.id));
-
-    const permissions: string[] = [];
-    if (roleAssignments.length > 0) {
-      for (const role of roleAssignments) {
-        const perms = await db
-          .select({ permissionId: schema.sourcePermissions.permissionId })
-          .from(schema.sourceRolePermissions)
-          .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.sourceRolePermissions.sourcePermissionId))
-          .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.sourceRolePermissions.sourceRoleId))
-          .where(eq(schema.sourceRoles.roleId, role.roleId));
-        for (const p of perms) {
-          if (!permissions.includes(p.permissionId)) permissions.push(p.permissionId);
-        }
-      }
-    }
-
-    profiles.push({
-      sourceUserId: user.sourceUserId,
-      displayName: user.displayName,
-      jobTitle: user.jobTitle,
-      department: user.department,
-      roles: roleAssignments,
-      permissions,
-    });
-  }
-
-  return profiles;
-}
+import type { UserAccessProfile } from "./types";
+import { loadUserProfiles } from "./load-user-profiles";
 
 function summarizeByDepartment(profiles: UserAccessProfile[]): string {
   const depts = new Map<string, { count: number; titles: Set<string> }>();
@@ -157,7 +107,8 @@ interface GenerationResult {
 
 export async function runPersonaGeneration(jobId: number): Promise<{ personasCreated: number; usersAssigned: number }> {
   const provider = await getAIProvider();
-  const profiles = await assembleUserProfiles();
+  const allUsers = await db.select().from(schema.users);
+  const profiles = await loadUserProfiles(allUsers);
   const prompt = buildPrompt(profiles);
 
   const text = await provider.generateText(prompt);
