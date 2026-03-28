@@ -1109,7 +1109,7 @@ The database is seeded with:
 - **Preconditions:** Logged in as demo.admin
 - **Steps:**
   1. Look at bottom of sidebar
-- **Expected Result:** Shows user avatar (initials), display name, role label, "Provisum v0.6.0" text.
+- **Expected Result:** Shows user avatar (initials), display name, role label, "Provisum v0.7.0" text.
 
 #### NAV-009: All Sidebar Links Navigate Correctly
 - **Preconditions:** Logged in as sysadmin (highest access)
@@ -1118,11 +1118,20 @@ The database is seeded with:
   2. Verify each page loads without error
 - **Expected Result:** Every link navigates to the correct page. No 404s, no errors, no blank pages.
 
-#### NAV-010: Loading State
+#### NAV-010: Loading State and Instant Click Feedback
 - **Preconditions:** Logged in
 - **Steps:**
-  1. Click on a page (observe during load)
-- **Expected Result:** Loading indicator shown (if applicable) while page data fetches.
+  1. Click a sidebar link (e.g., from Dashboard to Mapping)
+  2. Observe the sidebar immediately on click
+  3. Observe the main content area during load
+- **Expected Result:** Clicked sidebar link immediately highlights with active styling (bg-slate-800, indigo border) and icon pulses. A centered spinner appears in the main content area while the page loads. Previous active link de-highlights. Transition feels instant — no "dead click" period.
+
+#### NAV-011: Sidebar Pending State Clears on Navigation
+- **Preconditions:** Logged in
+- **Steps:**
+  1. Click a sidebar link
+  2. Wait for page to fully load
+- **Expected Result:** Pulse animation stops once the page renders. Active link styling is solid (no animation). Only the current page's link is highlighted.
 
 ---
 
@@ -1490,8 +1499,8 @@ Provisum is a Next.js 14 web application for managing SAP ECC to S/4HANA role mi
 5. Enter password "DemoGuide2026!" and click "Sign In"
 6. Verify redirect to /dashboard
 7. Verify the sidebar shows: WORKFLOW section (Dashboard, Releases, Data Upload, Personas, Role Mapping, SOD Analysis, Approvals, Inbox, Send Reminders), DATA section (Users, Source Roles, Target Roles, SOD Rules), REPORTS section (Exports, Risk Analysis, Validation, Release Comparison, Project Timeline, Audit Log), LEARN section (How It Works, Platform Overview, Quick Reference), ADMIN section (App Users, Assignments)
-8. Verify sidebar bottom shows user initials, "Demo Admin" name, "Admin" role, "Provisum v0.6.0"
-9. Click every sidebar link and verify each page loads without errors. Note any 404s or blank pages.
+8. Verify sidebar bottom shows user initials, "Demo Admin" name, "Admin" role, "Provisum v0.7.0"
+9. Click every sidebar link and verify each page loads without errors. Note any 404s or blank pages. Verify that each click immediately highlights the clicked link in the sidebar (no delay before visual feedback) and shows a loading spinner in the content area.
 10. Log out and test login with wrong password -- verify "Invalid credentials" error
 11. Verify the error clears when you start typing again
 
@@ -1573,6 +1582,20 @@ For each of these accounts, log in and verify:
 4. Navigate to /overview -- verify it loads without login
 5. Navigate to /quick-reference -- verify it loads without login
 6. Navigate to /dashboard -- verify redirect to /login
+
+## Reporting Format
+For each test, report:
+- PASS / FAIL / BLOCKED
+- Screenshot or description of any failures
+- Any unexpected behavior (even if technically passing)
+- Performance issues (pages taking >3s to load)
+
+### Phase 7: Performance Checks
+1. Click between sidebar pages rapidly (Dashboard → Mapping → SOD → Approvals) -- verify each click gives instant sidebar feedback (highlight + pulse)
+2. Time the dashboard page load -- should be under 3 seconds
+3. Time the /risk-analysis page load -- should be under 3 seconds
+4. Navigate to /exports and download the Full Excel Report -- verify download starts within 5 seconds
+5. Navigate to /admin/validation (as sysadmin) -- verify it loads within 5 seconds
 
 ## Reporting Format
 For each test, report:
