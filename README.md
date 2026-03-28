@@ -1,6 +1,8 @@
-# AIRM — AI Role Mapping Tool
+# Provisum — Intelligent Role Mapping
 
-AIRM is a workflow tool for managing enterprise role migrations (e.g. SAP ECC → S/4HANA). It uses AI to group users into security personas, maps those personas to target roles, runs SOD conflict analysis, and routes the results through a structured mapper → approver workflow.
+Provisum is an enterprise workflow tool for managing security role migrations (e.g. SAP ECC → S/4HANA). It uses AI to cluster users into security personas, maps those personas to target roles, runs SOD conflict analysis, quantifies risk, and routes the results through a structured mapper → approver workflow.
+
+**Live:** [https://airm-beige.vercel.app](https://airm-beige.vercel.app)
 
 ---
 
@@ -9,12 +11,13 @@ AIRM is a workflow tool for managing enterprise role migrations (e.g. SAP ECC �
 | Layer | Technology |
 |-------|-----------|
 | Framework | Next.js 14 (App Router, Server Components) |
-| Database | SQLite via `better-sqlite3` + Drizzle ORM |
+| Database | Supabase Postgres via `postgres-js` + Drizzle ORM |
+| Auth | Supabase Auth (`@supabase/ssr`, JWT sessions) |
 | AI | Anthropic Claude API (`@anthropic-ai/sdk`) |
 | UI | shadcn/ui + Tailwind CSS + Radix UI |
-| Auth | Cookie-based sessions, `bcryptjs` password hashing |
 | Tables | TanStack React Table |
 | Exports | `exceljs`, `pdfkit`, `csv-parse` |
+| Hosting | Vercel (auto-deploy from GitHub) |
 
 ---
 
@@ -23,7 +26,7 @@ AIRM is a workflow tool for managing enterprise role migrations (e.g. SAP ECC �
 ```bash
 pnpm install
 
-# Push schema and seed with demo data
+# Push schema to Supabase and seed with demo data
 pnpm db:push
 pnpm db:seed
 
@@ -31,15 +34,38 @@ pnpm db:seed
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). On first run you'll be redirected to `/setup` to create the initial admin account. The seed script creates a default `admin` / `admin123` account if you skip setup.
+Open [http://localhost:3000](http://localhost:3000).
 
-### Demo data packs
+### Environment Variables
+
+```env
+DATABASE_URL=postgresql://postgres.PROJECT_ID:PASSWORD@aws-1-us-east-1.pooler.supabase.com:6543/postgres
+NEXT_PUBLIC_SUPABASE_URL=https://PROJECT_ID.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon-key>
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+ANTHROPIC_API_KEY=<claude-api-key>
+ENCRYPTION_KEY=<aes-256-gcm-key>
+```
+
+### Demo Accounts
+
+| Username | Password | Role |
+|----------|----------|------|
+| demo.admin | DemoGuide2026! | admin |
+| demo.mapper.finance | DemoGuide2026! | mapper |
+| demo.mapper.operations | DemoGuide2026! | mapper |
+| demo.approver | DemoGuide2026! | approver |
+| demo.viewer | DemoGuide2026! | viewer |
+| demo.coordinator | DemoGuide2026! | coordinator |
+| sysadmin | Sysadmin@2026! | system_admin |
+
+### Demo Data Packs
 
 ```bash
 pnpm db:seed -- --demo=sap-migration
 ```
 
-Data files are read from `data/` (or `data/demos/<packname>/` for demo packs) as CSV files.
+9 demo environments available: SAP S/4HANA (default, energy-chemicals, consumer-products, financial-services, manufacturing), Oracle Fusion, Workday, Salesforce, ServiceNow.
 
 ---
 
@@ -47,7 +73,7 @@ Data files are read from `data/` (or `data/demos/<packname>/` for demo packs) as
 
 | Role | Hierarchy | Description |
 |------|-----------|-------------|
-| `system_admin` | 100 | Full access including system config console |
+| `system_admin` | 100 | Full access including system config console and pipeline validation |
 | `admin` | 80 | Full project access, user management |
 | `approver` | 60 | Approves role assignments within their org unit scope |
 | `coordinator` | 50 | View access + can send notifications to mappers/approvers |
@@ -65,7 +91,7 @@ Upload → Personas → Mapping → SOD Analysis → Approval
 ```
 
 1. **Upload** — Import users, source roles, target roles, and SOD rules via CSV/Excel
-2. **Personas** — AI clusters users into security personas based on role patterns
+2. **Personas** — AI clusters users into security personas based on role patterns (2-phase: AI designs personas from 100-user sample, then programmatic assignment for all users)
 3. **Role Mapping** — Mappers assign target roles to each persona; excess provisioning is flagged
 4. **SOD Analysis** — Conflicts between assigned roles are detected against the SOD rulebook
 5. **Approval** — Approvers review and approve/reject each user assignment
@@ -76,112 +102,70 @@ Upload → Personas → Mapping → SOD Analysis → Approval
 
 ### Dashboard
 - **Workflow stepper** showing progress across all 5 stages
-- **Strapline** — opinionated, role-aware status summary (e.g. *"12 assignments are sitting in the approval queue — this is the critical path right now"*)
-- **Provisioning Alerts** — scoped to the user's org unit, with inline accept/revoke for exceptions
+- **Strapline** — opinionated, role-aware status summary
+- **Risk Quantification** — 3 risk categories (Business Continuity, Adoption Risk, Incorrect Access)
+- **Provisioning Alerts** — scoped to user's org unit, with inline accept/revoke
 - **Department kanban** — per-department breakdown across all workflow stages
 
-### Authentication & Role Scoping
-- Cookie-based sessions (`airm_session`, 24h expiry, httpOnly)
-- First-run `/setup` creates the initial admin
-- `/login` with username + password
-- Mapper/approver/coordinator only see users in their assigned org unit subtree
+### Authentication & Security
+- Supabase Auth with JWT sessions via `@supabase/ssr`
+- Row-Level Security (RLS) enabled on all 39 tables
+- 12-character password policy with complexity requirements
+- Account lockout after 5 failed attempts
+- Security headers: CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy
+- AES-256-GCM encryption for sensitive settings (API keys, tokens)
 
-### Notifications (demo mode)
-- Coordinators and admins can send in-app notifications to mappers/approvers
-- Inbox with unread badge and mark-read
-- 4 quick-message templates: mapping pending, approval pending, SOD review, over-provisioning
-- No email transport — all notifications are stored in the `notifications` table
+### Risk Analysis
+- Dedicated `/risk-analysis` page with 3 risk category cards
+- Flagged users table sorted by SOD conflict count
+- Scope-aware: non-admin users see risk for their org unit only
 
-### Provisioning Alerts
-- Surfaces personas mapped to roles where `excessPercent` exceeds the configured threshold
-- Threshold is configurable per-project via admin console (`least_access_threshold` setting)
-- Exceptions accepted with justification, recorded in `leastAccessExceptions`
-- Scoped to user's org unit on the dashboard; full analysis at `/least-access`
+### Releases & Due Dates
+- Scoped migration waves with user and org unit assignment
+- Phase deadlines (mapping, review, approval) with visual overdue indicators
+- Existing production access from prior waves included in SOD analysis
 
-### SOD Analysis
-- Ruleset uploaded via CSV into `sodRules`
-- Conflicts detected at user level and surfaced by severity (critical / high / medium / low)
-- Conflicts block approvals until resolved or accepted
+### Pipeline Validation (Due Diligence)
+- System-admin-only tool at `/admin/validation`
+- Full attribution chain tracing: source attributes → persona → target roles → SOD conflicts
+- Edge case detection, confidence histograms, persona distribution
+- 5-tab Excel export for audit purposes
 
-### Releases
-- Scoped migration waves; users assigned per release
-- Existing production access from prior waves is imported and included in SOD analysis
+### Notifications (Demo Mode)
+- Coordinators and admins can send in-app notifications
+- 4 quick-message templates
+- No email transport — stored in DB only
 
----
-
-## Database Schema (tables)
-
-### Identity & Auth
-- `orgUnits` — 3-level org hierarchy (L1 → L2 → L3)
-- `appUsers` — tool users (admin, mapper, approver, coordinator, viewer)
-- `appUserSessions` — active session tokens
-- `workAssignments` — legacy mapper/approver → department scope
-
-### Source System (ECC)
-- `users` — source users with department, job title, org unit
-- `sourceRoles` — legacy roles (SAP ECC)
-- `sourcePermissions` — T-codes / permission objects
-- `sourceRolePermissions` — role ↔ permission junction
-- `userSourceRoleAssignments` — user ↔ source role
-
-### Target System (S/4HANA)
-- `targetRoles` — Tier 3 security roles
-- `targetPermissions` — target permission objects
-- `targetTaskRoles` — Tier 2 task role bundles
-- `targetTaskRolePermissions`, `targetSecurityRoleTasks`, `targetRolePermissions` — role hierarchy junctions
-
-### AI Mapping
-- `consolidatedGroups` — high-level access groups
-- `personas` — security personas (AI-generated or manual)
-- `personaSourcePermissions` — characteristic permissions with weights
-- `userPersonaAssignments` — AI-assigned user → persona (with confidence score)
-- `personaTargetRoleMappings` — persona → target role (with `coveragePercent`, `excessPercent`)
-- `userTargetRoleAssignments` — final user → target role with approval status
-
-### Risk & Compliance
-- `sodRules` — SOD rulebook
-- `sodConflicts` — detected violations per user
-- `leastAccessExceptions` — accepted over-provisioning exceptions
-- `permissionGaps` — uncovered permissions per persona
-
-### Operations
-- `releases` — migration waves
-- `releaseUsers`, `releaseOrgUnits` — release scope
-- `notifications` — in-app inbox
-- `processingJobs` — async job queue
-- `auditLog` — change history
-- `systemSettings` — key-value project config
+### Exports
+- Full Excel Report (multi-sheet workbook with cover page)
+- PDF Report
+- CSV Provisioning Export
+- SOD Conflict Report
+- Permission Gap Analysis
+- Audit Log Export
 
 ---
 
-## Settings (admin-configurable)
+## Infrastructure
 
-Settings are stored in `systemSettings` and accessed via `lib/settings.ts`.
+| Component | Service |
+|-----------|---------|
+| Hosting | Vercel (auto-deploy from `main` branch) |
+| Database | Supabase Postgres (pooled connection, port 6543) |
+| Auth | Supabase Auth (JWT, `@supabase/ssr`) |
+| AI | Anthropic Claude API |
+| Old URL redirect | Render static site → Vercel |
 
-| Key | Description | Default |
-|-----|-------------|---------|
-| `project_name` | Display name in header/sidebar | `AIRM` |
-| `least_access_threshold` | Over-provisioning alert threshold (%) | `30` |
-| `confidence_threshold` | Minimum AI confidence for auto-assignment | `65` |
-| `sod_auto_reject_threshold` | SOD severity that auto-rejects assignments | — |
+### Deployment
 
----
+Push to `main` triggers automatic Vercel production deploy. Database is persistent — no re-seeding needed on deploy.
 
-## API Routes
-
-| Method | Route | Description |
-|--------|-------|-------------|
-| POST | `/api/auth/login` | Authenticate, set session cookie |
-| POST | `/api/auth/logout` | Clear session |
-| POST | `/api/auth/setup` | Create initial admin (first-run only) |
-| GET/POST/DELETE | `/api/admin/app-users` | CRUD app users |
-| GET/POST/DELETE | `/api/admin/assignments` | Work assignments |
-| POST/PATCH | `/api/notifications` | Send / mark-read notifications |
-| POST/DELETE | `/api/least-access/exceptions` | Accept / revoke exceptions |
-| POST | `/api/approvals/[id]` | Approve / reject assignment |
-| POST | `/api/mapping/[personaId]` | Save persona → target role mapping |
-| GET | `/api/exports/provisioning` | CSV provisioning export |
-| POST | `/api/jobs/[jobType]` | Trigger async processing jobs |
+For initial setup:
+1. Create Supabase project
+2. Create Vercel project, set env vars
+3. `pnpm db:push` to create tables
+4. `pnpm db:seed` to seed demo data
+5. Push to deploy
 
 ---
 
@@ -189,34 +173,51 @@ Settings are stored in `systemSettings` and accessed via `lib/settings.ts`.
 
 ```
 airm/
-├── app/                    # Next.js App Router pages
-│   ├── dashboard/          # Main dashboard (strapline, KPIs, dept kanban, provisioning alerts)
+├── app/                    # Next.js App Router pages (37+ routes)
+│   ├── dashboard/          # Main dashboard (strapline, KPIs, risk cards, dept kanban)
 │   ├── mapping/            # Role mapping workspace
 │   ├── approvals/          # Approval queue
 │   ├── sod/                # SOD conflict analysis
-│   ├── least-access/       # Full provisioning analysis (detail view)
-│   ├── notifications/      # In-app notification inbox
+│   ├── risk-analysis/      # Risk quantification dashboard
 │   ├── personas/           # Persona management
-│   ├── releases/           # Release/wave management
-│   ├── admin/              # User management + system config console
+│   ├── releases/           # Release/wave management with due dates
+│   ├── notifications/      # In-app notification inbox
+│   ├── admin/              # User management, config console, pipeline validation
+│   ├── exports/            # Export center
 │   ├── login/              # Auth pages
-│   ├── setup/              # First-run admin creation
 │   └── api/                # API route handlers
 ├── components/
 │   ├── layout/             # Sidebar, header, workflow stepper
 │   ├── dashboard/          # KPI card
 │   └── ui/                 # shadcn/ui components
 ├── db/
-│   ├── schema.ts           # Drizzle schema (single source of truth)
-│   ├── index.ts            # DB connection (WAL mode, FK enabled)
-│   └── seed.ts             # CSV-based seeder
+│   ├── schema.ts           # Drizzle schema (pgTable, 39 tables)
+│   ├── index.ts            # Postgres connection (lazy proxy, prepare: false)
+│   └── seed.ts             # Demo data seeder
 ├── lib/
-│   ├── auth.ts             # Session management, role hierarchy
+│   ├── auth.ts             # Supabase Auth session management, role hierarchy
 │   ├── scope.ts            # Org-unit-based user scoping
-│   ├── queries.ts          # Shared DB queries
+│   ├── queries.ts          # Shared DB queries (50+ functions)
 │   ├── settings.ts         # getSetting / setSetting helpers
 │   ├── strapline.ts        # Rule-based dashboard status generator
+│   ├── supabase/           # Supabase client utilities (server, client, admin)
 │   └── ai/                 # Claude API integration helpers
-├── middleware.ts            # Session cookie validation, login redirect
-└── data/                   # CSV seed files
+├── middleware.ts            # Supabase session refresh, route protection, security headers
+├── docs/                   # Security controls, incident response, QA testing strategy
+└── render-redirect/        # Static redirect page for old Render URL
 ```
+
+---
+
+## Version History
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+
+| Version | Date | Highlights |
+|---------|------|-----------|
+| v0.7.0 | 2026-03-28 | Supabase Auth, RLS, Risk Dashboard, Due Dates, Vercel deploy |
+| v0.6.0 | 2026-03-26 | Security hardening, GDPR, demo overhaul, 9 demo environments |
+| v0.5.0 | 2026-03-26 | UX overhaul, AI chatbot, brand refresh to Provisum |
+| v0.3.0 | Earlier | Auth, role scoping, notifications, provisioning alerts |
+| v0.2.0 | Earlier | Cookie-based auth, role-based access |
+| v0.1.0 | Earlier | Core workflow, AI personas, SOD analysis, exports |
