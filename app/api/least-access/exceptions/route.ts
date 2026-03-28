@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 // POST — accept an exception
 export async function POST(req: NextRequest) {
-  const user = requireAuth();
+  const user = await requireAuth();
   if (!["admin", "system_admin", "approver"].includes(user.role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Revoke any existing accepted exception first (upsert by revoking then inserting)
-  const existing = db
+  const [existing] = await db
     .select({ id: schema.leastAccessExceptions.id })
     .from(schema.leastAccessExceptions)
     .where(
@@ -31,20 +31,19 @@ export async function POST(req: NextRequest) {
         eq(schema.leastAccessExceptions.status, "accepted"),
       )
     )
-    .get();
+    .limit(1);
 
   if (existing) {
-    db.update(schema.leastAccessExceptions)
+    await db.update(schema.leastAccessExceptions)
       .set({
         status: "revoked",
         revokedBy: user.username,
         revokedAt: new Date().toISOString(),
       })
-      .where(eq(schema.leastAccessExceptions.id, existing.id))
-      .run();
+      .where(eq(schema.leastAccessExceptions.id, existing.id));
   }
 
-  db.insert(schema.leastAccessExceptions)
+  await db.insert(schema.leastAccessExceptions)
     .values({
       personaId,
       targetRoleId,
@@ -53,15 +52,14 @@ export async function POST(req: NextRequest) {
       acceptedBy: user.username,
       acceptedAt: new Date().toISOString(),
       status: "accepted",
-    })
-    .run();
+    });
 
   return NextResponse.json({ ok: true });
 }
 
 // DELETE — revoke an exception
 export async function DELETE(req: NextRequest) {
-  const user = requireAuth();
+  const user = await requireAuth();
   if (!["admin", "system_admin", "approver"].includes(user.role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
@@ -73,7 +71,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "personaId and targetRoleId are required" }, { status: 400 });
   }
 
-  db.update(schema.leastAccessExceptions)
+  await db.update(schema.leastAccessExceptions)
     .set({
       status: "revoked",
       revokedBy: user.username,
@@ -85,8 +83,7 @@ export async function DELETE(req: NextRequest) {
         eq(schema.leastAccessExceptions.targetRoleId, targetRoleId),
         eq(schema.leastAccessExceptions.status, "accepted"),
       )
-    )
-    .run();
+    );
 
   return NextResponse.json({ ok: true });
 }

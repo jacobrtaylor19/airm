@@ -10,12 +10,12 @@ import { UserSodConflicts } from "./user-sod-conflicts";
 
 export const dynamic = "force-dynamic";
 
-export default function UserDetailPage({ params }: { params: { userId: string } }) {
-  const user = getUserDetail(Number(params.userId));
+export default async function UserDetailPage({ params }: { params: { userId: string } }) {
+  const user = await getUserDetail(Number(params.userId));
   if (!user) return notFound();
 
-  const { mapperName, mapperOrgUnitName, approverName, approverOrgUnitName } = getAssignedMapperApproverForUser(user.orgUnitId);
-  const gapAnalysis = getUserGapAnalysis(user.id);
+  const { mapperName, mapperOrgUnitName, approverName, approverOrgUnitName } = await getAssignedMapperApproverForUser(user.orgUnitId);
+  const gapAnalysis = await getUserGapAnalysis(user.id);
 
   return (
     <div className="space-y-6">

@@ -11,7 +11,7 @@ import { safeError } from "@/lib/errors";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !MAPPER_ROLES.includes(user.role as (typeof MAPPER_ROLES)[number])) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -28,13 +28,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user's scope for filtering
-    const scopedUserIds = getUserScope(user);
+    const scopedUserIds = await getUserScope(user);
 
     let draftAssignments;
     if (all) {
       // Submit all draft assignments in scope
       if (scopedUserIds) {
-        draftAssignments = db
+        draftAssignments = await db
           .select({ id: schema.userTargetRoleAssignments.id })
           .from(schema.userTargetRoleAssignments)
           .where(
@@ -42,19 +42,17 @@ export async function POST(req: NextRequest) {
               eq(schema.userTargetRoleAssignments.status, "draft"),
               inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)
             )
-          )
-          .all();
+          );
       } else {
         // No scope restriction (admin/system_admin)
-        draftAssignments = db
+        draftAssignments = await db
           .select({ id: schema.userTargetRoleAssignments.id })
           .from(schema.userTargetRoleAssignments)
-          .where(eq(schema.userTargetRoleAssignments.status, "draft"))
-          .all();
+          .where(eq(schema.userTargetRoleAssignments.status, "draft"));
       }
     } else {
       // Submit specific assignments — verify they are draft and in scope
-      draftAssignments = db
+      draftAssignments = await db
         .select({
           id: schema.userTargetRoleAssignments.id,
           userId: schema.userTargetRoleAssignments.userId,
@@ -65,8 +63,7 @@ export async function POST(req: NextRequest) {
             inArray(schema.userTargetRoleAssignments.id, assignmentIds!),
             eq(schema.userTargetRoleAssignments.status, "draft")
           )
-        )
-        .all();
+        );
 
       // Scope check for non-admin users
       if (scopedUserIds) {
@@ -89,13 +86,12 @@ export async function POST(req: NextRequest) {
     // Batch update in chunks of 500
     for (let i = 0; i < ids.length; i += 500) {
       const batch = ids.slice(i, i + 500);
-      db.update(schema.userTargetRoleAssignments)
+      await db.update(schema.userTargetRoleAssignments)
         .set({ status: "pending_review", updatedAt: now })
-        .where(inArray(schema.userTargetRoleAssignments.id, batch))
-        .run();
+        .where(inArray(schema.userTargetRoleAssignments.id, batch));
     }
 
-    auditLog({
+    await auditLog({
       entityType: "mapping",
       action: "submit_for_review",
       actorEmail: user.email ?? user.username,

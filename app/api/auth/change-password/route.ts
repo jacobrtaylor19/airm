@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { getSessionUser, verifyPassword, hashPassword } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 import { validatePassword } from "@/lib/password-policy";
 import { validateBody } from "@/lib/validation";
 import { changePasswordSchema } from "@/lib/validation/auth";
 import { safeError } from "@/lib/errors";
+import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -20,24 +20,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validation = validateBody(changePasswordSchema, body);
     if (!validation.success) return validation.response;
-    const { currentPassword, newPassword } = validation.data;
-
-    // Get the user's current password hash
-    const appUser = db
-      .select({ passwordHash: schema.appUsers.passwordHash })
-      .from(schema.appUsers)
-      .where(eq(schema.appUsers.id, user.id))
-      .get();
-
-    if (!appUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    // Verify current password
-    const isCurrentValid = await verifyPassword(currentPassword, appUser.passwordHash);
-    if (!isCurrentValid) {
-      return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 });
-    }
+    const { newPassword } = validation.data;
 
     // Validate new password strength
     const pwCheck = validatePassword(newPassword);
@@ -48,22 +31,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hash and update
-    const newHash = await hashPassword(newPassword);
-    db.update(schema.appUsers)
-      .set({ passwordHash: newHash, updatedAt: new Date().toISOString() })
-      .where(eq(schema.appUsers.id, user.id))
-      .run();
+    // Update password via Supabase Auth
+    const supabase = createClient();
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (updateError) {
+      return NextResponse.json(
+        { error: `Failed to update password: ${updateError.message}` },
+        { status: 500 }
+      );
+    }
 
     // Audit log the change (no password values)
-    db.insert(schema.auditLog)
-      .values({
-        entityType: "auth",
-        entityId: user.id,
-        action: "password_changed",
-        actorEmail: user.email || user.username,
-      })
-      .run();
+    await db.insert(schema.auditLog).values({
+      entityType: "auth",
+      entityId: user.id,
+      action: "password_changed",
+      actorEmail: user.email || user.username,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

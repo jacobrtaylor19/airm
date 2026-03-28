@@ -6,17 +6,17 @@ import { LeastAccessClient } from "./least-access-client";
 
 export const dynamic = "force-dynamic";
 
-export default function LeastAccessPage() {
-  const user = requireAuth();
+export default async function LeastAccessPage() {
+  const user = await requireAuth();
 
-  const threshold = parseInt(getSetting("least_access_threshold") ?? "30", 10);
-  let rows = getLeastAccessAnalysis(threshold);
+  const threshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
+  let rows = await getLeastAccessAnalysis(threshold);
 
   // Filter by org scope for mappers/approvers
   if (user && ["mapper", "approver"].includes(user.role)) {
-    const scopedUserIds = getUserScope(user);
+    const scopedUserIds = await getUserScope(user);
     if (scopedUserIds !== null) {
-      const scopedPersonaIds = new Set(getPersonaIdsForUsers(scopedUserIds));
+      const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
       rows = rows.filter(r => scopedPersonaIds.has(r.personaId));
     }
   }

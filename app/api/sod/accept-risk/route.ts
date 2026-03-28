@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "conflictId required" }, { status: 400 });
     }
 
-    const conflict = db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).get();
+    const [conflict] = await db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).limit(1);
     if (!conflict) {
       return NextResponse.json({ error: "Conflict not found" }, { status: 404 });
     }
@@ -36,33 +36,33 @@ export async function POST(req: NextRequest) {
       // Critical is never risk-acceptable regardless of settings
       return NextResponse.json({ error: "Critical severity conflicts cannot be risk-accepted." }, { status: 400 });
     }
-    if (severity === "high" && getSetting("workflow.sodHighRiskAcceptable") === "false") {
+    if (severity === "high" && (await getSetting("workflow.sodHighRiskAcceptable")) === "false") {
       return NextResponse.json({ error: "High severity risk acceptance is disabled by workflow settings." }, { status: 400 });
     }
-    if (severity === "medium" && getSetting("workflow.sodMediumRiskAcceptable") === "false") {
+    if (severity === "medium" && (await getSetting("workflow.sodMediumRiskAcceptable")) === "false") {
       return NextResponse.json({ error: "Medium severity risk acceptance is disabled by workflow settings." }, { status: 400 });
     }
-    if (severity === "low" && getSetting("workflow.sodLowRiskAcceptable") === "false") {
+    if (severity === "low" && (await getSetting("workflow.sodLowRiskAcceptable")) === "false") {
       return NextResponse.json({ error: "Low severity risk acceptance is disabled by workflow settings." }, { status: 400 });
     }
 
     // Handle reject action
     if (action === "reject") {
-      db.update(schema.sodConflicts).set({
+      await db.update(schema.sodConflicts).set({
         resolutionStatus: "open",
         resolutionNotes: conflict.resolutionNotes
           ? `${conflict.resolutionNotes}\n\n[REJECTED by ${user.username}]: ${justification ?? "No reason provided"}`
           : `[REJECTED by ${user.username}]: ${justification ?? "No reason provided"}`,
-      }).where(eq(schema.sodConflicts.id, conflictId)).run();
+      }).where(eq(schema.sodConflicts.id, conflictId));
 
-      db.insert(schema.auditLog).values({
+      await db.insert(schema.auditLog).values({
         entityType: "sodConflict",
         entityId: conflictId,
         action: "risk_acceptance_rejected",
         actorEmail: user.email ?? user.username,
         oldValue: JSON.stringify({ resolutionStatus: conflict.resolutionStatus }),
         newValue: JSON.stringify({ resolutionStatus: "open" }),
-      }).run();
+      });
 
       return NextResponse.json({ success: true, action: "rejected" });
     }
@@ -70,22 +70,22 @@ export async function POST(req: NextRequest) {
     // Default: approve risk acceptance
     const finalJustification = justification ?? conflict.resolutionNotes ?? "";
 
-    db.update(schema.sodConflicts).set({
+    await db.update(schema.sodConflicts).set({
       resolutionStatus: "risk_accepted",
       resolvedBy: user.username,
       resolvedAt: new Date().toISOString(),
       resolutionNotes: finalJustification,
-    }).where(eq(schema.sodConflicts.id, conflictId)).run();
+    }).where(eq(schema.sodConflicts.id, conflictId));
 
     // Check if all conflicts for this user are resolved (not open or pending)
-    const remainingUnresolved = db.select().from(schema.sodConflicts)
+    const remainingUnresolved = await db.select().from(schema.sodConflicts)
       .where(and(
         eq(schema.sodConflicts.userId, conflict.userId),
         inArray(schema.sodConflicts.resolutionStatus, ["open", "pending_risk_acceptance"])
-      )).all();
+      ));
 
     if (remainingUnresolved.length === 0) {
-      db.update(schema.userTargetRoleAssignments).set({
+      await db.update(schema.userTargetRoleAssignments).set({
         status: "sod_risk_accepted",
         riskAcceptedBy: user.username,
         riskAcceptedAt: new Date().toISOString(),
@@ -94,17 +94,17 @@ export async function POST(req: NextRequest) {
       }).where(and(
         eq(schema.userTargetRoleAssignments.userId, conflict.userId),
         eq(schema.userTargetRoleAssignments.status, "sod_rejected")
-      )).run();
+      ));
     }
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "sodConflict",
       entityId: conflictId,
       action: "risk_accepted",
       actorEmail: user.email ?? user.username,
       oldValue: JSON.stringify({ resolutionStatus: conflict.resolutionStatus }),
       newValue: JSON.stringify({ resolutionStatus: "risk_accepted", justification: finalJustification }),
-    }).run();
+    });
 
     return NextResponse.json({ success: true, action: "approved" });
   } catch (err: unknown) {

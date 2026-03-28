@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const APPROVER_ROLES = ["system_admin", "admin", "approver"];
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !APPROVER_ROLES.includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -25,8 +25,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "assignmentId required" }, { status: 400 });
     }
 
-    const assignment = db.select().from(schema.userTargetRoleAssignments)
-      .where(eq(schema.userTargetRoleAssignments.id, assignmentId)).get();
+    const [assignment] = await db.select().from(schema.userTargetRoleAssignments)
+      .where(eq(schema.userTargetRoleAssignments.id, assignmentId)).limit(1);
     if (!assignment) {
       return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
     }
@@ -34,21 +34,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `Cannot approve — status is ${assignment.status}, must be ready_for_approval` }, { status: 400 });
     }
 
-    db.update(schema.userTargetRoleAssignments).set({
+    await db.update(schema.userTargetRoleAssignments).set({
       status: "approved",
       approvedBy: user.username,
       approvedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    }).where(eq(schema.userTargetRoleAssignments.id, assignmentId)).run();
+    }).where(eq(schema.userTargetRoleAssignments.id, assignmentId));
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "userTargetRoleAssignment",
       entityId: assignmentId,
       action: "approved",
       actorEmail: user.username,
       oldValue: JSON.stringify({ status: "ready_for_approval" }),
       newValue: JSON.stringify({ status: "approved", approvedBy: user.username }),
-    }).run();
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

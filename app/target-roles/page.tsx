@@ -4,15 +4,15 @@ import { TargetRolesClient } from "./target-roles-client";
 
 export const dynamic = "force-dynamic";
 
-export default function TargetRolesPage() {
-  const roles = getTargetRoles();
-  const currentUser = getSessionUser();
+export default async function TargetRolesPage() {
+  const roles = await getTargetRoles();
+  const currentUser = await getSessionUser();
   const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
 
   // Pre-fetch permission details for all roles (expandable rows need them)
   const rolePermissions: Record<number, { id: number; permissionId: string; permissionName: string | null; permissionType: string | null; riskLevel: string | null }[]> = {};
   for (const role of roles) {
-    rolePermissions[role.id] = getTargetRolePermissions(role.id);
+    rolePermissions[role.id] = await getTargetRolePermissions(role.id);
   }
 
   return (

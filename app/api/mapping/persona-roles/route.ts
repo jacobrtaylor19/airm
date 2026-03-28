@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 // Body: { personaId: number, targetRoleIds: number[] }
 // Replaces all manually-managed mappings for a persona, preserving AI-generated ones that aren't in the list
 export async function PUT(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !(MAPPER_ROLES as readonly string[]).includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -25,11 +25,10 @@ export async function PUT(req: NextRequest) {
     }
 
     // Get existing mappings for this persona
-    const existing = db
+    const existing = await db
       .select()
       .from(schema.personaTargetRoleMappings)
-      .where(eq(schema.personaTargetRoleMappings.personaId, personaId))
-      .all();
+      .where(eq(schema.personaTargetRoleMappings.personaId, personaId));
 
     const existingIds = new Set(existing.map((m) => m.targetRoleId));
     const newIds = new Set(targetRoleIds);
@@ -37,41 +36,38 @@ export async function PUT(req: NextRequest) {
     // Remove roles that were deselected
     for (const mapping of existing) {
       if (!newIds.has(mapping.targetRoleId)) {
-        db.delete(schema.personaTargetRoleMappings)
+        await db.delete(schema.personaTargetRoleMappings)
           .where(
             and(
               eq(schema.personaTargetRoleMappings.personaId, personaId),
               eq(schema.personaTargetRoleMappings.targetRoleId, mapping.targetRoleId)
             )
-          )
-          .run();
+          );
       }
     }
 
     // Add newly selected roles
     for (const roleId of targetRoleIds) {
       if (!existingIds.has(roleId)) {
-        db.insert(schema.personaTargetRoleMappings)
+        await db.insert(schema.personaTargetRoleMappings)
           .values({
             personaId,
             targetRoleId: roleId,
             mappingReason: "manual",
             confidence: "manual",
             isActive: true,
-          })
-          .run();
+          });
       }
     }
 
     // Log action
-    db.insert(schema.auditLog)
+    await db.insert(schema.auditLog)
       .values({
         entityType: "personaTargetRoleMapping",
         entityId: personaId,
         action: "manual_mapping_updated",
         newValue: JSON.stringify({ personaId, targetRoleIds }),
-      })
-      .run();
+      });
 
     return NextResponse.json({ success: true, personaId, roleCount: targetRoleIds.length });
   } catch (err: unknown) {

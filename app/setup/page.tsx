@@ -3,8 +3,11 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { SetupForm } from "./setup-form";
 
-export default function SetupPage() {
-  const hasUsers = db.select().from(schema.appUsers).limit(1).all().length > 0;
+export const dynamic = "force-dynamic";
+
+export default async function SetupPage() {
+  const rows = await db.select().from(schema.appUsers).limit(1);
+  const hasUsers = rows.length > 0;
   if (hasUsers) redirect("/login");
 
   return (

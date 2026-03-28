@@ -40,14 +40,13 @@ export function getSelectedReleaseIds(): number[] | null {
  * Admins/system_admins get null (all releases).
  * Other roles get only their assigned releases.
  */
-export function getUserReleaseIds(appUserId: number, role: string): number[] | null {
+export async function getUserReleaseIds(appUserId: number, role: string): Promise<number[] | null> {
   if (["admin", "system_admin"].includes(role)) return null;
 
-  const assignments = db
+  const assignments = await db
     .select({ releaseId: schema.appUserReleases.releaseId })
     .from(schema.appUserReleases)
-    .where(eq(schema.appUserReleases.appUserId, appUserId))
-    .all();
+    .where(eq(schema.appUserReleases.appUserId, appUserId));
 
   if (assignments.length === 0) {
     // No release assignments — show all releases (backwards compatible)
@@ -61,8 +60,8 @@ export function getUserReleaseIds(appUserId: number, role: string): number[] | n
  * Get the effective release filter — intersection of user's assigned releases
  * and their UI selection. Returns null for "show everything".
  */
-export function getEffectiveReleaseIds(appUserId: number, role: string): number[] | null {
-  const userReleases = getUserReleaseIds(appUserId, role);
+export async function getEffectiveReleaseIds(appUserId: number, role: string): Promise<number[] | null> {
+  const userReleases = await getUserReleaseIds(appUserId, role);
   const selectedReleases = getSelectedReleaseIds();
 
   // Admin with no selection → all
@@ -87,38 +86,36 @@ export function getEffectiveReleaseIds(appUserId: number, role: string): number[
 /**
  * Get all releases visible to an app user.
  */
-export function getVisibleReleases(appUserId: number, role: string) {
-  const userReleaseIds = getUserReleaseIds(appUserId, role);
+export async function getVisibleReleases(appUserId: number, role: string) {
+  const userReleaseIds = await getUserReleaseIds(appUserId, role);
 
   if (userReleaseIds === null) {
     // Admin — see all releases
-    return db.select().from(schema.releases).all();
+    return await db.select().from(schema.releases);
   }
 
   if (userReleaseIds.length === 0) {
     // No assignments — show all (backwards compatible)
-    return db.select().from(schema.releases).all();
+    return await db.select().from(schema.releases);
   }
 
-  return db
+  return await db
     .select()
     .from(schema.releases)
-    .where(inArray(schema.releases.id, userReleaseIds))
-    .all();
+    .where(inArray(schema.releases.id, userReleaseIds));
 }
 
 /**
  * Get user IDs scoped to the given release IDs.
  * Returns null if releaseIds is null (no filter).
  */
-export function getUserIdsForReleases(releaseIds: number[] | null): number[] | null {
+export async function getUserIdsForReleases(releaseIds: number[] | null): Promise<number[] | null> {
   if (releaseIds === null) return null;
 
-  const rows = db
+  const rows = await db
     .select({ userId: schema.releaseUsers.userId })
     .from(schema.releaseUsers)
-    .where(inArray(schema.releaseUsers.releaseId, releaseIds))
-    .all();
+    .where(inArray(schema.releaseUsers.releaseId, releaseIds));
 
   return Array.from(new Set(rows.map((r) => r.userId)));
 }

@@ -6,11 +6,13 @@ import { runTargetRoleMapping } from "@/lib/ai/target-role-mapping";
 import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
+import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
@@ -21,9 +23,9 @@ export async function POST(req: NextRequest) {
   const rateLimited = checkAIRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
-  const scopedUserIds = getUserScope(user);
+  const scopedUserIds = await getUserScope(user);
 
-  const job = db.insert(schema.processingJobs).values({
+  const [job] = await db.insert(schema.processingJobs).values({
     jobType: "target_role_mapping",
     status: "running",
     startedAt: new Date().toISOString(),
@@ -32,34 +34,36 @@ export async function POST(req: NextRequest) {
       triggeredByRole: user.role,
       scopedUserIds: scopedUserIds,
     }),
-  }).returning().get();
+  }).returning();
 
   // Fire-and-forget: run in background so navigation doesn't kill it
-  runTargetRoleMapping(job.id)
-    .then((result) => {
-      db.update(schema.processingJobs).set({
+  const promise = runTargetRoleMapping(job.id)
+    .then(async (result) => {
+      await db.update(schema.processingJobs).set({
         status: "completed",
         totalRecords: result.personasMapped,
         processed: result.personasMapped,
         completedAt: new Date().toISOString(),
-      }).where(eq(schema.processingJobs.id, job.id)).run();
+      }).where(eq(schema.processingJobs.id, job.id));
 
-      db.insert(schema.auditLog).values({
+      await db.insert(schema.auditLog).values({
         entityType: "processingJob",
         entityId: job.id,
         action: "target_role_mapping_completed",
         newValue: JSON.stringify(result),
-      }).run();
+      });
     })
-    .catch((err: unknown) => {
+    .catch(async (err: unknown) => {
       const message = err instanceof Error ? err.message : String(err);
       console.error(`[target-role-mapping] Job ${job.id} failed:`, message);
-      db.update(schema.processingJobs).set({
+      await db.update(schema.processingJobs).set({
         status: "failed",
         errorLog: message,
         completedAt: new Date().toISOString(),
-      }).where(eq(schema.processingJobs.id, job.id)).run();
+      }).where(eq(schema.processingJobs.id, job.id));
     });
+
+  waitUntil(promise);
 
   return NextResponse.json({ jobId: job.id, status: "running" });
 }

@@ -7,11 +7,13 @@ import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { notifyUsersWithRoles } from "@/lib/notifications";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
+import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
@@ -23,9 +25,9 @@ export async function POST(req: NextRequest) {
   if (rateLimited) return rateLimited;
 
   // Capture user scope at enqueue time for job isolation
-  const scopedUserIds = getUserScope(user);
+  const scopedUserIds = await getUserScope(user);
 
-  const job = db.insert(schema.processingJobs).values({
+  const [job] = await db.insert(schema.processingJobs).values({
     jobType: "persona_generation",
     status: "running",
     startedAt: new Date().toISOString(),
@@ -34,27 +36,26 @@ export async function POST(req: NextRequest) {
       triggeredByRole: user.role,
       scopedUserIds: scopedUserIds,
     }),
-  }).returning().get();
+  }).returning();
 
   // Fire-and-forget: run generation in background, return job ID immediately.
-  // This allows the user to navigate away without killing the process.
-  runPersonaGeneration(job.id)
-    .then((result) => {
-      db.update(schema.processingJobs).set({
+  const promise = runPersonaGeneration(job.id)
+    .then(async (result) => {
+      await db.update(schema.processingJobs).set({
         status: "completed",
         totalRecords: result.usersAssigned,
         processed: result.usersAssigned,
         completedAt: new Date().toISOString(),
-      }).where(eq(schema.processingJobs.id, job.id)).run();
+      }).where(eq(schema.processingJobs.id, job.id));
 
-      db.insert(schema.auditLog).values({
+      await db.insert(schema.auditLog).values({
         entityType: "processingJob",
         entityId: job.id,
         action: "persona_generation_completed",
         newValue: JSON.stringify(result),
-      }).run();
+      });
 
-      notifyUsersWithRoles({
+      await notifyUsersWithRoles({
         roles: ["coordinator", "admin", "system_admin"],
         notificationType: "workflow_event",
         subject: "Persona generation complete",
@@ -62,16 +63,18 @@ export async function POST(req: NextRequest) {
         actionUrl: "/personas",
       });
     })
-    .catch((err: unknown) => {
+    .catch(async (err: unknown) => {
       // Store the REAL error in the DB for debugging (not sanitized)
       const message = err instanceof Error ? err.message : String(err);
       console.error(`[persona-generation] Job ${job.id} failed:`, message);
-      db.update(schema.processingJobs).set({
+      await db.update(schema.processingJobs).set({
         status: "failed",
         errorLog: message,
         completedAt: new Date().toISOString(),
-      }).where(eq(schema.processingJobs.id, job.id)).run();
+      }).where(eq(schema.processingJobs.id, job.id));
     });
+
+  waitUntil(promise);
 
   // Return immediately — client polls /api/jobs/[id] for status
   return NextResponse.json({ jobId: job.id, status: "running" });

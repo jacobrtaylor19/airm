@@ -6,14 +6,14 @@ export const dynamic = "force-dynamic";
 
 /** Public settings endpoint — returns non-sensitive project info for any authenticated user */
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   return NextResponse.json({
-    projectName: getProjectName(),
-    sourceSystem: getSourceSystemName(),
-    targetSystem: getTargetSystemName(),
+    projectName: await getProjectName(),
+    sourceSystem: await getSourceSystemName(),
+    targetSystem: await getTargetSystemName(),
   });
 }

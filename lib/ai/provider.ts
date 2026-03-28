@@ -145,10 +145,10 @@ export class ManualProvider implements AIProvider {
 
 // ─── Factory: getAIProvider() ───
 // Reads provider/key from database settings, falls back to env vars.
-export function getAIProvider(): AIProvider {
-  const provider = getSetting("ai.provider") || process.env.AI_PROVIDER || "claude";
-  const apiKey = getSetting("ai.apiKey") || "";
-  const model = getSetting("ai.model") || "";
+export async function getAIProvider(): Promise<AIProvider> {
+  const provider = (await getSetting("ai.provider")) || process.env.AI_PROVIDER || "claude";
+  const apiKey = (await getSetting("ai.apiKey")) || "";
+  const model = (await getSetting("ai.model")) || "";
 
   switch (provider.toLowerCase()) {
     case "claude":
@@ -165,16 +165,16 @@ export function getAIProvider(): AIProvider {
 
     case "ollama": {
       const ollamaModel = model || process.env.OLLAMA_MODEL || "llama3";
-      const ollamaUrl = getSetting("ai.ollamaUrl") || process.env.OLLAMA_URL || "http://localhost:11434";
+      const ollamaUrl = (await getSetting("ai.ollamaUrl")) || process.env.OLLAMA_URL || "http://localhost:11434";
       return new OllamaProvider(ollamaModel, ollamaUrl);
     }
 
     case "azure":
     case "azure-openai":
     case "azure_openai": {
-      const azureEndpoint = getSetting("ai.azureEndpoint") || process.env.AZURE_OPENAI_ENDPOINT || "";
+      const azureEndpoint = (await getSetting("ai.azureEndpoint")) || process.env.AZURE_OPENAI_ENDPOINT || "";
       const azureKey = apiKey || process.env.AZURE_OPENAI_API_KEY || "";
-      const azureDeployment = getSetting("ai.azureDeployment") || process.env.AZURE_OPENAI_DEPLOYMENT || "";
+      const azureDeployment = (await getSetting("ai.azureDeployment")) || process.env.AZURE_OPENAI_DEPLOYMENT || "";
       if (!azureEndpoint || !azureKey || !azureDeployment) {
         throw new Error(
           "Azure OpenAI configuration incomplete. Required: endpoint URL, API key, and deployment name. " +

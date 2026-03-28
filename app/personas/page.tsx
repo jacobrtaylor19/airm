@@ -4,10 +4,10 @@ import { PersonasPageClient } from "./personas-client";
 
 export const dynamic = "force-dynamic";
 
-export default function PersonasPage() {
-  const personas = getPersonas();
-  const groups = getConsolidatedGroups();
-  const currentUser = getSessionUser();
+export default async function PersonasPage() {
+  const personas = await getPersonas();
+  const groups = await getConsolidatedGroups();
+  const currentUser = await getSessionUser();
   const userRole = currentUser?.role ?? "viewer";
 
   return (

@@ -20,13 +20,13 @@ export const metadata: Metadata = {
   description: "Intelligent role mapping for enterprise migrations",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   validateEnv();
-  const user = getSessionUser();
+  const user = await getSessionUser();
 
   // If no user (login/setup/public pages), render with minimal nav
   if (!user) {
@@ -50,10 +50,10 @@ export default function RootLayout({
     );
   }
 
-  const releases = getReleasesForAppUser(user);
+  const releases = await getReleasesForAppUser(user);
   const cookieReleaseId = parseInt(cookies().get("airm_release_id")?.value ?? "") || null;
   const selectedReleaseId = releases.some((r) => r.id === cookieReleaseId) ? cookieReleaseId : null;
-  const unreadNotificationCount = getUnreadNotificationCount(user.id);
+  const unreadNotificationCount = await getUnreadNotificationCount(user.id);
 
   return (
     <html lang="en">

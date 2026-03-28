@@ -1,12 +1,12 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, real, serial, boolean } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // ─────────────────────────────────────────────
 // ORG UNITS (organizational hierarchy L1/L2/L3)
 // ─────────────────────────────────────────────
 
-export const orgUnits = sqliteTable("org_units", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const orgUnits = pgTable("org_units", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
   level: text("level").notNull(), // "L1", "L2", "L3"
   parentId: integer("parent_id"),
@@ -17,8 +17,8 @@ export const orgUnits = sqliteTable("org_units", {
 // USERS (source system users, normalized)
 // ─────────────────────────────────────────────
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   sourceUserId: text("source_user_id").notNull().unique(),
   displayName: text("display_name").notNull(),
   email: text("email"),
@@ -37,8 +37,8 @@ export const users = sqliteTable("users", {
 // SOURCE ROLES (legacy system roles)
 // ─────────────────────────────────────────────
 
-export const sourceRoles = sqliteTable("source_roles", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const sourceRoles = pgTable("source_roles", {
+  id: serial("id").primaryKey(),
   roleId: text("role_id").notNull().unique(),
   roleName: text("role_name").notNull(),
   description: text("description"),
@@ -53,8 +53,8 @@ export const sourceRoles = sqliteTable("source_roles", {
 // SOURCE PERMISSIONS (T-codes, functions, etc.)
 // ─────────────────────────────────────────────
 
-export const sourcePermissions = sqliteTable("source_permissions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const sourcePermissions = pgTable("source_permissions", {
+  id: serial("id").primaryKey(),
   permissionId: text("permission_id").notNull().unique(),
   permissionName: text("permission_name"),
   description: text("description"),
@@ -67,8 +67,8 @@ export const sourcePermissions = sqliteTable("source_permissions", {
 // SOURCE ROLE ↔ PERMISSION (junction)
 // ─────────────────────────────────────────────
 
-export const sourceRolePermissions = sqliteTable("source_role_permissions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const sourceRolePermissions = pgTable("source_role_permissions", {
+  id: serial("id").primaryKey(),
   sourceRoleId: integer("source_role_id").notNull().references(() => sourceRoles.id, { onDelete: "cascade" }),
   sourcePermissionId: integer("source_permission_id").notNull().references(() => sourcePermissions.id, { onDelete: "cascade" }),
 });
@@ -77,8 +77,8 @@ export const sourceRolePermissions = sqliteTable("source_role_permissions", {
 // USER ↔ SOURCE ROLE ASSIGNMENTS
 // ─────────────────────────────────────────────
 
-export const userSourceRoleAssignments = sqliteTable("user_source_role_assignments", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const userSourceRoleAssignments = pgTable("user_source_role_assignments", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   sourceRoleId: integer("source_role_id").notNull().references(() => sourceRoles.id, { onDelete: "cascade" }),
   assignedDate: text("assigned_date"),
@@ -88,8 +88,8 @@ export const userSourceRoleAssignments = sqliteTable("user_source_role_assignmen
 // CONSOLIDATED GROUPS (high-level security groups)
 // ─────────────────────────────────────────────
 
-export const consolidatedGroups = sqliteTable("consolidated_groups", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const consolidatedGroups = pgTable("consolidated_groups", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
   accessLevel: text("access_level"),
@@ -102,14 +102,14 @@ export const consolidatedGroups = sqliteTable("consolidated_groups", {
 // PERSONAS (security personas — AI-generated or manually uploaded)
 // ─────────────────────────────────────────────
 
-export const personas = sqliteTable("personas", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const personas = pgTable("personas", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description"),
   businessFunction: text("business_function"),
   consolidatedGroupId: integer("consolidated_group_id").references(() => consolidatedGroups.id),
   source: text("source").notNull().default("ai"),
-  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  isActive: boolean("is_active").default(true),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
@@ -118,20 +118,20 @@ export const personas = sqliteTable("personas", {
 // PERSONA ↔ SOURCE PERMISSION (characteristic permissions)
 // ─────────────────────────────────────────────
 
-export const personaSourcePermissions = sqliteTable("persona_source_permissions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const personaSourcePermissions = pgTable("persona_source_permissions", {
+  id: serial("id").primaryKey(),
   personaId: integer("persona_id").notNull().references(() => personas.id, { onDelete: "cascade" }),
   sourcePermissionId: integer("source_permission_id").notNull().references(() => sourcePermissions.id, { onDelete: "cascade" }),
   weight: real("weight").default(1.0),
-  isRequired: integer("is_required", { mode: "boolean" }).default(false),
+  isRequired: boolean("is_required").default(false),
 });
 
 // ─────────────────────────────────────────────
 // USER-PERSONA ASSIGNMENTS (AI output or manual)
 // ─────────────────────────────────────────────
 
-export const userPersonaAssignments = sqliteTable("user_persona_assignments", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const userPersonaAssignments = pgTable("user_persona_assignments", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   personaId: integer("persona_id").references(() => personas.id),
   consolidatedGroupId: integer("consolidated_group_id").references(() => consolidatedGroups.id),
@@ -148,8 +148,8 @@ export const userPersonaAssignments = sqliteTable("user_persona_assignments", {
 // TARGET ROLES (future system roles)
 // ─────────────────────────────────────────────
 
-export const targetRoles = sqliteTable("target_roles", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const targetRoles = pgTable("target_roles", {
+  id: serial("id").primaryKey(),
   roleId: text("role_id").notNull().unique(),
   roleName: text("role_name").notNull(),
   description: text("description"),
@@ -164,8 +164,8 @@ export const targetRoles = sqliteTable("target_roles", {
 // TARGET PERMISSIONS (future system permissions / Fiori apps)
 // ─────────────────────────────────────────────
 
-export const targetPermissions = sqliteTable("target_permissions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const targetPermissions = pgTable("target_permissions", {
+  id: serial("id").primaryKey(),
   permissionId: text("permission_id").notNull().unique(),
   permissionName: text("permission_name"),
   description: text("description"),
@@ -178,8 +178,8 @@ export const targetPermissions = sqliteTable("target_permissions", {
 // TARGET TASK ROLES (Tier 2 — focused permission bundles)
 // ─────────────────────────────────────────────
 
-export const targetTaskRoles = sqliteTable("target_task_roles", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const targetTaskRoles = pgTable("target_task_roles", {
+  id: serial("id").primaryKey(),
   taskRoleId: text("task_role_id").notNull().unique(),
   taskRoleName: text("task_role_name").notNull(),
   description: text("description"),
@@ -192,8 +192,8 @@ export const targetTaskRoles = sqliteTable("target_task_roles", {
 // TARGET TASK ROLE ↔ PERMISSION (Tier 2 → Tier 1)
 // ─────────────────────────────────────────────
 
-export const targetTaskRolePermissions = sqliteTable("target_task_role_permissions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const targetTaskRolePermissions = pgTable("target_task_role_permissions", {
+  id: serial("id").primaryKey(),
   targetTaskRoleId: integer("target_task_role_id").notNull().references(() => targetTaskRoles.id, { onDelete: "cascade" }),
   targetPermissionId: integer("target_permission_id").notNull().references(() => targetPermissions.id, { onDelete: "cascade" }),
 });
@@ -202,8 +202,8 @@ export const targetTaskRolePermissions = sqliteTable("target_task_role_permissio
 // TARGET SECURITY ROLE ↔ TASK ROLE (Tier 3 → Tier 2)
 // ─────────────────────────────────────────────
 
-export const targetSecurityRoleTasks = sqliteTable("target_security_role_tasks", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const targetSecurityRoleTasks = pgTable("target_security_role_tasks", {
+  id: serial("id").primaryKey(),
   targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
   targetTaskRoleId: integer("target_task_role_id").notNull().references(() => targetTaskRoles.id, { onDelete: "cascade" }),
 });
@@ -212,8 +212,8 @@ export const targetSecurityRoleTasks = sqliteTable("target_security_role_tasks",
 // TARGET ROLE ↔ PERMISSION (direct, Tier 3 → Tier 1)
 // ─────────────────────────────────────────────
 
-export const targetRolePermissions = sqliteTable("target_role_permissions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const targetRolePermissions = pgTable("target_role_permissions", {
+  id: serial("id").primaryKey(),
   targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
   targetPermissionId: integer("target_permission_id").notNull().references(() => targetPermissions.id, { onDelete: "cascade" }),
 });
@@ -222,15 +222,15 @@ export const targetRolePermissions = sqliteTable("target_role_permissions", {
 // PERSONA ↔ TARGET ROLE MAPPINGS
 // ─────────────────────────────────────────────
 
-export const personaTargetRoleMappings = sqliteTable("persona_target_role_mappings", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const personaTargetRoleMappings = pgTable("persona_target_role_mappings", {
+  id: serial("id").primaryKey(),
   personaId: integer("persona_id").notNull().references(() => personas.id, { onDelete: "cascade" }),
   targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
   mappingReason: text("mapping_reason"),
   coveragePercent: real("coverage_percent"),
   excessPercent: real("excess_percent"),
   confidence: text("confidence"),
-  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  isActive: boolean("is_active").default(true),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
@@ -238,8 +238,8 @@ export const personaTargetRoleMappings = sqliteTable("persona_target_role_mappin
 // RELEASES (top-level migration wave/project)
 // ─────────────────────────────────────────────
 
-export const releases = sqliteTable("releases", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const releases = pgTable("releases", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),                                     // e.g. "Wave 1 — Finance Go-Live"
   description: text("description"),
   status: text("status").notNull().default("planning"),              // planning | in_progress | approved | completed | archived
@@ -247,7 +247,10 @@ export const releases = sqliteTable("releases", {
   targetSystem: text("target_system"),                               // SAP S/4HANA | Oracle Cloud | Workday | etc.
   targetDate: text("target_date"),                                   // ISO date string
   completedDate: text("completed_date"),
-  isActive: integer("is_active", { mode: "boolean" }).default(true), // the currently "open" wave new assignments belong to
+  mappingDeadline: text("mapping_deadline"),                          // ISO date — when mapping must be complete
+  reviewDeadline: text("review_deadline"),                            // ISO date — when SOD review must be complete
+  approvalDeadline: text("approval_deadline"),                        // ISO date — when approvals must be complete
+  isActive: boolean("is_active").default(true), // the currently "open" wave new assignments belong to
   createdBy: text("created_by"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -258,8 +261,8 @@ export const releases = sqliteTable("releases", {
 // A user may be in-scope for multiple releases
 // ─────────────────────────────────────────────
 
-export const releaseUsers = sqliteTable("release_users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const releaseUsers = pgTable("release_users", {
+  id: serial("id").primaryKey(),
   releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -271,8 +274,8 @@ export const releaseUsers = sqliteTable("release_users", {
 // A business unit / department may span multiple releases
 // ─────────────────────────────────────────────
 
-export const releaseOrgUnits = sqliteTable("release_org_units", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const releaseOrgUnits = pgTable("release_org_units", {
+  id: serial("id").primaryKey(),
   releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
   orgUnitId: integer("org_unit_id").notNull().references(() => orgUnits.id, { onDelete: "cascade" }),
   addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -284,8 +287,8 @@ export const releaseOrgUnits = sqliteTable("release_org_units", {
 // A source role can apply to one or more releases
 // ─────────────────────────────────────────────
 
-export const releaseSourceRoles = sqliteTable("release_source_roles", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const releaseSourceRoles = pgTable("release_source_roles", {
+  id: serial("id").primaryKey(),
   releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
   sourceRoleId: integer("source_role_id").notNull().references(() => sourceRoles.id, { onDelete: "cascade" }),
   addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -296,8 +299,8 @@ export const releaseSourceRoles = sqliteTable("release_source_roles", {
 // A target role can apply to one or more releases
 // ─────────────────────────────────────────────
 
-export const releaseTargetRoles = sqliteTable("release_target_roles", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const releaseTargetRoles = pgTable("release_target_roles", {
+  id: serial("id").primaryKey(),
   releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
   targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
   addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -308,8 +311,8 @@ export const releaseTargetRoles = sqliteTable("release_target_roles", {
 // A SOD rule can apply to one or more releases
 // ─────────────────────────────────────────────
 
-export const releaseSodRules = sqliteTable("release_sod_rules", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const releaseSodRules = pgTable("release_sod_rules", {
+  id: serial("id").primaryKey(),
   releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
   sodRuleId: integer("sod_rule_id").notNull().references(() => sodRules.id, { onDelete: "cascade" }),
   addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -320,8 +323,8 @@ export const releaseSodRules = sqliteTable("release_sod_rules", {
 // Which releases each platform user (mapper/approver/coordinator) can see
 // ─────────────────────────────────────────────
 
-export const appUserReleases = sqliteTable("app_user_releases", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const appUserReleases = pgTable("app_user_releases", {
+  id: serial("id").primaryKey(),
   appUserId: integer("app_user_id").notNull().references(() => appUsers.id, { onDelete: "cascade" }),
   releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
   assignedAt: text("assigned_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -331,8 +334,8 @@ export const appUserReleases = sqliteTable("app_user_releases", {
 // USER ↔ TARGET ROLE ASSIGNMENTS
 // ─────────────────────────────────────────────
 
-export const userTargetRoleAssignments = sqliteTable("user_target_role_assignments", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const userTargetRoleAssignments = pgTable("user_target_role_assignments", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id),
   releaseId: integer("release_id").references(() => releases.id),   // null = legacy / pre-release tracking
@@ -357,8 +360,8 @@ export const userTargetRoleAssignments = sqliteTable("user_target_role_assignmen
 // SOD RULES (segregation of duties ruleset)
 // ─────────────────────────────────────────────
 
-export const sodRules = sqliteTable("sod_rules", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const sodRules = pgTable("sod_rules", {
+  id: serial("id").primaryKey(),
   ruleId: text("rule_id").notNull().unique(),
   ruleName: text("rule_name").notNull(),
   description: text("description"),
@@ -366,7 +369,7 @@ export const sodRules = sqliteTable("sod_rules", {
   permissionB: text("permission_b").notNull(),
   severity: text("severity").notNull().default("medium"),
   riskDescription: text("risk_description"),
-  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  isActive: boolean("is_active").default(true),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
@@ -374,8 +377,8 @@ export const sodRules = sqliteTable("sod_rules", {
 // SOD CONFLICTS (detected violations)
 // ─────────────────────────────────────────────
 
-export const sodConflicts = sqliteTable("sod_conflicts", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const sodConflicts = pgTable("sod_conflicts", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   sodRuleId: integer("sod_rule_id").notNull().references(() => sodRules.id, { onDelete: "cascade" }),
   roleIdA: integer("role_id_a").references(() => targetRoles.id),
@@ -397,8 +400,8 @@ export const sodConflicts = sqliteTable("sod_conflicts", {
 // NOTIFICATIONS (demo — no email sent)
 // ─────────────────────────────────────────────
 
-export const notifications = sqliteTable("notifications", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
   fromUserId: integer("from_user_id").notNull().references(() => appUsers.id),
   toUserId: integer("to_user_id").notNull().references(() => appUsers.id),
   notificationType: text("notification_type").notNull().default("reminder"), // reminder | escalation | info
@@ -416,8 +419,8 @@ export const notifications = sqliteTable("notifications", {
 // LEAST ACCESS EXCEPTIONS
 // ─────────────────────────────────────────────
 
-export const leastAccessExceptions = sqliteTable("least_access_exceptions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const leastAccessExceptions = pgTable("least_access_exceptions", {
+  id: serial("id").primaryKey(),
   personaId: integer("persona_id").notNull().references(() => personas.id, { onDelete: "cascade" }),
   targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
   excessPercent: real("excess_percent"),
@@ -434,8 +437,8 @@ export const leastAccessExceptions = sqliteTable("least_access_exceptions", {
 // PERMISSION GAPS
 // ─────────────────────────────────────────────
 
-export const permissionGaps = sqliteTable("permission_gaps", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const permissionGaps = pgTable("permission_gaps", {
+  id: serial("id").primaryKey(),
   personaId: integer("persona_id").notNull().references(() => personas.id, { onDelete: "cascade" }),
   sourcePermissionId: integer("source_permission_id").notNull().references(() => sourcePermissions.id),
   gapType: text("gap_type").notNull().default("no_coverage"),
@@ -447,8 +450,8 @@ export const permissionGaps = sqliteTable("permission_gaps", {
 // PROCESSING JOBS
 // ─────────────────────────────────────────────
 
-export const processingJobs = sqliteTable("processing_jobs", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const processingJobs = pgTable("processing_jobs", {
+  id: serial("id").primaryKey(),
   jobType: text("job_type").notNull(),
   status: text("status").notNull().default("queued"),
   totalRecords: integer("total_records").default(0),
@@ -465,8 +468,8 @@ export const processingJobs = sqliteTable("processing_jobs", {
 // AUDIT LOG
 // ─────────────────────────────────────────────
 
-export const auditLog = sqliteTable("audit_log", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const auditLog = pgTable("audit_log", {
+  id: serial("id").primaryKey(),
   entityType: text("entity_type").notNull(),
   entityId: integer("entity_id").notNull(),
   action: text("action").notNull(),
@@ -485,8 +488,8 @@ export const auditLog = sqliteTable("audit_log", {
 // this table + the pending_design_review status are the plumbing.
 // ─────────────────────────────────────────────
 
-export const securityDesignChanges = sqliteTable("security_design_changes", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const securityDesignChanges = pgTable("security_design_changes", {
+  id: serial("id").primaryKey(),
   targetRoleId: integer("target_role_id").notNull().references(() => targetRoles.id, { onDelete: "cascade" }),
   changeType: text("change_type").notNull(), // "permission_added" | "permission_removed" | "role_modified" | "role_deleted"
   changeDescription: text("change_description"),
@@ -502,8 +505,8 @@ export const securityDesignChanges = sqliteTable("security_design_changes", {
 // SYSTEM SETTINGS (key-value configuration store)
 // ─────────────────────────────────────────────
 
-export const systemSettings = sqliteTable("system_settings", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const systemSettings = pgTable("system_settings", {
+  id: serial("id").primaryKey(),
   key: text("key").notNull().unique(),
   value: text("value").notNull(),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
@@ -514,18 +517,19 @@ export const systemSettings = sqliteTable("system_settings", {
 // APP USERS (tool users — mappers, approvers, admins)
 // ─────────────────────────────────────────────
 
-export const appUsers = sqliteTable("app_users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const appUsers = pgTable("app_users", {
+  id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
   email: text("email"),
-  passwordHash: text("password_hash").notNull(),
+  passwordHash: text("password_hash").notNull().default(""),
   role: text("role").notNull().default("viewer"),
   assignedOrgUnitId: integer("assigned_org_unit_id"),
-  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  isActive: boolean("is_active").default(true),
   failedLoginAttempts: integer("failed_login_attempts").default(0),
   lockedUntil: integer("locked_until"),
   demoEnvironment: text("demo_environment"),
+  supabaseAuthId: text("supabase_auth_id").unique(),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
@@ -534,8 +538,8 @@ export const appUsers = sqliteTable("app_users", {
 // APP USER SESSIONS
 // ─────────────────────────────────────────────
 
-export const appUserSessions = sqliteTable("app_user_sessions", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const appUserSessions = pgTable("app_user_sessions", {
+  id: serial("id").primaryKey(),
   sessionToken: text("session_token").notNull().unique(),
   appUserId: integer("app_user_id").notNull().references(() => appUsers.id, { onDelete: "cascade" }),
   expiresAt: text("expires_at").notNull(),
@@ -546,8 +550,8 @@ export const appUserSessions = sqliteTable("app_user_sessions", {
 // WORK ASSIGNMENTS (mapper/approver → department/user)
 // ─────────────────────────────────────────────
 
-export const workAssignments = sqliteTable("work_assignments", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const workAssignments = pgTable("work_assignments", {
+  id: serial("id").primaryKey(),
   appUserId: integer("app_user_id").notNull().references(() => appUsers.id, { onDelete: "cascade" }),
   assignmentType: text("assignment_type").notNull(),
   scopeType: text("scope_type").notNull(),
@@ -559,8 +563,8 @@ export const workAssignments = sqliteTable("work_assignments", {
 // REVIEW LINKS (shareable read-only external reviewer snapshots)
 // ─────────────────────────────────────────────
 
-export const reviewLinks = sqliteTable("review_links", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const reviewLinks = pgTable("review_links", {
+  id: serial("id").primaryKey(),
   token: text("token").notNull().unique(),
   createdBy: integer("created_by").notNull().references(() => appUsers.id),
   expiresAt: text("expires_at").notNull(),
@@ -572,8 +576,8 @@ export const reviewLinks = sqliteTable("review_links", {
 // PERSONA CONFIRMATIONS (gate before target role mapping)
 // ─────────────────────────────────────────────
 
-export const personaConfirmations = sqliteTable("persona_confirmations", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const personaConfirmations = pgTable("persona_confirmations", {
+  id: serial("id").primaryKey(),
   orgUnitId: integer("org_unit_id").notNull().references(() => orgUnits.id, { onDelete: "cascade" }),
   confirmedAt: text("confirmed_at"),
   confirmedBy: integer("confirmed_by").references(() => appUsers.id),

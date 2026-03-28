@@ -3,8 +3,8 @@ import { ValidationDashboard } from "./validation-dashboard";
 
 export const dynamic = "force-dynamic";
 
-export default function ValidationPage() {
-  requireAuth();
+export default async function ValidationPage() {
+  await requireAuth();
 
   return (
     <div className="space-y-4">

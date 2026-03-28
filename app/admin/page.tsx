@@ -3,8 +3,8 @@ import { AdminConsoleClient } from "./admin-console-client";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminConsolePage() {
-  const user = requireRole(["system_admin"]);
+export default async function AdminConsolePage() {
+  const user = await requireRole(["system_admin"]);
 
   return (
     <div className="space-y-4">

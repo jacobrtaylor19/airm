@@ -8,15 +8,15 @@ export const dynamic = "force-dynamic";
 
 const ADMIN_ROLES = ["admin", "system_admin"];
 
-export default function ReleasesPage() {
-  const currentUser = requireAuth();
+export default async function ReleasesPage() {
+  const currentUser = await requireAuth();
   const isAdmin = ADMIN_ROLES.includes(currentUser.role);
 
   // Get all releases + their org unit scope memberships
-  const allReleases = db.select().from(schema.releases).orderBy(schema.releases.createdAt).all();
-  const allReleaseOrgUnits = db.select().from(schema.releaseOrgUnits).all();
-  const allReleaseUsers = db.select().from(schema.releaseUsers).all();
-  const allAssignments = db.select().from(schema.userTargetRoleAssignments).all();
+  const allReleases = await db.select().from(schema.releases).orderBy(schema.releases.createdAt);
+  const allReleaseOrgUnits = await db.select().from(schema.releaseOrgUnits);
+  const allReleaseUsers = await db.select().from(schema.releaseUsers);
+  const allAssignments = await db.select().from(schema.userTargetRoleAssignments);
 
   // For non-admins: filter releases to those that include their assigned org unit
   let visibleReleases = allReleases;
@@ -28,11 +28,10 @@ export default function ReleasesPage() {
         .map((ru) => ru.releaseId)
     );
     // Also check work assignments for additional org unit scope
-    const workAssignments = db
+    const workAssignments = await db
       .select()
       .from(schema.workAssignments)
-      .where(eq(schema.workAssignments.appUserId, currentUser.id))
-      .all();
+      .where(eq(schema.workAssignments.appUserId, currentUser.id));
     for (const wa of workAssignments) {
       if (wa.scopeType === "org_unit" && wa.scopeValue) {
         const orgUnitId = parseInt(wa.scopeValue);

@@ -7,7 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
@@ -41,18 +41,18 @@ export async function POST(req: Request) {
   }
 
   // Check org unit exists
-  const orgUnit = db
+  const [orgUnit] = await db
     .select()
     .from(schema.orgUnits)
     .where(eq(schema.orgUnits.id, orgUnitId))
-    .get();
+    .limit(1);
 
   if (!orgUnit) {
     return NextResponse.json({ error: "Org unit not found" }, { status: 404 });
   }
 
   // Check if already confirmed (not reset)
-  const existing = db
+  const [existingConfirmation] = await db
     .select()
     .from(schema.personaConfirmations)
     .where(
@@ -61,33 +61,31 @@ export async function POST(req: Request) {
         isNull(schema.personaConfirmations.resetAt)
       )
     )
-    .get();
+    .limit(1);
 
-  if (existing) {
+  if (existingConfirmation) {
     return NextResponse.json({ error: "Personas already confirmed for this org unit" }, { status: 409 });
   }
 
   const now = new Date().toISOString();
-  const row = db
+  const [row] = await db
     .insert(schema.personaConfirmations)
     .values({
       orgUnitId,
       confirmedAt: now,
       confirmedBy: user.id,
     })
-    .returning()
-    .get();
+    .returning();
 
   // Audit log
-  db.insert(schema.auditLog)
+  await db.insert(schema.auditLog)
     .values({
       entityType: "personaConfirmation",
       entityId: row.id,
       action: "persona_confirmed",
       newValue: JSON.stringify({ orgUnitId, confirmedBy: user.id }),
       actorEmail: user.email ?? user.username,
-    })
-    .run();
+    });
 
   return NextResponse.json({ success: true, confirmation: row });
 }

@@ -6,10 +6,10 @@ import { InboxClient } from "./inbox-client";
 
 export const dynamic = "force-dynamic";
 
-export default function InboxPage() {
-  const user = requireAuth();
+export default async function InboxPage() {
+  const user = await requireAuth();
 
-  const notifications = db
+  const notifications = await db
     .select({
       id: schema.notifications.id,
       fromUserId: schema.notifications.fromUserId,
@@ -26,8 +26,7 @@ export default function InboxPage() {
     .from(schema.notifications)
     .innerJoin(schema.appUsers, eq(schema.appUsers.id, schema.notifications.fromUserId))
     .where(eq(schema.notifications.toUserId, user.id))
-    .orderBy(desc(schema.notifications.createdAt))
-    .all();
+    .orderBy(desc(schema.notifications.createdAt));
 
   return (
     <div className="space-y-4">

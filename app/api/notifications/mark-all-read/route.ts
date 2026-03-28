@@ -8,20 +8,19 @@ export const dynamic = "force-dynamic";
 
 // PATCH — mark all notifications for the current user as read
 export async function PATCH() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  db.update(schema.notifications)
+  await db.update(schema.notifications)
     .set({ status: "read", readAt: new Date().toISOString() })
     .where(
       and(
         eq(schema.notifications.toUserId, user.id),
         isNull(schema.notifications.readAt)
       )
-    )
-    .run();
+    );
 
   return NextResponse.json({ ok: true });
 }

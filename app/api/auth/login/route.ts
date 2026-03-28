@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { verifyPassword, createSession } from "@/lib/auth";
-import { checkLoginRate } from "@/lib/rate-limit-middleware";
-import { validateBody } from "@/lib/validation";
-import { loginSchema } from "@/lib/validation/auth";
 import { safeError } from "@/lib/errors";
-import { AUTH } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 
@@ -16,113 +12,89 @@ function getClientIP(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
-  // Rate limit: 5 login attempts per 15 min per IP
-  const rateLimited = checkLoginRate(req);
-  if (rateLimited) return rateLimited;
-
   try {
     const body = await req.json();
+    const { username, password } = body;
     const ip = getClientIP(req);
 
-    const validation = validateBody(loginSchema, body);
-    if (!validation.success) return validation.response;
-    const { username, password } = validation.data;
+    if (!username || !password) {
+      return NextResponse.json({ error: "Username and password are required" }, { status: 400 });
+    }
 
-    const user = db.select().from(schema.appUsers)
+    // Look up the app user to get their email for Supabase Auth
+    const [appUser] = await db
+      .select()
+      .from(schema.appUsers)
       .where(and(eq(schema.appUsers.username, username), eq(schema.appUsers.isActive, true)))
-      .get();
+      .limit(1);
 
-    if (!user) {
-      db.insert(schema.auditLog).values({
+    if (!appUser || !appUser.supabaseAuthId) {
+      await db.insert(schema.auditLog).values({
         entityType: "auth",
         entityId: 0,
         action: "login_failure",
         newValue: JSON.stringify({ username, ip, reason: "user_not_found" }),
         actorEmail: username,
-      }).run();
+      });
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    // Check account lockout
-    if (user.lockedUntil && user.lockedUntil > Date.now()) {
-      const unlockTime = new Date(user.lockedUntil).toISOString();
-      db.insert(schema.auditLog).values({
-        entityType: "auth",
-        entityId: user.id,
-        action: "login_locked",
-        newValue: JSON.stringify({ ip, lockedUntil: unlockTime }),
-        actorEmail: user.email || user.username,
-      }).run();
-      const minutesLeft = Math.ceil((user.lockedUntil - Date.now()) / 60000);
-      return NextResponse.json(
-        { error: `Account locked. Please try again in ${minutesLeft} minute${minutesLeft !== 1 ? "s" : ""} or contact your administrator.` },
-        { status: 429 }
-      );
-    }
+    // Use the email associated with the Supabase Auth account
+    const email = appUser.email || `${username}@provisum.demo`;
 
-    const valid = await verifyPassword(password, user.passwordHash);
-    if (!valid) {
-      const attempts = (user.failedLoginAttempts ?? 0) + 1;
-      const updateData: { failedLoginAttempts: number; lockedUntil?: number } = {
-        failedLoginAttempts: attempts,
-      };
+    // Create a Supabase client that can set cookies on the response
+    const response = NextResponse.json({
+      success: true,
+      user: { id: appUser.id, username: appUser.username, role: appUser.role },
+    });
 
-      if (attempts >= AUTH.MAX_LOGIN_ATTEMPTS) {
-        updateData.lockedUntil = Date.now() + AUTH.LOCKOUT_DURATION_MS;
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return req.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
       }
+    );
 
-      db.update(schema.appUsers)
-        .set(updateData)
-        .where(eq(schema.appUsers.id, user.id))
-        .run();
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
+    if (signInError) {
       // Audit log failed attempt
-      db.insert(schema.auditLog).values({
+      await db.insert(schema.auditLog).values({
         entityType: "auth",
-        entityId: user.id,
-        action: attempts >= AUTH.MAX_LOGIN_ATTEMPTS ? "account_locked" : "login_failure",
-        newValue: JSON.stringify({ ip, attempts }),
-        actorEmail: user.email || user.username,
-      }).run();
-
-      if (attempts >= AUTH.MAX_LOGIN_ATTEMPTS) {
-        return NextResponse.json(
-          { error: "Account locked due to too many failed attempts. Please try again in 5 minutes or contact your administrator." },
-          { status: 429 }
-        );
-      }
+        entityId: appUser.id,
+        action: "login_failure",
+        newValue: JSON.stringify({ ip, reason: signInError.message }),
+        actorEmail: appUser.email || appUser.username,
+      });
 
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
-
-    // Successful login — reset lockout counters
-    db.update(schema.appUsers)
-      .set({ failedLoginAttempts: 0, lockedUntil: null })
-      .where(eq(schema.appUsers.id, user.id))
-      .run();
-
-    const token = createSession(user.id);
 
     // Audit log successful login
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "auth",
-      entityId: user.id,
+      entityId: appUser.id,
       action: "login_success",
       newValue: JSON.stringify({ ip }),
-      actorEmail: user.email || user.username,
-    }).run();
-
-    const response = NextResponse.json({ success: true, user: { id: user.id, username: user.username, role: user.role } });
-    response.cookies.set("airm_session", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 24 * 60 * 60,
+      actorEmail: appUser.email || appUser.username,
     });
 
     return response;
   } catch (err: unknown) {
+    console.error("[login] Unhandled error:", err);
     const message = safeError(err, "Login failed");
     return NextResponse.json({ error: message }, { status: 500 });
   }

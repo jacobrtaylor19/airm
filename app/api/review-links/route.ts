@@ -11,7 +11,7 @@ const ADMIN_ROLES = ["admin", "system_admin"];
 
 // POST /api/review-links — create a new review link
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !ADMIN_ROLES.includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -19,13 +19,12 @@ export async function POST(req: NextRequest) {
   const token = crypto.randomBytes(24).toString("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
 
-  db.insert(schema.reviewLinks)
+  await db.insert(schema.reviewLinks)
     .values({
       token,
       createdBy: user.id,
       expiresAt,
-    })
-    .run();
+    });
 
   const origin = req.nextUrl.origin;
   const url = `${origin}/review/${token}`;
@@ -35,12 +34,12 @@ export async function POST(req: NextRequest) {
 
 // GET /api/review-links — list all existing review links
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !ADMIN_ROLES.includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const links = db
+  const links = await db
     .select({
       id: schema.reviewLinks.id,
       token: schema.reviewLinks.token,
@@ -48,8 +47,7 @@ export async function GET() {
       createdAt: schema.reviewLinks.createdAt,
     })
     .from(schema.reviewLinks)
-    .orderBy(desc(schema.reviewLinks.createdAt))
-    .all();
+    .orderBy(desc(schema.reviewLinks.createdAt));
 
   return NextResponse.json({ links });
 }

@@ -6,13 +6,13 @@ import { NotificationsClient } from "./notifications-client";
 
 export const dynamic = "force-dynamic";
 
-export default function NotificationsPage() {
-  const user = requireAuth();
-  requireRole(["admin", "system_admin", "coordinator"]);
+export default async function NotificationsPage() {
+  const user = await requireAuth();
+  await requireRole(["admin", "system_admin", "coordinator"]);
 
   // For coordinators/admins: load app users who can receive notifications (mappers + approvers)
   const recipients = ["coordinator", "admin", "system_admin"].includes(user.role)
-    ? db
+    ? (await db
         .select({
           id: schema.appUsers.id,
           displayName: schema.appUsers.displayName,
@@ -21,8 +21,7 @@ export default function NotificationsPage() {
           isActive: schema.appUsers.isActive,
         })
         .from(schema.appUsers)
-        .where(ne(schema.appUsers.id, user.id))
-        .all()
+        .where(ne(schema.appUsers.id, user.id)))
         .filter(u => u.isActive !== false && ["mapper", "approver"].includes(u.role))
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .map(({ isActive, ...rest }) => rest)
@@ -30,7 +29,7 @@ export default function NotificationsPage() {
 
   // Sent notifications (for coordinators to track what they sent)
   const sent = ["coordinator", "admin", "system_admin"].includes(user.role)
-    ? db
+    ? (await db
         .select({
           id: schema.notifications.id,
           fromUserId: schema.notifications.fromUserId,
@@ -44,8 +43,7 @@ export default function NotificationsPage() {
         })
         .from(schema.notifications)
         .innerJoin(schema.appUsers, eq(schema.appUsers.id, schema.notifications.toUserId))
-        .where(eq(schema.notifications.fromUserId, user.id))
-        .all()
+        .where(eq(schema.notifications.fromUserId, user.id)))
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     : [];
 

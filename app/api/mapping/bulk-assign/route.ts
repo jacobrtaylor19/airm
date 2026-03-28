@@ -9,7 +9,7 @@ import { checkBulkRate } from "@/lib/rate-limit-middleware";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Verify target role exists
-  const targetRole = db.select().from(schema.targetRoles).where(eq(schema.targetRoles.id, targetRoleId)).get();
+  const [targetRole] = await db.select().from(schema.targetRoles).where(eq(schema.targetRoles.id, targetRoleId)).limit(1);
   if (!targetRole) {
     return NextResponse.json({ error: "Target role not found" }, { status: 404 });
   }
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
   for (const personaId of personaIds) {
     // Check if mapping already exists
-    const existing = db
+    const [existing] = await db
       .select()
       .from(schema.personaTargetRoleMappings)
       .where(
@@ -53,27 +53,26 @@ export async function POST(req: NextRequest) {
           eq(schema.personaTargetRoleMappings.targetRoleId, targetRoleId)
         )
       )
-      .get();
+      .limit(1);
 
     if (existing) {
       skipped++;
       continue;
     }
 
-    db.insert(schema.personaTargetRoleMappings)
+    await db.insert(schema.personaTargetRoleMappings)
       .values({
         personaId,
         targetRoleId,
         mappingReason: "Bulk manual assignment",
         confidence: "high",
-      })
-      .run();
+      });
     created++;
   }
 
   // Notify approvers that new mappings are ready for review
   if (created > 0) {
-    notifyUsersWithRoles({
+    await notifyUsersWithRoles({
       roles: ["approver", "admin", "system_admin"],
       notificationType: "workflow_event",
       subject: "New role mappings ready for review",

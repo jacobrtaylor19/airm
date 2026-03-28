@@ -4,9 +4,9 @@ import { SodRulesClient } from "./sod-rules-client";
 
 export const dynamic = "force-dynamic";
 
-export default function SodRulesPage() {
-  const rules = getSodRules();
-  const currentUser = getSessionUser();
+export default async function SodRulesPage() {
+  const rules = await getSodRules();
+  const currentUser = await getSessionUser();
   const canEdit = currentUser
     ? ["admin", "system_admin"].includes(currentUser.role) ||
       currentUser.role.toLowerCase().includes("compliance") ||

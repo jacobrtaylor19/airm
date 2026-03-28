@@ -4,16 +4,16 @@ import { SourceRolesClient } from "./source-roles-client";
 
 export const dynamic = "force-dynamic";
 
-export default function SourceRolesPage() {
-  const roles = getSourceRoles();
-  const systems = getDistinctSourceSystems();
-  const currentUser = getSessionUser();
+export default async function SourceRolesPage() {
+  const roles = await getSourceRoles();
+  const systems = await getDistinctSourceSystems();
+  const currentUser = await getSessionUser();
   const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
 
   // Pre-fetch permission details for all roles (expandable rows need them)
   const rolePermissions: Record<number, { id: number; permissionId: string; permissionName: string | null; permissionType: string | null; riskLevel: string | null }[]> = {};
   for (const role of roles) {
-    const detail = getSourceRoleDetail(role.id);
+    const detail = await getSourceRoleDetail(role.id);
     if (detail) {
       rolePermissions[role.id] = detail.permissions;
     }

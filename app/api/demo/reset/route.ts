@@ -1,29 +1,22 @@
 import { NextResponse } from "next/server";
-import { execSync } from "child_process";
 import { getSessionUser } from "@/lib/auth";
 import { getSetting } from "@/lib/settings";
 import { safeError } from "@/lib/errors";
+import { seedDatabase } from "@/db/seed";
+import { db } from "@/db";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || (user.role !== "system_admin" && user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
   try {
-    const activePack = getSetting("active_demo_pack") || "default";
+    const activePack = await getSetting("active_demo_pack") || "default";
 
-    // Use pnpm db:seed for reliability — npx tsx may not resolve on Render
-    const cmd = activePack === "default"
-      ? "pnpm db:seed"
-      : `pnpm db:seed -- --demo=${activePack}`;
-    execSync(cmd, {
-      cwd: process.cwd(),
-      stdio: "pipe",
-      timeout: 120000, // 2 min — bcrypt hashing for 16 accounts takes time
-    });
+    await seedDatabase(db, activePack);
 
     return NextResponse.json({
       success: true,

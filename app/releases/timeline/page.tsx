@@ -19,35 +19,33 @@ export interface TimelineRelease {
   userCount: number;
 }
 
-export default function TimelinePage() {
-  requireRole(ALLOWED_ROLES);
+export default async function TimelinePage() {
+  await requireRole(ALLOWED_ROLES);
 
-  const allReleases = db.select().from(schema.releases).orderBy(schema.releases.targetDate).all();
+  const allReleases = await db.select().from(schema.releases).orderBy(schema.releases.targetDate);
 
-  const releaseData: TimelineRelease[] = allReleases.map((r) => {
-    const totalAssignments = db
+  const releaseData: TimelineRelease[] = [];
+  for (const r of allReleases) {
+    const totalAssignments = (await db
       .select({ count: count() })
       .from(schema.userTargetRoleAssignments)
-      .where(eq(schema.userTargetRoleAssignments.releaseId, r.id))
-      .get()!.count;
+      .where(eq(schema.userTargetRoleAssignments.releaseId, r.id)))[0]!.count;
 
-    const approvedAssignments = db
+    const approvedAssignments = (await db
       .select({ count: count() })
       .from(schema.userTargetRoleAssignments)
       .where(
         sql`${schema.userTargetRoleAssignments.releaseId} = ${r.id} AND ${schema.userTargetRoleAssignments.status} = 'approved'`
-      )
-      .get()!.count;
+      ))[0]!.count;
 
-    const userCount = db
+    const userCount = (await db
       .select({ count: count() })
       .from(schema.releaseUsers)
-      .where(eq(schema.releaseUsers.releaseId, r.id))
-      .get()!.count;
+      .where(eq(schema.releaseUsers.releaseId, r.id)))[0]!.count;
 
     const completionPct = totalAssignments > 0 ? Math.round((approvedAssignments / totalAssignments) * 100) : 0;
 
-    return {
+    releaseData.push({
       id: r.id,
       name: r.name,
       status: r.status,
@@ -56,8 +54,8 @@ export default function TimelinePage() {
       createdAt: r.createdAt,
       completionPct,
       userCount,
-    };
-  });
+    });
+  }
 
   return <TimelineClient releases={releaseData} />;
 }

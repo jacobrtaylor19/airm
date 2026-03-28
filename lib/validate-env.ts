@@ -9,8 +9,8 @@ export function validateEnv(): void {
     if (!process.env.ENCRYPTION_KEY) {
       warnings.push("ENCRYPTION_KEY is not set — sensitive settings will be stored in plaintext");
     }
-    if (!process.env.DATABASE_PATH) {
-      warnings.push("DATABASE_PATH is not set — using default ./data/airm.db (may not persist on cloud platforms)");
+    if (!process.env.DATABASE_URL) {
+      warnings.push("DATABASE_URL is not set — database connection will fail");
     }
   }
 

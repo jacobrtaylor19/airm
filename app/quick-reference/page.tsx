@@ -196,8 +196,8 @@ function getQRGForRole(role: string): { roleLabel: string; description: string; 
   }
 }
 
-export default function QuickReferencePage() {
-  const user = requireAuth();
+export default async function QuickReferencePage() {
+  const user = await requireAuth();
   const qrg = getQRGForRole(user.role);
 
   return (

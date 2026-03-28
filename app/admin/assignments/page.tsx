@@ -3,8 +3,8 @@ import { AssignmentsClient } from "./assignments-client";
 
 export const dynamic = "force-dynamic";
 
-export default function AdminAssignmentsPage() {
-  requireRole(["admin", "system_admin"]);
+export default async function AdminAssignmentsPage() {
+  await requireRole(["admin", "system_admin"]);
 
   return (
     <div className="space-y-4">

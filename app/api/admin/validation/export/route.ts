@@ -3,9 +3,7 @@ import ExcelJS from "exceljs";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, count } from "drizzle-orm";
-import { getSessionUserFromToken } from "@/lib/auth";
-import { cookies } from "next/headers";
-import { AUTH } from "@/lib/constants";
+import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +30,7 @@ function applyHeaderRow(sheet: ExcelJS.Worksheet, headers: string[]) {
 }
 
 export async function GET() {
-  const token = cookies().get(AUTH.COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const user = getSessionUserFromToken(token);
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -46,11 +42,11 @@ export async function GET() {
   // ─────────────────────────────────────────────
   // Pre-fetch all data
   // ─────────────────────────────────────────────
-  const allUsers = db.select().from(schema.users).all();
-  const allPersonas = db.select().from(schema.personas).all();
-  const allTargetRoles = db.select().from(schema.targetRoles).all();
+  const allUsers = await db.select().from(schema.users);
+  const allPersonas = await db.select().from(schema.personas);
+  const allTargetRoles = await db.select().from(schema.targetRoles);
 
-  const personaAssignments = db
+  const personaAssignments = await db
     .select({
       userId: schema.userPersonaAssignments.userId,
       personaId: schema.userPersonaAssignments.personaId,
@@ -63,15 +59,14 @@ export async function GET() {
     })
     .from(schema.userPersonaAssignments)
     .leftJoin(schema.personas, eq(schema.userPersonaAssignments.personaId, schema.personas.id))
-    .leftJoin(schema.consolidatedGroups, eq(schema.userPersonaAssignments.consolidatedGroupId, schema.consolidatedGroups.id))
-    .all();
+    .leftJoin(schema.consolidatedGroups, eq(schema.userPersonaAssignments.consolidatedGroupId, schema.consolidatedGroups.id));
 
   const paMap: Record<number, (typeof personaAssignments)[0]> = {};
   for (const pa of personaAssignments) {
     paMap[pa.userId] = pa;
   }
 
-  const roleAssignments = db
+  const roleAssignments = await db
     .select({
       userId: schema.userTargetRoleAssignments.userId,
       targetRoleId: schema.userTargetRoleAssignments.targetRoleId,
@@ -83,8 +78,7 @@ export async function GET() {
       sodConflictCount: schema.userTargetRoleAssignments.sodConflictCount,
     })
     .from(schema.userTargetRoleAssignments)
-    .innerJoin(schema.targetRoles, eq(schema.userTargetRoleAssignments.targetRoleId, schema.targetRoles.id))
-    .all();
+    .innerJoin(schema.targetRoles, eq(schema.userTargetRoleAssignments.targetRoleId, schema.targetRoles.id));
 
   const rolesByUser: Record<number, typeof roleAssignments> = {};
   for (const ra of roleAssignments) {
@@ -92,21 +86,20 @@ export async function GET() {
     rolesByUser[ra.userId].push(ra);
   }
 
-  const sourceRoleCounts = db
+  const sourceRoleCounts = await db
     .select({
       userId: schema.userSourceRoleAssignments.userId,
       roleCount: count(),
     })
     .from(schema.userSourceRoleAssignments)
-    .groupBy(schema.userSourceRoleAssignments.userId)
-    .all();
+    .groupBy(schema.userSourceRoleAssignments.userId);
 
   const srcMap: Record<number, number> = {};
   for (const s of sourceRoleCounts) {
     srcMap[s.userId] = s.roleCount;
   }
 
-  const sodConflicts = db
+  const sodConflicts = await db
     .select({
       userId: schema.sodConflicts.userId,
       ruleId: schema.sodRules.ruleId,
@@ -118,8 +111,7 @@ export async function GET() {
     })
     .from(schema.sodConflicts)
     .innerJoin(schema.sodRules, eq(schema.sodConflicts.sodRuleId, schema.sodRules.id))
-    .leftJoin(schema.targetRoles, eq(schema.sodConflicts.roleIdA, schema.targetRoles.id))
-    .all();
+    .leftJoin(schema.targetRoles, eq(schema.sodConflicts.roleIdA, schema.targetRoles.id));
 
   // ─────────────────────────────────────────────
   // TAB 1: Validation Summary
@@ -248,14 +240,13 @@ export async function GET() {
     "Target Roles Mapped",
   ]);
 
-  const personaRoleMappings = db
+  const personaRoleMappings = await db
     .select({
       personaId: schema.personaTargetRoleMappings.personaId,
       roleCount: count(),
     })
     .from(schema.personaTargetRoleMappings)
-    .groupBy(schema.personaTargetRoleMappings.personaId)
-    .all();
+    .groupBy(schema.personaTargetRoleMappings.personaId);
 
   const prmMap: Record<number, number> = {};
   for (const p of personaRoleMappings) { prmMap[p.personaId] = p.roleCount; }

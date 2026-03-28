@@ -12,12 +12,12 @@ interface UserAccessProfile {
   permissions: string[];
 }
 
-function assembleUserProfiles(): UserAccessProfile[] {
-  const users = db.select().from(schema.users).all();
+async function assembleUserProfiles(): Promise<UserAccessProfile[]> {
+  const users = await db.select().from(schema.users);
   const profiles: UserAccessProfile[] = [];
 
   for (const user of users) {
-    const roleAssignments = db
+    const roleAssignments = await db
       .select({
         roleId: schema.sourceRoles.roleId,
         roleName: schema.sourceRoles.roleName,
@@ -25,19 +25,17 @@ function assembleUserProfiles(): UserAccessProfile[] {
       })
       .from(schema.userSourceRoleAssignments)
       .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
-      .where(eq(schema.userSourceRoleAssignments.userId, user.id))
-      .all();
+      .where(eq(schema.userSourceRoleAssignments.userId, user.id));
 
     const permissions: string[] = [];
     if (roleAssignments.length > 0) {
       for (const role of roleAssignments) {
-        const perms = db
+        const perms = await db
           .select({ permissionId: schema.sourcePermissions.permissionId })
           .from(schema.sourceRolePermissions)
           .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.sourceRolePermissions.sourcePermissionId))
           .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.sourceRolePermissions.sourceRoleId))
-          .where(eq(schema.sourceRoles.roleId, role.roleId))
-          .all();
+          .where(eq(schema.sourceRoles.roleId, role.roleId));
         for (const p of perms) {
           if (!permissions.includes(p.permissionId)) permissions.push(p.permissionId);
         }
@@ -158,8 +156,8 @@ interface GenerationResult {
 }
 
 export async function runPersonaGeneration(jobId: number): Promise<{ personasCreated: number; usersAssigned: number }> {
-  const provider = getAIProvider();
-  const profiles = assembleUserProfiles();
+  const provider = await getAIProvider();
+  const profiles = await assembleUserProfiles();
   const prompt = buildPrompt(profiles);
 
   const text = await provider.generateText(prompt);
@@ -172,23 +170,23 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
   // Clear ALL existing data for fresh generation
   // Order matters: delete children before parents to satisfy FK constraints
   // (userTargetRoleAssignments.derivedFromPersonaId references personas without CASCADE)
-  db.delete(schema.userPersonaAssignments).run();
-  db.delete(schema.personaSourcePermissions).run();
-  db.delete(schema.personaTargetRoleMappings).run();
-  db.delete(schema.userTargetRoleAssignments).run();
-  db.delete(schema.permissionGaps).run();
-  db.delete(schema.leastAccessExceptions).run();
-  db.delete(schema.personas).run();
-  db.delete(schema.consolidatedGroups).run();
+  await db.delete(schema.userPersonaAssignments);
+  await db.delete(schema.personaSourcePermissions);
+  await db.delete(schema.personaTargetRoleMappings);
+  await db.delete(schema.userTargetRoleAssignments);
+  await db.delete(schema.permissionGaps);
+  await db.delete(schema.leastAccessExceptions);
+  await db.delete(schema.personas);
+  await db.delete(schema.consolidatedGroups);
 
   // Create consolidated groups
   const groupMap = new Map<string, number>();
   for (const group of result.consolidated_groups) {
-    const inserted = db.insert(schema.consolidatedGroups).values({
+    const [inserted] = await db.insert(schema.consolidatedGroups).values({
       name: group.name,
       description: group.description,
       accessLevel: group.access_level,
-    }).returning().get();
+    }).returning();
     groupMap.set(group.name, inserted.id);
   }
 
@@ -196,25 +194,25 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
   const personaMap = new Map<string, number>();
   for (const persona of result.personas) {
     const groupId = groupMap.get(persona.suggested_group) ?? null;
-    const inserted = db.insert(schema.personas).values({
+    const [inserted] = await db.insert(schema.personas).values({
       name: persona.name,
       description: persona.description,
       businessFunction: persona.business_function,
       consolidatedGroupId: groupId,
       source: "ai",
-    }).returning().get();
+    }).returning();
     personaMap.set(persona.name, inserted.id);
 
     // Create persona source permissions
     for (const permId of persona.characteristic_permissions) {
-      const perm = db.select().from(schema.sourcePermissions)
-        .where(eq(schema.sourcePermissions.permissionId, permId)).get();
+      const [perm] = await db.select().from(schema.sourcePermissions)
+        .where(eq(schema.sourcePermissions.permissionId, permId));
       if (perm) {
-        db.insert(schema.personaSourcePermissions).values({
+        await db.insert(schema.personaSourcePermissions).values({
           personaId: inserted.id,
           sourcePermissionId: perm.id,
           isRequired: true,
-        }).run();
+        });
       }
     }
   }
@@ -242,7 +240,7 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
   const totalUsers = profiles.length;
 
   // Update job progress
-  db.update(schema.processingJobs).set({ totalRecords: totalUsers }).where(eq(schema.processingJobs.id, jobId)).run();
+  await db.update(schema.processingJobs).set({ totalRecords: totalUsers }).where(eq(schema.processingJobs.id, jobId));
 
   for (let i = 0; i < profiles.length; i++) {
     const profile = profiles[i];
@@ -289,16 +287,17 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
       bestPersona = allPersonas[0];
     }
 
-    const user = db.select().from(schema.users)
-      .where(eq(schema.users.sourceUserId, profile.sourceUserId)).get();
+    const [user] = await db.select().from(schema.users)
+      .where(eq(schema.users.sourceUserId, profile.sourceUserId));
 
     if (user && bestPersona) {
-      const groupId = db.select({ gid: schema.personas.consolidatedGroupId })
-        .from(schema.personas).where(eq(schema.personas.id, bestPersona.id)).get()?.gid ?? null;
+      const groupRows = await db.select({ gid: schema.personas.consolidatedGroupId })
+        .from(schema.personas).where(eq(schema.personas.id, bestPersona.id));
+      const groupId = groupRows[0]?.gid ?? null;
 
       const confidence = bestScore > 0 ? Math.min(95, 60 + bestScore * 5) : 70;
 
-      db.insert(schema.userPersonaAssignments).values({
+      await db.insert(schema.userPersonaAssignments).values({
         userId: user.id,
         personaId: bestPersona.id,
         consolidatedGroupId: groupId,
@@ -307,18 +306,18 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
         aiModel: provider.name,
         assignmentMethod: "ai_generation",
         jobRunId: jobId,
-      }).run();
+      });
       usersAssigned++;
     }
 
     // Update progress every 50 users
     if (i % 50 === 0) {
-      db.update(schema.processingJobs).set({ processed: i + 1 }).where(eq(schema.processingJobs.id, jobId)).run();
+      await db.update(schema.processingJobs).set({ processed: i + 1 }).where(eq(schema.processingJobs.id, jobId));
     }
   }
 
   // Final progress update
-  db.update(schema.processingJobs).set({ processed: usersAssigned }).where(eq(schema.processingJobs.id, jobId)).run();
+  await db.update(schema.processingJobs).set({ processed: usersAssigned }).where(eq(schema.processingJobs.id, jobId));
 
   return { personasCreated: result.personas.length, usersAssigned };
 }

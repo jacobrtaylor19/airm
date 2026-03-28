@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -24,36 +24,36 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "A comment explaining the escalation reason is required" }, { status: 400 });
     }
 
-    const conflict = db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).get();
+    const [conflict] = await db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).limit(1);
     if (!conflict) {
       return NextResponse.json({ error: "Conflict not found" }, { status: 404 });
     }
 
     // Update conflict status to sod_escalated
-    db.update(schema.sodConflicts).set({
+    await db.update(schema.sodConflicts).set({
       resolutionStatus: "escalated",
       resolutionNotes: conflict.resolutionNotes
         ? `${conflict.resolutionNotes}\n\n[ESCALATED by ${user.username}]: ${comment.trim()}`
         : `[ESCALATED by ${user.username}]: ${comment.trim()}`,
-    }).where(eq(schema.sodConflicts.id, conflictId)).run();
+    }).where(eq(schema.sodConflicts.id, conflictId));
 
     // Also set the user's assignments to sod_escalated status
-    db.update(schema.userTargetRoleAssignments).set({
+    await db.update(schema.userTargetRoleAssignments).set({
       status: "sod_escalated",
       updatedAt: new Date().toISOString(),
     }).where(and(
       eq(schema.userTargetRoleAssignments.userId, conflict.userId),
       eq(schema.userTargetRoleAssignments.status, "sod_rejected")
-    )).run();
+    ));
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "sodConflict",
       entityId: conflictId,
       action: "escalated",
       actorEmail: user.email ?? user.username,
       oldValue: JSON.stringify({ resolutionStatus: conflict.resolutionStatus }),
       newValue: JSON.stringify({ resolutionStatus: "escalated", comment: comment.trim() }),
-    }).run();
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

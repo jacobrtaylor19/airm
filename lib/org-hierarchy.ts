@@ -25,27 +25,28 @@ export interface OrgTreeNode extends OrgUnit {
 // Basic queries
 // ─────────────────────────────────────────────
 
-export function getOrgUnit(id: number): OrgUnit | null {
-  return db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, id)).get() ?? null;
+export async function getOrgUnit(id: number): Promise<OrgUnit | null> {
+  const [row] = await db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, id));
+  return row ?? null;
 }
 
-export function getAllOrgUnits(): OrgUnit[] {
-  return db.select().from(schema.orgUnits).all();
+export async function getAllOrgUnits(): Promise<OrgUnit[]> {
+  return await db.select().from(schema.orgUnits);
 }
 
 // ─────────────────────────────────────────────
 // Tree construction
 // ─────────────────────────────────────────────
 
-export function getOrgTree(): OrgTreeNode[] {
-  const allUnits = getAllOrgUnits();
+export async function getOrgTree(): Promise<OrgTreeNode[]> {
+  const allUnits = await getAllOrgUnits();
   if (allUnits.length === 0) return [];
 
   // Get user counts per org unit
   const userCounts = new Map<number, number>();
-  const userRows = db.select({
+  const userRows = await db.select({
     orgUnitId: schema.users.orgUnitId,
-  }).from(schema.users).all();
+  }).from(schema.users);
   for (const u of userRows) {
     if (u.orgUnitId) {
       userCounts.set(u.orgUnitId, (userCounts.get(u.orgUnitId) || 0) + 1);
@@ -53,12 +54,12 @@ export function getOrgTree(): OrgTreeNode[] {
   }
 
   // Get assigned mappers/approvers per org unit
-  const appUserAssignments = db.select({
+  const appUserAssignments = await db.select({
     id: schema.appUsers.id,
     displayName: schema.appUsers.displayName,
     role: schema.appUsers.role,
     assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
-  }).from(schema.appUsers).all();
+  }).from(schema.appUsers);
 
   const mapperByOu = new Map<number, string>();
   const approverByOu = new Map<number, string>();
@@ -116,8 +117,8 @@ export function getOrgTree(): OrgTreeNode[] {
  * If assigned to L1, returns all L2 and L3 children.
  * If assigned to L2, returns all L3 children.
  */
-export function getDescendantOrgUnitIds(orgUnitId: number): number[] {
-  const allUnits = getAllOrgUnits();
+export async function getDescendantOrgUnitIds(orgUnitId: number): Promise<number[]> {
+  const allUnits = await getAllOrgUnits();
   const childMap = new Map<number, number[]>();
   for (const u of allUnits) {
     if (u.parentId) {
@@ -144,14 +145,13 @@ export function getDescendantOrgUnitIds(orgUnitId: number): number[] {
  * Returns all user IDs within the org scope of a given org unit.
  * This includes all users in the org unit itself and all descendant org units.
  */
-export function getUsersInOrgScope(orgUnitId: number): number[] {
-  const ouIds = getDescendantOrgUnitIds(orgUnitId);
+export async function getUsersInOrgScope(orgUnitId: number): Promise<number[]> {
+  const ouIds = await getDescendantOrgUnitIds(orgUnitId);
   if (ouIds.length === 0) return [];
 
-  const users = db.select({ id: schema.users.id })
+  const users = await db.select({ id: schema.users.id })
     .from(schema.users)
-    .where(inArray(schema.users.orgUnitId, ouIds))
-    .all();
+    .where(inArray(schema.users.orgUnitId, ouIds));
 
   return users.map(u => u.id);
 }
@@ -159,9 +159,9 @@ export function getUsersInOrgScope(orgUnitId: number): number[] {
 /**
  * Returns the list of department names within the org scope.
  */
-export function getDepartmentsInOrgScope(orgUnitId: number): string[] {
-  const ouIds = getDescendantOrgUnitIds(orgUnitId);
-  const allUnits = getAllOrgUnits();
+export async function getDepartmentsInOrgScope(orgUnitId: number): Promise<string[]> {
+  const ouIds = await getDescendantOrgUnitIds(orgUnitId);
+  const allUnits = await getAllOrgUnits();
   return allUnits
     .filter(u => ouIds.includes(u.id))
     .map(u => u.name);

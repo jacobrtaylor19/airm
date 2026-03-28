@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  * Does NOT delete audit log entries (legal retention requirement).
  */
 export async function POST(req: NextRequest) {
-  const actor = getSessionUser();
+  const actor = await getSessionUser();
   if (!actor || actor.role !== "system_admin") {
     return NextResponse.json({ error: "Unauthorized — system_admin role required" }, { status: 403 });
   }
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Cannot delete your own account data" }, { status: 400 });
     }
 
-    const appUser = db.select().from(schema.appUsers).where(eq(schema.appUsers.id, userId)).get();
+    const [appUser] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.id, userId)).limit(1);
     if (!appUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const anonymizedEmail = `deleted_${anonymizedId}@anonymized.local`;
 
     // Anonymize the app user record
-    db.update(schema.appUsers)
+    await db.update(schema.appUsers)
       .set({
         username: anonymizedName.toLowerCase(),
         displayName: anonymizedName,
@@ -56,20 +56,17 @@ export async function POST(req: NextRequest) {
         isActive: false,
         updatedAt: new Date().toISOString(),
       })
-      .where(eq(schema.appUsers.id, userId))
-      .run();
+      .where(eq(schema.appUsers.id, userId));
 
     // Delete active sessions
-    db.delete(schema.appUserSessions)
-      .where(eq(schema.appUserSessions.appUserId, userId))
-      .run();
+    await db.delete(schema.appUserSessions)
+      .where(eq(schema.appUserSessions.appUserId, userId));
 
     // Delete notifications TO this user (preserves notifications FROM this user for audit trail)
-    const deletedNotifications = db.delete(schema.notifications)
-      .where(eq(schema.notifications.toUserId, userId))
-      .run();
+    await db.delete(schema.notifications)
+      .where(eq(schema.notifications.toUserId, userId));
 
-    auditLog({
+    await auditLog({
       entityType: "gdpr",
       entityId: userId,
       action: "data_deletion",
@@ -78,7 +75,6 @@ export async function POST(req: NextRequest) {
         originalUsername: appUser.username,
         anonymizedTo: anonymizedName,
         deletedSessions: true,
-        deletedNotificationCount: deletedNotifications.changes,
       },
     });
 
@@ -88,7 +84,6 @@ export async function POST(req: NextRequest) {
         userId,
         anonymizedTo: anonymizedName,
         sessionsDeleted: true,
-        notificationsDeleted: deletedNotifications.changes,
         auditLogPreserved: true,
       },
     });

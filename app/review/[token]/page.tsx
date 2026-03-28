@@ -8,42 +8,37 @@ import { ShieldCheck, Users, UserCircle, Route, AlertTriangle, Building2 } from 
 
 export const dynamic = "force-dynamic";
 
-function getReviewSnapshot() {
-  const totalUsers = db.select({ count: count() }).from(schema.users).get()!.count;
-  const totalPersonas = db.select({ count: count() }).from(schema.personas).get()!.count;
-  const totalTargetRoles = db.select({ count: count() }).from(schema.targetRoles).get()!.count;
+async function getReviewSnapshot() {
+  const totalUsers = (await db.select({ count: count() }).from(schema.users))[0]!.count;
+  const totalPersonas = (await db.select({ count: count() }).from(schema.personas))[0]!.count;
+  const totalTargetRoles = (await db.select({ count: count() }).from(schema.targetRoles))[0]!.count;
 
-  const usersWithPersona = db
+  const usersWithPersona = Number((await db
     .select({ count: sql<number>`count(distinct ${schema.userPersonaAssignments.userId})` })
-    .from(schema.userPersonaAssignments)
-    .get()!.count;
+    .from(schema.userPersonaAssignments))[0]!.count);
 
-  const personasMapped = db
+  const personasMapped = Number((await db
     .select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
-    .from(schema.personaTargetRoleMappings)
-    .get()!.count;
+    .from(schema.personaTargetRoleMappings))[0]!.count);
 
-  const totalAssignments = db.select({ count: count() }).from(schema.userTargetRoleAssignments).get()!.count;
-  const approvedAssignments = db
+  const totalAssignments = (await db.select({ count: count() }).from(schema.userTargetRoleAssignments))[0]!.count;
+  const approvedAssignments = (await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "approved"))
-    .get()!.count;
+    .where(eq(schema.userTargetRoleAssignments.status, "approved")))[0]!.count;
 
-  const sodConflictsBySeverity = db
+  const sodConflictsBySeverity = await db
     .select({ severity: schema.sodConflicts.severity, count: count() })
     .from(schema.sodConflicts)
-    .groupBy(schema.sodConflicts.severity)
-    .all();
+    .groupBy(schema.sodConflicts.severity);
 
-  const departmentStats = db
+  const departmentStats = await db
     .select({ department: schema.users.department, count: count() })
     .from(schema.users)
-    .groupBy(schema.users.department)
-    .all();
+    .groupBy(schema.users.department);
 
   // Top personas by user count
-  const topPersonas = db
+  const topPersonas = await db
     .select({
       name: schema.personas.name,
       userCount: sql<number>`count(${schema.userPersonaAssignments.userId})`,
@@ -52,8 +47,7 @@ function getReviewSnapshot() {
     .leftJoin(schema.userPersonaAssignments, eq(schema.personas.id, schema.userPersonaAssignments.personaId))
     .groupBy(schema.personas.id)
     .orderBy(sql`count(${schema.userPersonaAssignments.userId}) desc`)
-    .limit(10)
-    .all();
+    .limit(10);
 
   return {
     totalUsers,
@@ -69,14 +63,13 @@ function getReviewSnapshot() {
   };
 }
 
-export default function ReviewPage({ params }: { params: { token: string } }) {
+export default async function ReviewPage({ params }: { params: { token: string } }) {
   const { token } = params;
 
-  const link = db
+  const [link] = await db
     .select()
     .from(schema.reviewLinks)
-    .where(eq(schema.reviewLinks.token, token))
-    .get();
+    .where(eq(schema.reviewLinks.token, token));
 
   if (!link) notFound();
 
@@ -95,7 +88,7 @@ export default function ReviewPage({ params }: { params: { token: string } }) {
     );
   }
 
-  const data = getReviewSnapshot();
+  const data = await getReviewSnapshot();
   const personasMappedPct = data.totalPersonas > 0 ? Math.round((data.personasMapped / data.totalPersonas) * 100) : 0;
   const approvalPct = data.totalAssignments > 0 ? Math.round((data.approvedAssignments / data.totalAssignments) * 100) : 0;
   const totalSod = data.sodConflictsBySeverity.reduce((a, b) => a + b.count, 0);

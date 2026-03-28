@@ -69,9 +69,9 @@ const grcExports = [
   },
 ];
 
-export default function ExportsPage() {
-  const stats = getDashboardStats();
-  const user = getSessionUser();
+export default async function ExportsPage() {
+  const stats = await getDashboardStats();
+  const user = await getSessionUser();
   const isAdmin = user ? ["admin", "system_admin"].includes(user.role) : false;
 
   return (

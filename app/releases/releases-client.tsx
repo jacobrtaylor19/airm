@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, CheckCircle, Clock, Archive, Zap, Trash2, Pencil, Star } from "lucide-react";
+import { Plus, CheckCircle, Clock, Archive, Zap, Trash2, Pencil, Star, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 
 type ReleaseStats = { total: number; approved: number; sodFlagged: number; pending: number; pct: number; userCount: number; orgUnitCount: number };
@@ -35,6 +35,9 @@ type ReleaseRow = {
   targetDate: string | null;
   completedDate: string | null;
   isActive: boolean | null;
+  mappingDeadline: string | null;
+  reviewDeadline: string | null;
+  approvalDeadline: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -68,6 +71,9 @@ const EMPTY_FORM = {
   releaseType: "initial",
   targetSystem: "",
   targetDate: "",
+  mappingDeadline: "",
+  reviewDeadline: "",
+  approvalDeadline: "",
   isActive: false,
 };
 
@@ -94,6 +100,9 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
       releaseType: r.releaseType,
       targetSystem: r.targetSystem ?? "",
       targetDate: r.targetDate ?? "",
+      mappingDeadline: r.mappingDeadline ?? "",
+      reviewDeadline: r.reviewDeadline ?? "",
+      approvalDeadline: r.approvalDeadline ?? "",
       isActive: r.isActive ?? false,
     });
     setShowDialog(true);
@@ -244,6 +253,28 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                           Target: {new Date(r.targetDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                         </p>
                       )}
+
+                      {/* Phase deadlines */}
+                      {(r.mappingDeadline || r.reviewDeadline || r.approvalDeadline) && (
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                          <CalendarClock className="h-3 w-3 shrink-0" />
+                          {r.mappingDeadline && (
+                            <span className={new Date(r.mappingDeadline) < new Date() ? "text-red-600 font-medium" : ""}>
+                              Mapping: {new Date(r.mappingDeadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                          )}
+                          {r.reviewDeadline && (
+                            <span className={new Date(r.reviewDeadline) < new Date() ? "text-red-600 font-medium" : ""}>
+                              Review: {new Date(r.reviewDeadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                          )}
+                          {r.approvalDeadline && (
+                            <span className={new Date(r.approvalDeadline) < new Date() ? "text-red-600 font-medium" : ""}>
+                              Approval: {new Date(r.approvalDeadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     {/* Right: stats */}
@@ -389,6 +420,40 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                   value={form.targetDate}
                   onChange={(e) => setForm((f) => ({ ...f, targetDate: e.target.value }))}
                 />
+              </div>
+            </div>
+
+            {/* Phase Deadlines */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5 text-muted-foreground" />
+                Phase Deadlines
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Mapping</label>
+                  <Input
+                    type="date"
+                    value={form.mappingDeadline}
+                    onChange={(e) => setForm((f) => ({ ...f, mappingDeadline: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Review</label>
+                  <Input
+                    type="date"
+                    value={form.reviewDeadline}
+                    onChange={(e) => setForm((f) => ({ ...f, reviewDeadline: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Approval</label>
+                  <Input
+                    type="date"
+                    value={form.approvalDeadline}
+                    onChange={(e) => setForm((f) => ({ ...f, approvalDeadline: e.target.value }))}
+                  />
+                </div>
               </div>
             </div>
 

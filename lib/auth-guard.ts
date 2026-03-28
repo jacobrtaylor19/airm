@@ -3,10 +3,10 @@ import { getSessionUser, AppUser } from "@/lib/auth";
 
 /**
  * Get the authenticated user or return a 401 response.
- * Usage: const { user, error } = requireAuthGuard(); if (error) return error;
+ * Usage: const { user, error } = await requireAuthGuard(); if (error) return error;
  */
-export function requireAuthGuard(): { user: AppUser; error?: never } | { user?: never; error: NextResponse } {
-  const user = getSessionUser();
+export async function requireAuthGuard(): Promise<{ user: AppUser; error?: never } | { user?: never; error: NextResponse }> {
+  const user = await getSessionUser();
   if (!user) {
     return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
   }
@@ -17,8 +17,8 @@ export function requireAuthGuard(): { user: AppUser; error?: never } | { user?: 
  * Get the authenticated user and verify they have one of the allowed roles.
  * Returns 401 if not authenticated, 403 if wrong role.
  */
-export function requireRoleGuard(allowedRoles: string[]): { user: AppUser; error?: never } | { user?: never; error: NextResponse } {
-  const result = requireAuthGuard();
+export async function requireRoleGuard(allowedRoles: string[]): Promise<{ user: AppUser; error?: never } | { user?: never; error: NextResponse }> {
+  const result = await requireAuthGuard();
   if (result.error) return result;
   if (!allowedRoles.includes(result.user.role)) {
     return { error: NextResponse.json({ error: "Insufficient permissions" }, { status: 403 }) };

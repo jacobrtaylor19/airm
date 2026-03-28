@@ -5,13 +5,13 @@ import { SodPageClient } from "./sod-client";
 
 export const dynamic = "force-dynamic";
 
-export default function SodConflictAnalysisPage() {
-  const currentUser = getSessionUser();
-  let conflicts = getSodConflictsDetailed();
+export default async function SodConflictAnalysisPage() {
+  const currentUser = await getSessionUser();
+  let conflicts = await getSodConflictsDetailed();
 
   // Filter by org scope for mappers/approvers/coordinators
   if (currentUser && ["mapper", "approver", "coordinator"].includes(currentUser.role)) {
-    const scopedUserIds = getUserScope(currentUser);
+    const scopedUserIds = await getUserScope(currentUser);
     if (scopedUserIds !== null) {
       const idSet = new Set(scopedUserIds);
       conflicts = conflicts.filter(c => idSet.has(c.userId));

@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  if (!getSessionUser()) {
+  if (!(await getSessionUser())) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

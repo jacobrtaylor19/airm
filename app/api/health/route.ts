@@ -8,8 +8,8 @@ export async function GET() {
   let dbStatus = "disconnected";
 
   try {
-    const result = db.get<{ ok: number }>(sql`SELECT 1 as ok`);
-    if (result?.ok === 1) {
+    const result = await db.execute(sql`SELECT 1 as ok`);
+    if (result && (result as unknown[]).length > 0) {
       dbStatus = "connected";
     }
   } catch {

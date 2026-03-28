@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const user = getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -20,7 +20,7 @@ export async function GET() {
       metadata: { format: "sod_exceptions" },
     });
 
-    const csv = generateSodExceptionCsv();
+    const csv = await generateSodExceptionCsv();
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv",

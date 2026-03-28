@@ -6,12 +6,12 @@ import { getSessionUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const confirmations = db
+  const confirmations = await db
     .select({
       id: schema.personaConfirmations.id,
       orgUnitId: schema.personaConfirmations.orgUnitId,
@@ -20,18 +20,15 @@ export async function GET() {
       resetAt: schema.personaConfirmations.resetAt,
       resetBy: schema.personaConfirmations.resetBy,
     })
-    .from(schema.personaConfirmations)
-    .all();
+    .from(schema.personaConfirmations);
 
   // Enrich with org unit names and confirmer display names
-  const orgUnits = db
+  const orgUnits = await db
     .select({ id: schema.orgUnits.id, name: schema.orgUnits.name })
-    .from(schema.orgUnits)
-    .all();
-  const appUserRows = db
+    .from(schema.orgUnits);
+  const appUserRows = await db
     .select({ id: schema.appUsers.id, displayName: schema.appUsers.displayName })
-    .from(schema.appUsers)
-    .all();
+    .from(schema.appUsers);
 
   const orgUnitMap = new Map(orgUnits.map((o) => [o.id, o.name]));
   const userMap = new Map(appUserRows.map((u) => [u.id, u.displayName]));

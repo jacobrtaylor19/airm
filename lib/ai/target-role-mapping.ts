@@ -43,24 +43,24 @@ interface MappingResult {
 const BATCH_SIZE = 5; // Process 5 personas concurrently
 
 export async function runTargetRoleMapping(jobId: number): Promise<{ personasMapped: number; totalMappings: number }> {
-  const provider = getAIProvider();
-  const personas = db.select().from(schema.personas).all();
-  const targetRoles = db.select().from(schema.targetRoles).all();
+  const provider = await getAIProvider();
+  const personas = await db.select().from(schema.personas);
+  const targetRoles = await db.select().from(schema.targetRoles);
 
   if (targetRoles.length === 0) {
     throw new Error("No target roles available. Upload target roles first.");
   }
 
   // Find personas that already have manual mappings — skip them
-  const existingMappings = db.select({ personaId: schema.personaTargetRoleMappings.personaId })
-    .from(schema.personaTargetRoleMappings).all();
+  const existingMappings = await db.select({ personaId: schema.personaTargetRoleMappings.personaId })
+    .from(schema.personaTargetRoleMappings);
   const mappedPersonaIds = new Set(existingMappings.map(m => m.personaId));
   const unmappedPersonas = personas.filter(p => !mappedPersonaIds.has(p.id));
 
   // Update total records for progress tracking
-  db.update(schema.processingJobs).set({
+  await db.update(schema.processingJobs).set({
     totalRecords: unmappedPersonas.length,
-  }).where(eq(schema.processingJobs.id, jobId)).run();
+  }).where(eq(schema.processingJobs.id, jobId));
 
   let personasMapped = 0;
   let totalMappings = 0;
@@ -80,7 +80,7 @@ export async function runTargetRoleMapping(jobId: number): Promise<{ personasMap
       })
     );
 
-    // Write results to DB synchronously (SQLite requirement)
+    // Write results to DB
     for (const outcome of results) {
       if (outcome.status === "fulfilled") {
         const { persona, result } = outcome.value;
@@ -88,12 +88,12 @@ export async function runTargetRoleMapping(jobId: number): Promise<{ personasMap
           const targetRole = targetRoles.find(r => r.roleId === mapping.target_role_id);
           if (!targetRole) continue;
 
-          db.insert(schema.personaTargetRoleMappings).values({
+          await db.insert(schema.personaTargetRoleMappings).values({
             personaId: persona.id,
             targetRoleId: targetRole.id,
             mappingReason: mapping.reason,
             confidence: mapping.confidence,
-          }).run();
+          });
           totalMappings++;
         }
         personasMapped++;
@@ -102,44 +102,42 @@ export async function runTargetRoleMapping(jobId: number): Promise<{ personasMap
     }
 
     // Update progress after each batch
-    db.update(schema.processingJobs).set({
+    await db.update(schema.processingJobs).set({
       processed: personasMapped,
-    }).where(eq(schema.processingJobs.id, jobId)).run();
+    }).where(eq(schema.processingJobs.id, jobId));
   }
 
   // Derive user-level target role assignments from persona mappings
-  deriveUserTargetRoleAssignments();
+  await deriveUserTargetRoleAssignments();
 
   return { personasMapped, totalMappings };
 }
 
-function deriveUserTargetRoleAssignments() {
+async function deriveUserTargetRoleAssignments(): Promise<void> {
   // For each user with a persona assignment, create target role assignments
   // based on their persona's mappings
-  const assignments = db.select().from(schema.userPersonaAssignments).all();
+  const assignments = await db.select().from(schema.userPersonaAssignments);
 
   for (const assignment of assignments) {
     if (!assignment.personaId) continue;
 
-    const mappings = db.select().from(schema.personaTargetRoleMappings)
-      .where(eq(schema.personaTargetRoleMappings.personaId, assignment.personaId))
-      .all();
+    const mappings = await db.select().from(schema.personaTargetRoleMappings)
+      .where(eq(schema.personaTargetRoleMappings.personaId, assignment.personaId));
 
     for (const mapping of mappings) {
       // Check if assignment already exists
-      const existing = db.select().from(schema.userTargetRoleAssignments)
-        .where(eq(schema.userTargetRoleAssignments.userId, assignment.userId))
-        .all()
-        .find(a => a.targetRoleId === mapping.targetRoleId);
+      const existing = await db.select().from(schema.userTargetRoleAssignments)
+        .where(eq(schema.userTargetRoleAssignments.userId, assignment.userId));
+      const alreadyAssigned = existing.find(a => a.targetRoleId === mapping.targetRoleId);
 
-      if (!existing) {
-        db.insert(schema.userTargetRoleAssignments).values({
+      if (!alreadyAssigned) {
+        await db.insert(schema.userTargetRoleAssignments).values({
           userId: assignment.userId,
           targetRoleId: mapping.targetRoleId,
           derivedFromPersonaId: assignment.personaId,
           assignmentType: "persona_default",
           status: "draft",
-        }).run();
+        });
       }
     }
   }

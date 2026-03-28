@@ -3,8 +3,10 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
+import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 /**
  * Assigns users to personas using programmatic permission-overlap matching.
@@ -12,115 +14,99 @@ export const dynamic = "force-dynamic";
  * Matches users by: department → business function, then permission overlap score.
  */
 export async function POST() {
-  const job = db.insert(schema.processingJobs).values({
+  const [job] = await db.insert(schema.processingJobs).values({
     jobType: "persona_assignment",
     status: "running",
     startedAt: new Date().toISOString(),
-  }).returning().get();
+  }).returning();
 
-  try {
-    // 1. Load all personas with their characteristic permissions
-    const personas = db.select().from(schema.personas).all();
-    if (personas.length === 0) {
-      throw new Error("No personas available. Run persona generation first.");
-    }
-
-    const personaPermissions = new Map<number, Set<string>>();
-    const personaInfo = new Map<number, { name: string; func: string }>();
-
-    // Bulk load all persona permissions in one query (avoids N+1)
-    const allPersonaPerms = db
-      .select({
-        personaId: schema.personaSourcePermissions.personaId,
-        permId: schema.sourcePermissions.permissionId,
-      })
-      .from(schema.personaSourcePermissions)
-      .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
-      .all();
-
-    for (const p of personas) {
-      personaPermissions.set(p.id, new Set());
-      personaInfo.set(p.id, { name: p.name, func: (p.businessFunction || "").toLowerCase() });
-    }
-    for (const pp of allPersonaPerms) {
-      personaPermissions.get(pp.personaId)?.add(pp.permId);
-    }
-
-    // Build function → personas map for department matching
-    const funcToPersonas = new Map<string, number[]>();
-    for (const [id, info] of Array.from(personaInfo.entries())) {
-      if (!funcToPersonas.has(info.func)) funcToPersonas.set(info.func, []);
-      funcToPersonas.get(info.func)!.push(id);
-    }
-
-    // 2. Load all users with their permissions
-    const users = db.select().from(schema.users).all();
-    const allPersonaIds = Array.from(personaPermissions.keys());
-
-    // Pre-load all user source permissions
-    const userPermMap = new Map<number, Set<string>>();
-    const sourceRoleAssignments = db
-      .select({
-        userId: schema.userSourceRoleAssignments.userId,
-        roleId: schema.sourceRoles.id,
-      })
-      .from(schema.userSourceRoleAssignments)
-      .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
-      .all();
-
-    const rolePermCache = new Map<number, string[]>();
-    for (const sra of sourceRoleAssignments) {
-      if (!rolePermCache.has(sra.roleId)) {
-        const perms = db
-          .select({ permId: schema.sourcePermissions.permissionId })
-          .from(schema.sourceRolePermissions)
-          .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.sourceRolePermissions.sourcePermissionId))
-          .where(eq(schema.sourceRolePermissions.sourceRoleId, sra.roleId))
-          .all();
-        rolePermCache.set(sra.roleId, perms.map(p => p.permId));
+  const promise = (async () => {
+    try {
+      // 1. Load all personas with their characteristic permissions
+      const personas = await db.select().from(schema.personas);
+      if (personas.length === 0) {
+        throw new Error("No personas available. Run persona generation first.");
       }
-      if (!userPermMap.has(sra.userId)) userPermMap.set(sra.userId, new Set());
-      for (const p of rolePermCache.get(sra.roleId)!) {
-        userPermMap.get(sra.userId)!.add(p);
+
+      const personaPermissions = new Map<number, Set<string>>();
+      const personaInfo = new Map<number, { name: string; func: string }>();
+
+      // Bulk load all persona permissions in one query (avoids N+1)
+      const allPersonaPerms = await db
+        .select({
+          personaId: schema.personaSourcePermissions.personaId,
+          permId: schema.sourcePermissions.permissionId,
+        })
+        .from(schema.personaSourcePermissions)
+        .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId));
+
+      for (const p of personas) {
+        personaPermissions.set(p.id, new Set());
+        personaInfo.set(p.id, { name: p.name, func: (p.businessFunction || "").toLowerCase() });
       }
-    }
+      for (const pp of allPersonaPerms) {
+        personaPermissions.get(pp.personaId)?.add(pp.permId);
+      }
 
-    // 3. Clear existing assignments
-    db.delete(schema.userPersonaAssignments).run();
+      // Build function → personas map for department matching
+      const funcToPersonas = new Map<string, number[]>();
+      for (const [id, info] of Array.from(personaInfo.entries())) {
+        if (!funcToPersonas.has(info.func)) funcToPersonas.set(info.func, []);
+        funcToPersonas.get(info.func)!.push(id);
+      }
 
-    // Update total for progress tracking
-    db.update(schema.processingJobs).set({ totalRecords: users.length })
-      .where(eq(schema.processingJobs.id, job.id)).run();
+      // 2. Load all users with their permissions
+      const users = await db.select().from(schema.users);
+      const allPersonaIds = Array.from(personaPermissions.keys());
 
-    // 4. Assign each user to best-matching persona
-    let usersAssigned = 0;
-    let failed = 0;
+      // Pre-load all user source permissions
+      const userPermMap = new Map<number, Set<string>>();
+      const sourceRoleAssignments = await db
+        .select({
+          userId: schema.userSourceRoleAssignments.userId,
+          roleId: schema.sourceRoles.id,
+        })
+        .from(schema.userSourceRoleAssignments)
+        .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId));
 
-    for (let i = 0; i < users.length; i++) {
-      const user = users[i];
-      const userPerms = userPermMap.get(user.id) || new Set<string>();
-      const dept = (user.department || "").toLowerCase();
-
-      // Try department-matched personas first, then all
-      const candidates = funcToPersonas.get(dept) || allPersonaIds;
-      let bestPersonaId: number | null = null;
-      let bestScore = -1;
-
-      for (const pid of candidates) {
-        const pPerms = personaPermissions.get(pid)!;
-        let overlap = 0;
-        for (const p of Array.from(pPerms)) {
-          if (userPerms.has(p)) overlap++;
+      const rolePermCache = new Map<number, string[]>();
+      for (const sra of sourceRoleAssignments) {
+        if (!rolePermCache.has(sra.roleId)) {
+          const perms = await db
+            .select({ permId: schema.sourcePermissions.permissionId })
+            .from(schema.sourceRolePermissions)
+            .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.sourceRolePermissions.sourcePermissionId))
+            .where(eq(schema.sourceRolePermissions.sourceRoleId, sra.roleId));
+          rolePermCache.set(sra.roleId, perms.map(p => p.permId));
         }
-        if (overlap > bestScore) {
-          bestScore = overlap;
-          bestPersonaId = pid;
+        if (!userPermMap.has(sra.userId)) userPermMap.set(sra.userId, new Set());
+        for (const p of rolePermCache.get(sra.roleId)!) {
+          userPermMap.get(sra.userId)!.add(p);
         }
       }
 
-      // Fallback: try all personas if no department match found overlap
-      if (bestScore === 0) {
-        for (const pid of allPersonaIds) {
+      // 3. Clear existing assignments
+      await db.delete(schema.userPersonaAssignments);
+
+      // Update total for progress tracking
+      await db.update(schema.processingJobs).set({ totalRecords: users.length })
+        .where(eq(schema.processingJobs.id, job.id));
+
+      // 4. Assign each user to best-matching persona
+      let usersAssigned = 0;
+      let failed = 0;
+
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
+        const userPerms = userPermMap.get(user.id) || new Set<string>();
+        const dept = (user.department || "").toLowerCase();
+
+        // Try department-matched personas first, then all
+        const candidates = funcToPersonas.get(dept) || allPersonaIds;
+        let bestPersonaId: number | null = null;
+        let bestScore = -1;
+
+        for (const pid of candidates) {
           const pPerms = personaPermissions.get(pid)!;
           let overlap = 0;
           for (const p of Array.from(pPerms)) {
@@ -131,64 +117,89 @@ export async function POST() {
             bestPersonaId = pid;
           }
         }
+
+        // Fallback: try all personas if no department match found overlap
+        if (bestScore === 0) {
+          for (const pid of allPersonaIds) {
+            const pPerms = personaPermissions.get(pid)!;
+            let overlap = 0;
+            for (const p of Array.from(pPerms)) {
+              if (userPerms.has(p)) overlap++;
+            }
+            if (overlap > bestScore) {
+              bestScore = overlap;
+              bestPersonaId = pid;
+            }
+          }
+        }
+
+        if (!bestPersonaId) bestPersonaId = allPersonaIds[0];
+
+        try {
+          const info = personaInfo.get(bestPersonaId)!;
+          const groupRow = await db.select({ gid: schema.personas.consolidatedGroupId })
+            .from(schema.personas).where(eq(schema.personas.id, bestPersonaId)).limit(1);
+          const groupId = groupRow[0]?.gid ?? null;
+
+          const confidence = bestScore > 0 ? Math.min(95, 60 + bestScore * 5) : 70;
+
+          await db.insert(schema.userPersonaAssignments).values({
+            userId: user.id,
+            personaId: bestPersonaId,
+            consolidatedGroupId: groupId,
+            confidenceScore: confidence,
+            aiReasoning: `Matched to "${info.name}" by ${bestScore > 0 ? "permission overlap" : "department"} (${dept || "unspecified"})`,
+            aiModel: "programmatic",
+            assignmentMethod: "programmatic_matching",
+            jobRunId: job.id,
+          });
+          usersAssigned++;
+        } catch {
+          failed++;
+        }
+
+        // Update progress every 100 users
+        if (i % 100 === 0) {
+          await db.update(schema.processingJobs).set({ processed: i + 1 })
+            .where(eq(schema.processingJobs.id, job.id));
+        }
       }
 
-      if (!bestPersonaId) bestPersonaId = allPersonaIds[0];
+      await db.update(schema.processingJobs).set({
+        status: "completed",
+        totalRecords: users.length,
+        processed: usersAssigned,
+        failed,
+        completedAt: new Date().toISOString(),
+      }).where(eq(schema.processingJobs.id, job.id));
 
-      try {
-        const info = personaInfo.get(bestPersonaId)!;
-        const groupId = db.select({ gid: schema.personas.consolidatedGroupId })
-          .from(schema.personas).where(eq(schema.personas.id, bestPersonaId)).get()?.gid ?? null;
+      await db.insert(schema.auditLog).values({
+        entityType: "processingJob",
+        entityId: job.id,
+        action: "persona_assignment_completed",
+        newValue: JSON.stringify({ usersAssigned, failed }),
+      });
 
-        const confidence = bestScore > 0 ? Math.min(95, 60 + bestScore * 5) : 70;
+      return { jobId: job.id, usersAssigned, failed };
+    } catch (err: unknown) {
+      const realError = err instanceof Error ? err.message : String(err);
+      console.error("[persona-assignment]", realError);
+      await db.update(schema.processingJobs).set({
+        status: "failed",
+        errorLog: realError,
+        completedAt: new Date().toISOString(),
+      }).where(eq(schema.processingJobs.id, job.id));
 
-        db.insert(schema.userPersonaAssignments).values({
-          userId: user.id,
-          personaId: bestPersonaId,
-          consolidatedGroupId: groupId,
-          confidenceScore: confidence,
-          aiReasoning: `Matched to "${info.name}" by ${bestScore > 0 ? "permission overlap" : "department"} (${dept || "unspecified"})`,
-          aiModel: "programmatic",
-          assignmentMethod: "programmatic_matching",
-          jobRunId: job.id,
-        }).run();
-        usersAssigned++;
-      } catch {
-        failed++;
-      }
-
-      // Update progress every 100 users
-      if (i % 100 === 0) {
-        db.update(schema.processingJobs).set({ processed: i + 1 })
-          .where(eq(schema.processingJobs.id, job.id)).run();
-      }
+      throw err;
     }
+  })();
 
-    db.update(schema.processingJobs).set({
-      status: "completed",
-      totalRecords: users.length,
-      processed: usersAssigned,
-      failed,
-      completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id)).run();
+  waitUntil(promise.catch(() => {}));
 
-    db.insert(schema.auditLog).values({
-      entityType: "processingJob",
-      entityId: job.id,
-      action: "persona_assignment_completed",
-      newValue: JSON.stringify({ usersAssigned, failed }),
-    }).run();
-
-    return NextResponse.json({ jobId: job.id, usersAssigned, failed });
+  try {
+    const result = await promise;
+    return NextResponse.json(result);
   } catch (err: unknown) {
-    const realError = err instanceof Error ? err.message : String(err);
-    console.error("[persona-assignment]", realError);
-    db.update(schema.processingJobs).set({
-      status: "failed",
-      errorLog: realError,
-      completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id)).run();
-
     const message = safeError(err, "Persona assignment failed");
     return NextResponse.json({ error: message }, { status: 500 });
   }

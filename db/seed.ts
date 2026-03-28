@@ -1,78 +1,103 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
 import { parse } from "csv-parse/sync";
 import { readFileSync, existsSync } from "fs";
 import { eq, and } from "drizzle-orm";
 import path from "path";
+import { createClient } from "@supabase/supabase-js";
 
-// ─── Parse --demo flag ───
-const demoArg = process.argv.find((a) => a.startsWith("--demo="));
-const demoPack = demoArg ? demoArg.split("=")[1] : null;
+/**
+ * Helper to create a Supabase Auth user via admin API.
+ * Returns the auth user ID, or null if Supabase env vars are not configured.
+ */
+async function createSupabaseAuthUser(
+  email: string,
+  password: string
+): Promise<string | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !serviceKey) {
+    // Supabase Auth not configured — skip auth user creation
+    return null;
+  }
+
+  const supabase = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // Check if user already exists with this email
+  const { data: existingUsers } = await supabase.auth.admin.listUsers();
+  const existing = existingUsers?.users?.find((u) => u.email === email);
+  if (existing) {
+    // Update password and return existing ID
+    await supabase.auth.admin.updateUserById(existing.id, { password });
+    return existing.id;
+  }
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+
+  if (error) {
+    console.warn(`  ⚠ Failed to create Supabase Auth user for ${email}: ${error.message}`);
+    return null;
+  }
+
+  return data.user?.id ?? null;
+}
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const packName = demoPack ?? "default";
-const CSV_DIR = path.join(DATA_DIR, "demos", packName);
 
-if (!existsSync(CSV_DIR)) {
-  console.error(`❌ Demo pack not found: ${CSV_DIR}`);
-  process.exit(1);
-}
-
-// Use DATABASE_PATH env var (matches db/index.ts and Render config)
-const dbPath = process.env.DATABASE_PATH ?? path.join(DATA_DIR, "airm.db");
-console.log(`📦 Using demo pack: ${packName}`);
-console.log(`   CSV directory: ${CSV_DIR}`);
-console.log(`   Database: ${dbPath}\n`);
-
-const sqlite = new Database(dbPath);
-sqlite.pragma("journal_mode = WAL");
-sqlite.pragma("foreign_keys = ON");
-sqlite.pragma("busy_timeout = 5000");
-
-const db = drizzle(sqlite, { schema });
-
-function readCsv<T>(filename: string): T[] {
-  const filepath = path.join(CSV_DIR, filename);
-  if (!existsSync(filepath)) {
-    return [];
+/**
+ * Exported for API-based demo reset (called from /api/demo endpoints).
+ * Pass in the shared db instance and pack name.
+ */
+export async function seedDatabase(seedDb: ReturnType<typeof drizzle<typeof schema>>, seedPackName: string): Promise<void> {
+  const seedCsvDir = path.join(DATA_DIR, "demos", seedPackName);
+  if (!existsSync(seedCsvDir)) {
+    throw new Error(`Demo pack not found: ${seedCsvDir}`);
   }
-  const content = readFileSync(filepath, "utf-8");
-  const records = parse(content, {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
-  }) as T[];
-  return records;
+
+  function readPackCsv<T>(filename: string): T[] {
+    const filepath = path.join(seedCsvDir, filename);
+    if (!existsSync(filepath)) return [];
+    const content = readFileSync(filepath, "utf-8");
+    return parse(content, { columns: true, skip_empty_lines: true, trim: true }) as T[];
+  }
+
+  await runSeed(seedDb, readPackCsv);
 }
 
-function seed() {
+async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string) => T[]) {
   console.log("🌱 Seeding database...\n");
 
   // ─── Clear tables (reverse dependency order) ───
-  db.delete(schema.auditLog).run();
-  db.delete(schema.processingJobs).run();
-  db.delete(schema.permissionGaps).run();
-  db.delete(schema.sodConflicts).run();
-  db.delete(schema.sodRules).run();
-  db.delete(schema.userTargetRoleAssignments).run();
-  db.delete(schema.personaTargetRoleMappings).run();
-  db.delete(schema.userPersonaAssignments).run();
-  db.delete(schema.personaSourcePermissions).run();
-  db.delete(schema.userSourceRoleAssignments).run();
-  db.delete(schema.sourceRolePermissions).run();
-  db.delete(schema.targetSecurityRoleTasks).run();
-  db.delete(schema.targetTaskRolePermissions).run();
-  db.delete(schema.targetRolePermissions).run();
-  db.delete(schema.targetTaskRoles).run();
-  db.delete(schema.personas).run();
-  db.delete(schema.consolidatedGroups).run();
-  db.delete(schema.sourcePermissions).run();
-  db.delete(schema.sourceRoles).run();
-  db.delete(schema.targetPermissions).run();
-  db.delete(schema.targetRoles).run();
-  db.delete(schema.users).run();
-  db.delete(schema.orgUnits).run();
+  await db.delete(schema.auditLog);
+  await db.delete(schema.processingJobs);
+  await db.delete(schema.permissionGaps);
+  await db.delete(schema.sodConflicts);
+  await db.delete(schema.sodRules);
+  await db.delete(schema.userTargetRoleAssignments);
+  await db.delete(schema.personaTargetRoleMappings);
+  await db.delete(schema.userPersonaAssignments);
+  await db.delete(schema.personaSourcePermissions);
+  await db.delete(schema.userSourceRoleAssignments);
+  await db.delete(schema.sourceRolePermissions);
+  await db.delete(schema.targetSecurityRoleTasks);
+  await db.delete(schema.targetTaskRolePermissions);
+  await db.delete(schema.targetRolePermissions);
+  await db.delete(schema.targetTaskRoles);
+  await db.delete(schema.personas);
+  await db.delete(schema.consolidatedGroups);
+  await db.delete(schema.sourcePermissions);
+  await db.delete(schema.sourceRoles);
+  await db.delete(schema.targetPermissions);
+  await db.delete(schema.targetRoles);
+  await db.delete(schema.users);
+  await db.delete(schema.orgUnits);
 
   // ─── 0. Org Hierarchy ───
   const orgHierarchy: { name: string; level: string; parentName?: string; description?: string }[] = [
@@ -124,13 +149,13 @@ function seed() {
   for (const level of ["L1", "L2", "L3"]) {
     for (const ou of orgHierarchy.filter(o => o.level === level)) {
       const parentId = ou.parentName ? orgUnitIdMap.get(ou.parentName) ?? null : null;
-      const result = db.insert(schema.orgUnits).values({
+      const [result] = await db.insert(schema.orgUnits).values({
         name: ou.name,
         level: ou.level,
         parentId,
         description: ou.description,
-      }).run();
-      orgUnitIdMap.set(ou.name, Number(result.lastInsertRowid));
+      }).returning({ id: schema.orgUnits.id });
+      orgUnitIdMap.set(ou.name, result.id);
     }
   }
   console.log(`  ✓ ${orgHierarchy.length} org units (L1/L2/L3 hierarchy)`);
@@ -143,20 +168,20 @@ function seed() {
 
   // ─── 1. Users ───
   const BATCH_SIZE = 500;
-  const usersData = readCsv<any>("users.csv");
+  const usersData = readCsvFn<any>("users.csv");
   for (let i = 0; i < usersData.length; i += BATCH_SIZE) {
     const batch = usersData.slice(i, i + BATCH_SIZE);
     for (const row of batch) {
       const dept = row.department?.trim();
       const ouId = dept ? (deptToOrgUnit.get(dept) ?? null) : null;
-      db.insert(schema.users).values({
+      await db.insert(schema.users).values({
         sourceUserId: row.source_user_id,
         displayName: row.display_name,
         email: row.email,
         jobTitle: row.job_title,
         department: row.department,
         orgUnitId: ouId,
-      }).run();
+      });
     }
     if (usersData.length > 1000 && i + BATCH_SIZE < usersData.length) {
       process.stdout.write(`\r  ⏳ Users: ${Math.min(i + BATCH_SIZE, usersData.length)}/${usersData.length}`);
@@ -166,14 +191,14 @@ function seed() {
   console.log(`  ✓ ${usersData.length} users`);
 
   // ─── 2. Consolidated Groups (skip if file not in demo pack) ───
-  const groupsData = readCsv<any>("consolidated-groups.csv");
+  const groupsData = readCsvFn<any>("consolidated-groups.csv");
   if (groupsData.length > 0) {
     for (const row of groupsData) {
-      db.insert(schema.consolidatedGroups).values({
+      await db.insert(schema.consolidatedGroups).values({
         name: row.name,
         accessLevel: row.access_level,
         description: row.description,
-      }).run();
+      });
     }
     console.log(`  ✓ ${groupsData.length} consolidated groups`);
   } else {
@@ -181,15 +206,15 @@ function seed() {
   }
 
   // ─── 3. Personas (skip if file not in demo pack) ───
-  const personasData = readCsv<any>("personas.csv");
+  const personasData = readCsvFn<any>("personas.csv");
   if (personasData.length > 0) {
     for (const row of personasData) {
-      db.insert(schema.personas).values({
+      await db.insert(schema.personas).values({
         name: row.name,
         description: row.description,
         businessFunction: row.business_function,
         source: "ai",
-      }).run();
+      });
     }
     console.log(`  ✓ ${personasData.length} personas`);
   } else {
@@ -197,18 +222,16 @@ function seed() {
   }
 
   // ─── 4. Persona → Group Mappings (skip if file not in demo pack) ───
-  const pgMappings = readCsv<any>("persona-group-mappings.csv");
+  const pgMappings = readCsvFn<any>("persona-group-mappings.csv");
   let pgCount = 0;
   if (pgMappings.length > 0) {
     for (const row of pgMappings) {
-      const group = db.select().from(schema.consolidatedGroups)
-        .where(eq(schema.consolidatedGroups.name, row.consolidated_group_name))
-        .get();
+      const [group] = await db.select().from(schema.consolidatedGroups)
+        .where(eq(schema.consolidatedGroups.name, row.consolidated_group_name));
       if (group) {
-        db.update(schema.personas)
+        await db.update(schema.personas)
           .set({ consolidatedGroupId: group.id })
-          .where(eq(schema.personas.name, row.persona_name))
-          .run();
+          .where(eq(schema.personas.name, row.persona_name));
         pgCount++;
       }
     }
@@ -218,76 +241,76 @@ function seed() {
   }
 
   // ─── 5. Source Roles ───
-  const rolesData = readCsv<any>("source-roles.csv");
+  const rolesData = readCsvFn<any>("source-roles.csv");
   for (const row of rolesData) {
-    db.insert(schema.sourceRoles).values({
+    await db.insert(schema.sourceRoles).values({
       roleId: row.role_id,
       roleName: row.role_name,
       description: row.description,
       system: row.system || "SAP ECC",
       domain: row.domain,
       roleOwner: row.role_owner || null,
-    }).run();
+    });
   }
   console.log(`  ✓ ${rolesData.length} source roles`);
 
   // ─── 6. Source Permissions ───
-  const permData = readCsv<any>("source-permissions.csv");
+  const permData = readCsvFn<any>("source-permissions.csv");
   for (const row of permData) {
-    db.insert(schema.sourcePermissions).values({
+    await db.insert(schema.sourcePermissions).values({
       permissionId: row.permission_id,
       permissionName: row.permission_name || null,
       description: row.description || null,
       system: row.system || "SAP ECC",
       riskLevel: row.risk_level || null,
-    }).run();
+    });
   }
   console.log(`  ✓ ${permData.length} source permissions`);
 
   // ─── 7. Source Role-Permission Assignments ───
-  const rpData = readCsv<any>("source-role-permissions.csv");
+  const rpData = readCsvFn<any>("source-role-permissions.csv");
   let rpCount = 0;
   for (const row of rpData) {
-    const role = db.select().from(schema.sourceRoles)
-      .where(eq(schema.sourceRoles.roleId, row.role_id)).get();
-    const perm = db.select().from(schema.sourcePermissions)
-      .where(eq(schema.sourcePermissions.permissionId, row.permission_id)).get();
+    const [role] = await db.select().from(schema.sourceRoles)
+      .where(eq(schema.sourceRoles.roleId, row.role_id));
+    const [perm] = await db.select().from(schema.sourcePermissions)
+      .where(eq(schema.sourcePermissions.permissionId, row.permission_id));
     if (role && perm) {
-      db.insert(schema.sourceRolePermissions).values({
+      await db.insert(schema.sourceRolePermissions).values({
         sourceRoleId: role.id,
         sourcePermissionId: perm.id,
-      }).run();
+      });
       rpCount++;
     }
   }
   console.log(`  ✓ ${rpCount} role-permission assignments`);
 
   // ─── 8. Target Roles ───
-  const targetRolesData = readCsv<any>("target-roles.csv");
+  const targetRolesData = readCsvFn<any>("target-roles.csv");
   for (const row of targetRolesData) {
     if (row.role_id === "Role ID") continue; // skip header row if duplicated
-    db.insert(schema.targetRoles).values({
+    await db.insert(schema.targetRoles).values({
       roleId: row.role_id,
       roleName: row.role_name,
       description: row.description,
       system: row.system || "S/4HANA",
       domain: row.domain || "Finance",
       roleOwner: row.role_owner || null,
-    }).run();
+    });
   }
   console.log(`  ✓ ${targetRolesData.length} target roles`);
 
   // ─── 9. Target Permissions (optional) ───
-  const targetPermData = readCsv<any>("target-permissions.csv");
+  const targetPermData = readCsvFn<any>("target-permissions.csv");
   if (targetPermData.length > 0) {
     for (const row of targetPermData) {
-      db.insert(schema.targetPermissions).values({
+      await db.insert(schema.targetPermissions).values({
         permissionId: row.permission_id,
         permissionName: row.permission_name || null,
         description: row.description || null,
         system: row.system || "S/4HANA",
         riskLevel: row.risk_level || null,
-      }).run();
+      });
     }
     console.log(`  ✓ ${targetPermData.length} target permissions`);
   } else {
@@ -295,18 +318,18 @@ function seed() {
   }
 
   // ─── 9b. Target Role-Permission Assignments ───
-  const trpData = readCsv<any>("target-role-permissions.csv");
+  const trpData = readCsvFn<any>("target-role-permissions.csv");
   let trpCount = 0;
   for (const row of trpData) {
-    const role = db.select().from(schema.targetRoles)
-      .where(eq(schema.targetRoles.roleId, row.target_role_id)).get();
-    const perm = db.select().from(schema.targetPermissions)
-      .where(eq(schema.targetPermissions.permissionId, row.permission_id)).get();
+    const [role] = await db.select().from(schema.targetRoles)
+      .where(eq(schema.targetRoles.roleId, row.target_role_id));
+    const [perm] = await db.select().from(schema.targetPermissions)
+      .where(eq(schema.targetPermissions.permissionId, row.permission_id));
     if (role && perm) {
-      db.insert(schema.targetRolePermissions).values({
+      await db.insert(schema.targetRolePermissions).values({
         targetRoleId: role.id,
         targetPermissionId: perm.id,
-      }).run();
+      });
       trpCount++;
     }
   }
@@ -317,22 +340,22 @@ function seed() {
   }
 
   // ─── 10. User-Persona Assignments (skip if file not in demo pack) ───
-  const upaData = readCsv<any>("user-persona-assignments.csv");
+  const upaData = readCsvFn<any>("user-persona-assignments.csv");
   let upaCount = 0;
   if (upaData.length > 0) {
     for (const row of upaData) {
-      const user = db.select().from(schema.users)
-        .where(eq(schema.users.sourceUserId, row.source_user_id)).get();
-      const persona = db.select().from(schema.personas)
-        .where(eq(schema.personas.name, row.persona_name)).get();
+      const [user] = await db.select().from(schema.users)
+        .where(eq(schema.users.sourceUserId, row.source_user_id));
+      const [persona] = await db.select().from(schema.personas)
+        .where(eq(schema.personas.name, row.persona_name));
       if (user && persona) {
-        db.insert(schema.userPersonaAssignments).values({
+        await db.insert(schema.userPersonaAssignments).values({
           userId: user.id,
           personaId: persona.id,
           consolidatedGroupId: persona.consolidatedGroupId,
           confidenceScore: parseFloat(row.confidence_score) || null,
           assignmentMethod: row.assignment_method || "ai",
-        }).run();
+        });
         upaCount++;
       }
     }
@@ -342,18 +365,18 @@ function seed() {
   }
 
   // ─── 10b. User-Source Role Assignments (optional) ───
-  const usraData = readCsv<any>("user-source-role-assignments.csv");
+  const usraData = readCsvFn<any>("user-source-role-assignments.csv");
   let usraCount = 0;
   for (const row of usraData) {
-    const user = db.select().from(schema.users)
-      .where(eq(schema.users.sourceUserId, row.user_id)).get();
-    const role = db.select().from(schema.sourceRoles)
-      .where(eq(schema.sourceRoles.roleId, row.role_id)).get();
+    const [user] = await db.select().from(schema.users)
+      .where(eq(schema.users.sourceUserId, row.user_id));
+    const [role] = await db.select().from(schema.sourceRoles)
+      .where(eq(schema.sourceRoles.roleId, row.role_id));
     if (user && role) {
-      db.insert(schema.userSourceRoleAssignments).values({
+      await db.insert(schema.userSourceRoleAssignments).values({
         userId: user.id,
         sourceRoleId: role.id,
-      }).run();
+      });
       usraCount++;
     }
   }
@@ -364,10 +387,10 @@ function seed() {
   }
 
   // ─── 11. SOD Rules (optional) ───
-  const sodData = readCsv<any>("sod-rules.csv");
+  const sodData = readCsvFn<any>("sod-rules.csv");
   if (sodData.length > 0) {
     for (const row of sodData) {
-      db.insert(schema.sodRules).values({
+      await db.insert(schema.sodRules).values({
         ruleId: row.rule_id,
         ruleName: row.rule_name,
         description: row.description || null,
@@ -375,7 +398,7 @@ function seed() {
         permissionB: row.permission_b,
         severity: row.severity || "medium",
         riskDescription: row.risk_description || null,
-      }).run();
+      });
     }
     console.log(`  ✓ ${sodData.length} SOD rules`);
   } else {
@@ -385,18 +408,18 @@ function seed() {
   // ─── 11c. User-Target-Role Assignments (loaded from CSV) ───
   // Lookup helpers
   const targetRoleLookup = new Map<string, number>();
-  const allTargetRoles = db.select().from(schema.targetRoles).all();
+  const allTargetRoles = await db.select().from(schema.targetRoles);
   for (const tr of allTargetRoles) {
     targetRoleLookup.set(tr.roleId, tr.id);
   }
 
   const userLookup = new Map<string, { id: number; department: string | null }>();
-  const allUsers = db.select().from(schema.users).all();
+  const allUsers = await db.select().from(schema.users);
   for (const u of allUsers) {
     userLookup.set(u.sourceUserId, { id: u.id, department: u.department });
   }
 
-  const utraData = readCsv<any>("user-target-role-assignments.csv");
+  const utraData = readCsvFn<any>("user-target-role-assignments.csv");
   let utraCount = 0;
   for (const row of utraData) {
     const userInfo = userLookup.get(row.user_id);
@@ -404,13 +427,13 @@ function seed() {
     if (userInfo && targetRoleDbId) {
       const phase = row.release_phase?.trim() || "current";
       const isExisting = phase === "existing";
-      db.insert(schema.userTargetRoleAssignments).values({
+      await db.insert(schema.userTargetRoleAssignments).values({
         userId: userInfo.id,
         targetRoleId: targetRoleDbId,
         assignmentType: isExisting ? "existing_access" : "seed_demo",
         status: isExisting ? "approved" : "draft",
         releasePhase: phase,
-      }).run();
+      });
       utraCount++;
     }
   }
@@ -421,118 +444,85 @@ function seed() {
   }
 
   // ─── 11d. Run SOD analysis on seeded assignments ───
-  // The hardcoded target-system SOD rules reference S/4HANA Fiori app IDs (F0717, F0859, etc.).
-  // Only insert them for SAP/S4HANA packs where these permissions exist.
-  const isSapPack = db.select().from(schema.targetPermissions)
-    .where(eq(schema.targetPermissions.permissionId, "F0717")).get() !== undefined;
+  const [isSapCheck] = await db.select().from(schema.targetPermissions)
+    .where(eq(schema.targetPermissions.permissionId, "F0717"));
+  const isSapPack = isSapCheck !== undefined;
 
   const targetSodRules: { ruleId: string; ruleName: string; permA: string; permB: string; severity: string; riskDesc: string }[] = !isSapPack ? [] : [
-    // Finance: Invoice creation vs approval
     { ruleId: "T-SOD-AP-001", ruleName: "Create & Approve Invoice", permA: "F0717", permB: "F0859",
       severity: "critical", riskDesc: "A user who can both create supplier invoices (F0717) and approve them (F0859) can post fraudulent invoices and approve their own entries, bypassing the dual-control requirement for accounts payable." },
-    // Finance: Invoice creation vs payment execution
     { ruleId: "T-SOD-AP-002", ruleName: "Invoice Entry & Payment Execution", permA: "F0717", permB: "F1603",
       severity: "critical", riskDesc: "A user who can post supplier invoices and execute automatic payments has end-to-end control over cash disbursement. This allows posting fraudulent invoices and immediately paying them." },
-    // Finance: Vendor master vs payment
     { ruleId: "T-SOD-AP-003", ruleName: "Vendor Master & Payment Execution", permA: "F0790", permB: "F1603",
       severity: "critical", riskDesc: "A user who can create/modify vendor master records and execute payment runs can create fictitious vendors and immediately pay them. This is one of the highest-risk SOD conflicts." },
-    // Finance: Vendor master vs invoice
     { ruleId: "T-SOD-AP-004", ruleName: "Vendor Master & Invoice Entry", permA: "F0790", permB: "F0717",
       severity: "high", riskDesc: "A user who can maintain vendor master data and post invoices can create fictitious vendors and record fraudulent invoices without a purchase order control point." },
-    // Finance: Invoice approval vs payment
     { ruleId: "T-SOD-AP-005", ruleName: "Invoice Approval & Payment Execution", permA: "F0859", permB: "F1603",
       severity: "high", riskDesc: "A user who can approve invoices and run payment programs controls both the approval gate and cash disbursement, weakening the procure-to-pay control framework." },
-    // Finance: GL posting vs invoice
     { ruleId: "T-SOD-GL-001", ruleName: "GL Posting & Invoice Processing", permA: "F0400", permB: "F0717",
       severity: "high", riskDesc: "A user who can post journal entries and process invoices can manipulate both the sub-ledger and general ledger, making it difficult to detect financial statement fraud." },
-    // Finance: GL posting vs payment
     { ruleId: "T-SOD-GL-002", ruleName: "GL Posting & Payment Execution", permA: "F0400", permB: "F1603",
       severity: "high", riskDesc: "A user who can post journal entries and execute payments can create manual adjustments to cover fraudulent payment activity." },
-    // Finance: Vendor master + invoice approval
     { ruleId: "T-SOD-AP-006", ruleName: "Vendor Master & Invoice Approval", permA: "F0790", permB: "F0859",
       severity: "high", riskDesc: "A user who can maintain vendor master records and approve invoices can modify vendor bank details and then approve invoices that route payments to unauthorized accounts." },
-    // Procurement: PO creation vs goods receipt
     { ruleId: "T-SOD-MM-001", ruleName: "Purchase Order & Goods Receipt", permA: "F2439", permB: "F3002",
       severity: "critical", riskDesc: "A user who can create purchase orders and post goods receipts can fabricate procurement commitments and falsely confirm delivery. This is among the most significant procurement SOD conflicts." },
-    // Procurement: PO creation vs PO release
     { ruleId: "T-SOD-MM-002", ruleName: "Create & Release Purchase Order", permA: "F2439", permB: "F2441",
       severity: "high", riskDesc: "A user who can create and approve purchase orders circumvents the purchasing authorization control. This is a foundational procurement segregation requirement." },
-    // Procurement: PO creation vs inventory management
     { ruleId: "T-SOD-MM-003", ruleName: "Purchase Order & Inventory Adjustment", permA: "F2439", permB: "F3737",
       severity: "high", riskDesc: "A user who can create purchase orders and manage physical inventory can manipulate both procurement records and inventory counts to conceal misappropriation." },
-    // Procurement: Goods receipt vs inventory differences
     { ruleId: "T-SOD-MM-004", ruleName: "Goods Receipt & Inventory Differences", permA: "F3002", permB: "F3738",
       severity: "high", riskDesc: "A user who can post goods receipts and adjust inventory differences can inflate delivery quantities and then write off the discrepancies, concealing theft." },
-    // Procurement: Buyer + Material master
     { ruleId: "T-SOD-MM-005", ruleName: "Purchase Order & Material Master", permA: "F2439", permB: "F3814",
       severity: "medium", riskDesc: "A user who can create purchase orders and maintain material master records controls both what can be procured and the actual procurement transaction." },
-    // Maintenance: Create order vs confirm order
     { ruleId: "T-SOD-PM-001", ruleName: "Create & Confirm Maintenance Order", permA: "F4580", permB: "F4583",
       severity: "medium", riskDesc: "A user who can create maintenance orders and confirm their completion can report false work completion, enabling labor fraud and false productivity reporting." },
-    // Maintenance: Equipment master vs maintenance order
     { ruleId: "T-SOD-PM-002", ruleName: "Equipment Master & Maintenance Order", permA: "F4590", permB: "F4580",
       severity: "medium", riskDesc: "A user who can manage equipment records and create maintenance orders bypasses independent technical review of asset setup before work is authorized." },
-    // Maintenance: Schedule plans vs confirm order
     { ruleId: "T-SOD-PM-003", ruleName: "Schedule Plans & Confirm Order", permA: "F4600", permB: "F4583",
       severity: "medium", riskDesc: "A user who can schedule preventive maintenance and confirm its completion can falsify preventive maintenance records without independent verification." },
-    // Cross-domain: Maintenance order + goods receipt
     { ruleId: "T-SOD-XM-001", ruleName: "Maintenance Order & Goods Receipt", permA: "F4580", permB: "F3002",
       severity: "high", riskDesc: "A user who can create maintenance orders and receive goods can authorize work and receive materials without independent oversight, enabling material diversion." },
-    // Cross-domain: Maintenance order + purchase order
     { ruleId: "T-SOD-XM-002", ruleName: "Maintenance Order & Purchase Order", permA: "F4581", permB: "F2439",
       severity: "high", riskDesc: "A user who can manage maintenance orders and create purchase orders controls both the work scope and procurement commitment, enabling inflated maintenance costs." },
-    // Cross-domain: Equipment + Material master
     { ruleId: "T-SOD-XM-003", ruleName: "Equipment Master & Material Master", permA: "F4590", permB: "F3814",
       severity: "medium", riskDesc: "A user who can manage both equipment and material master records controls the registration of assets and their associated spare parts without separation between technical and procurement master data." },
-    // Warehouse: Goods receipt + goods issue
     { ruleId: "T-SOD-WH-001", ruleName: "Goods Receipt & Goods Issue", permA: "F3002", permB: "F3003",
       severity: "medium", riskDesc: "A user who can process both goods receipts and goods issues can manipulate inventory levels without independent confirmation of inbound and outbound material flows." },
-    // Inventory: Physical inventory + posting differences
     { ruleId: "T-SOD-INV-001", ruleName: "Physical Inventory & Post Differences", permA: "F3737", permB: "F3738",
       severity: "critical", riskDesc: "A user who can conduct physical inventory counts and post the resulting adjustments has full control over inventory variance recognition, enabling concealment of theft." },
-    // --- Additional rules using ACTUAL target role permission IDs for demo coverage ---
-    // High: GL posting (F0716) vs Supplier invoice (F0717)
     { ruleId: "T-SOD-GL-003", ruleName: "GL Posting & Supplier Invoices", permA: "F0716", permB: "F0717",
       severity: "high", riskDesc: "A user who can post journal entries and process supplier invoices can manipulate both the sub-ledger and general ledger, making it difficult to detect financial statement fraud." },
-    // High: PO Create (F1074) vs Goods Receipt (F2093)
     { ruleId: "T-SOD-MM-006", ruleName: "Purchase Order & Goods Receipt", permA: "F1074", permB: "F2093",
       severity: "high", riskDesc: "A user who can create purchase orders and post goods receipts can fabricate procurement transactions and falsely confirm delivery without independent oversight." },
-    // Medium: Goods Receipt (F2093) vs Goods Issue (F2094) — within WH/Inv roles
     { ruleId: "T-SOD-WH-002", ruleName: "Goods Receipt & Goods Issue", permA: "F2093", permB: "F2094",
       severity: "medium", riskDesc: "A user who can process both goods receipts and goods issues can manipulate inventory levels without independent confirmation of inbound and outbound material flows." },
-    // Critical: Employee Data (F2721) vs Payroll (F2722) — HR within-role
     { ruleId: "T-SOD-HR-001", ruleName: "Employee Data & Payroll Execution", permA: "F2721", permB: "F2722",
       severity: "critical", riskDesc: "A user who maintains employee records and runs payroll can create ghost employees and inflate payroll, representing one of the highest-risk HR SOD conflicts." },
-    // Critical: User Admin (F7721) vs Authorization Admin (F7722) — IT within-role
     { ruleId: "T-SOD-IT-001", ruleName: "User Admin & Authorization Admin", permA: "F7721", permB: "F7722",
       severity: "critical", riskDesc: "A user who can create user accounts and configure authorization roles can grant themselves unlimited access to any system function, bypassing all other controls." },
-    // Medium: Maintenance Create (F0893) vs Maintenance Confirm (F0894)
     { ruleId: "T-SOD-PM-004", ruleName: "Create & Confirm Maintenance", permA: "F0893", permB: "F0894",
       severity: "medium", riskDesc: "A user who can create maintenance work orders and confirm their completion can fabricate maintenance activity, enabling labor fraud and false productivity reporting." },
-    // High: PO Approve (F1076) vs Supplier Master (F0743)
     { ruleId: "T-SOD-MM-007", ruleName: "PO Approval & Supplier Master", permA: "F1076", permB: "F0743",
       severity: "high", riskDesc: "A user who can approve purchase orders and maintain supplier master data can set up preferred vendors and approve their own procurement transactions." },
-    // Medium: Document Reversal (F0719) vs Account Clearing (F0720)
     { ruleId: "T-SOD-GL-004", ruleName: "Document Reversal & Account Clearing", permA: "F0719", permB: "F0720",
       severity: "medium", riskDesc: "A user who can reverse documents and clear accounts can manipulate financial records by reversing and re-clearing entries to hide discrepancies." },
-    // High: Automatic Payments (F2424) vs Customer Payments (F2625)
     { ruleId: "T-SOD-TR-001", ruleName: "Automatic Payments & Customer Payments", permA: "F2424", permB: "F2625",
       severity: "high", riskDesc: "A user who controls both outgoing automatic payments and incoming customer payment processing can divert funds by manipulating payment flows in both directions." },
-    // Low: Cost Centers (F2872) vs Financial Reports (F2312)
     { ruleId: "T-SOD-CO-001", ruleName: "Cost Center Maintenance & Financial Reporting", permA: "F2872", permB: "F2312",
       severity: "low", riskDesc: "A user who maintains cost center master data and generates financial reports can manipulate cost allocations and then generate reports that conceal the misallocation." },
   ];
 
   // Insert target-system SOD rules
   for (const r of targetSodRules) {
-    db.insert(schema.sodRules).values({
+    await db.insert(schema.sodRules).values({
       ruleId: r.ruleId,
       ruleName: r.ruleName,
       permissionA: r.permA,
       permissionB: r.permB,
       severity: r.severity,
       riskDescription: r.riskDesc,
-    }).run();
+    });
   }
   if (targetSodRules.length > 0) {
     console.log(`  ✓ ${targetSodRules.length} target-system SOD rules (S/4HANA Fiori permissions)`);
@@ -542,12 +532,11 @@ function seed() {
 
   // Build permission map for target roles
   const seedRolePerms = new Map<number, Set<string>>();
-  const seedTrps = db.select({
+  const seedTrps = await db.select({
     roleId: schema.targetRolePermissions.targetRoleId,
     permId: schema.targetPermissions.permissionId,
   }).from(schema.targetRolePermissions)
-    .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
-    .all();
+    .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id));
   for (const row of seedTrps) {
     if (!seedRolePerms.has(row.roleId)) seedRolePerms.set(row.roleId, new Set());
     seedRolePerms.get(row.roleId)!.add(row.permId);
@@ -555,7 +544,7 @@ function seed() {
 
   // Load target permission name lookup
   const permNameLookup = new Map<string, string | null>();
-  const allTargetPerms = db.select().from(schema.targetPermissions).all();
+  const allTargetPerms = await db.select().from(schema.targetPermissions);
   for (const tp of allTargetPerms) {
     permNameLookup.set(tp.permissionId, tp.permissionName);
   }
@@ -567,19 +556,18 @@ function seed() {
   }
 
   // Load all active SOD rules (including the target-system ones we just inserted)
-  const activeRules = db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true)).all();
+  const activeRules = await db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true));
 
   // Promote draft assignments to pending_review before SOD analysis
-  db.update(schema.userTargetRoleAssignments)
+  await db.update(schema.userTargetRoleAssignments)
     .set({ status: "pending_review", updatedAt: new Date().toISOString() })
-    .where(eq(schema.userTargetRoleAssignments.status, "draft"))
-    .run();
+    .where(eq(schema.userTargetRoleAssignments.status, "draft"));
 
   // Group assignments by user — include both pending_review (current) and existing (previous wave) for SOD
-  const seedAssignments = db.select().from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "pending_review")).all();
-  const seedExistingAssignments = db.select().from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing")).all();
+  const seedAssignments = await db.select().from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.status, "pending_review"));
+  const seedExistingAssignments = await db.select().from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"));
 
   const seedUserAssignments = new Map<number, number[]>(); // draft only
   const seedUserAllRoles = new Map<number, Set<number>>(); // all roles for SOD
@@ -600,7 +588,6 @@ function seed() {
 
   const seedUserEntries = Array.from(seedUserAssignments.entries());
   for (const [userId, draftRoleIds] of seedUserEntries) {
-    // Use ALL roles (existing + current) for SOD checking
     const allRoleIds = Array.from(seedUserAllRoles.get(userId) || new Set<number>());
     const userPerms = new Set<string>();
     const permToRole = new Map<string, number>();
@@ -627,12 +614,10 @@ function seed() {
         const permAName = permNameLookup.get(rule.permissionA) ?? null;
         const permBName = permNameLookup.get(rule.permissionB) ?? null;
 
-        // Determine conflict type: if both permissions come from the same role, it's within_role
         const conflictType = (roleIdA !== null && roleIdB !== null && roleIdA === roleIdB)
           ? "within_role"
           : "between_role";
 
-        // Build risk explanation
         const risk = rule.riskDescription
           ? rule.riskDescription
           : `Conflicting access: "${permAName ?? rule.permissionA}" and "${permBName ?? rule.permissionB}" should be held by separate individuals.`;
@@ -646,7 +631,7 @@ function seed() {
         }
         const riskExplanation = `${risk}\n\n${resolution}`;
 
-        db.insert(schema.sodConflicts).values({
+        await db.insert(schema.sodConflicts).values({
           userId,
           sodRuleId: rule.id,
           roleIdA,
@@ -657,14 +642,14 @@ function seed() {
           conflictType,
           resolutionStatus: "open",
           riskExplanation,
-        }).run();
+        });
       }
     }
 
-    // Update assignment statuses for DRAFT assignments only (existing keep their approved status)
+    // Update assignment statuses for DRAFT assignments only
     const newStatus = userConflictCount > 0 ? "sod_rejected" : "compliance_approved";
     for (const roleId of draftRoleIds) {
-      db.update(schema.userTargetRoleAssignments).set({
+      await db.update(schema.userTargetRoleAssignments).set({
         status: newStatus,
         sodConflictCount: userConflictCount,
         updatedAt: new Date().toISOString(),
@@ -674,7 +659,7 @@ function seed() {
           eq(schema.userTargetRoleAssignments.targetRoleId, roleId),
           eq(schema.userTargetRoleAssignments.status, "pending_review"),
         )
-      ).run();
+      );
     }
   }
 
@@ -682,51 +667,46 @@ function seed() {
   console.log(`    (${seedUserAssignments.size - seedUsersWithConflicts.size} users clean, ${seedUsersWithConflicts.size} users with conflicts)`);
 
   // ─── 12. Default Admin User ───
-  db.delete(schema.workAssignments).run();
-  db.delete(schema.appUserSessions).run();
-  db.delete(schema.appUsers).run();
-
-  // Hash password synchronously using bcryptjs
-  // Passwords meet the 12-char policy: uppercase + lowercase + digit + special char
-  const bcrypt = require("bcryptjs");
-  const sysadminHash = bcrypt.hashSync("Sysadmin@2026!", 12);
-  const adminHash = bcrypt.hashSync("AdminPass@2026!", 12);
-  const testPassword = bcrypt.hashSync("Provisum@2026!", 12);
-  const securityHash = bcrypt.hashSync("Security@2026!", 12);
-  const complianceHash = bcrypt.hashSync("Compliance@2026!", 12);
-  const grcHash = bcrypt.hashSync("GrcAnalyst@2026!", 12);
+  await db.delete(schema.workAssignments);
+  await db.delete(schema.appUserSessions);
+  await db.delete(schema.appUsers);
 
   const testUsers = [
-    { username: "sysadmin", displayName: "System Administrator", role: "system_admin", hash: sysadminHash, orgUnit: null as string | null },
-    { username: "admin", displayName: "Administrator", role: "admin", hash: adminHash, orgUnit: null as string | null },
-    { username: "mapper.finance", displayName: "Jane Chen (Finance Mapper)", role: "mapper", hash: testPassword, orgUnit: "Finance" },
-    { username: "mapper.maintenance", displayName: "Mike Torres (Maintenance Mapper)", role: "mapper", hash: testPassword, orgUnit: "Maintenance" },
-    { username: "mapper.procurement", displayName: "Sarah Kim (Procurement Mapper)", role: "mapper", hash: testPassword, orgUnit: "Procurement" },
-    { username: "approver.finance", displayName: "David Okafor (Finance Approver)", role: "approver", hash: testPassword, orgUnit: "Corporate Services" },
-    { username: "approver.operations", displayName: "Lisa Park (Operations Approver)", role: "approver", hash: testPassword, orgUnit: "Operations" },
-    { username: "viewer", displayName: "Chris Reed (Viewer)", role: "viewer", hash: testPassword, orgUnit: null as string | null },
-    { username: "security.lead", displayName: "Security Lead", role: "mapper", hash: securityHash, orgUnit: null as string | null },
-    { username: "compliance.officer", displayName: "Compliance Officer", role: "approver", hash: complianceHash, orgUnit: null as string | null },
-    { username: "grc.analyst", displayName: "GRC Analyst", role: "viewer", hash: grcHash, orgUnit: null as string | null },
+    { username: "sysadmin", displayName: "System Administrator", role: "system_admin", password: "Sysadmin@2026!", orgUnit: null as string | null },
+    { username: "admin", displayName: "Administrator", role: "admin", password: "AdminPass@2026!", orgUnit: null as string | null },
+    { username: "mapper.finance", displayName: "Jane Chen (Finance Mapper)", role: "mapper", password: "Provisum@2026!", orgUnit: "Finance" },
+    { username: "mapper.maintenance", displayName: "Mike Torres (Maintenance Mapper)", role: "mapper", password: "Provisum@2026!", orgUnit: "Maintenance" },
+    { username: "mapper.procurement", displayName: "Sarah Kim (Procurement Mapper)", role: "mapper", password: "Provisum@2026!", orgUnit: "Procurement" },
+    { username: "approver.finance", displayName: "David Okafor (Finance Approver)", role: "approver", password: "Provisum@2026!", orgUnit: "Corporate Services" },
+    { username: "approver.operations", displayName: "Lisa Park (Operations Approver)", role: "approver", password: "Provisum@2026!", orgUnit: "Operations" },
+    { username: "viewer", displayName: "Chris Reed (Viewer)", role: "viewer", password: "Provisum@2026!", orgUnit: null as string | null },
+    { username: "security.lead", displayName: "Security Lead", role: "mapper", password: "Security@2026!", orgUnit: null as string | null },
+    { username: "compliance.officer", displayName: "Compliance Officer", role: "approver", password: "Compliance@2026!", orgUnit: null as string | null },
+    { username: "grc.analyst", displayName: "GRC Analyst", role: "viewer", password: "GrcAnalyst@2026!", orgUnit: null as string | null },
   ];
 
   for (const u of testUsers) {
     const ouId = u.orgUnit ? (orgUnitIdMap.get(u.orgUnit) ?? null) : null;
-    db.insert(schema.appUsers).values({
+    const email = `${u.username}@provisum.demo`;
+    const supabaseAuthId = await createSupabaseAuthUser(email, u.password);
+
+    await db.insert(schema.appUsers).values({
       username: u.username,
       displayName: u.displayName,
-      passwordHash: u.hash,
+      email,
+      passwordHash: "",
       role: u.role,
       assignedOrgUnitId: ouId,
-    }).run();
+      supabaseAuthId,
+    });
   }
 
   // Create work assignments for the test users
-  const mapperFinance = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.finance")).get()!;
-  const mapperMaint = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.maintenance")).get()!;
-  const mapperProc = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.procurement")).get()!;
-  const approverFin = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "approver.finance")).get()!;
-  const approverOps = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "approver.operations")).get()!;
+  const [mapperFinance] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.finance"));
+  const [mapperMaint] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.maintenance"));
+  const [mapperProc] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "mapper.procurement"));
+  const [approverFin] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "approver.finance"));
+  const [approverOps] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "approver.operations"));
 
   const assignments = [
     { appUserId: mapperFinance.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Finance" },
@@ -744,35 +724,40 @@ function seed() {
   ];
 
   for (const a of assignments) {
-    db.insert(schema.workAssignments).values(a).run();
+    await db.insert(schema.workAssignments).values(a);
   }
 
   // ─── 12b. Self-Guided Demo Accounts (always created) ───
-  const demoHash = bcrypt.hashSync("DemoGuide2026!", 12);
+  const demoPassword = "DemoGuide2026!";
   const demoUsers = [
-    { username: "demo.admin", displayName: "Demo Administrator", role: "admin", hash: demoHash, orgUnit: null as string | null },
-    { username: "demo.mapper.finance", displayName: "Demo Finance Mapper", role: "mapper", hash: demoHash, orgUnit: "Finance" },
-    { username: "demo.mapper.operations", displayName: "Demo Operations Mapper", role: "mapper", hash: demoHash, orgUnit: "Operations" },
-    { username: "demo.approver", displayName: "Demo Approver", role: "approver", hash: demoHash, orgUnit: null as string | null },
-    { username: "demo.coordinator", displayName: "Demo Coordinator", role: "coordinator", hash: demoHash, orgUnit: null as string | null },
-    { username: "demo.viewer", displayName: "Demo Viewer", role: "viewer", hash: demoHash, orgUnit: null as string | null },
+    { username: "demo.admin", displayName: "Demo Administrator", role: "admin", orgUnit: null as string | null },
+    { username: "demo.mapper.finance", displayName: "Demo Finance Mapper", role: "mapper", orgUnit: "Finance" },
+    { username: "demo.mapper.operations", displayName: "Demo Operations Mapper", role: "mapper", orgUnit: "Operations" },
+    { username: "demo.approver", displayName: "Demo Approver", role: "approver", orgUnit: null as string | null },
+    { username: "demo.coordinator", displayName: "Demo Coordinator", role: "coordinator", orgUnit: null as string | null },
+    { username: "demo.viewer", displayName: "Demo Viewer", role: "viewer", orgUnit: null as string | null },
   ];
 
   for (const u of demoUsers) {
     const ouId = u.orgUnit ? (orgUnitIdMap.get(u.orgUnit) ?? null) : null;
-    db.insert(schema.appUsers).values({
+    const email = `${u.username}@provisum.demo`;
+    const supabaseAuthId = await createSupabaseAuthUser(email, demoPassword);
+
+    await db.insert(schema.appUsers).values({
       username: u.username,
       displayName: u.displayName,
-      passwordHash: u.hash,
+      email,
+      passwordHash: "",
       role: u.role,
       assignedOrgUnitId: ouId,
       demoEnvironment: "self-guided",
-    }).run();
+      supabaseAuthId,
+    });
   }
 
-  const demoMapperFin = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.mapper.finance")).get()!;
-  const demoMapperOps = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.mapper.operations")).get()!;
-  const demoApprover = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.approver")).get()!;
+  const [demoMapperFin] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.mapper.finance"));
+  const [demoMapperOps] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.mapper.operations"));
+  const [demoApprover] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, "demo.approver"));
 
   const demoAssignments = [
     { appUserId: demoMapperFin.id, assignmentType: "mapper", scopeType: "department", scopeValue: "Finance" },
@@ -785,14 +770,14 @@ function seed() {
   ];
 
   for (const a of demoAssignments) {
-    db.insert(schema.workAssignments).values(a).run();
+    await db.insert(schema.workAssignments).values(a);
   }
 
   console.log(`  ✓ ${demoUsers.length} self-guided demo accounts (always available)`);
   console.log("    Password: DemoGuide2026!");
 
   // ─── 13. Default System Settings ───
-  db.delete(schema.systemSettings).run();
+  await db.delete(schema.systemSettings);
   const defaultSettings = [
     { key: "project.name", value: "SAP S/4HANA Migration" },
     { key: "project.sourceSystem", value: "SAP ECC" },
@@ -810,23 +795,23 @@ function seed() {
     { key: "workflow.sodSeverity.low", value: "allowed" },
   ];
   for (const s of defaultSettings) {
-    db.insert(schema.systemSettings).values({
+    await db.insert(schema.systemSettings).values({
       key: s.key,
       value: s.value,
       updatedBy: "system",
-    }).run();
+    });
   }
   console.log(`  ✓ ${defaultSettings.length} default system settings`);
 
   // ─── 14. Releases + Release Scoping ───
-  db.delete(schema.releaseUsers).run();
-  db.delete(schema.releaseSourceRoles).run();
-  db.delete(schema.releaseTargetRoles).run();
-  db.delete(schema.releaseSodRules).run();
-  db.delete(schema.appUserReleases).run();
-  db.delete(schema.releases).run();
+  await db.delete(schema.releaseUsers);
+  await db.delete(schema.releaseSourceRoles);
+  await db.delete(schema.releaseTargetRoles);
+  await db.delete(schema.releaseSodRules);
+  await db.delete(schema.appUserReleases);
+  await db.delete(schema.releases);
 
-  const wave1 = db.insert(schema.releases).values({
+  const [wave1] = await db.insert(schema.releases).values({
     name: "Wave 1 — Finance & Operations",
     description: "First migration wave covering Finance, Procurement, and Operations departments.",
     status: "in_progress",
@@ -834,9 +819,9 @@ function seed() {
     targetSystem: "SAP S/4HANA",
     isActive: true,
     createdBy: "system",
-  }).returning().get();
+  }).returning();
 
-  const wave2 = db.insert(schema.releases).values({
+  const [wave2] = await db.insert(schema.releases).values({
     name: "Wave 2 — Maintenance & IT",
     description: "Second wave covering Maintenance, Facilities, IT, and remaining departments.",
     status: "planning",
@@ -844,51 +829,47 @@ function seed() {
     targetSystem: "SAP S/4HANA",
     isActive: false,
     createdBy: "system",
-  }).returning().get();
+  }).returning();
 
   console.log(`  ✓ 2 releases: Wave 1 (active), Wave 2 (planning)`);
 
   // Associate ALL users with Wave 1 (initial migration covers everyone)
-  // Associate a subset with Wave 2
-  const seedAllUsers = db.select({ id: schema.users.id, department: schema.users.department }).from(schema.users).all();
+  const seedAllUsers = await db.select({ id: schema.users.id, department: schema.users.department }).from(schema.users);
   const wave2Depts = new Set(["Maintenance", "Facilities Management", "IT", "Quality Control"]);
 
   for (const u of seedAllUsers) {
-    db.insert(schema.releaseUsers).values({ releaseId: wave1.id, userId: u.id }).run();
+    await db.insert(schema.releaseUsers).values({ releaseId: wave1.id, userId: u.id });
     if (wave2Depts.has(u.department || "")) {
-      db.insert(schema.releaseUsers).values({ releaseId: wave2.id, userId: u.id }).run();
+      await db.insert(schema.releaseUsers).values({ releaseId: wave2.id, userId: u.id });
     }
   }
   const wave2UserCount = seedAllUsers.filter(u => wave2Depts.has(u.department || "")).length;
   console.log(`  ✓ Release users: ${seedAllUsers.length} in Wave 1, ${wave2UserCount} in Wave 2`);
 
   // Associate all source roles, target roles, and SOD rules with Wave 1
-  const seedSourceRoles = db.select({ id: schema.sourceRoles.id }).from(schema.sourceRoles).all();
-  const seedTargetRoles = db.select({ id: schema.targetRoles.id }).from(schema.targetRoles).all();
-  const seedSodRules = db.select({ id: schema.sodRules.id }).from(schema.sodRules).all();
+  const seedSourceRoles = await db.select({ id: schema.sourceRoles.id }).from(schema.sourceRoles);
+  const seedTargetRoles = await db.select({ id: schema.targetRoles.id }).from(schema.targetRoles);
+  const seedSodRules = await db.select({ id: schema.sodRules.id }).from(schema.sodRules);
 
   for (const sr of seedSourceRoles) {
-    db.insert(schema.releaseSourceRoles).values({ releaseId: wave1.id, sourceRoleId: sr.id }).run();
+    await db.insert(schema.releaseSourceRoles).values({ releaseId: wave1.id, sourceRoleId: sr.id });
   }
   for (const tr of seedTargetRoles) {
-    db.insert(schema.releaseTargetRoles).values({ releaseId: wave1.id, targetRoleId: tr.id }).run();
-    // Wave 2 also gets all target roles (same target system)
-    db.insert(schema.releaseTargetRoles).values({ releaseId: wave2.id, targetRoleId: tr.id }).run();
+    await db.insert(schema.releaseTargetRoles).values({ releaseId: wave1.id, targetRoleId: tr.id });
+    await db.insert(schema.releaseTargetRoles).values({ releaseId: wave2.id, targetRoleId: tr.id });
   }
   for (const sr of seedSodRules) {
-    db.insert(schema.releaseSodRules).values({ releaseId: wave1.id, sodRuleId: sr.id }).run();
-    db.insert(schema.releaseSodRules).values({ releaseId: wave2.id, sodRuleId: sr.id }).run();
+    await db.insert(schema.releaseSodRules).values({ releaseId: wave1.id, sodRuleId: sr.id });
+    await db.insert(schema.releaseSodRules).values({ releaseId: wave2.id, sodRuleId: sr.id });
   }
   console.log(`  ✓ Release associations: ${seedSourceRoles.length} source roles, ${seedTargetRoles.length} target roles, ${seedSodRules.length} SOD rules`);
 
   // Assign app users to releases
-  const appUserRows = db.select({ id: schema.appUsers.id, role: schema.appUsers.role, username: schema.appUsers.username }).from(schema.appUsers).all();
+  const appUserRows = await db.select({ id: schema.appUsers.id, role: schema.appUsers.role, username: schema.appUsers.username }).from(schema.appUsers);
   for (const au of appUserRows) {
-    // All app users get Wave 1
-    db.insert(schema.appUserReleases).values({ appUserId: au.id, releaseId: wave1.id }).run();
-    // Admins + maintenance/operations-scoped users also get Wave 2
+    await db.insert(schema.appUserReleases).values({ appUserId: au.id, releaseId: wave1.id });
     if (["admin", "system_admin"].includes(au.role) || au.username.includes("maintenance") || au.username.includes("operations")) {
-      db.insert(schema.appUserReleases).values({ appUserId: au.id, releaseId: wave2.id }).run();
+      await db.insert(schema.appUserReleases).values({ appUserId: au.id, releaseId: wave2.id });
     }
   }
   console.log(`  ✓ App user release assignments`);
@@ -910,25 +891,61 @@ function seed() {
   // ─── Verification ───
   console.log("\n📊 Verification:");
   const counts = {
-    users: db.select().from(schema.users).all().length,
-    consolidatedGroups: db.select().from(schema.consolidatedGroups).all().length,
-    personas: db.select().from(schema.personas).all().length,
-    sourceRoles: db.select().from(schema.sourceRoles).all().length,
-    sourcePermissions: db.select().from(schema.sourcePermissions).all().length,
-    rolePermissions: db.select().from(schema.sourceRolePermissions).all().length,
-    targetRoles: db.select().from(schema.targetRoles).all().length,
-    targetPermissions: db.select().from(schema.targetPermissions).all().length,
-    targetRolePermissions: db.select().from(schema.targetRolePermissions).all().length,
-    userPersonaAssignments: db.select().from(schema.userPersonaAssignments).all().length,
-    sodRules: db.select().from(schema.sodRules).all().length,
-    userTargetRoleAssignments: db.select().from(schema.userTargetRoleAssignments).all().length,
-    sodConflicts: db.select().from(schema.sodConflicts).all().length,
+    users: (await db.select().from(schema.users)).length,
+    consolidatedGroups: (await db.select().from(schema.consolidatedGroups)).length,
+    personas: (await db.select().from(schema.personas)).length,
+    sourceRoles: (await db.select().from(schema.sourceRoles)).length,
+    sourcePermissions: (await db.select().from(schema.sourcePermissions)).length,
+    rolePermissions: (await db.select().from(schema.sourceRolePermissions)).length,
+    targetRoles: (await db.select().from(schema.targetRoles)).length,
+    targetPermissions: (await db.select().from(schema.targetPermissions)).length,
+    targetRolePermissions: (await db.select().from(schema.targetRolePermissions)).length,
+    userPersonaAssignments: (await db.select().from(schema.userPersonaAssignments)).length,
+    sodRules: (await db.select().from(schema.sodRules)).length,
+    userTargetRoleAssignments: (await db.select().from(schema.userTargetRoleAssignments)).length,
+    sodConflicts: (await db.select().from(schema.sodConflicts)).length,
   };
   console.log(counts);
   console.log("\n✅ Seed complete!");
-
-  // Close the database connection so subsequent processes can access it
-  sqlite.close();
 }
 
-seed();
+// ─── Standalone entry point (only runs when executed directly via tsx) ───
+const isDirectExecution = process.argv[1]?.includes("seed");
+if (isDirectExecution) {
+  const demoArg = process.argv.find((a) => a.startsWith("--demo="));
+  const demoPack = demoArg ? demoArg.split("=")[1] : null;
+  const packName = demoPack ?? "default";
+  const csvDir = path.join(DATA_DIR, "demos", packName);
+
+  if (!existsSync(csvDir)) {
+    console.error(`❌ Demo pack not found: ${csvDir}`);
+    process.exit(1);
+  }
+
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    console.error("❌ DATABASE_URL environment variable is required");
+    process.exit(1);
+  }
+
+  console.log(`📦 Using demo pack: ${packName}`);
+  console.log(`   CSV directory: ${csvDir}`);
+  console.log(`   Database: Supabase Postgres\n`);
+
+  const client = postgres(connectionString, { max: 5 });
+  const seedDb = drizzle(client, { schema });
+
+  const readCsv = <T,>(filename: string): T[] => {
+    const filepath = path.join(csvDir, filename);
+    if (!existsSync(filepath)) return [];
+    const content = readFileSync(filepath, "utf-8");
+    return parse(content, { columns: true, skip_empty_lines: true, trim: true }) as T[];
+  };
+
+  runSeed(seedDb, readCsv)
+    .then(() => client.end())
+    .catch((err) => {
+      console.error("❌ Seed failed:", err);
+      client.end().then(() => process.exit(1));
+    });
+}

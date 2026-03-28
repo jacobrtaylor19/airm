@@ -26,11 +26,11 @@ interface ChatRequestBody {
   };
 }
 
-function getLumenDataContext(user: { id: number; role: string }): string {
+async function getLumenDataContext(user: { id: number; role: string }): Promise<string> {
   try {
-    const stats = getDashboardStats();
-    const scopedUserIds = getUserScope(user as Parameters<typeof getUserScope>[0]);
-    const scopeDepts = getUserScopeDepartments(user as Parameters<typeof getUserScopeDepartments>[0]);
+    const stats = await getDashboardStats();
+    const scopedUserIds = await getUserScope(user as Parameters<typeof getUserScope>[0]);
+    const scopeDepts = await getUserScopeDepartments(user as Parameters<typeof getUserScopeDepartments>[0]);
 
     const lines: string[] = [
       `\n## Current Project Data`,
@@ -57,11 +57,11 @@ function getLumenDataContext(user: { id: number; role: string }): string {
       lines.push(`- Users in your scope: ${scopedUserIds.length}`);
 
       if (scopedUserIds.length > 0) {
-        const scopedPersonaCount = db
+        const [scopedPersonaCountRow] = await db
           .select({ count: sql<number>`count(distinct persona_id)` })
           .from(schema.userPersonaAssignments)
-          .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds))
-          .get()?.count ?? 0;
+          .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds));
+        const scopedPersonaCount = scopedPersonaCountRow?.count ?? 0;
         lines.push(`- Personas in your scope: ${scopedPersonaCount}`);
       }
     }
@@ -95,7 +95,7 @@ Guidelines:
 }
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const apiKey = getSetting("ai.apiKey") || process.env.ANTHROPIC_API_KEY;
+  const apiKey = await getSetting("ai.apiKey") || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return new Response(JSON.stringify({ error: "AI API key not configured" }), {
       status: 500,
@@ -134,9 +134,9 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const model = getSetting("ai.model") || "claude-sonnet-4-20250514";
+  const model = await getSetting("ai.model") || "claude-sonnet-4-20250514";
 
-  const dataContext = getLumenDataContext(user);
+  const dataContext = await getLumenDataContext(user);
   const systemPrompt = buildSystemPrompt(
     context?.userName || user.displayName,
     context?.userRole || user.role,

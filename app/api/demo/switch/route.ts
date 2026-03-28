@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { execSync } from "child_process";
 import { existsSync } from "fs";
 import path from "path";
 import { setSetting } from "@/lib/settings";
 import { safeError } from "@/lib/errors";
+import { seedDatabase } from "@/db/seed";
+import { db } from "@/db";
 
 export const dynamic = "force-dynamic";
 
@@ -41,18 +42,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Use pnpm db:seed for reliability — npx tsx may not resolve on Render
-    const cmd = demo === "default"
-      ? "pnpm db:seed"
-      : `pnpm db:seed -- --demo=${demo}`;
-    execSync(cmd, {
-      cwd: process.cwd(),
-      stdio: "pipe",
-      timeout: 120000, // 2 min — bcrypt hashing for accounts takes time
-    });
+    await seedDatabase(db, demo);
 
     // Persist the active demo pack so login isolation can check it
-    setSetting("active_demo_pack", demo, "system");
+    await setSetting("active_demo_pack", demo, "system");
 
     return NextResponse.json({
       success: true,

@@ -4,24 +4,42 @@ import * as schema from "@/db/schema";
 import { count, eq } from "drizzle-orm";
 
 export async function generatePdfReport(generatedByUsername?: string): Promise<Buffer> {
+  // Query stats — all async before entering the sync PDF builder
+  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users);
+  const totalUsers = totalUsersRow!.count;
+  const [totalPersonasRow] = await db.select({ count: count() }).from(schema.personas);
+  const totalPersonas = totalPersonasRow!.count;
+  const [totalTargetRolesRow] = await db.select({ count: count() }).from(schema.targetRoles);
+  const totalTargetRoles = totalTargetRolesRow!.count;
+  const [totalAssignmentsRow] = await db.select({ count: count() }).from(schema.userTargetRoleAssignments);
+  const totalAssignments = totalAssignmentsRow!.count;
+  const [approvedRow] = await db.select({ count: count() }).from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.status, "approved"));
+  const approved = approvedRow!.count;
+  const [totalMappingsRow] = await db.select({ count: count() }).from(schema.personaTargetRoleMappings);
+  const totalMappings = totalMappingsRow!.count;
+  const [conflictsRow] = await db.select({ count: count() }).from(schema.sodConflicts);
+  const conflicts = conflictsRow!.count;
+  const approvalPct = totalAssignments > 0 ? Math.round((approved / totalAssignments) * 100) : 0;
+
+  const deptStats = await db.select({
+    department: schema.users.department,
+    userCount: count(),
+  }).from(schema.users).groupBy(schema.users.department);
+
+  const allConflictRows = conflicts > 0
+    ? await db.select().from(schema.sodConflicts)
+    : [];
+
+  const personas = await db.select().from(schema.personas);
+
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 50 });
+    const doc = new PDFDocument({ margin: 50, bufferPages: true });
     const chunks: Buffer[] = [];
 
     doc.on("data", (chunk: Buffer) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
-
-    // Query stats
-    const totalUsers = db.select({ count: count() }).from(schema.users).get()!.count;
-    const totalPersonas = db.select({ count: count() }).from(schema.personas).get()!.count;
-    const totalTargetRoles = db.select({ count: count() }).from(schema.targetRoles).get()!.count;
-    const totalAssignments = db.select({ count: count() }).from(schema.userTargetRoleAssignments).get()!.count;
-    const approved = db.select({ count: count() }).from(schema.userTargetRoleAssignments)
-      .where(eq(schema.userTargetRoleAssignments.status, "approved")).get()!.count;
-    const totalMappings = db.select({ count: count() }).from(schema.personaTargetRoleMappings).get()!.count;
-    const conflicts = db.select({ count: count() }).from(schema.sodConflicts).get()!.count;
-    const approvalPct = totalAssignments > 0 ? Math.round((approved / totalAssignments) * 100) : 0;
 
     // ─────────────────────────────────────────────
     // COVER PAGE
@@ -91,11 +109,6 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     doc.fontSize(14).font("Helvetica-Bold").text("Department Breakdown");
     doc.moveDown(0.5);
 
-    const deptStats = db.select({
-      department: schema.users.department,
-      userCount: count(),
-    }).from(schema.users).groupBy(schema.users.department).all();
-
     doc.fontSize(11).font("Helvetica");
     for (const dept of deptStats) {
       const pct = totalUsers > 0 ? Math.round((dept.userCount / totalUsers) * 100) : 0;
@@ -111,7 +124,6 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     if (conflicts === 0) {
       doc.text("No SOD conflicts detected. Risk level: LOW.");
     } else {
-      const allConflictRows = db.select().from(schema.sodConflicts).all();
       const severityMap: Record<string, { total: number; open: number; accepted: number }> = {};
       for (const c of allConflictRows) {
         const sev = c.severity ?? "unknown";
@@ -146,7 +158,6 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     doc.fillColor("#000000");
     doc.moveDown(0.5);
 
-    const personas = db.select().from(schema.personas).all();
     doc.fontSize(11).font("Helvetica");
     for (const p of personas) {
       doc.text(`${p.name} \u2014 ${p.businessFunction ?? "General"} (${p.source})`);

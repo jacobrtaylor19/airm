@@ -5,13 +5,13 @@ import { UsersTable } from "./users-table";
 
 export const dynamic = "force-dynamic";
 
-export default function UsersPage() {
-  const currentUser = getSessionUser();
-  let users = getUsers();
+export default async function UsersPage() {
+  const currentUser = await getSessionUser();
+  let users = await getUsers();
 
   // Filter by org scope for mappers/approvers
   if (currentUser && ["mapper", "approver"].includes(currentUser.role)) {
-    const scopedUserIds = getUserScope(currentUser);
+    const scopedUserIds = await getUserScope(currentUser);
     if (scopedUserIds !== null) {
       const idSet = new Set(scopedUserIds);
       users = users.filter(u => idSet.has(u.id));

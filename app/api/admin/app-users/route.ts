@@ -2,19 +2,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { getSessionUser, hashPassword } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 import { safeError } from "@/lib/errors";
 import { validatePassword } from "@/lib/password-policy";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || (user.role !== "admin" && user.role !== "system_admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const users = db.select({
+  const users = await db.select({
     id: schema.appUsers.id,
     username: schema.appUsers.username,
     displayName: schema.appUsers.displayName,
@@ -22,13 +23,13 @@ export async function GET() {
     role: schema.appUsers.role,
     isActive: schema.appUsers.isActive,
     createdAt: schema.appUsers.createdAt,
-  }).from(schema.appUsers).all();
+  }).from(schema.appUsers);
 
   return NextResponse.json(users);
 }
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || (user.role !== "admin" && user.role !== "system_admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -44,27 +45,44 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Password does not meet requirements", details: pwCheck.errors }, { status: 400 });
     }
 
-    const existing = db.select().from(schema.appUsers).where(eq(schema.appUsers.username, username)).get();
+    const [existing] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.username, username)).limit(1);
     if (existing) {
       return NextResponse.json({ error: "Username already exists" }, { status: 400 });
     }
 
-    const passwordHash = await hashPassword(password);
-    const created = db.insert(schema.appUsers).values({
+    // Create Supabase Auth user via admin API
+    const supabaseAdmin = createAdminClient();
+    const authEmail = email || `${username}@provisum.demo`;
+
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+      email: authEmail,
+      password,
+      email_confirm: true,
+    });
+
+    if (authError || !authData.user) {
+      return NextResponse.json(
+        { error: `Failed to create auth user: ${authError?.message || "Unknown error"}` },
+        { status: 500 }
+      );
+    }
+
+    const [created] = await db.insert(schema.appUsers).values({
       username,
       displayName,
-      email: email || null,
-      passwordHash,
+      email: authEmail,
+      passwordHash: "",
       role,
-    }).returning().get();
+      supabaseAuthId: authData.user.id,
+    }).returning();
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "appUser",
       entityId: created.id,
       action: "created",
       newValue: JSON.stringify({ username, role }),
       actorEmail: user.username,
-    }).run();
+    });
 
     return NextResponse.json({ success: true, id: created.id });
   } catch (err: unknown) {

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const SEND_BACK_ROLES = ["system_admin", "admin", "mapper", "approver"];
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !SEND_BACK_ROLES.includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -25,26 +25,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "assignmentId and reason required" }, { status: 400 });
     }
 
-    const assignment = db.select().from(schema.userTargetRoleAssignments)
-      .where(eq(schema.userTargetRoleAssignments.id, assignmentId)).get();
+    const [assignment] = await db.select().from(schema.userTargetRoleAssignments)
+      .where(eq(schema.userTargetRoleAssignments.id, assignmentId)).limit(1);
     if (!assignment) {
       return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
     }
 
-    db.update(schema.userTargetRoleAssignments).set({
+    await db.update(schema.userTargetRoleAssignments).set({
       status: "draft",
       sentBackReason: reason,
       updatedAt: new Date().toISOString(),
-    }).where(eq(schema.userTargetRoleAssignments.id, assignmentId)).run();
+    }).where(eq(schema.userTargetRoleAssignments.id, assignmentId));
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "userTargetRoleAssignment",
       entityId: assignmentId,
       action: "sent_back",
       actorEmail: user.username,
       oldValue: JSON.stringify({ status: assignment.status }),
       newValue: JSON.stringify({ status: "draft", reason }),
-    }).run();
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

@@ -1,10 +1,11 @@
-import { getDashboardStats, getDepartmentMappingStatus, getSourceSystemStats, getLeastAccessAnalysis, getPersonaIdsForUsers } from "@/lib/queries";
+import { getDashboardStats, getDepartmentMappingStatus, getSourceSystemStats, getLeastAccessAnalysis, getPersonaIdsForUsers, getAggregateRiskAnalysis } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
 import { getUserScopeDepartments, getUserScope } from "@/lib/scope";
 import { getSetting } from "@/lib/settings";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
-import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Database, Info, AlertTriangle, CheckCircle2, Zap } from "lucide-react";
+import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Database, Info, AlertTriangle, CheckCircle2, Zap, TrendingUp } from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DashboardFiltered } from "./dashboard-filtered";
@@ -15,11 +16,11 @@ import { inArray, count, sql } from "drizzle-orm";
 
 export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
-  const user = requireAuth();
-  const stats = getDashboardStats();
-  const allDeptStatus = getDepartmentMappingStatus();
-  const sourceSystemStats = getSourceSystemStats();
+export default async function DashboardPage() {
+  const user = await requireAuth();
+  const stats = await getDashboardStats();
+  const allDeptStatus = await getDepartmentMappingStatus();
+  const sourceSystemStats = await getSourceSystemStats();
 
   const mappedPercent = stats.totalPersonas > 0
     ? Math.round((stats.personasWithMapping / stats.totalPersonas) * 100) : 0;
@@ -27,35 +28,32 @@ export default function DashboardPage() {
     ? Math.round((stats.approvedAssignments / stats.totalAssignments) * 100) : 0;
 
   // Determine assigned departments for mapper/approver via org hierarchy
-  const scopeDepts = getUserScopeDepartments(user);
+  const scopeDepts = await getUserScopeDepartments(user);
   const assignedDepartments = scopeDepts && scopeDepts.length > 0 ? scopeDepts : null;
 
   // Build scoped stats for strapline (mapper/approver/coordinator)
   const needsScopeStats = ["mapper", "approver", "coordinator"].includes(user.role);
   let scopedStats = null;
   if (needsScopeStats) {
-    const scopedUserIds = getUserScope(user);
+    const scopedUserIds = await getUserScope(user);
     if (scopedUserIds !== null && scopedUserIds.length > 0) {
       const depts = scopeDepts ?? [];
       // Count personas mapped in this scope
       const scopedPersonaRows = scopedUserIds.length > 0
-        ? db.select({ personaId: schema.userPersonaAssignments.personaId })
+        ? await db.select({ personaId: schema.userPersonaAssignments.personaId })
             .from(schema.userPersonaAssignments)
             .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds))
-            .all()
         : [];
       const scopedPersonaIds = Array.from(new Set(scopedPersonaRows.map(r => r.personaId).filter((id): id is number => id !== null)));
       const mappedPersonaCount = scopedPersonaIds.length > 0
-        ? db.select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
+        ? Number((await db.select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
             .from(schema.personaTargetRoleMappings)
-            .where(inArray(schema.personaTargetRoleMappings.personaId, scopedPersonaIds))
-            .get()?.count ?? 0
+            .where(inArray(schema.personaTargetRoleMappings.personaId, scopedPersonaIds)))?.[0]?.count ?? 0)
         : 0;
       const pendingApprovals = scopedUserIds.length > 0
-        ? db.select({ count: count() })
+        ? (await db.select({ count: count() })
             .from(schema.userTargetRoleAssignments)
-            .where(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds))
-            .get()?.count ?? 0
+            .where(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)))?.[0]?.count ?? 0
         : 0;
       scopedStats = {
         deptCount: depts.length,
@@ -69,13 +67,17 @@ export default function DashboardPage() {
 
   const strapline = generateStrapline(stats, user.role, scopedStats, user.displayName);
 
+  // Risk analysis — scoped to user's area
+  const riskScopeIds = await getUserScope(user);
+  const riskAnalysis = await getAggregateRiskAnalysis(riskScopeIds);
+
   // Provisioning alerts — scoped to user's area
-  const overprovisioningThreshold = parseInt(getSetting("least_access_threshold") ?? "30", 10);
-  let overprovisioningAlerts = getLeastAccessAnalysis(overprovisioningThreshold);
+  const overprovisioningThreshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
+  let overprovisioningAlerts = await getLeastAccessAnalysis(overprovisioningThreshold);
   if (["mapper", "approver", "coordinator"].includes(user.role)) {
-    const scopedUserIds = getUserScope(user);
+    const scopedUserIds = await getUserScope(user);
     if (scopedUserIds !== null) {
-      const scopedPersonaIds = new Set(getPersonaIdsForUsers(scopedUserIds));
+      const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
       overprovisioningAlerts = overprovisioningAlerts.filter(r => scopedPersonaIds.has(r.personaId));
     }
   }
@@ -182,6 +184,53 @@ export default function DashboardPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Risk Quantification Summary */}
+      {riskAnalysis.totalUsersAnalyzed > 0 && (
+        <>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Risk Quantification</h3>
+            <Link href="/risk-analysis" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+              View full analysis &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <Card className={riskAnalysis.businessContinuity.usersAtRisk > 20 ? "border-red-200 bg-red-50/30" : riskAnalysis.businessContinuity.usersAtRisk > 5 ? "border-yellow-200 bg-yellow-50/30" : ""}>
+              <CardContent className="flex items-center gap-3 py-3">
+                <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Business Continuity</p>
+                  <p className="text-xs text-muted-foreground">
+                    <strong className="text-foreground">{riskAnalysis.businessContinuity.usersAtRisk}</strong> users below 90% coverage &middot; {riskAnalysis.businessContinuity.avgCoverage}% avg
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className={riskAnalysis.adoption.usersWithNewAccess > 30 ? "border-red-200 bg-red-50/30" : riskAnalysis.adoption.usersWithNewAccess > 10 ? "border-yellow-200 bg-yellow-50/30" : ""}>
+              <CardContent className="flex items-center gap-3 py-3">
+                <TrendingUp className="h-5 w-5 text-blue-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Adoption Risk</p>
+                  <p className="text-xs text-muted-foreground">
+                    <strong className="text-foreground">{riskAnalysis.adoption.usersWithNewAccess}</strong> users with &gt;10 new perms &middot; {riskAnalysis.adoption.totalNewPerms} total
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className={riskAnalysis.incorrectAccess.flaggedUsers > 10 ? "border-red-200 bg-red-50/30" : riskAnalysis.incorrectAccess.flaggedUsers > 3 ? "border-yellow-200 bg-yellow-50/30" : ""}>
+              <CardContent className="flex items-center gap-3 py-3">
+                <Shield className="h-5 w-5 text-red-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Incorrect Access</p>
+                  <p className="text-xs text-muted-foreground">
+                    <strong className="text-foreground">{riskAnalysis.incorrectAccess.flaggedUsers}</strong> flagged users (gaps + SOD conflicts)
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
       )}
 
       {/* Filtered Department View — interactive client component */}

@@ -10,22 +10,21 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const tree = getOrgTree();
+    const tree = await getOrgTree();
 
     // Also return flat list of app users with mapper/approver roles for assignment dropdowns
-    const appUsers = db
+    const appUsers = await db
       .select({
         id: schema.appUsers.id,
         displayName: schema.appUsers.displayName,
         role: schema.appUsers.role,
       })
       .from(schema.appUsers)
-      .where(eq(schema.appUsers.isActive, true))
-      .all();
+      .where(eq(schema.appUsers.isActive, true));
 
     const mappers = appUsers.filter((u) => u.role === "mapper");
     const approvers = appUsers.filter((u) => u.role === "approver");
-    const allUnits = getAllOrgUnits();
+    const allUnits = await getAllOrgUnits();
 
     return NextResponse.json({ tree, mappers, approvers, allUnits });
   } catch (error) {
@@ -38,7 +37,7 @@ export async function GET() {
 
 // CREATE org unit
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== "system_admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -63,7 +62,7 @@ export async function POST(req: NextRequest) {
       if (!parentId) {
         return NextResponse.json({ error: "L2 units must have an L1 parent" }, { status: 400 });
       }
-      const parent = db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, parentId)).get();
+      const [parent] = await db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, parentId)).limit(1);
       if (!parent || parent.level !== "L1") {
         return NextResponse.json({ error: "L2 parent must be an L1 unit" }, { status: 400 });
       }
@@ -73,13 +72,13 @@ export async function POST(req: NextRequest) {
       if (!parentId) {
         return NextResponse.json({ error: "L3 units must have an L2 parent" }, { status: 400 });
       }
-      const parent = db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, parentId)).get();
+      const [parent] = await db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, parentId)).limit(1);
       if (!parent || parent.level !== "L2") {
         return NextResponse.json({ error: "L3 parent must be an L2 unit" }, { status: 400 });
       }
     }
 
-    const inserted = db
+    const [inserted] = await db
       .insert(schema.orgUnits)
       .values({
         name,
@@ -87,19 +86,17 @@ export async function POST(req: NextRequest) {
         parentId: parentId || null,
         description: description || null,
       })
-      .returning()
-      .get();
+      .returning();
 
     // Audit log
-    db.insert(schema.auditLog)
+    await db.insert(schema.auditLog)
       .values({
         entityType: "orgUnit",
         entityId: inserted.id,
         action: "created",
         newValue: JSON.stringify({ name, level, parentId, description }),
         actorEmail: user.email ?? user.username,
-      })
-      .run();
+      });
 
     return NextResponse.json({ success: true, orgUnit: inserted });
   } catch (err: unknown) {
@@ -110,7 +107,7 @@ export async function POST(req: NextRequest) {
 
 // UPDATE org unit
 export async function PUT(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== "system_admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -122,7 +119,7 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
-    const existing = db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, id)).get();
+    const [existing] = await db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, id)).limit(1);
     if (!existing) {
       return NextResponse.json({ error: "Org unit not found" }, { status: 404 });
     }
@@ -135,13 +132,13 @@ export async function PUT(req: NextRequest) {
         return NextResponse.json({ error: "L1 units cannot have a parent" }, { status: 400 });
       }
       if (existing.level === "L2" && parentId) {
-        const parent = db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, parentId)).get();
+        const [parent] = await db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, parentId)).limit(1);
         if (!parent || parent.level !== "L1") {
           return NextResponse.json({ error: "L2 parent must be an L1 unit" }, { status: 400 });
         }
       }
       if (existing.level === "L3" && parentId) {
-        const parent = db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, parentId)).get();
+        const [parent] = await db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, parentId)).limit(1);
         if (!parent || parent.level !== "L2") {
           return NextResponse.json({ error: "L3 parent must be an L2 unit" }, { status: 400 });
         }
@@ -159,13 +156,13 @@ export async function PUT(req: NextRequest) {
     if (parentId !== undefined) updates.parentId = parentId || null;
 
     if (Object.keys(updates).length > 0) {
-      db.update(schema.orgUnits).set(updates).where(eq(schema.orgUnits.id, id)).run();
+      await db.update(schema.orgUnits).set(updates).where(eq(schema.orgUnits.id, id));
     }
 
     // Handle mapper assignment
     if (assignedMapperId !== undefined) {
       // Remove any existing mapper assignment for this org unit
-      const existingMappers = db
+      const existingMappers = await db
         .select()
         .from(schema.appUsers)
         .where(
@@ -173,28 +170,25 @@ export async function PUT(req: NextRequest) {
             eq(schema.appUsers.assignedOrgUnitId, id),
             eq(schema.appUsers.role, "mapper")
           )
-        )
-        .all();
+        );
       for (const m of existingMappers) {
-        db.update(schema.appUsers)
+        await db.update(schema.appUsers)
           .set({ assignedOrgUnitId: null })
-          .where(eq(schema.appUsers.id, m.id))
-          .run();
+          .where(eq(schema.appUsers.id, m.id));
       }
 
       // Assign new mapper if provided
       if (assignedMapperId) {
-        db.update(schema.appUsers)
+        await db.update(schema.appUsers)
           .set({ assignedOrgUnitId: id })
-          .where(eq(schema.appUsers.id, assignedMapperId))
-          .run();
+          .where(eq(schema.appUsers.id, assignedMapperId));
       }
     }
 
     // Handle approver assignment
     if (assignedApproverId !== undefined) {
       // Remove any existing approver assignment for this org unit
-      const existingApprovers = db
+      const existingApprovers = await db
         .select()
         .from(schema.appUsers)
         .where(
@@ -202,26 +196,23 @@ export async function PUT(req: NextRequest) {
             eq(schema.appUsers.assignedOrgUnitId, id),
             eq(schema.appUsers.role, "approver")
           )
-        )
-        .all();
+        );
       for (const a of existingApprovers) {
-        db.update(schema.appUsers)
+        await db.update(schema.appUsers)
           .set({ assignedOrgUnitId: null })
-          .where(eq(schema.appUsers.id, a.id))
-          .run();
+          .where(eq(schema.appUsers.id, a.id));
       }
 
       // Assign new approver if provided
       if (assignedApproverId) {
-        db.update(schema.appUsers)
+        await db.update(schema.appUsers)
           .set({ assignedOrgUnitId: id })
-          .where(eq(schema.appUsers.id, assignedApproverId))
-          .run();
+          .where(eq(schema.appUsers.id, assignedApproverId));
       }
     }
 
     // Audit log
-    db.insert(schema.auditLog)
+    await db.insert(schema.auditLog)
       .values({
         entityType: "orgUnit",
         entityId: id,
@@ -229,8 +220,7 @@ export async function PUT(req: NextRequest) {
         oldValue,
         newValue: JSON.stringify({ name, description, parentId, assignedMapperId, assignedApproverId }),
         actorEmail: user.email ?? user.username,
-      })
-      .run();
+      });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
@@ -241,7 +231,7 @@ export async function PUT(req: NextRequest) {
 
 // DELETE org unit
 export async function DELETE(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== "system_admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -253,17 +243,16 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "id is required" }, { status: 400 });
     }
 
-    const existing = db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, id)).get();
+    const [existing] = await db.select().from(schema.orgUnits).where(eq(schema.orgUnits.id, id)).limit(1);
     if (!existing) {
       return NextResponse.json({ error: "Org unit not found" }, { status: 404 });
     }
 
     // Check for children
-    const children = db
+    const children = await db
       .select()
       .from(schema.orgUnits)
-      .where(eq(schema.orgUnits.parentId, id))
-      .all();
+      .where(eq(schema.orgUnits.parentId, id));
     if (children.length > 0) {
       return NextResponse.json(
         { error: "Cannot delete org unit that has children. Delete children first." },
@@ -272,37 +261,33 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Check for assigned users (warning — still allow deletion)
-    const assignedUsers = db
+    const assignedUsers = await db
       .select({ id: schema.users.id })
       .from(schema.users)
-      .where(eq(schema.users.orgUnitId, id))
-      .all();
+      .where(eq(schema.users.orgUnitId, id));
 
     // Unset assignedOrgUnitId for app users assigned to this org unit
-    db.update(schema.appUsers)
+    await db.update(schema.appUsers)
       .set({ assignedOrgUnitId: null })
-      .where(eq(schema.appUsers.assignedOrgUnitId, id))
-      .run();
+      .where(eq(schema.appUsers.assignedOrgUnitId, id));
 
     // Unset orgUnitId for users assigned to this org unit
-    db.update(schema.users)
+    await db.update(schema.users)
       .set({ orgUnitId: null })
-      .where(eq(schema.users.orgUnitId, id))
-      .run();
+      .where(eq(schema.users.orgUnitId, id));
 
     // Delete
-    db.delete(schema.orgUnits).where(eq(schema.orgUnits.id, id)).run();
+    await db.delete(schema.orgUnits).where(eq(schema.orgUnits.id, id));
 
     // Audit log
-    db.insert(schema.auditLog)
+    await db.insert(schema.auditLog)
       .values({
         entityType: "orgUnit",
         entityId: id,
         action: "deleted",
         oldValue: JSON.stringify(existing),
         actorEmail: user.email ?? user.username,
-      })
-      .run();
+      });
 
     return NextResponse.json({
       success: true,

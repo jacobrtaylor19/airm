@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { inArray } from "drizzle-orm";
-import { getSessionUserFromToken } from "@/lib/auth";
-import { cookies } from "next/headers";
+import { getSessionUser } from "@/lib/auth";
 import { checkBulkRate } from "@/lib/rate-limit-middleware";
 import { validateBody } from "@/lib/validation";
 import { bulkDeleteSchema } from "@/lib/validation/admin";
@@ -22,13 +21,7 @@ const ALLOWED_ENTITIES = {
 type EntityType = keyof typeof ALLOWED_ENTITIES;
 
 export async function POST(request: NextRequest) {
-  const cookieStore = cookies();
-  const sessionCookie = cookieStore.get("airm_session");
-  if (!sessionCookie?.value) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  const user = getSessionUserFromToken(sessionCookie.value);
+  const user = await getSessionUser();
   if (!user || !["admin", "system_admin"].includes(user.role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
@@ -48,10 +41,10 @@ export async function POST(request: NextRequest) {
   const table = ALLOWED_ENTITIES[entityType as EntityType];
 
   try {
-    db.delete(table).where(inArray(table.id, ids)).run();
+    await db.delete(table).where(inArray(table.id, ids));
 
     // Log each deletion to audit log
-    db.insert(schema.auditLog)
+    await db.insert(schema.auditLog)
       .values({
         entityType,
         entityId: 0,
@@ -59,8 +52,7 @@ export async function POST(request: NextRequest) {
         oldValue: JSON.stringify({ ids }),
         newValue: JSON.stringify({ count: ids.length }),
         actorEmail: user.email ?? user.username,
-      })
-      .run();
+      });
 
     return NextResponse.json({ deleted: ids.length });
   } catch (err: unknown) {

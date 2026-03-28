@@ -20,21 +20,21 @@ import { MappingClient } from "./mapping-client";
 
 export const dynamic = "force-dynamic";
 
-export default function MappingPage() {
-  const user = requireAuth();
+export default async function MappingPage() {
+  const user = await requireAuth();
 
-  let personas = getPersonaMappingWorkspace();
-  let refinements = getUserRefinements();
-  let gaps = getGapAnalysis();
-  const targetRoles = getTargetRoles();
-  const gapSummary = getGapAnalysisSummary();
-  let refinementDetails = getUserRefinementDetails();
+  let personas = await getPersonaMappingWorkspace();
+  let refinements = await getUserRefinements();
+  let gaps = await getGapAnalysis();
+  const targetRoles = await getTargetRoles();
+  const gapSummary = await getGapAnalysisSummary();
+  let refinementDetails = await getUserRefinementDetails();
 
   // Filter for mappers — only show personas containing their assigned users
   if (user.role === "mapper") {
-    const scopedUserIds = getUserScope(user);
+    const scopedUserIds = await getUserScope(user);
     if (scopedUserIds && scopedUserIds.length > 0) {
-      const scopedPersonaIds = new Set(getPersonaIdsForUsers(scopedUserIds));
+      const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
       personas = personas.filter((p) => scopedPersonaIds.has(p.personaId));
       refinements = refinements.filter((r) => scopedUserIds.includes(r.userId));
       gaps = gaps.filter((g) => scopedPersonaIds.has(g.personaId));
@@ -49,7 +49,7 @@ export default function MappingPage() {
   }
 
   // Release filter — applied on top of org-scope filter
-  const userReleases = getReleasesForAppUser(user);
+  const userReleases = await getReleasesForAppUser(user);
   const cookieReleaseId = parseInt(cookies().get("airm_release_id")?.value ?? "") || null;
   const activeReleaseId = userReleases.some((r) => r.id === cookieReleaseId)
     ? cookieReleaseId
@@ -58,10 +58,10 @@ export default function MappingPage() {
     : (userReleases.find((r) => r.isActive)?.id ?? null);
 
   if (activeReleaseId) {
-    const releaseUserIds = getReleaseUserIds(activeReleaseId);
+    const releaseUserIds = await getReleaseUserIds(activeReleaseId);
     if (releaseUserIds !== null) {
       const releaseSet = new Set(releaseUserIds);
-      const releasePersonaIds = new Set(getPersonaIdsForUsers(Array.from(releaseSet)));
+      const releasePersonaIds = new Set(await getPersonaIdsForUsers(Array.from(releaseSet)));
       personas = personas.filter((p) => releasePersonaIds.has(p.personaId));
       refinements = refinements.filter((r) => releaseSet.has(r.userId));
       gaps = gaps.filter((g) => releasePersonaIds.has(g.personaId));
@@ -69,12 +69,12 @@ export default function MappingPage() {
     }
   }
 
-  const excessThreshold = parseInt(getSetting("least_access_threshold") ?? "30", 10);
+  const excessThreshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
 
   // Pre-fetch persona details for the workspace
   const personaDetails: Record<number, { sourcePermissionCount: number; mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; excessPercent: number | null; confidence: string | null; roleOwner: string | null }[] }> = {};
   for (const p of personas) {
-    const detail = getPersonaDetail(p.personaId);
+    const detail = await getPersonaDetail(p.personaId);
     if (detail) {
       personaDetails[p.personaId] = {
         sourcePermissionCount: detail.sourcePermissions.length,
@@ -87,7 +87,7 @@ export default function MappingPage() {
   }
 
   // Get source systems per persona for multi-system visibility
-  const personaSourceSystemsMap = getPersonaSourceSystems();
+  const personaSourceSystemsMap = await getPersonaSourceSystems();
   const personaSourceSystemsObj: Record<number, string[]> = {};
   personaSourceSystemsMap.forEach((systems, personaId) => {
     if (personas.some(p => p.personaId === personaId)) {
@@ -96,7 +96,7 @@ export default function MappingPage() {
   });
 
   // Get open SOD conflicts grouped by persona for warning banners
-  const sodConflictMap = getOpenSodConflictsByPersona();
+  const sodConflictMap = await getOpenSodConflictsByPersona();
   const sodConflictsByPersona: Record<number, PersonaSodConflict[]> = {};
   sodConflictMap.forEach((conflicts, personaId) => {
     // Only include personas that are in the current workspace

@@ -7,12 +7,12 @@ import { getSessionUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !["admin", "system_admin"].includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const assignments = db
+  const assignments = await db
     .select({
       id: schema.appUserReleases.id,
       appUserId: schema.appUserReleases.appUserId,
@@ -24,14 +24,13 @@ export async function GET() {
     })
     .from(schema.appUserReleases)
     .innerJoin(schema.appUsers, eq(schema.appUsers.id, schema.appUserReleases.appUserId))
-    .innerJoin(schema.releases, eq(schema.releases.id, schema.appUserReleases.releaseId))
-    .all();
+    .innerJoin(schema.releases, eq(schema.releases.id, schema.appUserReleases.releaseId));
 
   return NextResponse.json(assignments);
 }
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !["admin", "system_admin"].includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -44,7 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check if assignment already exists
-  const existing = db
+  const [existing] = await db
     .select()
     .from(schema.appUserReleases)
     .where(
@@ -53,23 +52,22 @@ export async function POST(req: NextRequest) {
         eq(schema.appUserReleases.releaseId, releaseId)
       )
     )
-    .get();
+    .limit(1);
 
   if (existing) {
     return NextResponse.json({ error: "User is already assigned to this release" }, { status: 409 });
   }
 
-  const inserted = db
+  const [inserted] = await db
     .insert(schema.appUserReleases)
     .values({ appUserId, releaseId })
-    .returning()
-    .get();
+    .returning();
 
   return NextResponse.json(inserted, { status: 201 });
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !["admin", "system_admin"].includes(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -79,9 +77,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "id required" }, { status: 400 });
   }
 
-  db.delete(schema.appUserReleases)
-    .where(eq(schema.appUserReleases.id, Number(id)))
-    .run();
+  await db.delete(schema.appUserReleases)
+    .where(eq(schema.appUserReleases.id, Number(id)));
 
   return NextResponse.json({ ok: true });
 }

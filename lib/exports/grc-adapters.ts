@@ -16,7 +16,7 @@ export interface GrcExportAdapter {
 // Shared: fetch approved assignments
 // ─────────────────────────────────────────────
 
-function getApprovedAssignments() {
+async function getApprovedAssignments() {
   return db
     .select({
       sourceUserId: schema.users.sourceUserId,
@@ -33,8 +33,7 @@ function getApprovedAssignments() {
       schema.targetRoles,
       eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId)
     )
-    .where(eq(schema.userTargetRoleAssignments.status, "approved"))
-    .all();
+    .where(eq(schema.userTargetRoleAssignments.status, "approved"));
 }
 
 function csvEscape(val: string | null | undefined): string {
@@ -53,7 +52,7 @@ export const sapGrcAdapter: GrcExportAdapter = {
   name: "SAP GRC",
   format: "csv",
   async generate(): Promise<Buffer> {
-    const assignments = getApprovedAssignments();
+    const assignments = await getApprovedAssignments();
     const today = new Date().toISOString().split("T")[0];
     const validTo = "9999-12-31";
 
@@ -75,7 +74,7 @@ export const serviceNowAdapter: GrcExportAdapter = {
   name: "ServiceNow",
   format: "csv",
   async generate(): Promise<Buffer> {
-    const assignments = getApprovedAssignments();
+    const assignments = await getApprovedAssignments();
 
     const header = "user_name,role,assignment_group,state,sys_domain";
     const rows = assignments.map(
@@ -95,7 +94,7 @@ export const sailPointAdapter: GrcExportAdapter = {
   name: "SailPoint",
   format: "csv",
   async generate(): Promise<Buffer> {
-    const assignments = getApprovedAssignments();
+    const assignments = await getApprovedAssignments();
 
     const header = "identityName,applicationName,entitlementName,operation,source";
     const rows = assignments.map(

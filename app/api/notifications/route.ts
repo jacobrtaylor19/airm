@@ -8,14 +8,14 @@ export const dynamic = "force-dynamic";
 
 // GET — fetch notifications for the current user (inbox) or sent (coordinator)
 export async function GET(req: NextRequest) {
-  const user = requireAuth();
+  const user = await requireAuth();
   const { searchParams } = new URL(req.url);
   const view = searchParams.get("view") ?? "inbox"; // "inbox" | "sent"
 
   const toUserId = user.id;
   const fromUserId = user.id;
 
-  const rows = db
+  const rows = await db
     .select({
       id: schema.notifications.id,
       fromUserId: schema.notifications.fromUserId,
@@ -38,15 +38,14 @@ export async function GET(req: NextRequest) {
         ? eq(schema.notifications.fromUserId, fromUserId)
         : eq(schema.notifications.toUserId, toUserId)
     )
-    .orderBy(desc(schema.notifications.createdAt))
-    .all();
+    .orderBy(desc(schema.notifications.createdAt));
 
   return NextResponse.json(rows);
 }
 
 // POST — send a notification (coordinator, admin)
 export async function POST(req: NextRequest) {
-  const user = requireAuth();
+  const user = await requireAuth();
   if (!["coordinator", "admin", "system_admin"].includes(user.role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
@@ -60,7 +59,7 @@ export async function POST(req: NextRequest) {
 
   const inserted: number[] = [];
   for (const toUserId of toUserIds as number[]) {
-    const row = db.insert(schema.notifications).values({
+    const [row] = await db.insert(schema.notifications).values({
       fromUserId: user.id,
       toUserId,
       notificationType: notificationType ?? "reminder",
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
       relatedEntityType: relatedEntityType ?? null,
       relatedEntityId: relatedEntityId ?? null,
       status: "sent",
-    }).returning({ id: schema.notifications.id }).get();
+    }).returning({ id: schema.notifications.id });
     inserted.push(row.id);
   }
 
@@ -78,16 +77,15 @@ export async function POST(req: NextRequest) {
 
 // PATCH — mark notification as read
 export async function PATCH(req: NextRequest) {
-  requireAuth();
+  await requireAuth();
   const body = await req.json();
   const { id } = body;
 
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
-  db.update(schema.notifications)
+  await db.update(schema.notifications)
     .set({ status: "read", readAt: new Date().toISOString() })
-    .where(eq(schema.notifications.id, id))
-    .run();
+    .where(eq(schema.notifications.id, id));
 
   return NextResponse.json({ ok: true });
 }

@@ -12,7 +12,7 @@ import { safeError } from "@/lib/errors";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
@@ -24,9 +24,9 @@ export async function POST(req: NextRequest) {
   if (rateLimited) return rateLimited;
 
   // Capture user scope at enqueue time for job isolation (WORKFLOW.md Note 6)
-  const scopedUserIds = getUserScope(user);
+  const scopedUserIds = await getUserScope(user);
 
-  const job = db.insert(schema.processingJobs).values({
+  const [job] = await db.insert(schema.processingJobs).values({
     jobType: "sod_analysis",
     status: "running",
     startedAt: new Date().toISOString(),
@@ -35,24 +35,24 @@ export async function POST(req: NextRequest) {
       triggeredByRole: user.role,
       scopedUserIds: scopedUserIds,
     }),
-  }).returning().get();
+  }).returning();
 
   try {
-    const result = runSodAnalysis(scopedUserIds);
+    const result = await runSodAnalysis(scopedUserIds);
 
-    db.update(schema.processingJobs).set({
+    await db.update(schema.processingJobs).set({
       status: "completed",
       totalRecords: result.usersAnalyzed,
       processed: result.usersAnalyzed,
       completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id)).run();
+    }).where(eq(schema.processingJobs.id, job.id));
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "processingJob",
       entityId: job.id,
       action: "sod_analysis_completed",
       newValue: JSON.stringify(result),
-    }).run();
+    });
 
     // Notify coordinators and admins about SOD analysis results
     const conflictCount = result.conflictsFound ?? 0;
@@ -69,11 +69,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ jobId: job.id, ...result });
   } catch (err: unknown) {
     const message = safeError(err, "Unknown error");
-    db.update(schema.processingJobs).set({
+    await db.update(schema.processingJobs).set({
       status: "failed",
       errorLog: message,
       completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id)).run();
+    }).where(eq(schema.processingJobs.id, job.id));
 
     return NextResponse.json({ error: message }, { status: 500 });
   }

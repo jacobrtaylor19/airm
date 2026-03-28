@@ -9,7 +9,7 @@ import { getDescendantOrgUnitIds, getDepartmentsInOrgScope } from "@/lib/org-hie
  * org unit assignment. Returns null if the user has no scope restriction
  * (admin, viewer, sysadmin — sees everything).
  */
-export function getUserScope(appUser: AppUser & { assignedOrgUnitId?: number | null }): number[] | null {
+export async function getUserScope(appUser: AppUser & { assignedOrgUnitId?: number | null }): Promise<number[] | null> {
   // Admin, viewer, and system_admin see everything
   if (["admin", "system_admin", "viewer"].includes(appUser.role)) {
     return null; // null means "all users"
@@ -21,10 +21,9 @@ export function getUserScope(appUser: AppUser & { assignedOrgUnitId?: number | n
   // Get assignedOrgUnitId from the database if not provided
   let orgUnitId = appUser.assignedOrgUnitId;
   if (orgUnitId === undefined) {
-    const dbUser = db.select({ assignedOrgUnitId: schema.appUsers.assignedOrgUnitId })
+    const [dbUser] = await db.select({ assignedOrgUnitId: schema.appUsers.assignedOrgUnitId })
       .from(schema.appUsers)
-      .where(eq(schema.appUsers.id, appUser.id))
-      .get();
+      .where(eq(schema.appUsers.id, appUser.id));
     orgUnitId = dbUser?.assignedOrgUnitId ?? null;
   }
 
@@ -34,13 +33,12 @@ export function getUserScope(appUser: AppUser & { assignedOrgUnitId?: number | n
   }
 
   // Get all descendant org unit IDs
-  const ouIds = getDescendantOrgUnitIds(orgUnitId);
+  const ouIds = await getDescendantOrgUnitIds(orgUnitId);
   if (ouIds.length === 0) return [];
 
-  const users = db.select({ id: schema.users.id })
+  const users = await db.select({ id: schema.users.id })
     .from(schema.users)
-    .where(inArray(schema.users.orgUnitId, ouIds))
-    .all();
+    .where(inArray(schema.users.orgUnitId, ouIds));
 
   return users.map(u => u.id);
 }
@@ -49,17 +47,16 @@ export function getUserScope(appUser: AppUser & { assignedOrgUnitId?: number | n
  * Returns the departments this app user can see, based on their org unit.
  * Returns null if no scope restriction.
  */
-export function getUserScopeDepartments(appUser: AppUser & { assignedOrgUnitId?: number | null }): string[] | null {
+export async function getUserScopeDepartments(appUser: AppUser & { assignedOrgUnitId?: number | null }): Promise<string[] | null> {
   if (["admin", "system_admin", "viewer"].includes(appUser.role)) {
     return null;
   }
 
   let orgUnitId = appUser.assignedOrgUnitId;
   if (orgUnitId === undefined) {
-    const dbUser = db.select({ assignedOrgUnitId: schema.appUsers.assignedOrgUnitId })
+    const [dbUser] = await db.select({ assignedOrgUnitId: schema.appUsers.assignedOrgUnitId })
       .from(schema.appUsers)
-      .where(eq(schema.appUsers.id, appUser.id))
-      .get();
+      .where(eq(schema.appUsers.id, appUser.id));
     orgUnitId = dbUser?.assignedOrgUnitId ?? null;
   }
 
@@ -74,13 +71,12 @@ export function getUserScopeDepartments(appUser: AppUser & { assignedOrgUnitId?:
 
 // ─── Legacy fallback (work_assignments table) ───
 
-function getLegacyScopeUserIds(appUser: AppUser): number[] {
+async function getLegacyScopeUserIds(appUser: AppUser): Promise<number[]> {
   const assignmentType = appUser.role === "mapper" ? "mapper" : appUser.role === "approver" ? "approver" : null;
   if (!assignmentType) return [];
 
-  const assignments = db.select().from(schema.workAssignments)
-    .where(eq(schema.workAssignments.appUserId, appUser.id))
-    .all();
+  const assignments = await db.select().from(schema.workAssignments)
+    .where(eq(schema.workAssignments.appUserId, appUser.id));
 
   const departments: string[] = [];
   const sourceUserIds: string[] = [];
@@ -93,30 +89,27 @@ function getLegacyScopeUserIds(appUser: AppUser): number[] {
 
   const ids = new Set<number>();
   if (departments.length > 0) {
-    const users = db.select({ id: schema.users.id })
+    const users = await db.select({ id: schema.users.id })
       .from(schema.users)
-      .where(inArray(schema.users.department, departments))
-      .all();
+      .where(inArray(schema.users.department, departments));
     for (const u of users) ids.add(u.id);
   }
   if (sourceUserIds.length > 0) {
-    const users = db.select({ id: schema.users.id })
+    const users = await db.select({ id: schema.users.id })
       .from(schema.users)
-      .where(inArray(schema.users.sourceUserId, sourceUserIds))
-      .all();
+      .where(inArray(schema.users.sourceUserId, sourceUserIds));
     for (const u of users) ids.add(u.id);
   }
 
   return Array.from(ids);
 }
 
-function getLegacyScopeDepartments(appUser: AppUser): string[] {
+async function getLegacyScopeDepartments(appUser: AppUser): Promise<string[]> {
   const assignmentType = appUser.role === "mapper" ? "mapper" : appUser.role === "approver" ? "approver" : null;
   if (!assignmentType) return [];
 
-  const assignments = db.select().from(schema.workAssignments)
-    .where(eq(schema.workAssignments.appUserId, appUser.id))
-    .all();
+  const assignments = await db.select().from(schema.workAssignments)
+    .where(eq(schema.workAssignments.appUserId, appUser.id));
 
   return assignments
     .filter(a => a.scopeType === "department")

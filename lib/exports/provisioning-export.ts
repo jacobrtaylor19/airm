@@ -2,8 +2,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export function generateProvisioningCsv(): string {
-  const assignments = db.select({
+export async function generateProvisioningCsv(): Promise<string> {
+  const assignments = await db.select({
     sourceUserId: schema.users.sourceUserId,
     displayName: schema.users.displayName,
     targetRoleId: schema.targetRoles.roleId,
@@ -13,8 +13,7 @@ export function generateProvisioningCsv(): string {
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
-    .where(eq(schema.userTargetRoleAssignments.status, "approved"))
-    .all();
+    .where(eq(schema.userTargetRoleAssignments.status, "approved"));
 
   const header = "source_user_id,display_name,target_role_id,target_role_name,status";
   const rows = assignments.map(a =>

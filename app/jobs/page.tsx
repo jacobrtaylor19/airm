@@ -4,11 +4,11 @@ import { JobsClient } from "./jobs-client";
 
 export const dynamic = "force-dynamic";
 
-export default function JobsPage() {
-  const jobs = getJobs();
-  const stats = getDashboardStats();
+export default async function JobsPage() {
+  const jobs = await getJobs();
+  const stats = await getDashboardStats();
   const hasData = stats.totalUsers > 0;
-  const user = getSessionUser();
+  const user = await getSessionUser();
 
   return (
     <div className="space-y-4">

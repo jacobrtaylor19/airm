@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * Returns all data associated with a given app user.
  */
 export async function POST(req: NextRequest) {
-  const actor = getSessionUser();
+  const actor = await getSessionUser();
   if (!actor || actor.role !== "system_admin") {
     return NextResponse.json({ error: "Unauthorized — system_admin role required" }, { status: 403 });
   }
@@ -24,15 +24,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "userId (number) is required" }, { status: 400 });
     }
 
-    const appUser = db.select().from(schema.appUsers).where(eq(schema.appUsers.id, userId)).get();
+    const [appUser] = await db.select().from(schema.appUsers).where(eq(schema.appUsers.id, userId)).limit(1);
     if (!appUser) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     // Collect all associated data
-    const sessions = db.select().from(schema.appUserSessions).where(eq(schema.appUserSessions.appUserId, userId)).all();
-    const workAssigns = db.select().from(schema.workAssignments).where(eq(schema.workAssignments.appUserId, userId)).all();
-    const notifications = db.select().from(schema.notifications).where(eq(schema.notifications.toUserId, userId)).all();
+    const sessions = await db.select().from(schema.appUserSessions).where(eq(schema.appUserSessions.appUserId, userId));
+    const workAssigns = await db.select().from(schema.workAssignments).where(eq(schema.workAssignments.appUserId, userId));
+    const notifications = await db.select().from(schema.notifications).where(eq(schema.notifications.toUserId, userId));
 
     const exportData = {
       exportedAt: new Date().toISOString(),
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       })),
     };
 
-    auditLog({
+    await auditLog({
       entityType: "gdpr",
       entityId: userId,
       action: "data_export",

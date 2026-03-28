@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "conflictId and removeRoleId required" }, { status: 400 });
     }
 
-    const conflict = db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).get();
+    const [conflict] = await db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).limit(1);
     if (!conflict) {
       return NextResponse.json({ error: "Conflict not found" }, { status: 404 });
     }
@@ -39,44 +39,43 @@ export async function POST(req: NextRequest) {
     }
 
     // Remove the target role assignment for this user
-    const deleted = db.delete(schema.userTargetRoleAssignments)
+    const deleted = await db.delete(schema.userTargetRoleAssignments)
       .where(and(
         eq(schema.userTargetRoleAssignments.userId, conflict.userId),
         eq(schema.userTargetRoleAssignments.targetRoleId, removeRoleId),
       ))
-      .returning()
-      .all();
+      .returning();
 
     // Mark the SOD conflict as resolved
-    db.update(schema.sodConflicts).set({
+    await db.update(schema.sodConflicts).set({
       resolutionStatus: "mapping_fixed",
       resolvedBy: user.username,
       resolvedAt: new Date().toISOString(),
       resolutionNotes: `Removed target role assignment (roleId=${removeRoleId}) to resolve conflict`,
-    }).where(eq(schema.sodConflicts.id, conflictId)).run();
+    }).where(eq(schema.sodConflicts.id, conflictId));
 
     // Check if all conflicts for this user are now resolved
-    const remainingOpen = db.select().from(schema.sodConflicts)
+    const remainingOpen = await db.select().from(schema.sodConflicts)
       .where(and(
         eq(schema.sodConflicts.userId, conflict.userId),
         eq(schema.sodConflicts.resolutionStatus, "open")
-      )).all();
+      ));
 
     if (remainingOpen.length === 0) {
       // All conflicts resolved — transition sod_rejected assignments back to DRAFT
       // so they re-enter SOD analysis before reaching compliance_approved.
       // A fix does NOT skip the SOD gate.
-      db.update(schema.userTargetRoleAssignments).set({
+      await db.update(schema.userTargetRoleAssignments).set({
         status: "draft",
         updatedAt: new Date().toISOString(),
       }).where(and(
         eq(schema.userTargetRoleAssignments.userId, conflict.userId),
         eq(schema.userTargetRoleAssignments.status, "sod_rejected")
-      )).run();
+      ));
     }
 
     // Audit log
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "sodConflict",
       entityId: conflictId,
       action: "mapping_fixed",
@@ -87,7 +86,7 @@ export async function POST(req: NextRequest) {
         removedRoleId: removeRoleId,
         removedAssignments: deleted.length,
       }),
-    }).run();
+    });
 
     return NextResponse.json({ success: true, removedAssignments: deleted.length });
   } catch (err: unknown) {

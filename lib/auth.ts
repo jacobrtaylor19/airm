@@ -1,15 +1,8 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import bcrypt from "bcryptjs";
-import crypto from "crypto";
-
-import { AUTH } from "@/lib/constants";
-
-const COOKIE_NAME = AUTH.COOKIE_NAME;
-const SESSION_DURATION_MS = AUTH.SESSION_DURATION_MS;
+import { createClient } from "@/lib/supabase/server";
 
 export interface AppUser {
   id: number;
@@ -20,83 +13,53 @@ export interface AppUser {
   assignedOrgUnitId: number | null;
 }
 
-export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, AUTH.BCRYPT_ROUNDS);
-}
+/**
+ * Get the current session user by reading the Supabase JWT from cookies,
+ * then looking up the corresponding appUsers row via supabaseAuthId.
+ */
+export async function getSessionUser(): Promise<AppUser | null> {
+  try {
+    const supabase = createClient();
+    const { data: { user: supabaseUser }, error } = await supabase.auth.getUser();
 
-export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
+    if (error || !supabaseUser) return null;
 
-export function createSession(appUserId: number): string {
-  const token = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS).toISOString();
+    const [appUser] = await db
+      .select({
+        id: schema.appUsers.id,
+        username: schema.appUsers.username,
+        displayName: schema.appUsers.displayName,
+        email: schema.appUsers.email,
+        role: schema.appUsers.role,
+        assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
+        isActive: schema.appUsers.isActive,
+      })
+      .from(schema.appUsers)
+      .where(eq(schema.appUsers.supabaseAuthId, supabaseUser.id));
 
-  // Clean up expired sessions for this user
-  db.delete(schema.appUserSessions)
-    .where(eq(schema.appUserSessions.appUserId, appUserId))
-    .run();
+    if (!appUser || appUser.isActive === false) return null;
 
-  db.insert(schema.appUserSessions).values({
-    sessionToken: token,
-    appUserId,
-    expiresAt,
-  }).run();
-
-  return token;
-}
-
-export function deleteSession(token: string): void {
-  db.delete(schema.appUserSessions)
-    .where(eq(schema.appUserSessions.sessionToken, token))
-    .run();
-}
-
-export function getSessionUser(): AppUser | null {
-  const cookieStore = cookies();
-  const sessionCookie = cookieStore.get(COOKIE_NAME);
-  if (!sessionCookie?.value) return null;
-
-  const session = db.select({
-    id: schema.appUsers.id,
-    username: schema.appUsers.username,
-    displayName: schema.appUsers.displayName,
-    email: schema.appUsers.email,
-    role: schema.appUsers.role,
-    assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
-    expiresAt: schema.appUserSessions.expiresAt,
-  })
-    .from(schema.appUserSessions)
-    .innerJoin(schema.appUsers, eq(schema.appUsers.id, schema.appUserSessions.appUserId))
-    .where(eq(schema.appUserSessions.sessionToken, sessionCookie.value))
-    .get();
-
-  if (!session) return null;
-
-  // Check expiry
-  if (new Date(session.expiresAt) < new Date()) {
-    deleteSession(sessionCookie.value);
+    return {
+      id: appUser.id,
+      username: appUser.username,
+      displayName: appUser.displayName,
+      email: appUser.email,
+      role: appUser.role,
+      assignedOrgUnitId: appUser.assignedOrgUnitId,
+    };
+  } catch {
     return null;
   }
-
-  return {
-    id: session.id,
-    username: session.username,
-    displayName: session.displayName,
-    email: session.email,
-    role: session.role,
-    assignedOrgUnitId: session.assignedOrgUnitId,
-  };
 }
 
-export function requireAuth(): AppUser {
-  const user = getSessionUser();
+export async function requireAuth(): Promise<AppUser> {
+  const user = await getSessionUser();
   if (!user) redirect("/login");
   return user;
 }
 
-export function requireRole(allowedRoles: string[]): AppUser {
-  const user = requireAuth();
+export async function requireRole(allowedRoles: string[]): Promise<AppUser> {
+  const user = await requireAuth();
   if (!allowedRoles.includes(user.role)) redirect("/unauthorized");
   return user;
 }
@@ -120,34 +83,37 @@ export function isAdminOrAbove(user: AppUser): boolean {
   return user.role === "admin" || user.role === "system_admin";
 }
 
-export function hasAppUsers(): boolean {
-  const count = db.select().from(schema.appUsers).limit(1).all();
+export async function hasAppUsers(): Promise<boolean> {
+  const count = await db.select().from(schema.appUsers).limit(1);
   return count.length > 0;
 }
 
-export function getSessionUserFromToken(token: string): AppUser | null {
-  const session = db.select({
-    id: schema.appUsers.id,
-    username: schema.appUsers.username,
-    displayName: schema.appUsers.displayName,
-    email: schema.appUsers.email,
-    role: schema.appUsers.role,
-    assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
-    expiresAt: schema.appUserSessions.expiresAt,
-  })
-    .from(schema.appUserSessions)
-    .innerJoin(schema.appUsers, eq(schema.appUsers.id, schema.appUserSessions.appUserId))
-    .where(eq(schema.appUserSessions.sessionToken, token))
-    .get();
+/**
+ * Look up an AppUser by explicit Supabase auth ID (for API routes that
+ * already have the user from supabase.auth.getUser()).
+ */
+export async function getAppUserByAuthId(supabaseAuthId: string): Promise<AppUser | null> {
+  const [appUser] = await db
+    .select({
+      id: schema.appUsers.id,
+      username: schema.appUsers.username,
+      displayName: schema.appUsers.displayName,
+      email: schema.appUsers.email,
+      role: schema.appUsers.role,
+      assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
+      isActive: schema.appUsers.isActive,
+    })
+    .from(schema.appUsers)
+    .where(eq(schema.appUsers.supabaseAuthId, supabaseAuthId));
 
-  if (!session || new Date(session.expiresAt) < new Date()) return null;
+  if (!appUser || appUser.isActive === false) return null;
 
   return {
-    id: session.id,
-    username: session.username,
-    displayName: session.displayName,
-    email: session.email,
-    role: session.role,
-    assignedOrgUnitId: session.assignedOrgUnitId,
+    id: appUser.id,
+    username: appUser.username,
+    displayName: appUser.displayName,
+    email: appUser.email,
+    role: appUser.role,
+    assignedOrgUnitId: appUser.assignedOrgUnitId,
   };
 }

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="5;url=https://airm-beige.vercel.app">
+  <title>Provisum has moved</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0F172A;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #E2E8F0;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 480px;
+    }
+    .shield {
+      width: 64px;
+      height: 64px;
+      margin: 0 auto 1.5rem;
+      background: linear-gradient(135deg, #4F46E5 0%, #14B8A6 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .shield svg {
+      width: 36px;
+      height: 36px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #F8FAFC;
+      margin-bottom: 0.5rem;
+      letter-spacing: -0.025em;
+    }
+    .brand {
+      font-size: 0.875rem;
+      color: #14B8A6;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    p {
+      font-size: 0.9375rem;
+      color: #94A3B8;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+    .link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background: #4F46E5;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .link:hover { background: #4338CA; }
+    .link svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .countdown {
+      margin-top: 1.5rem;
+      font-size: 0.8125rem;
+      color: #64748B;
+    }
+    .bar {
+      margin-top: 0.75rem;
+      width: 200px;
+      height: 3px;
+      background: #1E293B;
+      border-radius: 2px;
+      margin-left: auto;
+      margin-right: auto;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4F46E5, #14B8A6);
+      border-radius: 2px;
+      animation: fill 5s linear forwards;
+    }
+    @keyframes fill {
+      from { width: 0; }
+      to { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="shield">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    </div>
+    <div class="brand">PROVISUM</div>
+    <h1>We've moved to a new home</h1>
+    <p>
+      Provisum is now hosted on a faster, more reliable platform.
+      You'll be redirected automatically in a few seconds.
+    </p>
+    <a href="https://airm-beige.vercel.app" class="link">
+      Go to Provisum
+      <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </a>
+    <div class="countdown">Redirecting in <span id="timer">5</span> seconds...</div>
+    <div class="bar"><div class="bar-fill"></div></div>
+  </div>
+  <script>
+    let s = 5;
+    const el = document.getElementById('timer');
+    setInterval(() => { if (--s >= 0) el.textContent = s; }, 1000);
+  </script>
+</body>
+</html>

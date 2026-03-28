@@ -11,18 +11,21 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
   // ─────────────────────────────────────────────
   // Pre-fetch shared data
   // ─────────────────────────────────────────────
-  const allUsers = db.select().from(schema.users).all();
-  const allPersonas = db.select().from(schema.personas).all();
-  const allRoles = db.select().from(schema.targetRoles).all();
-  const allSodRules = db.select().from(schema.sodRules).all();
-  const allConflicts = db.select().from(schema.sodConflicts).all();
+  const allUsers = await db.select().from(schema.users);
+  const allPersonas = await db.select().from(schema.personas);
+  const allRoles = await db.select().from(schema.targetRoles);
+  const allSodRules = await db.select().from(schema.sodRules);
+  const allConflicts = await db.select().from(schema.sodConflicts);
 
-  const totalAssignments = db.select({ count: count() }).from(schema.userTargetRoleAssignments).get()!.count;
-  const approvedAssignments = db.select({ count: count() }).from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "approved")).get()!.count;
+  const [totalAssignmentsRow] = await db.select({ count: count() }).from(schema.userTargetRoleAssignments);
+  const totalAssignments = totalAssignmentsRow!.count;
+  const [approvedAssignmentsRow] = await db.select({ count: count() }).from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.status, "approved"));
+  const approvedAssignments = approvedAssignmentsRow!.count;
   const approvalPct = totalAssignments > 0 ? Math.round((approvedAssignments / totalAssignments) * 100) : 0;
 
-  const totalMappings = db.select({ count: count() }).from(schema.personaTargetRoleMappings).get()!.count;
+  const [totalMappingsRow] = await db.select({ count: count() }).from(schema.personaTargetRoleMappings);
+  const totalMappings = totalMappingsRow!.count;
 
   // ─────────────────────────────────────────────
   // TAB 1: Cover Sheet
@@ -126,10 +129,10 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
     cell.font = { bold: true };
   });
 
-  const deptStats = db.select({
+  const deptStats = await db.select({
     department: schema.users.department,
     userCount: count(),
-  }).from(schema.users).groupBy(schema.users.department).all();
+  }).from(schema.users).groupBy(schema.users.department);
 
   for (const dept of deptStats) {
     const pct = allUsers.length > 0 ? Math.round((dept.userCount / allUsers.length) * 100) : 0;
@@ -186,7 +189,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
   ];
 
   for (const user of allUsers) {
-    const assignment = db.select({
+    const [assignment] = await db.select({
       personaName: schema.personas.name,
       confidence: schema.userPersonaAssignments.confidenceScore,
       groupName: schema.consolidatedGroups.name,
@@ -194,8 +197,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
       .from(schema.userPersonaAssignments)
       .leftJoin(schema.personas, eq(schema.personas.id, schema.userPersonaAssignments.personaId))
       .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId))
-      .where(eq(schema.userPersonaAssignments.userId, user.id))
-      .get();
+      .where(eq(schema.userPersonaAssignments.userId, user.id));
 
     sheet1.addRow({
       sourceUserId: user.sourceUserId,
@@ -224,7 +226,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
     { header: "Reason", key: "reason", width: 40 },
   ];
 
-  const mappings = db.select({
+  const mappings = await db.select({
     personaName: schema.personas.name,
     businessFunction: schema.personas.businessFunction,
     targetRoleId: schema.targetRoles.roleId,
@@ -235,8 +237,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
   })
     .from(schema.personaTargetRoleMappings)
     .innerJoin(schema.personas, eq(schema.personas.id, schema.personaTargetRoleMappings.personaId))
-    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.personaTargetRoleMappings.targetRoleId))
-    .all();
+    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.personaTargetRoleMappings.targetRoleId));
 
   for (const m of mappings) {
     sheet2.addRow(m);
@@ -257,7 +258,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
     { header: "Status", key: "status", width: 18 },
   ];
 
-  const fullChain = db.select({
+  const fullChain = await db.select({
     sourceUserId: schema.users.sourceUserId,
     displayName: schema.users.displayName,
     department: schema.users.department,
@@ -269,8 +270,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
-    .leftJoin(schema.personas, eq(schema.personas.id, schema.userTargetRoleAssignments.derivedFromPersonaId))
-    .all();
+    .leftJoin(schema.personas, eq(schema.personas.id, schema.userTargetRoleAssignments.derivedFromPersonaId));
 
   for (const row of fullChain) {
     sheet3.addRow(row);
@@ -291,7 +291,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
     { header: "Notes", key: "resolutionNotes", width: 40 },
   ];
 
-  const conflicts = db.select({
+  const conflicts = await db.select({
     userName: schema.users.displayName,
     severity: schema.sodConflicts.severity,
     ruleName: schema.sodRules.ruleName,
@@ -302,8 +302,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
   })
     .from(schema.sodConflicts)
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
-    .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
-    .all();
+    .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId));
 
   for (const c of conflicts) {
     sheet4.addRow(c);
@@ -322,7 +321,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
     { header: "Notes", key: "notes", width: 40 },
   ];
 
-  const gapRows = db.select({
+  const gapRows = await db.select({
     personaName: schema.personas.name,
     permissionId: schema.sourcePermissions.permissionId,
     permissionName: schema.sourcePermissions.permissionName,
@@ -331,8 +330,7 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
   })
     .from(schema.permissionGaps)
     .innerJoin(schema.personas, eq(schema.personas.id, schema.permissionGaps.personaId))
-    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.permissionGaps.sourcePermissionId))
-    .all();
+    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.permissionGaps.sourcePermissionId));
 
   for (const g of gapRows) {
     sheet5.addRow(g);

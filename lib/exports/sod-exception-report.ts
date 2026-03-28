@@ -2,8 +2,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 
-export function generateSodExceptionCsv(): string {
-  const conflicts = db.select({
+export async function generateSodExceptionCsv(): Promise<string> {
+  const conflicts = await db.select({
     userName: schema.users.displayName,
     userId: schema.users.sourceUserId,
     severity: schema.sodConflicts.severity,
@@ -18,8 +18,7 @@ export function generateSodExceptionCsv(): string {
     .from(schema.sodConflicts)
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
     .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
-    .where(eq(schema.sodConflicts.resolutionStatus, "risk_accepted"))
-    .all();
+    .where(eq(schema.sodConflicts.resolutionStatus, "risk_accepted"));
 
   const header = "user,user_id,severity,rule,permission_a,permission_b,resolution,justification,resolved_by,resolved_at";
   const rows = conflicts.map(c =>

@@ -4,6 +4,43 @@ All notable feature additions and changes are documented here. Most recent first
 
 ---
 
+## [0.7.0] — 2026-03-28 — Supabase Auth + Risk Quantification + Due Dates
+
+### Supabase Auth Migration
+- **Replaced custom cookie auth with Supabase Auth**: JWT-based sessions via `@supabase/ssr`
+- **Bridge pattern**: `appUsers.supabaseAuthId` links app users to Supabase `auth.users`
+- **Middleware rewrite**: Session refresh on every request via Supabase server client
+- **17 demo auth users**: Created via Supabase Admin API in seed script
+- **Password changes**: Now use `supabase.auth.updateUser()` instead of bcrypt
+- **Removed bcrypt dependency**: All password operations delegated to Supabase
+
+### Risk Quantification Dashboard
+- **3 risk categories**: Business Continuity (coverage gaps), Adoption Risk (new permissions), Incorrect Access (gaps + SOD conflicts)
+- **Dashboard summary cards**: Color-coded risk indicators on main dashboard with link to full analysis
+- **Dedicated `/risk-analysis` page**: Detailed metrics, analysis summary, flagged users table
+- **Bulk analysis**: 6 optimized queries instead of N+1 per-user pattern
+- **Scope-aware**: Non-admin users see risk for their org unit only
+
+### Coordinator Due Dates
+- **Release-level phase deadlines**: `mapping_deadline`, `review_deadline`, `approval_deadline` on releases table
+- **Visual overdue indicators**: Past-due deadlines shown in red on release cards
+- **Create/Edit dialog**: Phase deadline date pickers in release management UI
+
+### Render Redirect
+- **Branded redirect page**: `public/render-redirect.html` with auto-redirect to Vercel URL, countdown timer, animated progress bar
+
+### Row-Level Security
+- **RLS enabled on all 39 tables**: Defense-in-depth — blocks direct Supabase REST API access
+- **`postgres` role bypasses RLS**: App's pooled connection continues working normally
+- **`anon`/`authenticated` roles blocked**: No data accessible via Supabase auto-generated API
+
+### Infrastructure
+- **Supabase env vars**: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` set on Vercel
+- **Dashboard number fix**: Wrapped all `sql<number>` results with `Number()` to prevent string concatenation
+- **Set iteration fix**: `Array.from()` for ES target compatibility in risk analysis queries
+
+---
+
 ## [Unreleased] — 2026-03-26
 
 ### Pipeline Validation (Due Diligence)

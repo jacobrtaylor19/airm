@@ -6,11 +6,11 @@ export const dynamic = "force-dynamic";
 
 export default async function PersonaDetailPage({ params }: { params: Promise<{ personaId: string }> }) {
   const { personaId } = await params;
-  const persona = getPersonaDetail(Number(personaId));
+  const persona = await getPersonaDetail(Number(personaId));
   if (!persona) return notFound();
 
-  const allUsers = getAllSimpleUsers();
-  const allTargetRoles = getAllSimpleTargetRoles();
+  const allUsers = await getAllSimpleUsers();
+  const allTargetRoles = await getAllSimpleTargetRoles();
 
   return (
     <PersonaDetailClient

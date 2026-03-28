@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 const PUBLIC_PATHS = ["/", "/login", "/setup", "/methodology", "/overview", "/quick-reference", "/api/auth/login", "/api/auth/setup", "/api/auth/logout", "/review", "/api/health"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public paths
   if (pathname === "/" || PUBLIC_PATHS.some((p) => p !== "/" && pathname.startsWith(p))) {
-    return addSecurityHeaders(NextResponse.next());
+    return addSecurityHeaders(await updateSession(request, NextResponse.next()));
   }
 
   // Allow static assets and Next.js internals
@@ -20,7 +21,7 @@ export function middleware(request: NextRequest) {
     "/dashboard", "/admin", "/personas", "/mapping", "/sod", "/sod-rules",
     "/approvals", "/users", "/upload", "/data", "/exports", "/jobs",
     "/source-roles", "/target-roles", "/releases", "/audit-log",
-    "/least-access", "/inbox", "/notifications", "/unauthorized",
+    "/least-access", "/risk-analysis", "/inbox", "/notifications", "/unauthorized",
     "/api/admin", "/api/ai", "/api/approvals", "/api/assistant",
     "/api/exports", "/api/jobs", "/api/least-access", "/api/mapping",
     "/api/notifications", "/api/org-hierarchy", "/api/personas",
@@ -30,15 +31,56 @@ export function middleware(request: NextRequest) {
 
   const isAuthRoute = AUTHENTICATED_PREFIXES.some((p) => pathname.startsWith(p));
 
+  // Refresh Supabase session on every request (keeps JWT fresh)
+  let response = NextResponse.next({ request });
+  response = await updateSession(request, response);
+
   if (isAuthRoute) {
-    const sessionToken = request.cookies.get("airm_session")?.value;
-    if (!sessionToken) {
+    // Check if we have a valid Supabase session
+    const supabase = createSupabaseMiddlewareClient(request, response);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
       const loginUrl = new URL("/login", request.url);
       return addSecurityHeaders(NextResponse.redirect(loginUrl));
     }
   }
 
-  return addSecurityHeaders(NextResponse.next());
+  return addSecurityHeaders(response);
+}
+
+/**
+ * Creates a Supabase client that can read/write cookies in middleware context.
+ */
+function createSupabaseMiddlewareClient(request: NextRequest, response: NextResponse) {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+}
+
+/**
+ * Refreshes the Supabase session by reading cookies from the request and
+ * writing updated tokens back to the response.
+ */
+async function updateSession(request: NextRequest, response: NextResponse): Promise<NextResponse> {
+  const supabase = createSupabaseMiddlewareClient(request, response);
+  // This refreshes the session if needed and updates the cookies
+  await supabase.auth.getUser();
+  return response;
 }
 
 function addSecurityHeaders(response: NextResponse): NextResponse {
@@ -67,7 +109,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob:",
       "font-src 'self'",
-      "connect-src 'self' https://api.anthropic.com",
+      "connect-src 'self' https://api.anthropic.com https://*.supabase.co",
       "frame-ancestors 'none'",
     ].join("; ") + ";"
   );

@@ -10,155 +10,163 @@ import { count, sql, eq, desc, ne, and, inArray } from "drizzle-orm";
  * Get user IDs that belong to the given releases.
  * Returns null if releaseIds is null (no filter — show all).
  */
-export function getUserIdsInReleases(releaseIds: number[] | null): number[] | null {
+export async function getUserIdsInReleases(releaseIds: number[] | null): Promise<number[] | null> {
   if (releaseIds === null || releaseIds.length === 0) return null;
-  const rows = db
+  const rows = await db
     .select({ userId: schema.releaseUsers.userId })
     .from(schema.releaseUsers)
-    .where(inArray(schema.releaseUsers.releaseId, releaseIds))
-    .all();
+    .where(inArray(schema.releaseUsers.releaseId, releaseIds));
   return Array.from(new Set(rows.map((r) => r.userId)));
 }
 
 /**
  * Get source role IDs that belong to the given releases.
  */
-export function getSourceRoleIdsInReleases(releaseIds: number[] | null): number[] | null {
+export async function getSourceRoleIdsInReleases(releaseIds: number[] | null): Promise<number[] | null> {
   if (releaseIds === null || releaseIds.length === 0) return null;
-  const rows = db
+  const rows = await db
     .select({ sourceRoleId: schema.releaseSourceRoles.sourceRoleId })
     .from(schema.releaseSourceRoles)
-    .where(inArray(schema.releaseSourceRoles.releaseId, releaseIds))
-    .all();
+    .where(inArray(schema.releaseSourceRoles.releaseId, releaseIds));
   return rows.length > 0 ? Array.from(new Set(rows.map((r) => r.sourceRoleId))) : null;
 }
 
 /**
  * Get target role IDs that belong to the given releases.
  */
-export function getTargetRoleIdsInReleases(releaseIds: number[] | null): number[] | null {
+export async function getTargetRoleIdsInReleases(releaseIds: number[] | null): Promise<number[] | null> {
   if (releaseIds === null || releaseIds.length === 0) return null;
-  const rows = db
+  const rows = await db
     .select({ targetRoleId: schema.releaseTargetRoles.targetRoleId })
     .from(schema.releaseTargetRoles)
-    .where(inArray(schema.releaseTargetRoles.releaseId, releaseIds))
-    .all();
+    .where(inArray(schema.releaseTargetRoles.releaseId, releaseIds));
   return rows.length > 0 ? Array.from(new Set(rows.map((r) => r.targetRoleId))) : null;
 }
 
-export function getDashboardStats() {
-  const totalUsers = db.select({ count: count() }).from(schema.users).get()!.count;
-  const totalPersonas = db.select({ count: count() }).from(schema.personas).get()!.count;
-  const totalSourceRoles = db.select({ count: count() }).from(schema.sourceRoles).get()!.count;
-  const totalTargetRoles = db.select({ count: count() }).from(schema.targetRoles).get()!.count;
-  const totalGroups = db.select({ count: count() }).from(schema.consolidatedGroups).get()!.count;
+export async function getDashboardStats() {
+  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users);
+  const totalUsers = totalUsersRow!.count;
 
-  const usersWithPersona = db
+  const [totalPersonasRow] = await db.select({ count: count() }).from(schema.personas);
+  const totalPersonas = totalPersonasRow!.count;
+
+  const [totalSourceRolesRow] = await db.select({ count: count() }).from(schema.sourceRoles);
+  const totalSourceRoles = totalSourceRolesRow!.count;
+
+  const [totalTargetRolesRow] = await db.select({ count: count() }).from(schema.targetRoles);
+  const totalTargetRoles = totalTargetRolesRow!.count;
+
+  const [totalGroupsRow] = await db.select({ count: count() }).from(schema.consolidatedGroups);
+  const totalGroups = totalGroupsRow!.count;
+
+  const [usersWithPersonaRow] = await db
     .select({ count: count() })
-    .from(schema.userPersonaAssignments)
-    .get()!.count;
+    .from(schema.userPersonaAssignments);
+  const usersWithPersona = usersWithPersonaRow!.count;
 
-  const personasWithMapping = db
+  const [personasWithMappingRow] = await db
     .select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
-    .from(schema.personaTargetRoleMappings)
-    .get()!.count;
+    .from(schema.personaTargetRoleMappings);
+  const personasWithMapping = Number(personasWithMappingRow!.count);
 
-  const totalAssignments = db
+  const [totalAssignmentsRow] = await db
+    .select({ count: count() })
+    .from(schema.userTargetRoleAssignments);
+  const totalAssignments = totalAssignmentsRow!.count;
+
+  const [approvedAssignmentsRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .get()!.count;
+    .where(eq(schema.userTargetRoleAssignments.status, "approved"));
+  const approvedAssignments = approvedAssignmentsRow!.count;
 
-  const approvedAssignments = db
+  const [complianceApprovedRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "approved"))
-    .get()!.count;
+    .where(eq(schema.userTargetRoleAssignments.status, "compliance_approved"));
+  const complianceApproved = complianceApprovedRow!.count;
 
-  const complianceApproved = db
+  const [sodRejectedRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "compliance_approved"))
-    .get()!.count;
+    .where(eq(schema.userTargetRoleAssignments.status, "sod_rejected"));
+  const sodRejected = sodRejectedRow!.count;
 
-  const sodRejected = db
+  const [readyForApprovalRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "sod_rejected"))
-    .get()!.count;
+    .where(eq(schema.userTargetRoleAssignments.status, "ready_for_approval"));
+  const readyForApproval = readyForApprovalRow!.count;
 
-  const readyForApproval = db
+  const [pendingReviewRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "ready_for_approval"))
-    .get()!.count;
+    .where(eq(schema.userTargetRoleAssignments.status, "pending_review"));
+  const pendingReview = pendingReviewRow!.count;
 
-  const pendingReview = db
+  const [draftAssignmentsRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "pending_review"))
-    .get()!.count;
+    .where(eq(schema.userTargetRoleAssignments.status, "draft"));
+  const draftAssignments = draftAssignmentsRow!.count;
 
-  const draftAssignments = db
-    .select({ count: count() })
-    .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "draft"))
-    .get()!.count;
+  const [sourcePermissionsRow] = await db.select({ count: count() }).from(schema.sourcePermissions);
+  const sourcePermissions = sourcePermissionsRow!.count;
 
-  const sourcePermissions = db.select({ count: count() }).from(schema.sourcePermissions).get()!.count;
-  const rolePermissions = db.select({ count: count() }).from(schema.sourceRolePermissions).get()!.count;
-  const sodRulesCount = db.select({ count: count() }).from(schema.sodRules).get()!.count;
+  const [rolePermissionsRow] = await db.select({ count: count() }).from(schema.sourceRolePermissions);
+  const rolePermissions = rolePermissionsRow!.count;
+
+  const [sodRulesCountRow] = await db.select({ count: count() }).from(schema.sodRules);
+  const sodRulesCount = sodRulesCountRow!.count;
 
   // SOD conflicts by severity
-  const sodConflictsBySeverity = db
+  const sodConflictsBySeverity = await db
     .select({
       severity: schema.sodConflicts.severity,
       count: count(),
     })
     .from(schema.sodConflicts)
-    .groupBy(schema.sodConflicts.severity)
-    .all();
+    .groupBy(schema.sodConflicts.severity);
 
   // Department breakdown
-  const departmentStats = db
+  const departmentStats = await db
     .select({
       department: schema.users.department,
       count: count(),
     })
     .from(schema.users)
-    .groupBy(schema.users.department)
-    .all();
+    .groupBy(schema.users.department);
 
   // Users with persona by department
-  const deptPersonaCounts = db
+  const deptPersonaCounts = await db
     .select({
       department: schema.users.department,
       count: count(),
     })
     .from(schema.userPersonaAssignments)
     .innerJoin(schema.users, eq(schema.userPersonaAssignments.userId, schema.users.id))
-    .groupBy(schema.users.department)
-    .all();
+    .groupBy(schema.users.department);
 
   // Low confidence assignments
-  const lowConfidence = db
+  const [lowConfidenceRow] = await db
     .select({ count: count() })
     .from(schema.userPersonaAssignments)
-    .where(sql`${schema.userPersonaAssignments.confidenceScore} < 65`)
-    .get()!.count;
+    .where(sql`${schema.userPersonaAssignments.confidenceScore} < 65`);
+  const lowConfidence = lowConfidenceRow!.count;
 
   // Existing production access (from previous waves)
-  const existingAccessCount = db
+  const [existingAccessCountRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
-    .get()!.count;
+    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"));
+  const existingAccessCount = existingAccessCountRow!.count;
 
   const existingAccessUserCount = existingAccessCount > 0
-    ? db
+    ? Number((await db
         .select({ count: sql<number>`count(distinct ${schema.userTargetRoleAssignments.userId})` })
         .from(schema.userTargetRoleAssignments)
         .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
-        .get()!.count
+      )[0]!.count)
     : 0;
 
   return {
@@ -206,8 +214,8 @@ export interface UserRow {
   groupName: string | null;
 }
 
-export function getUsers(): UserRow[] {
-  return db
+export async function getUsers(): Promise<UserRow[]> {
+  return await db
     .select({
       id: schema.users.id,
       sourceUserId: schema.users.sourceUserId,
@@ -238,8 +246,7 @@ export function getUsers(): UserRow[] {
     .leftJoin(
       schema.consolidatedGroups,
       eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId)
-    )
-    .all();
+    );
 }
 
 export interface UserDetail {
@@ -294,15 +301,14 @@ export interface UserDetail {
   }[];
 }
 
-export function getUserDetail(id: number): UserDetail | null {
-  const user = db
+export async function getUserDetail(id: number): Promise<UserDetail | null> {
+  const [user] = await db
     .select()
     .from(schema.users)
-    .where(eq(schema.users.id, id))
-    .get();
+    .where(eq(schema.users.id, id));
   if (!user) return null;
 
-  const assignment = db
+  const [assignment] = await db
     .select({
       personaId: schema.userPersonaAssignments.personaId,
       confidenceScore: schema.userPersonaAssignments.confidenceScore,
@@ -314,10 +320,9 @@ export function getUserDetail(id: number): UserDetail | null {
     .from(schema.userPersonaAssignments)
     .leftJoin(schema.personas, eq(schema.personas.id, schema.userPersonaAssignments.personaId))
     .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId))
-    .where(eq(schema.userPersonaAssignments.userId, id))
-    .get();
+    .where(eq(schema.userPersonaAssignments.userId, id));
 
-  const sourceRoles = db
+  const sourceRoles = await db
     .select({
       id: schema.sourceRoles.id,
       roleId: schema.sourceRoles.roleId,
@@ -327,10 +332,9 @@ export function getUserDetail(id: number): UserDetail | null {
     })
     .from(schema.userSourceRoleAssignments)
     .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
-    .where(eq(schema.userSourceRoleAssignments.userId, id))
-    .all();
+    .where(eq(schema.userSourceRoleAssignments.userId, id));
 
-  const targetRoleAssignments = db
+  const targetRoleAssignments = await db
     .select({
       id: schema.userTargetRoleAssignments.id,
       targetRoleId: schema.userTargetRoleAssignments.targetRoleId,
@@ -343,10 +347,9 @@ export function getUserDetail(id: number): UserDetail | null {
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
-    .where(eq(schema.userTargetRoleAssignments.userId, id))
-    .all();
+    .where(eq(schema.userTargetRoleAssignments.userId, id));
 
-  const sodConflictsRaw = db
+  const sodConflictsRaw = await db
     .select({
       id: schema.sodConflicts.id,
       severity: schema.sodConflicts.severity,
@@ -361,22 +364,21 @@ export function getUserDetail(id: number): UserDetail | null {
     })
     .from(schema.sodConflicts)
     .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
-    .where(eq(schema.sodConflicts.userId, id))
-    .all();
+    .where(eq(schema.sodConflicts.userId, id));
 
-  const sodConflicts = sodConflictsRaw.map((c) => {
-    const roleA = c.roleIdA
-      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdA)).get()
-      : null;
-    const roleB = c.roleIdB
-      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdB)).get()
-      : null;
+  const sodConflicts = await Promise.all(sodConflictsRaw.map(async (c) => {
+    const [roleA] = c.roleIdA
+      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdA))
+      : [null];
+    const [roleB] = c.roleIdB
+      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdB))
+      : [null];
     return {
       ...c,
       roleNameA: roleA?.roleName ?? null,
       roleNameB: roleB?.roleName ?? null,
     };
-  });
+  }));
 
   return {
     id: user.id,
@@ -417,23 +419,22 @@ export interface UserGapAnalysis {
   coveragePercent: number;
 }
 
-export function getUserGapAnalysis(userId: number): UserGapAnalysis {
+export async function getUserGapAnalysis(userId: number): Promise<UserGapAnalysis> {
   // Get user's source permissions (via source role assignments → source roles → source role permissions)
-  const sourceRoleAssignments = db
+  const sourceRoleAssignments = await db
     .select({
       roleId: schema.sourceRoles.id,
       roleName: schema.sourceRoles.roleName,
     })
     .from(schema.userSourceRoleAssignments)
     .innerJoin(schema.sourceRoles, eq(schema.userSourceRoleAssignments.sourceRoleId, schema.sourceRoles.id))
-    .where(eq(schema.userSourceRoleAssignments.userId, userId))
-    .all();
+    .where(eq(schema.userSourceRoleAssignments.userId, userId));
 
   const sourcePerms: { permissionId: string; permissionName: string | null; system: string | null; roleName: string }[] = [];
   const sourcePermMap = new Map<string, string[]>(); // permId → roleNames
 
   for (const role of sourceRoleAssignments) {
-    const perms = db
+    const perms = await db
       .select({
         permissionId: schema.sourcePermissions.permissionId,
         permissionName: schema.sourcePermissions.permissionName,
@@ -441,8 +442,7 @@ export function getUserGapAnalysis(userId: number): UserGapAnalysis {
       })
       .from(schema.sourceRolePermissions)
       .innerJoin(schema.sourcePermissions, eq(schema.sourceRolePermissions.sourcePermissionId, schema.sourcePermissions.id))
-      .where(eq(schema.sourceRolePermissions.sourceRoleId, role.roleId))
-      .all();
+      .where(eq(schema.sourceRolePermissions.sourceRoleId, role.roleId));
 
     for (const p of perms) {
       sourcePerms.push({ ...p, roleName: role.roleName });
@@ -454,21 +454,20 @@ export function getUserGapAnalysis(userId: number): UserGapAnalysis {
   }
 
   // Get user's target permissions (via target role assignments → target roles → target role permissions)
-  const targetRoleAssignments = db
+  const targetRoleAssignments = await db
     .select({
       roleId: schema.targetRoles.id,
       roleName: schema.targetRoles.roleName,
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.targetRoles, eq(schema.userTargetRoleAssignments.targetRoleId, schema.targetRoles.id))
-    .where(eq(schema.userTargetRoleAssignments.userId, userId))
-    .all();
+    .where(eq(schema.userTargetRoleAssignments.userId, userId));
 
   const targetPerms: { permissionId: string; permissionName: string | null; system: string | null; roleName: string }[] = [];
   const targetPermMap = new Map<string, string[]>(); // permId → roleNames
 
   for (const role of targetRoleAssignments) {
-    const perms = db
+    const perms = await db
       .select({
         permissionId: schema.targetPermissions.permissionId,
         permissionName: schema.targetPermissions.permissionName,
@@ -476,8 +475,7 @@ export function getUserGapAnalysis(userId: number): UserGapAnalysis {
       })
       .from(schema.targetRolePermissions)
       .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
-      .where(eq(schema.targetRolePermissions.targetRoleId, role.roleId))
-      .all();
+      .where(eq(schema.targetRolePermissions.targetRoleId, role.roleId));
 
     for (const p of perms) {
       targetPerms.push({ ...p, roleName: role.roleName });
@@ -550,8 +548,8 @@ export interface PersonaRow {
   userCount: number;
 }
 
-export function getPersonas(): PersonaRow[] {
-  return db
+export async function getPersonas(): Promise<PersonaRow[]> {
+  return await db
     .select({
       id: schema.personas.id,
       name: schema.personas.name,
@@ -569,8 +567,7 @@ export function getPersonas(): PersonaRow[] {
     .leftJoin(
       schema.consolidatedGroups,
       eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId)
-    )
-    .all();
+    );
 }
 
 export interface PersonaDetail {
@@ -607,8 +604,8 @@ export interface PersonaDetail {
   }[];
 }
 
-export function getPersonaDetail(id: number): PersonaDetail | null {
-  const persona = db
+export async function getPersonaDetail(id: number): Promise<PersonaDetail | null> {
+  const [persona] = await db
     .select({
       id: schema.personas.id,
       name: schema.personas.name,
@@ -620,12 +617,11 @@ export function getPersonaDetail(id: number): PersonaDetail | null {
     })
     .from(schema.personas)
     .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId))
-    .where(eq(schema.personas.id, id))
-    .get();
+    .where(eq(schema.personas.id, id));
 
   if (!persona) return null;
 
-  const sourcePermissions = db
+  const sourcePermissions = await db
     .select({
       id: schema.sourcePermissions.id,
       permissionId: schema.sourcePermissions.permissionId,
@@ -635,10 +631,9 @@ export function getPersonaDetail(id: number): PersonaDetail | null {
     })
     .from(schema.personaSourcePermissions)
     .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
-    .where(eq(schema.personaSourcePermissions.personaId, id))
-    .all();
+    .where(eq(schema.personaSourcePermissions.personaId, id));
 
-  const users = db
+  const users = await db
     .select({
       id: schema.users.id,
       displayName: schema.users.displayName,
@@ -648,10 +643,9 @@ export function getPersonaDetail(id: number): PersonaDetail | null {
     })
     .from(schema.userPersonaAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userPersonaAssignments.userId))
-    .where(eq(schema.userPersonaAssignments.personaId, id))
-    .all();
+    .where(eq(schema.userPersonaAssignments.personaId, id));
 
-  const targetRoleMappings = db
+  const targetRoleMappings = await db
     .select({
       id: schema.personaTargetRoleMappings.id,
       targetRoleId: schema.personaTargetRoleMappings.targetRoleId,
@@ -664,8 +658,7 @@ export function getPersonaDetail(id: number): PersonaDetail | null {
     })
     .from(schema.personaTargetRoleMappings)
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.personaTargetRoleMappings.targetRoleId))
-    .where(eq(schema.personaTargetRoleMappings.personaId, id))
-    .all();
+    .where(eq(schema.personaTargetRoleMappings.personaId, id));
 
   return {
     ...persona,
@@ -689,8 +682,8 @@ export interface GroupRow {
   userCount: number;
 }
 
-export function getConsolidatedGroups(): GroupRow[] {
-  return db
+export async function getConsolidatedGroups(): Promise<GroupRow[]> {
+  return await db
     .select({
       id: schema.consolidatedGroups.id,
       name: schema.consolidatedGroups.name,
@@ -707,8 +700,7 @@ export function getConsolidatedGroups(): GroupRow[] {
         WHERE p.consolidated_group_id = consolidated_groups.id
       )`,
     })
-    .from(schema.consolidatedGroups)
-    .all();
+    .from(schema.consolidatedGroups);
 }
 
 // ─────────────────────────────────────────────
@@ -726,8 +718,8 @@ export interface SourceRoleRow {
   userCount: number;
 }
 
-export function getSourceRoles(): SourceRoleRow[] {
-  return db
+export async function getSourceRoles(): Promise<SourceRoleRow[]> {
+  return await db
     .select({
       id: schema.sourceRoles.id,
       roleId: schema.sourceRoles.roleId,
@@ -744,8 +736,7 @@ export function getSourceRoles(): SourceRoleRow[] {
         WHERE usra.source_role_id = source_roles.id
       )`,
     })
-    .from(schema.sourceRoles)
-    .all();
+    .from(schema.sourceRoles);
 }
 
 export interface SourceRoleDetail {
@@ -765,11 +756,11 @@ export interface SourceRoleDetail {
   }[];
 }
 
-export function getSourceRoleDetail(id: number): SourceRoleDetail | null {
-  const role = db.select().from(schema.sourceRoles).where(eq(schema.sourceRoles.id, id)).get();
+export async function getSourceRoleDetail(id: number): Promise<SourceRoleDetail | null> {
+  const [role] = await db.select().from(schema.sourceRoles).where(eq(schema.sourceRoles.id, id));
   if (!role) return null;
 
-  const permissions = db
+  const permissions = await db
     .select({
       id: schema.sourcePermissions.id,
       permissionId: schema.sourcePermissions.permissionId,
@@ -779,8 +770,7 @@ export function getSourceRoleDetail(id: number): SourceRoleDetail | null {
     })
     .from(schema.sourceRolePermissions)
     .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.sourceRolePermissions.sourcePermissionId))
-    .where(eq(schema.sourceRolePermissions.sourceRoleId, id))
-    .all();
+    .where(eq(schema.sourceRolePermissions.sourceRoleId, id));
 
   return { ...role, permissions };
 }
@@ -800,8 +790,8 @@ export interface TargetRoleRow {
   permissionCount: number;
 }
 
-export function getTargetRoles(): TargetRoleRow[] {
-  return db
+export async function getTargetRoles(): Promise<TargetRoleRow[]> {
+  return await db
     .select({
       id: schema.targetRoles.id,
       roleId: schema.targetRoles.roleId,
@@ -815,8 +805,7 @@ export function getTargetRoles(): TargetRoleRow[] {
         WHERE trp.target_role_id = target_roles.id
       )`,
     })
-    .from(schema.targetRoles)
-    .all();
+    .from(schema.targetRoles);
 }
 
 export interface TargetPermissionInfo {
@@ -827,8 +816,8 @@ export interface TargetPermissionInfo {
   riskLevel: string | null;
 }
 
-export function getTargetRolePermissions(roleId: number): TargetPermissionInfo[] {
-  return db
+export async function getTargetRolePermissions(roleId: number): Promise<TargetPermissionInfo[]> {
+  return await db
     .select({
       id: schema.targetPermissions.id,
       permissionId: schema.targetPermissions.permissionId,
@@ -841,8 +830,7 @@ export function getTargetRolePermissions(roleId: number): TargetPermissionInfo[]
       schema.targetPermissions,
       eq(schema.targetPermissions.id, schema.targetRolePermissions.targetPermissionId)
     )
-    .where(eq(schema.targetRolePermissions.targetRoleId, roleId))
-    .all();
+    .where(eq(schema.targetRolePermissions.targetRoleId, roleId));
 }
 
 // ─────────────────────────────────────────────
@@ -861,8 +849,8 @@ export interface SodRuleRow {
   isActive: boolean | null;
 }
 
-export function getSodRules(): SodRuleRow[] {
-  return db.select().from(schema.sodRules).all();
+export async function getSodRules(): Promise<SodRuleRow[]> {
+  return await db.select().from(schema.sodRules);
 }
 
 // ─────────────────────────────────────────────
@@ -892,8 +880,8 @@ export interface SodConflictRow {
   riskExplanation: string | null;
 }
 
-export function getSodConflicts(): SodConflictRow[] {
-  const conflicts = db
+export async function getSodConflicts(): Promise<SodConflictRow[]> {
+  const conflicts = await db
     .select({
       id: schema.sodConflicts.id,
       userId: schema.sodConflicts.userId,
@@ -914,23 +902,22 @@ export function getSodConflicts(): SodConflictRow[] {
     })
     .from(schema.sodConflicts)
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
-    .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
-    .all();
+    .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId));
 
   // Resolve role names and permission names
-  return conflicts.map((c) => {
-    const roleA = c.roleIdA
-      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdA)).get()
-      : null;
-    const roleB = c.roleIdB
-      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdB)).get()
-      : null;
-    const permA = c.permissionIdA
-      ? db.select({ permissionName: schema.targetPermissions.permissionName }).from(schema.targetPermissions).where(eq(schema.targetPermissions.permissionId, c.permissionIdA)).get()
-      : null;
-    const permB = c.permissionIdB
-      ? db.select({ permissionName: schema.targetPermissions.permissionName }).from(schema.targetPermissions).where(eq(schema.targetPermissions.permissionId, c.permissionIdB)).get()
-      : null;
+  return await Promise.all(conflicts.map(async (c) => {
+    const [roleA] = c.roleIdA
+      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdA))
+      : [null];
+    const [roleB] = c.roleIdB
+      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdB))
+      : [null];
+    const [permA] = c.permissionIdA
+      ? await db.select({ permissionName: schema.targetPermissions.permissionName }).from(schema.targetPermissions).where(eq(schema.targetPermissions.permissionId, c.permissionIdA))
+      : [null];
+    const [permB] = c.permissionIdB
+      ? await db.select({ permissionName: schema.targetPermissions.permissionName }).from(schema.targetPermissions).where(eq(schema.targetPermissions.permissionId, c.permissionIdB))
+      : [null];
     return {
       id: c.id,
       userId: c.userId,
@@ -953,7 +940,7 @@ export function getSodConflicts(): SodConflictRow[] {
       resolutionNotes: c.resolutionNotes,
       riskExplanation: c.riskExplanation,
     };
-  });
+  }));
 }
 
 // ─────────────────────────────────────────────
@@ -975,8 +962,8 @@ export interface ApprovalRow {
   sodConflictCount: number | null;
 }
 
-export function getApprovalQueue(): ApprovalRow[] {
-  return db
+export async function getApprovalQueue(): Promise<ApprovalRow[]> {
+  return await db
     .select({
       assignmentId: schema.userTargetRoleAssignments.id,
       userId: schema.userTargetRoleAssignments.userId,
@@ -999,8 +986,7 @@ export function getApprovalQueue(): ApprovalRow[] {
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
-    .leftJoin(schema.personas, eq(schema.personas.id, schema.userTargetRoleAssignments.derivedFromPersonaId))
-    .all();
+    .leftJoin(schema.personas, eq(schema.personas.id, schema.userTargetRoleAssignments.derivedFromPersonaId));
 }
 
 // ─────────────────────────────────────────────
@@ -1020,12 +1006,11 @@ export interface JobRow {
   errorLog: string | null;
 }
 
-export function getJobs(): JobRow[] {
-  return db
+export async function getJobs(): Promise<JobRow[]> {
+  return await db
     .select()
     .from(schema.processingJobs)
-    .orderBy(desc(schema.processingJobs.createdAt))
-    .all();
+    .orderBy(desc(schema.processingJobs.createdAt));
 }
 
 // ─────────────────────────────────────────────
@@ -1043,12 +1028,11 @@ export interface AuditLogRow {
   createdAt: string;
 }
 
-export function getAuditLog(): AuditLogRow[] {
-  return db
+export async function getAuditLog(): Promise<AuditLogRow[]> {
+  return await db
     .select()
     .from(schema.auditLog)
-    .orderBy(desc(schema.auditLog.createdAt))
-    .all();
+    .orderBy(desc(schema.auditLog.createdAt));
 }
 
 // ─────────────────────────────────────────────
@@ -1061,15 +1045,14 @@ export interface SimpleUser {
   department: string | null;
 }
 
-export function getAllSimpleUsers(): SimpleUser[] {
-  return db
+export async function getAllSimpleUsers(): Promise<SimpleUser[]> {
+  return await db
     .select({
       id: schema.users.id,
       displayName: schema.users.displayName,
       department: schema.users.department,
     })
-    .from(schema.users)
-    .all();
+    .from(schema.users);
 }
 
 export interface SimpleTargetRole {
@@ -1079,16 +1062,15 @@ export interface SimpleTargetRole {
   domain: string | null;
 }
 
-export function getAllSimpleTargetRoles(): SimpleTargetRole[] {
-  return db
+export async function getAllSimpleTargetRoles(): Promise<SimpleTargetRole[]> {
+  return await db
     .select({
       id: schema.targetRoles.id,
       roleId: schema.targetRoles.roleId,
       roleName: schema.targetRoles.roleName,
       domain: schema.targetRoles.domain,
     })
-    .from(schema.targetRoles)
-    .all();
+    .from(schema.targetRoles);
 }
 
 // ─────────────────────────────────────────────
@@ -1103,8 +1085,8 @@ export interface UserRoleAssignmentRow {
   assignedDate: string | null;
 }
 
-export function getUserSourceRoleAssignments(): UserRoleAssignmentRow[] {
-  return db
+export async function getUserSourceRoleAssignments(): Promise<UserRoleAssignmentRow[]> {
+  return await db
     .select({
       id: schema.userSourceRoleAssignments.id,
       userName: schema.users.displayName,
@@ -1114,8 +1096,7 @@ export function getUserSourceRoleAssignments(): UserRoleAssignmentRow[] {
     })
     .from(schema.userSourceRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userSourceRoleAssignments.userId))
-    .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
-    .all();
+    .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId));
 }
 
 export interface SourcePermissionRow {
@@ -1128,8 +1109,8 @@ export interface SourcePermissionRow {
   riskLevel: string | null;
 }
 
-export function getAllSourcePermissions(): SourcePermissionRow[] {
-  return db.select().from(schema.sourcePermissions).all();
+export async function getAllSourcePermissions(): Promise<SourcePermissionRow[]> {
+  return await db.select().from(schema.sourcePermissions);
 }
 
 export interface TargetPermissionRow {
@@ -1142,8 +1123,8 @@ export interface TargetPermissionRow {
   riskLevel: string | null;
 }
 
-export function getAllTargetPermissions(): TargetPermissionRow[] {
-  return db.select().from(schema.targetPermissions).all();
+export async function getAllTargetPermissions(): Promise<TargetPermissionRow[]> {
+  return await db.select().from(schema.targetPermissions);
 }
 
 // ─────────────────────────────────────────────
@@ -1159,8 +1140,8 @@ export interface PersonaMappingRow {
   sourcePermissionCount: number;
 }
 
-export function getPersonaMappingWorkspace(): PersonaMappingRow[] {
-  return db
+export async function getPersonaMappingWorkspace(): Promise<PersonaMappingRow[]> {
+  return await db
     .select({
       personaId: schema.personas.id,
       personaName: schema.personas.name,
@@ -1179,8 +1160,7 @@ export function getPersonaMappingWorkspace(): PersonaMappingRow[] {
       )`,
     })
     .from(schema.personas)
-    .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId))
-    .all();
+    .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId));
 }
 
 export interface UserRefinementRow {
@@ -1194,8 +1174,8 @@ export interface UserRefinementRow {
   personaName: string | null;
 }
 
-export function getUserRefinements(): UserRefinementRow[] {
-  return db
+export async function getUserRefinements(): Promise<UserRefinementRow[]> {
+  return await db
     .select({
       assignmentId: schema.userTargetRoleAssignments.id,
       userId: schema.userTargetRoleAssignments.userId,
@@ -1210,8 +1190,7 @@ export function getUserRefinements(): UserRefinementRow[] {
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
     .leftJoin(schema.personas, eq(schema.personas.id, schema.userTargetRoleAssignments.derivedFromPersonaId))
-    .where(ne(schema.userTargetRoleAssignments.assignmentType, "persona_default"))
-    .all();
+    .where(ne(schema.userTargetRoleAssignments.assignmentType, "persona_default"));
 }
 
 export interface GapRow {
@@ -1224,8 +1203,8 @@ export interface GapRow {
   notes: string | null;
 }
 
-export function getGapAnalysis(): GapRow[] {
-  return db
+export async function getGapAnalysis(): Promise<GapRow[]> {
+  return await db
     .select({
       gapId: schema.permissionGaps.id,
       personaId: schema.permissionGaps.personaId,
@@ -1237,8 +1216,7 @@ export function getGapAnalysis(): GapRow[] {
     })
     .from(schema.permissionGaps)
     .innerJoin(schema.personas, eq(schema.personas.id, schema.permissionGaps.personaId))
-    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.permissionGaps.sourcePermissionId))
-    .all();
+    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.permissionGaps.sourcePermissionId));
 }
 
 // ─────────────────────────────────────────────
@@ -1255,71 +1233,70 @@ export interface DepartmentMappingStatus {
   approved: number;
 }
 
-export function getDepartmentMappingStatus(): DepartmentMappingStatus[] {
-  const departments = db.select({
+export async function getDepartmentMappingStatus(): Promise<DepartmentMappingStatus[]> {
+  const departments = await db.select({
     department: schema.users.department,
     totalUsers: count(),
-  }).from(schema.users).groupBy(schema.users.department).all();
+  }).from(schema.users).groupBy(schema.users.department);
 
-  return departments.map((d) => {
+  return await Promise.all(departments.map(async (d) => {
     const dept = d.department || "Unknown";
 
-    const withPersona = db.select({ count: count() })
+    const [withPersonaRow] = await db.select({ count: count() })
       .from(schema.userPersonaAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userPersonaAssignments.userId))
-      .where(eq(schema.users.department, dept))
-      .get()!.count;
+      .where(eq(schema.users.department, dept));
+    const withPersona = withPersonaRow!.count;
 
     // Users who have at least one target role assignment
-    const mapped = db.select({
+    const [mappedRow] = await db.select({
       count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(eq(schema.users.department, dept))
-      .get()!.count;
+      .where(eq(schema.users.department, dept));
+    const mapped = Number(mappedRow!.count);
 
     // Users with at least one sod_rejected assignment
-    const sodRejected = db.select({
+    const [sodRejectedRow] = await db.select({
       count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'sod_rejected'`)
-      .get()!.count;
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'sod_rejected'`);
+    const sodRejected = Number(sodRejectedRow!.count);
 
     // Users whose ALL assignments are compliance_approved or sod_risk_accepted or approved
-    const sodClean = db.select({
+    const [sodCleanRow] = await db.select({
       count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status IN ('compliance_approved', 'sod_risk_accepted', 'ready_for_approval', 'approved')`)
-      .get()!.count;
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status IN ('compliance_approved', 'sod_risk_accepted', 'ready_for_approval', 'approved')`);
+    const sodClean = Number(sodCleanRow!.count);
 
-    const approved = db.select({
+    const [approvedRow] = await db.select({
       count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'approved'`)
-      .get()!.count;
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'approved'`);
+    const approved = Number(approvedRow!.count);
 
     return { department: dept, totalUsers: d.totalUsers, withPersona, mapped, sodRejected, sodClean, approved };
-  });
+  }));
 }
 
 // ─────────────────────────────────────────────
 // WORK ASSIGNMENTS (scope filtering)
 // ─────────────────────────────────────────────
 
-export function getAssignedScope(appUserId: number, assignmentType: string): { departments: string[]; userIds: string[] } {
-  const assignments = db.select().from(schema.workAssignments)
+export async function getAssignedScope(appUserId: number, assignmentType: string): Promise<{ departments: string[]; userIds: string[] }> {
+  const assignments = await db.select().from(schema.workAssignments)
     .where(and(
       eq(schema.workAssignments.appUserId, appUserId),
       eq(schema.workAssignments.assignmentType, assignmentType)
-    ))
-    .all();
+    ));
 
   const departments: string[] = [];
   const userIds: string[] = [];
@@ -1332,47 +1309,45 @@ export function getAssignedScope(appUserId: number, assignmentType: string): { d
   return { departments, userIds };
 }
 
-export function getSourceUserIdsInScope(scope: { departments: string[]; userIds: string[] }): number[] {
+export async function getSourceUserIdsInScope(scope: { departments: string[]; userIds: string[] }): Promise<number[]> {
   const ids = new Set<number>();
 
   if (scope.departments.length > 0) {
-    const users = db.select({ id: schema.users.id })
+    const users = await db.select({ id: schema.users.id })
       .from(schema.users)
-      .where(inArray(schema.users.department, scope.departments))
-      .all();
+      .where(inArray(schema.users.department, scope.departments));
     for (const u of users) ids.add(u.id);
   }
 
   if (scope.userIds.length > 0) {
-    const users = db.select({ id: schema.users.id })
+    const users = await db.select({ id: schema.users.id })
       .from(schema.users)
-      .where(inArray(schema.users.sourceUserId, scope.userIds))
-      .all();
+      .where(inArray(schema.users.sourceUserId, scope.userIds));
     for (const u of users) ids.add(u.id);
   }
 
   return Array.from(ids);
 }
 
-export function getApprovalQueueScoped(appUserId: number): ApprovalRow[] {
-  const scope = getAssignedScope(appUserId, "approver");
-  const all = getApprovalQueue();
+export async function getApprovalQueueScoped(appUserId: number): Promise<ApprovalRow[]> {
+  const scope = await getAssignedScope(appUserId, "approver");
+  const all = await getApprovalQueue();
 
   // If no assignments, return empty (not everything)
   if (scope.departments.length === 0 && scope.userIds.length === 0) return [];
 
-  const scopedUserIds = getSourceUserIdsInScope(scope);
+  const scopedUserIds = await getSourceUserIdsInScope(scope);
   const idSet = new Set(scopedUserIds);
   return all.filter((a) => idSet.has(a.userId));
 }
 
-export function getUsersScoped(appUserId: number, assignmentType: string): UserRow[] {
-  const scope = getAssignedScope(appUserId, assignmentType);
-  const all = getUsers();
+export async function getUsersScoped(appUserId: number, assignmentType: string): Promise<UserRow[]> {
+  const scope = await getAssignedScope(appUserId, assignmentType);
+  const all = await getUsers();
 
   if (scope.departments.length === 0 && scope.userIds.length === 0) return [];
 
-  const scopedUserIds = getSourceUserIdsInScope(scope);
+  const scopedUserIds = await getSourceUserIdsInScope(scope);
   const idSet = new Set(scopedUserIds);
   return all.filter((u) => idSet.has(u.id));
 }
@@ -1396,9 +1371,9 @@ export interface PersonaSodConflict {
   roleNameB: string | null;
 }
 
-export function getOpenSodConflictsByPersona(): Map<number, PersonaSodConflict[]> {
+export async function getOpenSodConflictsByPersona(): Promise<Map<number, PersonaSodConflict[]>> {
   // Get all open SOD conflicts with user-persona info
-  const rows = db
+  const rows = await db
     .select({
       conflictId: schema.sodConflicts.id,
       userId: schema.sodConflicts.userId,
@@ -1415,18 +1390,17 @@ export function getOpenSodConflictsByPersona(): Map<number, PersonaSodConflict[]
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
     .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
     .innerJoin(schema.userPersonaAssignments, eq(schema.userPersonaAssignments.userId, schema.sodConflicts.userId))
-    .where(eq(schema.sodConflicts.resolutionStatus, "open"))
-    .all();
+    .where(eq(schema.sodConflicts.resolutionStatus, "open"));
 
   const result = new Map<number, PersonaSodConflict[]>();
   for (const r of rows) {
     if (!r.personaId) continue;
-    const roleA = r.roleIdA
-      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, r.roleIdA)).get()
-      : null;
-    const roleB = r.roleIdB
-      ? db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, r.roleIdB)).get()
-      : null;
+    const [roleA] = r.roleIdA
+      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, r.roleIdA))
+      : [null];
+    const [roleB] = r.roleIdB
+      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, r.roleIdB))
+      : [null];
     const entry: PersonaSodConflict = {
       personaId: r.personaId,
       conflictId: r.conflictId,
@@ -1448,13 +1422,13 @@ export function getOpenSodConflictsByPersona(): Map<number, PersonaSodConflict[]
   return result;
 }
 
-export function getPersonaIdsForUsers(userIds: number[]): number[] {
+export async function getPersonaIdsForUsers(userIds: number[]): Promise<number[]> {
   if (userIds.length === 0) return [];
   const idSet = new Set(userIds);
-  const assignments = db.select({
+  const assignments = await db.select({
     personaId: schema.userPersonaAssignments.personaId,
     userId: schema.userPersonaAssignments.userId,
-  }).from(schema.userPersonaAssignments).all();
+  }).from(schema.userPersonaAssignments);
 
   const personaIds = new Set<number>();
   for (const a of assignments) {
@@ -1473,8 +1447,8 @@ export interface SourceSystemStat {
   userCount: number;
 }
 
-export function getSourceSystemStats(): SourceSystemStat[] {
-  return db
+export async function getSourceSystemStats(): Promise<SourceSystemStat[]> {
+  return await db
     .select({
       system: sql<string>`coalesce(${schema.sourceRoles.system}, 'Unknown')`,
       roleCount: count(),
@@ -1486,16 +1460,14 @@ export function getSourceSystemStats(): SourceSystemStat[] {
       )`,
     })
     .from(schema.sourceRoles)
-    .groupBy(schema.sourceRoles.system)
-    .all();
+    .groupBy(schema.sourceRoles.system);
 }
 
-export function getDistinctSourceSystems(): string[] {
-  const rows = db
+export async function getDistinctSourceSystems(): Promise<string[]> {
+  const rows = await db
     .select({ system: sql<string>`coalesce(${schema.sourceRoles.system}, 'Unknown')` })
     .from(schema.sourceRoles)
-    .groupBy(schema.sourceRoles.system)
-    .all();
+    .groupBy(schema.sourceRoles.system);
   return rows.map((r) => r.system);
 }
 
@@ -1504,8 +1476,8 @@ export interface PersonaSourceSystemInfo {
   systems: string[];
 }
 
-export function getPersonaSourceSystems(): Map<number, string[]> {
-  const rows = db
+export async function getPersonaSourceSystems(): Promise<Map<number, string[]>> {
+  const rows = await db
     .select({
       personaId: schema.personaSourcePermissions.personaId,
       system: sql<string>`coalesce(${schema.sourcePermissions.system}, 'Unknown')`,
@@ -1515,8 +1487,7 @@ export function getPersonaSourceSystems(): Map<number, string[]> {
       schema.sourcePermissions,
       eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId)
     )
-    .groupBy(schema.personaSourcePermissions.personaId, schema.sourcePermissions.system)
-    .all();
+    .groupBy(schema.personaSourcePermissions.personaId, schema.sourcePermissions.system);
 
   const map = new Map<number, string[]>();
   for (const row of rows) {
@@ -1543,38 +1514,36 @@ export interface SodConflictDetailed extends SodConflictRow {
   roleBPermissions: { permissionId: string; permissionName: string | null }[];
 }
 
-export function getSodConflictsDetailed(): SodConflictDetailed[] {
-  const base = getSodConflicts();
+export async function getSodConflictsDetailed(): Promise<SodConflictDetailed[]> {
+  const base = await getSodConflicts();
 
-  return base.map((c) => {
+  return await Promise.all(base.map(async (c) => {
     const roleAPermissions = c.roleIdA
-      ? db.select({
+      ? await db.select({
           permissionId: schema.targetPermissions.permissionId,
           permissionName: schema.targetPermissions.permissionName,
         })
         .from(schema.targetRolePermissions)
         .innerJoin(schema.targetPermissions, eq(schema.targetPermissions.id, schema.targetRolePermissions.targetPermissionId))
         .where(eq(schema.targetRolePermissions.targetRoleId, c.roleIdA))
-        .all()
       : [];
 
     const roleBPermissions = c.roleIdB
-      ? db.select({
+      ? await db.select({
           permissionId: schema.targetPermissions.permissionId,
           permissionName: schema.targetPermissions.permissionName,
         })
         .from(schema.targetRolePermissions)
         .innerJoin(schema.targetPermissions, eq(schema.targetPermissions.id, schema.targetRolePermissions.targetPermissionId))
         .where(eq(schema.targetRolePermissions.targetRoleId, c.roleIdB))
-        .all()
       : [];
 
     return { ...c, roleAPermissions, roleBPermissions };
-  });
+  }));
 }
 
-export function getSodConflictDetail(conflictId: number): SodConflictDetailed | null {
-  const all = getSodConflictsDetailed();
+export async function getSodConflictDetail(conflictId: number): Promise<SodConflictDetailed | null> {
+  const all = await getSodConflictsDetailed();
   return all.find(c => c.id === conflictId) ?? null;
 }
 
@@ -1594,19 +1563,19 @@ export interface AssignedMapperApprover {
  * Walks up the org hierarchy from the user's org unit to find
  * the closest mapper/approver assignment.
  */
-export function getAssignedMapperApproverForUser(orgUnitId: number | null): AssignedMapperApprover {
+export async function getAssignedMapperApproverForUser(orgUnitId: number | null): Promise<AssignedMapperApprover> {
   if (!orgUnitId) return { mapperName: null, mapperOrgUnitName: null, approverName: null, approverOrgUnitName: null };
 
   // Get all org units to build the ancestry chain
-  const allOrgUnits = db.select().from(schema.orgUnits).all();
+  const allOrgUnits = await db.select().from(schema.orgUnits);
   const orgUnitMap = new Map(allOrgUnits.map(u => [u.id, u]));
 
   // Get all app user assignments
-  const appUserAssignments = db.select({
+  const appUserAssignments = await db.select({
     displayName: schema.appUsers.displayName,
     role: schema.appUsers.role,
     assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
-  }).from(schema.appUsers).where(eq(schema.appUsers.isActive, true)).all();
+  }).from(schema.appUsers).where(eq(schema.appUsers.isActive, true));
 
   const mapperByOu = new Map<number, string>();
   const approverByOu = new Map<number, string>();
@@ -1668,8 +1637,8 @@ export interface GapAnalysisSummary {
  * against target role permissions to find uncovered permissions.
  * Uses the permission_gaps table if populated.
  */
-export function getGapAnalysisSummary(): GapAnalysisSummary {
-  const allPersonaPerms = db
+export async function getGapAnalysisSummary(): Promise<GapAnalysisSummary> {
+  const allPersonaPerms = await db
     .select({
       personaId: schema.personaSourcePermissions.personaId,
       sourcePermissionId: schema.personaSourcePermissions.sourcePermissionId,
@@ -1678,24 +1647,21 @@ export function getGapAnalysisSummary(): GapAnalysisSummary {
       description: schema.sourcePermissions.description,
     })
     .from(schema.personaSourcePermissions)
-    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
-    .all();
+    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId));
 
-  const personas = db
+  const personas = await db
     .select({ id: schema.personas.id, name: schema.personas.name })
-    .from(schema.personas)
-    .all();
+    .from(schema.personas);
 
   const personaNameMap = new Map(personas.map(p => [p.id, p.name]));
 
   // Get all gaps from the permission_gaps table
-  const gaps = db
+  const gaps = await db
     .select({
       personaId: schema.permissionGaps.personaId,
       sourcePermissionId: schema.permissionGaps.sourcePermissionId,
     })
-    .from(schema.permissionGaps)
-    .all();
+    .from(schema.permissionGaps);
 
   const gapSet = new Set(gaps.map(g => `${g.personaId}-${g.sourcePermissionId}`));
 
@@ -1768,8 +1734,8 @@ export interface UserRefinementDetail {
  * Gets all users who have target role assignments, including both
  * persona defaults and individual overrides for the refinements tab.
  */
-export function getUserRefinementDetails(): UserRefinementDetail[] {
-  const assignments = db
+export async function getUserRefinementDetails(): Promise<UserRefinementDetail[]> {
+  const assignments = await db
     .select({
       assignmentId: schema.userTargetRoleAssignments.id,
       userId: schema.userTargetRoleAssignments.userId,
@@ -1786,22 +1752,20 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
-    .all();
+    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId));
 
-  const personaAssignments = db
+  const personaAssignments = await db
     .select({
       userId: schema.userPersonaAssignments.userId,
       personaId: schema.userPersonaAssignments.personaId,
       personaName: schema.personas.name,
     })
     .from(schema.userPersonaAssignments)
-    .innerJoin(schema.personas, eq(schema.personas.id, schema.userPersonaAssignments.personaId))
-    .all();
+    .innerJoin(schema.personas, eq(schema.personas.id, schema.userPersonaAssignments.personaId));
 
   const personaByUser = new Map(personaAssignments.map(pa => [pa.userId, pa]));
 
-  const personaMappings = db
+  const personaMappings = await db
     .select({
       personaId: schema.personaTargetRoleMappings.personaId,
       targetRoleId: schema.personaTargetRoleMappings.targetRoleId,
@@ -1809,8 +1773,7 @@ export function getUserRefinementDetails(): UserRefinementDetail[] {
       roleId: schema.targetRoles.roleId,
     })
     .from(schema.personaTargetRoleMappings)
-    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.personaTargetRoleMappings.targetRoleId))
-    .all();
+    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.personaTargetRoleMappings.targetRoleId));
 
   const defaultRolesByPersona = new Map<number, { targetRoleId: number; roleName: string; roleId: string }[]>();
   for (const m of personaMappings) {
@@ -1877,8 +1840,8 @@ export interface LeastAccessRow {
   exceptionAcceptedAt: string | null;
 }
 
-export function getLeastAccessAnalysis(threshold: number): LeastAccessRow[] {
-  const rows = db
+export async function getLeastAccessAnalysis(threshold: number): Promise<LeastAccessRow[]> {
+  const rows = await db
     .select({
       personaId: schema.personaTargetRoleMappings.personaId,
       personaName: schema.personas.name,
@@ -1907,17 +1870,15 @@ export function getLeastAccessAnalysis(threshold: number): LeastAccessRow[] {
         eq(schema.leastAccessExceptions.status, "accepted"),
       )
     )
-    .where(sql`${schema.personaTargetRoleMappings.excessPercent} >= ${threshold}`)
-    .all();
+    .where(sql`${schema.personaTargetRoleMappings.excessPercent} >= ${threshold}`);
 
-  const userCounts = db
+  const userCounts = await db
     .select({
       personaId: schema.userPersonaAssignments.personaId,
       count: count(),
     })
     .from(schema.userPersonaAssignments)
-    .groupBy(schema.userPersonaAssignments.personaId)
-    .all();
+    .groupBy(schema.userPersonaAssignments.personaId);
   const userCountMap = new Map(userCounts.map(u => [u.personaId, u.count]));
 
   return rows
@@ -1927,4 +1888,243 @@ export function getLeastAccessAnalysis(threshold: number): LeastAccessRow[] {
       excessPercent: r.excessPercent!,
       userCount: userCountMap.get(r.personaId) ?? 0,
     }));
+}
+
+// ─────────────────────────────────────────────
+// AGGREGATE RISK ANALYSIS
+// ─────────────────────────────────────────────
+
+export interface FlaggedUser {
+  userId: number;
+  userName: string;
+  department: string | null;
+  coveragePercent: number;
+  uncoveredPermCount: number;
+  newPermCount: number;
+  sodConflictCount: number;
+}
+
+export interface AggregateRiskAnalysis {
+  businessContinuity: {
+    usersAtRisk: number;
+    totalUncoveredPerms: number;
+    avgCoverage: number;
+  };
+  adoption: {
+    usersWithNewAccess: number;
+    totalNewPerms: number;
+  };
+  incorrectAccess: {
+    flaggedUsers: number;
+    flaggedUserList: FlaggedUser[];
+  };
+  totalUsersAnalyzed: number;
+}
+
+/**
+ * Bulk risk analysis across all users (or scoped users).
+ * Avoids N+1 by doing bulk queries and computing in memory.
+ */
+export async function getAggregateRiskAnalysis(
+  scopedUserIds: number[] | null = null
+): Promise<AggregateRiskAnalysis> {
+  // 1. Get all users with target role assignments (these are the ones we can analyze)
+  let usersWithAssignments: { id: number; displayName: string; department: string | null }[];
+
+  if (scopedUserIds !== null && scopedUserIds.length > 0) {
+    usersWithAssignments = await db
+      .select({
+        id: schema.users.id,
+        displayName: schema.users.displayName,
+        department: schema.users.department,
+      })
+      .from(schema.users)
+      .where(inArray(schema.users.id, scopedUserIds));
+  } else {
+    usersWithAssignments = await db
+      .select({
+        id: schema.users.id,
+        displayName: schema.users.displayName,
+        department: schema.users.department,
+      })
+      .from(schema.users);
+  }
+
+  const userIds = usersWithAssignments.map(u => u.id);
+  if (userIds.length === 0) {
+    return {
+      businessContinuity: { usersAtRisk: 0, totalUncoveredPerms: 0, avgCoverage: 100 },
+      adoption: { usersWithNewAccess: 0, totalNewPerms: 0 },
+      incorrectAccess: { flaggedUsers: 0, flaggedUserList: [] },
+      totalUsersAnalyzed: 0,
+    };
+  }
+
+  // 2. Bulk load: source role assignments → source permissions per user
+  const sourceRoleAssignments = await db
+    .select({
+      userId: schema.userSourceRoleAssignments.userId,
+      sourceRoleId: schema.userSourceRoleAssignments.sourceRoleId,
+    })
+    .from(schema.userSourceRoleAssignments)
+    .where(inArray(schema.userSourceRoleAssignments.userId, userIds));
+
+  const allSourceRoleIds = Array.from(new Set(sourceRoleAssignments.map(a => a.sourceRoleId)));
+
+  // Source role → permission IDs
+  const sourceRolePermRows = allSourceRoleIds.length > 0
+    ? await db
+        .select({
+          sourceRoleId: schema.sourceRolePermissions.sourceRoleId,
+          permissionId: schema.sourcePermissions.permissionId,
+        })
+        .from(schema.sourceRolePermissions)
+        .innerJoin(schema.sourcePermissions, eq(schema.sourceRolePermissions.sourcePermissionId, schema.sourcePermissions.id))
+        .where(inArray(schema.sourceRolePermissions.sourceRoleId, allSourceRoleIds))
+    : [];
+
+  // Build: sourceRoleId → Set<permissionId>
+  const sourceRolePermMap = new Map<number, Set<string>>();
+  for (const r of sourceRolePermRows) {
+    if (!sourceRolePermMap.has(r.sourceRoleId)) sourceRolePermMap.set(r.sourceRoleId, new Set());
+    sourceRolePermMap.get(r.sourceRoleId)!.add(r.permissionId);
+  }
+
+  // Build: userId → Set<sourcePermissionId>
+  const userSourcePerms = new Map<number, Set<string>>();
+  for (const a of sourceRoleAssignments) {
+    if (!userSourcePerms.has(a.userId)) userSourcePerms.set(a.userId, new Set());
+    const perms = sourceRolePermMap.get(a.sourceRoleId);
+    if (perms) {
+      for (const p of Array.from(perms)) userSourcePerms.get(a.userId)!.add(p);
+    }
+  }
+
+  // 3. Bulk load: target role assignments → target permissions per user
+  const targetRoleAssignments = await db
+    .select({
+      userId: schema.userTargetRoleAssignments.userId,
+      targetRoleId: schema.userTargetRoleAssignments.targetRoleId,
+    })
+    .from(schema.userTargetRoleAssignments)
+    .where(inArray(schema.userTargetRoleAssignments.userId, userIds));
+
+  const allTargetRoleIds = Array.from(new Set(targetRoleAssignments.map(a => a.targetRoleId)));
+
+  const targetRolePermRows = allTargetRoleIds.length > 0
+    ? await db
+        .select({
+          targetRoleId: schema.targetRolePermissions.targetRoleId,
+          permissionId: schema.targetPermissions.permissionId,
+        })
+        .from(schema.targetRolePermissions)
+        .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
+        .where(inArray(schema.targetRolePermissions.targetRoleId, allTargetRoleIds))
+    : [];
+
+  const targetRolePermMap = new Map<number, Set<string>>();
+  for (const r of targetRolePermRows) {
+    if (!targetRolePermMap.has(r.targetRoleId)) targetRolePermMap.set(r.targetRoleId, new Set());
+    targetRolePermMap.get(r.targetRoleId)!.add(r.permissionId);
+  }
+
+  const userTargetPerms = new Map<number, Set<string>>();
+  for (const a of targetRoleAssignments) {
+    if (!userTargetPerms.has(a.userId)) userTargetPerms.set(a.userId, new Set());
+    const perms = targetRolePermMap.get(a.targetRoleId);
+    if (perms) {
+      for (const p of Array.from(perms)) userTargetPerms.get(a.userId)!.add(p);
+    }
+  }
+
+  // 4. Bulk load: SOD conflicts per user
+  const sodConflictRows = await db
+    .select({
+      userId: schema.sodConflicts.userId,
+      count: count(),
+    })
+    .from(schema.sodConflicts)
+    .where(inArray(schema.sodConflicts.userId, userIds))
+    .groupBy(schema.sodConflicts.userId);
+
+  const userSodCounts = new Map<number, number>();
+  for (const r of sodConflictRows) {
+    userSodCounts.set(r.userId, r.count);
+  }
+
+  // 5. Compute risk metrics per user
+  let totalUncoveredPerms = 0;
+  let totalNewPerms = 0;
+  let usersAtRisk = 0;
+  let usersWithNewAccess = 0;
+  let totalCoverage = 0;
+  let analyzedCount = 0;
+  const flaggedUserList: FlaggedUser[] = [];
+
+  for (const user of usersWithAssignments) {
+    const source = userSourcePerms.get(user.id) ?? new Set<string>();
+    const target = userTargetPerms.get(user.id) ?? new Set<string>();
+
+    // Skip users with no source roles (nothing to compare)
+    if (source.size === 0 && target.size === 0) continue;
+
+    analyzedCount++;
+
+    // Uncovered: source perms not in target
+    let uncoveredCount = 0;
+    for (const p of Array.from(source)) {
+      if (!target.has(p)) uncoveredCount++;
+    }
+
+    // New: target perms not in source
+    let newCount = 0;
+    for (const p of Array.from(target)) {
+      if (!source.has(p)) newCount++;
+    }
+
+    const coveragePercent = source.size > 0
+      ? Math.round(((source.size - uncoveredCount) / source.size) * 100)
+      : 100;
+
+    totalCoverage += coveragePercent;
+    totalUncoveredPerms += uncoveredCount;
+    totalNewPerms += newCount;
+
+    if (coveragePercent < 90) usersAtRisk++;
+    if (newCount > 10) usersWithNewAccess++;
+
+    // Flagged: both uncovered perms AND SOD conflicts
+    const sodCount = userSodCounts.get(user.id) ?? 0;
+    if (uncoveredCount > 0 && sodCount > 0) {
+      flaggedUserList.push({
+        userId: user.id,
+        userName: user.displayName,
+        department: user.department,
+        coveragePercent,
+        uncoveredPermCount: uncoveredCount,
+        newPermCount: newCount,
+        sodConflictCount: sodCount,
+      });
+    }
+  }
+
+  // Sort flagged users by SOD conflict count descending
+  flaggedUserList.sort((a, b) => b.sodConflictCount - a.sodConflictCount);
+
+  return {
+    businessContinuity: {
+      usersAtRisk,
+      totalUncoveredPerms,
+      avgCoverage: analyzedCount > 0 ? Math.round(totalCoverage / analyzedCount) : 100,
+    },
+    adoption: {
+      usersWithNewAccess,
+      totalNewPerms,
+    },
+    incorrectAccess: {
+      flaggedUsers: flaggedUserList.length,
+      flaggedUserList,
+    },
+    totalUsersAnalyzed: analyzedCount,
+  };
 }

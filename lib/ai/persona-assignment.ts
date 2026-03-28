@@ -20,29 +20,30 @@ interface PersonaInfo {
   characteristicPermissions: string[];
 }
 
-function getAvailablePersonas(): PersonaInfo[] {
-  const personas = db.select().from(schema.personas).all();
-  return personas.map((p) => {
-    const perms = db
-      .select({ permId: schema.sourcePermissions.permissionId })
-      .from(schema.personaSourcePermissions)
-      .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
-      .where(eq(schema.personaSourcePermissions.personaId, p.id))
-      .all();
-    return {
-      id: p.id,
-      name: p.name,
-      description: p.description,
-      characteristicPermissions: perms.map((x) => x.permId),
-    };
-  });
+async function getAvailablePersonas(): Promise<PersonaInfo[]> {
+  const personas = await db.select().from(schema.personas);
+  return Promise.all(
+    personas.map(async (p) => {
+      const perms = await db
+        .select({ permId: schema.sourcePermissions.permissionId })
+        .from(schema.personaSourcePermissions)
+        .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
+        .where(eq(schema.personaSourcePermissions.personaId, p.id));
+      return {
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        characteristicPermissions: perms.map((x) => x.permId),
+      };
+    })
+  );
 }
 
-function getUserProfile(userId: number): UserAccessProfile | null {
-  const user = db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
+async function getUserProfile(userId: number): Promise<UserAccessProfile | null> {
+  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
   if (!user) return null;
 
-  const roleAssignments = db
+  const roleAssignments = await db
     .select({
       roleId: schema.sourceRoles.roleId,
       roleName: schema.sourceRoles.roleName,
@@ -50,18 +51,16 @@ function getUserProfile(userId: number): UserAccessProfile | null {
     })
     .from(schema.userSourceRoleAssignments)
     .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
-    .where(eq(schema.userSourceRoleAssignments.userId, userId))
-    .all();
+    .where(eq(schema.userSourceRoleAssignments.userId, userId));
 
   const permissions: string[] = [];
   for (const role of roleAssignments) {
-    const perms = db
+    const perms = await db
       .select({ permissionId: schema.sourcePermissions.permissionId })
       .from(schema.sourceRolePermissions)
       .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.sourceRolePermissions.sourcePermissionId))
       .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.sourceRolePermissions.sourceRoleId))
-      .where(eq(schema.sourceRoles.roleId, role.roleId))
-      .all();
+      .where(eq(schema.sourceRoles.roleId, role.roleId));
     for (const p of perms) {
       if (!permissions.includes(p.permissionId)) permissions.push(p.permissionId);
     }
@@ -130,23 +129,23 @@ interface AssignmentResult {
 const BATCH_SIZE = 5; // Process 5 users concurrently
 
 export async function runPersonaAssignment(jobId: number): Promise<{ usersAssigned: number; failed: number }> {
-  const provider = getAIProvider();
-  const personas = getAvailablePersonas();
+  const provider = await getAIProvider();
+  const personas = await getAvailablePersonas();
   if (personas.length === 0) {
     throw new Error("No personas available. Run persona generation first.");
   }
 
-  const users = db.select().from(schema.users).all();
+  const users = await db.select().from(schema.users);
   let usersAssigned = 0;
   let failed = 0;
 
   // Clear existing assignments
-  db.delete(schema.userPersonaAssignments).run();
+  await db.delete(schema.userPersonaAssignments);
 
   // Update total records for progress tracking
-  db.update(schema.processingJobs).set({
+  await db.update(schema.processingJobs).set({
     totalRecords: users.length,
-  }).where(eq(schema.processingJobs.id, jobId)).run();
+  }).where(eq(schema.processingJobs.id, jobId));
 
   // Process users in parallel batches
   for (let i = 0; i < users.length; i += BATCH_SIZE) {
@@ -154,7 +153,7 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
 
     const results = await Promise.allSettled(
       batch.map(async (user) => {
-        const profile = getUserProfile(user.id);
+        const profile = await getUserProfile(user.id);
         if (!profile) throw new Error("no_profile");
 
         const prompt = buildPrompt(profile, personas);
@@ -167,18 +166,19 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
       })
     );
 
-    // Write results to DB synchronously (SQLite requirement)
+    // Write results to DB
     for (const outcome of results) {
       if (outcome.status === "fulfilled") {
         try {
           const { user, result } = outcome.value;
-          const minConfidence = Math.max(40, Number(getSetting("ai.confidenceThreshold") || "85") * 0.5);
+          const minConfidence = Math.max(40, Number((await getSetting("ai.confidenceThreshold")) || "85") * 0.5);
           const personaId = result.confidence >= minConfidence ? result.persona_id : null;
-          const groupId = personaId
-            ? db.select({ gid: schema.personas.consolidatedGroupId }).from(schema.personas).where(eq(schema.personas.id, personaId)).get()?.gid ?? null
-            : null;
+          const groupRows = personaId
+            ? await db.select({ gid: schema.personas.consolidatedGroupId }).from(schema.personas).where(eq(schema.personas.id, personaId))
+            : [];
+          const groupId = groupRows[0]?.gid ?? null;
 
-          db.insert(schema.userPersonaAssignments).values({
+          await db.insert(schema.userPersonaAssignments).values({
             userId: user.id,
             personaId,
             consolidatedGroupId: groupId,
@@ -187,7 +187,7 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
             aiModel: provider.name,
             assignmentMethod: "ai_assignment",
             jobRunId: jobId,
-          }).run();
+          });
 
           usersAssigned++;
         } catch {
@@ -199,9 +199,9 @@ export async function runPersonaAssignment(jobId: number): Promise<{ usersAssign
     }
 
     // Update job progress after each batch
-    db.update(schema.processingJobs).set({
+    await db.update(schema.processingJobs).set({
       processed: usersAssigned + failed,
-    }).where(eq(schema.processingJobs.id, jobId)).run();
+    }).where(eq(schema.processingJobs.id, jobId));
   }
 
   return { usersAssigned, failed };

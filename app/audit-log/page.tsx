@@ -3,8 +3,8 @@ import { AuditLogClient } from "./audit-log-client";
 
 export const dynamic = "force-dynamic";
 
-export default function AuditLogPage() {
-  const logs = getAuditLog();
+export default async function AuditLogPage() {
+  const logs = await getAuditLog();
 
   return (
     <div className="space-y-4">

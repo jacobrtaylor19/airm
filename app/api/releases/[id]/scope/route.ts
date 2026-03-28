@@ -7,8 +7,8 @@ import { getSessionUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 const ADMIN_ROLES = ["admin", "system_admin"];
-function isAdmin(): boolean {
-  const user = getSessionUser();
+async function isAdmin(): Promise<boolean> {
+  const user = await getSessionUser();
   return user !== null && ADMIN_ROLES.includes(user.role);
 }
 
@@ -19,7 +19,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
   const releaseId = parseInt(params.id);
   if (!releaseId) return NextResponse.json({ error: "Invalid id" }, { status: 400 });
 
-  const orgUnits = db
+  const orgUnits = await db
     .select({
       id: schema.releaseOrgUnits.id,
       orgUnitId: schema.releaseOrgUnits.orgUnitId,
@@ -29,10 +29,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
     })
     .from(schema.releaseOrgUnits)
     .innerJoin(schema.orgUnits, eq(schema.releaseOrgUnits.orgUnitId, schema.orgUnits.id))
-    .where(eq(schema.releaseOrgUnits.releaseId, releaseId))
-    .all();
+    .where(eq(schema.releaseOrgUnits.releaseId, releaseId));
 
-  const users = db
+  const users = await db
     .select({
       id: schema.releaseUsers.id,
       userId: schema.releaseUsers.userId,
@@ -42,8 +41,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
     })
     .from(schema.releaseUsers)
     .innerJoin(schema.users, eq(schema.releaseUsers.userId, schema.users.id))
-    .where(eq(schema.releaseUsers.releaseId, releaseId))
-    .all();
+    .where(eq(schema.releaseUsers.releaseId, releaseId));
 
   return NextResponse.json({ orgUnits, users });
 }
@@ -51,7 +49,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
 // POST /api/releases/[id]/scope — add org units or users to scope
 // Body: { type: "org_unit" | "user", ids: number[] }
 export async function POST(req: NextRequest, { params }: Params) {
-  if (!isAdmin()) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
+  if (!(await isAdmin())) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
 
   const releaseId = parseInt(params.id);
   const body = await req.json();
@@ -61,30 +59,30 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "type and ids required" }, { status: 400 });
   }
 
-  const currentUser = getSessionUser();
+  const currentUser = await getSessionUser();
   const addedBy = currentUser?.username ?? "admin";
 
   if (type === "org_unit") {
     for (const orgUnitId of ids) {
       // Skip if already exists
-      const exists = db
+      const [exists] = await db
         .select()
         .from(schema.releaseOrgUnits)
         .where(and(eq(schema.releaseOrgUnits.releaseId, releaseId), eq(schema.releaseOrgUnits.orgUnitId, orgUnitId)))
-        .get();
+        .limit(1);
       if (!exists) {
-        db.insert(schema.releaseOrgUnits).values({ releaseId, orgUnitId, addedBy }).run();
+        await db.insert(schema.releaseOrgUnits).values({ releaseId, orgUnitId, addedBy });
       }
     }
   } else {
     for (const userId of ids) {
-      const exists = db
+      const [exists] = await db
         .select()
         .from(schema.releaseUsers)
         .where(and(eq(schema.releaseUsers.releaseId, releaseId), eq(schema.releaseUsers.userId, userId)))
-        .get();
+        .limit(1);
       if (!exists) {
-        db.insert(schema.releaseUsers).values({ releaseId, userId, addedBy }).run();
+        await db.insert(schema.releaseUsers).values({ releaseId, userId, addedBy });
       }
     }
   }
@@ -94,7 +92,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
 // DELETE /api/releases/[id]/scope?type=org_unit&scopeId=5
 export async function DELETE(req: NextRequest) {
-  if (!isAdmin()) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
+  if (!(await isAdmin())) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
   const type = searchParams.get("type");
@@ -103,9 +101,9 @@ export async function DELETE(req: NextRequest) {
   if (!type || !scopeId) return NextResponse.json({ error: "type and scopeId required" }, { status: 400 });
 
   if (type === "org_unit") {
-    db.delete(schema.releaseOrgUnits).where(eq(schema.releaseOrgUnits.id, scopeId)).run();
+    await db.delete(schema.releaseOrgUnits).where(eq(schema.releaseOrgUnits.id, scopeId));
   } else {
-    db.delete(schema.releaseUsers).where(eq(schema.releaseUsers.id, scopeId)).run();
+    await db.delete(schema.releaseUsers).where(eq(schema.releaseUsers.id, scopeId));
   }
 
   return NextResponse.json({ success: true });

@@ -2,16 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, count, sql, isNotNull } from "drizzle-orm";
-import { getSessionUserFromToken } from "@/lib/auth";
-import { cookies } from "next/headers";
-import { AUTH } from "@/lib/constants";
+import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const token = cookies().get(AUTH.COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const user = getSessionUserFromToken(token);
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -19,23 +15,28 @@ export async function GET() {
   // ─────────────────────────────────────────────
   // 1. Core counts
   // ─────────────────────────────────────────────
-  const totalUsers = db.select({ count: count() }).from(schema.users).get()!.count;
-  const totalPersonas = db.select({ count: count() }).from(schema.personas).get()!.count;
-  const totalTargetRoles = db.select({ count: count() }).from(schema.targetRoles).get()!.count;
-  const totalAssignments = db.select({ count: count() }).from(schema.userTargetRoleAssignments).get()!.count;
-  const totalSodConflicts = db.select({ count: count() }).from(schema.sodConflicts).get()!.count;
+  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users);
+  const totalUsers = totalUsersRow.count;
+  const [totalPersonasRow] = await db.select({ count: count() }).from(schema.personas);
+  const totalPersonas = totalPersonasRow.count;
+  const [totalTargetRolesRow] = await db.select({ count: count() }).from(schema.targetRoles);
+  const totalTargetRoles = totalTargetRolesRow.count;
+  const [totalAssignmentsRow] = await db.select({ count: count() }).from(schema.userTargetRoleAssignments);
+  const totalAssignments = totalAssignmentsRow.count;
+  const [totalSodConflictsRow] = await db.select({ count: count() }).from(schema.sodConflicts);
+  const totalSodConflicts = totalSodConflictsRow.count;
 
-  const usersWithPersona = db.select({ count: count() })
+  const [usersWithPersonaRow] = await db.select({ count: count() })
     .from(schema.userPersonaAssignments)
-    .where(isNotNull(schema.userPersonaAssignments.personaId))
-    .get()!.count;
+    .where(isNotNull(schema.userPersonaAssignments.personaId));
+  const usersWithPersona = usersWithPersonaRow.count;
 
   const usersWithoutPersona = totalUsers - usersWithPersona;
 
   // ─────────────────────────────────────────────
   // 2. Persona distribution
   // ─────────────────────────────────────────────
-  const personaDistribution = db
+  const personaDistribution = await db
     .select({
       personaId: schema.userPersonaAssignments.personaId,
       personaName: schema.personas.name,
@@ -48,25 +49,23 @@ export async function GET() {
     .from(schema.userPersonaAssignments)
     .innerJoin(schema.personas, eq(schema.userPersonaAssignments.personaId, schema.personas.id))
     .groupBy(schema.userPersonaAssignments.personaId)
-    .orderBy(sql`count(*) desc`)
-    .all();
+    .orderBy(sql`count(*) desc`);
 
   // ─────────────────────────────────────────────
   // 3. Assignment status breakdown
   // ─────────────────────────────────────────────
-  const statusBreakdown = db
+  const statusBreakdown = await db
     .select({
       status: schema.userTargetRoleAssignments.status,
       count: count(),
     })
     .from(schema.userTargetRoleAssignments)
-    .groupBy(schema.userTargetRoleAssignments.status)
-    .all();
+    .groupBy(schema.userTargetRoleAssignments.status);
 
   // ─────────────────────────────────────────────
   // 4. Confidence distribution (buckets)
   // ─────────────────────────────────────────────
-  const confidenceBuckets = db.all(sql`
+  const confidenceBuckets = await db.execute(sql`
     SELECT
       CASE
         WHEN confidence_score >= 90 THEN '90-100'
@@ -86,7 +85,7 @@ export async function GET() {
   // ─────────────────────────────────────────────
   // 5. Full attribution chain (all users)
   // ─────────────────────────────────────────────
-  const fullChain = db
+  const fullChain = await db
     .select({
       userId: schema.users.id,
       sourceUserId: schema.users.sourceUserId,
@@ -105,13 +104,12 @@ export async function GET() {
     .from(schema.users)
     .leftJoin(schema.userPersonaAssignments, eq(schema.users.id, schema.userPersonaAssignments.userId))
     .leftJoin(schema.personas, eq(schema.userPersonaAssignments.personaId, schema.personas.id))
-    .leftJoin(schema.consolidatedGroups, eq(schema.userPersonaAssignments.consolidatedGroupId, schema.consolidatedGroups.id))
-    .all();
+    .leftJoin(schema.consolidatedGroups, eq(schema.userPersonaAssignments.consolidatedGroupId, schema.consolidatedGroups.id));
 
   // ─────────────────────────────────────────────
   // 6. Role assignments per user (for chain)
   // ─────────────────────────────────────────────
-  const roleAssignments = db
+  const roleAssignments = await db
     .select({
       userId: schema.userTargetRoleAssignments.userId,
       targetRoleId: schema.userTargetRoleAssignments.targetRoleId,
@@ -123,8 +121,7 @@ export async function GET() {
       sodConflictCount: schema.userTargetRoleAssignments.sodConflictCount,
     })
     .from(schema.userTargetRoleAssignments)
-    .innerJoin(schema.targetRoles, eq(schema.userTargetRoleAssignments.targetRoleId, schema.targetRoles.id))
-    .all();
+    .innerJoin(schema.targetRoles, eq(schema.userTargetRoleAssignments.targetRoleId, schema.targetRoles.id));
 
   // Group role assignments by userId
   const rolesByUser: Record<number, typeof roleAssignments> = {};
@@ -136,14 +133,13 @@ export async function GET() {
   // ─────────────────────────────────────────────
   // 7. SOD conflicts per user
   // ─────────────────────────────────────────────
-  const sodByUser = db
+  const sodByUser = await db
     .select({
       userId: schema.sodConflicts.userId,
       conflictCount: count(),
     })
     .from(schema.sodConflicts)
-    .groupBy(schema.sodConflicts.userId)
-    .all();
+    .groupBy(schema.sodConflicts.userId);
 
   const sodMap: Record<number, number> = {};
   for (const s of sodByUser) {
@@ -153,14 +149,13 @@ export async function GET() {
   // ─────────────────────────────────────────────
   // 8. Source role count per user
   // ─────────────────────────────────────────────
-  const sourceRoleCounts = db
+  const sourceRoleCounts = await db
     .select({
       userId: schema.userSourceRoleAssignments.userId,
       roleCount: count(),
     })
     .from(schema.userSourceRoleAssignments)
-    .groupBy(schema.userSourceRoleAssignments.userId)
-    .all();
+    .groupBy(schema.userSourceRoleAssignments.userId);
 
   const sourceRoleMap: Record<number, number> = {};
   for (const s of sourceRoleCounts) {
@@ -170,7 +165,7 @@ export async function GET() {
   // ─────────────────────────────────────────────
   // 9. Persona → target role mappings
   // ─────────────────────────────────────────────
-  const personaRoleMappings = db
+  const personaRoleMappings = await db
     .select({
       personaId: schema.personaTargetRoleMappings.personaId,
       personaName: schema.personas.name,
@@ -183,8 +178,7 @@ export async function GET() {
     })
     .from(schema.personaTargetRoleMappings)
     .innerJoin(schema.personas, eq(schema.personaTargetRoleMappings.personaId, schema.personas.id))
-    .innerJoin(schema.targetRoles, eq(schema.personaTargetRoleMappings.targetRoleId, schema.targetRoles.id))
-    .all();
+    .innerJoin(schema.targetRoles, eq(schema.personaTargetRoleMappings.targetRoleId, schema.targetRoles.id));
 
   // ─────────────────────────────────────────────
   // 10. Build enriched user chain

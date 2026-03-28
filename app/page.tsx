@@ -10,8 +10,8 @@ import { getSessionUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const user = getSessionUser();
+export default async function Home() {
+  const user = await getSessionUser();
   if (user) redirect("/dashboard");
   return (
     <div className="min-h-screen">

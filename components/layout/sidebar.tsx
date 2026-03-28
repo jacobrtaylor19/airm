@@ -28,6 +28,7 @@ import {
   GitCompare,
   Calendar,
   FlaskConical,
+  BarChart3,
 } from "lucide-react";
 
 interface NavItem {
@@ -72,6 +73,7 @@ const navSections: NavSection[] = [
     label: "REPORTS",
     items: [
       { href: "/exports", label: "Exports", icon: FileText },
+      { href: "/risk-analysis", label: "Risk Analysis", icon: BarChart3 },
       { href: "/admin/validation", label: "Validation", icon: FlaskConical },
       { href: "/releases/compare", label: "Release Comparison", icon: GitCompare, minRole: ["admin", "system_admin", "project_manager"] },
       { href: "/releases/timeline", label: "Project Timeline", icon: Calendar, minRole: ["admin", "system_admin", "project_manager"] },

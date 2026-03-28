@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
-import { queryAuditEntries } from "@/db/audit-db";
+import { queryAuditEntries, auditLog } from "@/lib/audit";
 import { checkBulkRate } from "@/lib/rate-limit-middleware";
 import { safeError } from "@/lib/errors";
-import { auditLog } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -28,7 +27,7 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "1000", 10);
     const format = searchParams.get("format") || "json";
 
-    const entries = queryAuditEntries({
+    const entries = await queryAuditEntries({
       entityType,
       actorEmail,
       fromDate,
@@ -37,7 +36,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Audit log the export itself
-    auditLog({
+    await auditLog({
       entityType: "audit_export",
       action: "export",
       actorEmail: user.email || user.username,

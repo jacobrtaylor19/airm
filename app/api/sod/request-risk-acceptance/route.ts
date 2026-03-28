@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "conflictId and justification required" }, { status: 400 });
     }
 
-    const conflict = db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).get();
+    const [conflict] = await db.select().from(schema.sodConflicts).where(eq(schema.sodConflicts.id, conflictId)).limit(1);
     if (!conflict) {
       return NextResponse.json({ error: "Conflict not found" }, { status: 404 });
     }
@@ -38,20 +38,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Set status to pending_risk_acceptance (requires approver review)
-    db.update(schema.sodConflicts).set({
+    await db.update(schema.sodConflicts).set({
       resolutionStatus: "pending_risk_acceptance",
       resolutionNotes: justification.trim(),
-    }).where(eq(schema.sodConflicts.id, conflictId)).run();
+    }).where(eq(schema.sodConflicts.id, conflictId));
 
     // Audit log
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "sodConflict",
       entityId: conflictId,
       action: "risk_acceptance_requested",
       actorEmail: user.email ?? user.username,
       oldValue: JSON.stringify({ resolutionStatus: "open" }),
       newValue: JSON.stringify({ resolutionStatus: "pending_risk_acceptance", justification: justification.trim() }),
-    }).run();
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

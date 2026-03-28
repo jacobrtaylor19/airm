@@ -10,18 +10,17 @@ interface SodAnalysisResult {
   usersClean: number;
 }
 
-export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResult {
+export async function runSodAnalysis(scopedUserIds?: number[] | null): Promise<SodAnalysisResult> {
   // 1. Load all active SOD rules
-  const rules = db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true)).all();
+  const rules = await db.select().from(schema.sodRules).where(eq(schema.sodRules.isActive, true));
 
   if (rules.length === 0) {
     // No SOD rules — mark all pending_review assignments as compliance_approved
-    db.update(schema.userTargetRoleAssignments)
+    await db.update(schema.userTargetRoleAssignments)
       .set({ status: "compliance_approved", updatedAt: new Date().toISOString() })
-      .where(eq(schema.userTargetRoleAssignments.status, "pending_review"))
-      .run();
+      .where(eq(schema.userTargetRoleAssignments.status, "pending_review"));
 
-    const totalDraft = db.select().from(schema.userTargetRoleAssignments).all();
+    const totalDraft = await db.select().from(schema.userTargetRoleAssignments);
     return {
       usersAnalyzed: new Set(totalDraft.map(a => a.userId)).size,
       conflictsFound: 0,
@@ -34,20 +33,16 @@ export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResu
   //    SOD must check the complete picture: existing + current together
   //    Scope-filtered when called by a scoped user (mapper/approver)
   const draftAssignments = scopedUserIds
-    ? db.select().from(schema.userTargetRoleAssignments)
+    ? await db.select().from(schema.userTargetRoleAssignments)
         .where(and(eq(schema.userTargetRoleAssignments.status, "pending_review"), inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)))
-        .all()
-    : db.select().from(schema.userTargetRoleAssignments)
-        .where(eq(schema.userTargetRoleAssignments.status, "pending_review"))
-        .all();
+    : await db.select().from(schema.userTargetRoleAssignments)
+        .where(eq(schema.userTargetRoleAssignments.status, "pending_review"));
 
   const existingAssignments = scopedUserIds
-    ? db.select().from(schema.userTargetRoleAssignments)
+    ? await db.select().from(schema.userTargetRoleAssignments)
         .where(and(eq(schema.userTargetRoleAssignments.releasePhase, "existing"), inArray(schema.userTargetRoleAssignments.userId, scopedUserIds)))
-        .all()
-    : db.select().from(schema.userTargetRoleAssignments)
-        .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
-        .all();
+    : await db.select().from(schema.userTargetRoleAssignments)
+        .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"));
 
   // 3. Group ALL assignments by user (both existing and current draft)
   const userAllRoles = new Map<number, Set<number>>();
@@ -69,12 +64,11 @@ export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResu
 
   // 4. For each target role, expand to its permissions
   const rolePerms = new Map<number, Set<string>>();
-  const trps = db.select({
+  const trps = await db.select({
     roleId: schema.targetRolePermissions.targetRoleId,
     permissionId: schema.targetPermissions.permissionId,
   }).from(schema.targetRolePermissions)
-    .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
-    .all();
+    .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id));
 
   for (const row of trps) {
     if (!rolePerms.has(row.roleId)) rolePerms.set(row.roleId, new Set());
@@ -82,7 +76,7 @@ export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResu
   }
 
   // 5. Clear previous conflicts
-  db.delete(schema.sodConflicts).run();
+  await db.delete(schema.sodConflicts);
 
   // 6. For each user with draft assignments, check all SOD rules against their FULL role set
   let conflictsFound = 0;
@@ -121,7 +115,7 @@ export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResu
           ? "within_role"
           : "between_role";
 
-        db.insert(schema.sodConflicts).values({
+        await db.insert(schema.sodConflicts).values({
           userId,
           sodRuleId: rule.id,
           roleIdA,
@@ -131,7 +125,7 @@ export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResu
           severity: rule.severity,
           conflictType,
           resolutionStatus: "open",
-        }).run();
+        });
       }
     }
 
@@ -139,7 +133,7 @@ export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResu
     // (existing/approved assignments keep their status)
     const newStatus = userConflictCount > 0 ? "sod_rejected" : "compliance_approved";
     for (const roleId of draftRoleIds) {
-      db.update(schema.userTargetRoleAssignments)
+      await db.update(schema.userTargetRoleAssignments)
         .set({
           status: newStatus,
           sodConflictCount: userConflictCount,
@@ -151,38 +145,35 @@ export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResu
             eq(schema.userTargetRoleAssignments.targetRoleId, roleId),
             eq(schema.userTargetRoleAssignments.status, "pending_review")
           )
-        )
-        .run();
+        );
     }
   }
 
   // Auto-recommend: route SOD-clean high-confidence assignments to approver for bulk review
   // (does NOT skip the approver — sets status to "ready_for_approval" so approver can confirm in bulk)
-  const autoApprove = getSetting("workflow.autoApprove") === "true";
+  const autoApprove = (await getSetting("workflow.autoApprove")) === "true";
   if (autoApprove) {
-    const confidenceThreshold = Number(getSetting("ai.confidenceThreshold") || "85");
+    const confidenceThreshold = Number((await getSetting("ai.confidenceThreshold")) || "85");
 
     // Get all compliance_approved assignments (SOD-clean, just set above)
-    const cleanAssignments = db
+    const cleanAssignments = await db
       .select()
       .from(schema.userTargetRoleAssignments)
-      .where(eq(schema.userTargetRoleAssignments.status, "compliance_approved"))
-      .all();
+      .where(eq(schema.userTargetRoleAssignments.status, "compliance_approved"));
 
     // Group by user and check their persona assignment confidence
     const userIds = Array.from(new Set(cleanAssignments.map((a) => a.userId)));
     for (const userId of userIds) {
-      const personaAssignment = db
+      const [personaAssignment] = await db
         .select()
         .from(schema.userPersonaAssignments)
-        .where(eq(schema.userPersonaAssignments.userId, userId))
-        .get();
+        .where(eq(schema.userPersonaAssignments.userId, userId));
 
       const confidence = personaAssignment?.confidenceScore ?? 0;
       if (confidence >= confidenceThreshold) {
         // Route to approver: compliance_approved -> ready_for_approval
         // Approver still needs to review and confirm — this just pre-qualifies them
-        db.update(schema.userTargetRoleAssignments)
+        await db.update(schema.userTargetRoleAssignments)
           .set({
             status: "ready_for_approval",
             updatedAt: new Date().toISOString(),
@@ -192,8 +183,7 @@ export function runSodAnalysis(scopedUserIds?: number[] | null): SodAnalysisResu
               eq(schema.userTargetRoleAssignments.userId, userId),
               eq(schema.userTargetRoleAssignments.status, "compliance_approved")
             )
-          )
-          .run();
+          );
       }
     }
   }

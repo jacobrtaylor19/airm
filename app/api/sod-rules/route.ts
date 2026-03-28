@@ -16,7 +16,7 @@ function canEditSodRules(role: string): boolean {
 
 // POST — create or update a SOD rule
 export async function POST(request: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !canEditSodRules(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   try {
     if (id) {
       // Update existing rule
-      db.update(schema.sodRules)
+      await db.update(schema.sodRules)
         .set({
           ruleId,
           ruleName,
@@ -52,22 +52,21 @@ export async function POST(request: NextRequest) {
           riskDescription: riskDescription || null,
           isActive: isActive !== false,
         })
-        .where(eq(schema.sodRules.id, id))
-        .run();
+        .where(eq(schema.sodRules.id, id));
 
       // Audit log
-      db.insert(schema.auditLog).values({
+      await db.insert(schema.auditLog).values({
         entityType: "sodRule",
         entityId: id,
         action: "updated",
         actorEmail: user.email || user.username,
         newValue: JSON.stringify({ ruleId, ruleName, severity, isActive }),
-      }).run();
+      });
 
       return NextResponse.json({ success: true, action: "updated" });
     } else {
       // Create new rule
-      const result = db.insert(schema.sodRules).values({
+      const [inserted] = await db.insert(schema.sodRules).values({
         ruleId,
         ruleName,
         permissionA,
@@ -75,17 +74,17 @@ export async function POST(request: NextRequest) {
         severity,
         riskDescription: riskDescription || null,
         isActive: isActive !== false,
-      }).run();
+      }).returning();
 
-      db.insert(schema.auditLog).values({
+      await db.insert(schema.auditLog).values({
         entityType: "sodRule",
-        entityId: Number(result.lastInsertRowid),
+        entityId: inserted.id,
         action: "created",
         actorEmail: user.email || user.username,
         newValue: JSON.stringify({ ruleId, ruleName, severity }),
-      }).run();
+      });
 
-      return NextResponse.json({ success: true, action: "created", id: Number(result.lastInsertRowid) });
+      return NextResponse.json({ success: true, action: "created", id: inserted.id });
     }
   } catch (err) {
     const msg = safeError(err, "Unknown error");
@@ -95,7 +94,7 @@ export async function POST(request: NextRequest) {
 
 // PATCH — toggle active/inactive
 export async function PATCH(request: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !canEditSodRules(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -113,18 +112,17 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    db.update(schema.sodRules)
+    await db.update(schema.sodRules)
       .set({ isActive })
-      .where(eq(schema.sodRules.id, id))
-      .run();
+      .where(eq(schema.sodRules.id, id));
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "sodRule",
       entityId: id,
       action: isActive ? "activated" : "deactivated",
       actorEmail: user.email || user.username,
       newValue: JSON.stringify({ isActive }),
-    }).run();
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {
@@ -135,7 +133,7 @@ export async function PATCH(request: NextRequest) {
 
 // DELETE — delete a SOD rule
 export async function DELETE(request: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || !canEditSodRules(user.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -154,20 +152,20 @@ export async function DELETE(request: NextRequest) {
 
   try {
     // Get rule info for audit log before deleting
-    const rule = db.select().from(schema.sodRules).where(eq(schema.sodRules.id, id)).get();
+    const [rule] = await db.select().from(schema.sodRules).where(eq(schema.sodRules.id, id)).limit(1);
     if (!rule) {
       return NextResponse.json({ error: "Rule not found" }, { status: 404 });
     }
 
-    db.delete(schema.sodRules).where(eq(schema.sodRules.id, id)).run();
+    await db.delete(schema.sodRules).where(eq(schema.sodRules.id, id));
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "sodRule",
       entityId: id,
       action: "deleted",
       actorEmail: user.email || user.username,
       oldValue: JSON.stringify({ ruleId: rule.ruleId, ruleName: rule.ruleName, severity: rule.severity }),
-    }).run();
+    });
 
     return NextResponse.json({ success: true });
   } catch (err) {

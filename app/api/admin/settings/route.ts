@@ -10,17 +10,17 @@ import { safeError } from "@/lib/errors";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== "system_admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const settings = getAllSettings();
+  const settings = await getAllSettings();
   return NextResponse.json(settings);
 }
 
 export async function PUT(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== "system_admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -32,10 +32,10 @@ export async function PUT(req: NextRequest) {
     const entries = Object.entries(validation.data) as [string, string][];
 
     for (const [key, value] of entries) {
-      setSetting(key, String(value), user.username);
+      await setSetting(key, String(value), user.username);
 
       // Audit log the setting change (key only, not the value)
-      db.insert(schema.auditLog)
+      await db.insert(schema.auditLog)
         .values({
           entityType: "system_setting",
           entityId: 0,
@@ -43,8 +43,7 @@ export async function PUT(req: NextRequest) {
           oldValue: null,
           newValue: key,
           actorEmail: user.email || user.username,
-        })
-        .run();
+        });
     }
 
     return NextResponse.json({ success: true, updated: entries.length });

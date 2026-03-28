@@ -7,13 +7,13 @@ import { ApprovalsClient } from "./approvals-client";
 
 export const dynamic = "force-dynamic";
 
-export default function ApprovalsPage() {
-  const user = requireAuth();
+export default async function ApprovalsPage() {
+  const user = await requireAuth();
 
   // Get full queue, then filter by org scope
-  let queue = getApprovalQueue();
+  let queue = await getApprovalQueue();
   if (user.role === "approver") {
-    const scopedUserIds = getUserScope(user);
+    const scopedUserIds = await getUserScope(user);
     if (scopedUserIds !== null) {
       const idSet = new Set(scopedUserIds);
       queue = queue.filter((a) => idSet.has(a.userId));
@@ -21,7 +21,7 @@ export default function ApprovalsPage() {
   }
 
   // Release filter
-  const userReleases = getReleasesForAppUser(user);
+  const userReleases = await getReleasesForAppUser(user);
   const cookieReleaseId = parseInt(cookies().get("airm_release_id")?.value ?? "") || null;
   const activeReleaseId = userReleases.some((r) => r.id === cookieReleaseId)
     ? cookieReleaseId
@@ -30,7 +30,7 @@ export default function ApprovalsPage() {
     : (userReleases.find((r) => r.isActive)?.id ?? null);
 
   if (activeReleaseId) {
-    const releaseUserIds = getReleaseUserIds(activeReleaseId);
+    const releaseUserIds = await getReleaseUserIds(activeReleaseId);
     if (releaseUserIds !== null) {
       const releaseSet = new Set(releaseUserIds);
       queue = queue.filter((a) => releaseSet.has(a.userId));

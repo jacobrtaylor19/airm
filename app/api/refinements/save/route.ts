@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const user = getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -25,11 +25,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Get current assignments for this user
-    const currentAssignments = db
+    const currentAssignments = await db
       .select()
       .from(schema.userTargetRoleAssignments)
-      .where(eq(schema.userTargetRoleAssignments.userId, userId))
-      .all();
+      .where(eq(schema.userTargetRoleAssignments.userId, userId));
 
     // Gate: only allow edits when all assignments are in an editable status
     const nonEditableAssignments = currentAssignments.filter(
@@ -48,11 +47,10 @@ export async function POST(req: NextRequest) {
     // Get persona default role IDs if persona exists
     const personaDefaultRoleIds = new Set<number>();
     if (personaId) {
-      const mappings = db
+      const mappings = await db
         .select({ targetRoleId: schema.personaTargetRoleMappings.targetRoleId })
         .from(schema.personaTargetRoleMappings)
-        .where(eq(schema.personaTargetRoleMappings.personaId, personaId))
-        .all();
+        .where(eq(schema.personaTargetRoleMappings.personaId, personaId));
       for (const m of mappings) personaDefaultRoleIds.add(m.targetRoleId);
     }
 
@@ -64,32 +62,31 @@ export async function POST(req: NextRequest) {
     // Add new assignments
     for (const roleId of toAdd) {
       const isDefault = personaDefaultRoleIds.has(roleId);
-      db.insert(schema.userTargetRoleAssignments).values({
+      await db.insert(schema.userTargetRoleAssignments).values({
         userId,
         targetRoleId: roleId,
         derivedFromPersonaId: personaId ?? null,
         assignmentType: isDefault ? "persona_default" : "individual_override",
         status: "draft",
         mappedBy: user.username,
-      }).run();
+      });
     }
 
     // Remove assignments
     for (const assignment of toRemove) {
-      db.delete(schema.userTargetRoleAssignments)
-        .where(eq(schema.userTargetRoleAssignments.id, assignment.id))
-        .run();
+      await db.delete(schema.userTargetRoleAssignments)
+        .where(eq(schema.userTargetRoleAssignments.id, assignment.id));
     }
 
     // Audit log
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "userRefinement",
       entityId: userId,
       action: "refinements_saved",
       actorEmail: user.email ?? user.username,
       oldValue: JSON.stringify({ roleIds: Array.from(currentRoleIds) }),
       newValue: JSON.stringify({ roleIds: targetRoleIds, added: toAdd, removed: toRemove.map(a => a.targetRoleId) }),
-    }).run();
+    });
 
     return NextResponse.json({
       success: true,

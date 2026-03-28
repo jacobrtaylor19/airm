@@ -8,30 +8,30 @@ import { safeError } from "@/lib/errors";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const assignments = db.select({
-    id: schema.workAssignments.id,
-    appUserId: schema.workAssignments.appUserId,
-    appUserName: schema.appUsers.displayName,
-    appUserRole: schema.appUsers.role,
-    assignmentType: schema.workAssignments.assignmentType,
-    scopeType: schema.workAssignments.scopeType,
-    scopeValue: schema.workAssignments.scopeValue,
-    createdAt: schema.workAssignments.createdAt,
-  })
+  const assignments = await db
+    .select({
+      id: schema.workAssignments.id,
+      appUserId: schema.workAssignments.appUserId,
+      appUserName: schema.appUsers.displayName,
+      appUserRole: schema.appUsers.role,
+      assignmentType: schema.workAssignments.assignmentType,
+      scopeType: schema.workAssignments.scopeType,
+      scopeValue: schema.workAssignments.scopeValue,
+      createdAt: schema.workAssignments.createdAt,
+    })
     .from(schema.workAssignments)
-    .innerJoin(schema.appUsers, eq(schema.appUsers.id, schema.workAssignments.appUserId))
-    .all();
+    .innerJoin(schema.appUsers, eq(schema.appUsers.id, schema.workAssignments.appUserId));
 
   return NextResponse.json(assignments);
 }
 
 export async function POST(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -42,20 +42,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "All fields required" }, { status: 400 });
     }
 
-    const created = db.insert(schema.workAssignments).values({
+    const [created] = await db.insert(schema.workAssignments).values({
       appUserId,
       assignmentType,
       scopeType,
       scopeValue,
-    }).returning().get();
+    }).returning();
 
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "workAssignment",
       entityId: created.id,
       action: "created",
       newValue: JSON.stringify({ appUserId, assignmentType, scopeType, scopeValue }),
       actorEmail: user.username,
-    }).run();
+    });
 
     return NextResponse.json({ success: true, id: created.id });
   } catch (err: unknown) {
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user || user.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
@@ -76,14 +76,14 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Assignment ID required" }, { status: 400 });
   }
 
-  db.delete(schema.workAssignments).where(eq(schema.workAssignments.id, Number(id))).run();
+  await db.delete(schema.workAssignments).where(eq(schema.workAssignments.id, Number(id)));
 
-  db.insert(schema.auditLog).values({
+  await db.insert(schema.auditLog).values({
     entityType: "workAssignment",
     entityId: Number(id),
     action: "deleted",
     actorEmail: user.username,
-  }).run();
+  });
 
   return NextResponse.json({ success: true });
 }

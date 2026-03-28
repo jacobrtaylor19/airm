@@ -1,21 +1,20 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { getSessionUserFromToken } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { AIRMLogo } from "@/components/layout/airm-logo";
 
-export default function LoginPage() {
+export const dynamic = "force-dynamic";
+
+export default async function LoginPage() {
   // If already logged in, redirect to dashboard
-  const token = cookies().get("airm_session")?.value;
-  if (token) {
-    const user = getSessionUserFromToken(token);
-    if (user) redirect("/dashboard");
-  }
+  const user = await getSessionUser();
+  if (user) redirect("/dashboard");
 
   // If no app users exist, redirect to setup
-  const hasUsers = db.select().from(schema.appUsers).limit(1).all().length > 0;
+  const rows = await db.select().from(schema.appUsers).limit(1);
+  const hasUsers = rows.length > 0;
   if (!hasUsers) redirect("/setup");
 
   return (

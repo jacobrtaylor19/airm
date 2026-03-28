@@ -16,34 +16,32 @@ import { Badge } from "@/components/ui/badge";
 import { Eye } from "lucide-react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function getCount(table: any) {
-  return db.select({ count: count() }).from(table).get()!.count;
+async function getCount(table: any) {
+  return (await db.select({ count: count() }).from(table))[0]!.count;
 }
 
-export default function DataUploadPage() {
-  const user = requireAuth();
+export default async function DataUploadPage() {
+  const user = await requireAuth();
   const isAdmin = user.role === "admin" || user.role === "system_admin";
-  const sourceSystemStats = getSourceSystemStats();
-  const appUserCount = db.select({ count: count() }).from(schema.appUsers)
-    .where(ne(schema.appUsers.role, "system_admin"))
-    .get()!.count;
+  const sourceSystemStats = await getSourceSystemStats();
+  const appUserCount = (await db.select({ count: count() }).from(schema.appUsers)
+    .where(ne(schema.appUsers.role, "system_admin")))[0]!.count;
 
-  const existingAccessCount = db.select({ count: count() }).from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
-    .get()!.count;
+  const existingAccessCount = (await db.select({ count: count() }).from(schema.userTargetRoleAssignments)
+    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing")))[0]!.count;
 
   const counts = {
-    orgUnits: getCount(schema.orgUnits),
-    releases: getCount(schema.releases),
-    releaseScope: getCount(schema.releaseOrgUnits),
-    users: getCount(schema.users),
-    sourceRoles: getCount(schema.sourceRoles),
-    roleAssignments: getCount(schema.userSourceRoleAssignments),
-    rolePermissions: getCount(schema.sourceRolePermissions),
-    targetRoles: getCount(schema.targetRoles),
-    targetPermissions: getCount(schema.targetPermissions),
-    sodRules: getCount(schema.sodRules),
-    personas: getCount(schema.personas),
+    orgUnits: await getCount(schema.orgUnits),
+    releases: await getCount(schema.releases),
+    releaseScope: await getCount(schema.releaseOrgUnits),
+    users: await getCount(schema.users),
+    sourceRoles: await getCount(schema.sourceRoles),
+    roleAssignments: await getCount(schema.userSourceRoleAssignments),
+    rolePermissions: await getCount(schema.sourceRolePermissions),
+    targetRoles: await getCount(schema.targetRoles),
+    targetPermissions: await getCount(schema.targetPermissions),
+    sodRules: await getCount(schema.sodRules),
+    personas: await getCount(schema.personas),
     appUsers: appUserCount,
     existingAccess: existingAccessCount,
   };

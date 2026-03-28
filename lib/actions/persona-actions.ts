@@ -14,14 +14,13 @@ export async function updatePersona(
     description?: string;
   }
 ) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) throw new Error("Not authenticated");
 
-  const existing = db
+  const [existing] = await db
     .select()
     .from(schema.personas)
-    .where(eq(schema.personas.id, personaId))
-    .get();
+    .where(eq(schema.personas.id, personaId));
   if (!existing) throw new Error("Persona not found");
 
   const oldValue = {
@@ -30,17 +29,16 @@ export async function updatePersona(
     description: existing.description,
   };
 
-  db.update(schema.personas)
+  await db.update(schema.personas)
     .set({
       ...(updates.name !== undefined && { name: updates.name }),
       ...(updates.businessFunction !== undefined && { businessFunction: updates.businessFunction }),
       ...(updates.description !== undefined && { description: updates.description }),
       updatedAt: new Date().toISOString(),
     })
-    .where(eq(schema.personas.id, personaId))
-    .run();
+    .where(eq(schema.personas.id, personaId));
 
-  db.insert(schema.auditLog)
+  await db.insert(schema.auditLog)
     .values({
       entityType: "persona",
       entityId: personaId,
@@ -48,8 +46,7 @@ export async function updatePersona(
       oldValue: JSON.stringify(oldValue),
       newValue: JSON.stringify(updates),
       actorEmail: user.email ?? user.username,
-    })
-    .run();
+    });
 
   revalidatePath(`/personas/${personaId}`);
   revalidatePath("/personas");
@@ -60,49 +57,45 @@ export async function updatePersonaUsers(
   personaId: number,
   userIds: number[]
 ) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) throw new Error("Not authenticated");
 
   // Get current assignments
-  const current = db
+  const currentRows = await db
     .select({ userId: schema.userPersonaAssignments.userId })
     .from(schema.userPersonaAssignments)
-    .where(eq(schema.userPersonaAssignments.personaId, personaId))
-    .all()
-    .map((r) => r.userId);
+    .where(eq(schema.userPersonaAssignments.personaId, personaId));
+  const current = currentRows.map((r) => r.userId);
 
   const toAdd = userIds.filter((id) => !current.includes(id));
   const toRemove = current.filter((id) => !userIds.includes(id));
 
   // Remove unselected users
   if (toRemove.length > 0) {
-    db.delete(schema.userPersonaAssignments)
+    await db.delete(schema.userPersonaAssignments)
       .where(
         and(
           eq(schema.userPersonaAssignments.personaId, personaId),
           inArray(schema.userPersonaAssignments.userId, toRemove)
         )
-      )
-      .run();
+      );
   }
 
   // Add new users (remove from other personas first)
   for (const uid of toAdd) {
-    db.delete(schema.userPersonaAssignments)
-      .where(eq(schema.userPersonaAssignments.userId, uid))
-      .run();
+    await db.delete(schema.userPersonaAssignments)
+      .where(eq(schema.userPersonaAssignments.userId, uid));
 
-    db.insert(schema.userPersonaAssignments)
+    await db.insert(schema.userPersonaAssignments)
       .values({
         userId: uid,
         personaId,
         assignmentMethod: "manual",
         confidenceScore: 100,
-      })
-      .run();
+      });
   }
 
-  db.insert(schema.auditLog)
+  await db.insert(schema.auditLog)
     .values({
       entityType: "persona",
       entityId: personaId,
@@ -110,8 +103,7 @@ export async function updatePersonaUsers(
       oldValue: JSON.stringify(current),
       newValue: JSON.stringify(userIds),
       actorEmail: user.email ?? user.username,
-    })
-    .run();
+    });
 
   revalidatePath(`/personas/${personaId}`);
   revalidatePath("/personas");
@@ -122,42 +114,39 @@ export async function updatePersonaTargetRoles(
   personaId: number,
   targetRoleIds: number[]
 ) {
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) throw new Error("Not authenticated");
 
-  const current = db
+  const currentRows = await db
     .select({ targetRoleId: schema.personaTargetRoleMappings.targetRoleId })
     .from(schema.personaTargetRoleMappings)
-    .where(eq(schema.personaTargetRoleMappings.personaId, personaId))
-    .all()
-    .map((r) => r.targetRoleId);
+    .where(eq(schema.personaTargetRoleMappings.personaId, personaId));
+  const current = currentRows.map((r) => r.targetRoleId);
 
   const toAdd = targetRoleIds.filter((id) => !current.includes(id));
   const toRemove = current.filter((id) => !targetRoleIds.includes(id));
 
   if (toRemove.length > 0) {
-    db.delete(schema.personaTargetRoleMappings)
+    await db.delete(schema.personaTargetRoleMappings)
       .where(
         and(
           eq(schema.personaTargetRoleMappings.personaId, personaId),
           inArray(schema.personaTargetRoleMappings.targetRoleId, toRemove)
         )
-      )
-      .run();
+      );
   }
 
   for (const roleId of toAdd) {
-    db.insert(schema.personaTargetRoleMappings)
+    await db.insert(schema.personaTargetRoleMappings)
       .values({
         personaId,
         targetRoleId: roleId,
         confidence: "manual",
         mappingReason: "Manually assigned",
-      })
-      .run();
+      });
   }
 
-  db.insert(schema.auditLog)
+  await db.insert(schema.auditLog)
     .values({
       entityType: "persona",
       entityId: personaId,
@@ -165,8 +154,7 @@ export async function updatePersonaTargetRoles(
       oldValue: JSON.stringify(current),
       newValue: JSON.stringify(targetRoleIds),
       actorEmail: user.email ?? user.username,
-    })
-    .run();
+    });
 
   revalidatePath(`/personas/${personaId}`);
   revalidatePath("/personas");

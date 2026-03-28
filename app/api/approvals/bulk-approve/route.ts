@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: NextRequest) {
   try {
-    const user = getSessionUser();
+    const user = await getSessionUser();
     if (!user) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
@@ -47,11 +47,11 @@ export async function POST(request: NextRequest) {
 }
 
 /** Approve all eligible assignments for a specific department */
-function handleDepartmentApprove(department: string, actorEmail: string) {
+async function handleDepartmentApprove(department: string, actorEmail: string) {
   // Get all assignments for users in this department with approvable status
   const approvableStatuses = ["ready_for_approval", "compliance_approved"];
 
-  const candidates = db
+  const candidates = await db
     .select({
       assignmentId: schema.userTargetRoleAssignments.id,
       userId: schema.userTargetRoleAssignments.userId,
@@ -62,8 +62,7 @@ function handleDepartmentApprove(department: string, actorEmail: string) {
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-    .where(eq(schema.users.department, department))
-    .all();
+    .where(eq(schema.users.department, department));
 
   // Filter to only approvable statuses
   const eligible = candidates.filter((c) => {
@@ -81,15 +80,14 @@ function handleDepartmentApprove(department: string, actorEmail: string) {
   let count = 0;
 
   for (const item of allEligible) {
-    db.update(schema.userTargetRoleAssignments)
+    await db.update(schema.userTargetRoleAssignments)
       .set({
         status: "approved",
         approvedBy: actorEmail,
         approvedAt: now,
         updatedAt: now,
       })
-      .where(eq(schema.userTargetRoleAssignments.id, item.assignmentId))
-      .run();
+      .where(eq(schema.userTargetRoleAssignments.id, item.assignmentId));
     count++;
   }
 
@@ -98,27 +96,27 @@ function handleDepartmentApprove(department: string, actorEmail: string) {
   ).length;
 
   if (count > 0) {
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "userTargetRoleAssignment",
       entityId: 0,
       action: "bulk_approved",
       actorEmail,
       newValue: JSON.stringify({ count, department, skippedSod }),
-    }).run();
+    });
   }
 
   return NextResponse.json({ success: true, count, skippedSod, department });
 }
 
 /** Approve specific assignment IDs */
-function handleIdsApprove(assignmentIds: number[], actorEmail: string) {
+async function handleIdsApprove(assignmentIds: number[], actorEmail: string) {
   const approvableStatuses = ["ready_for_approval", "compliance_approved", "sod_risk_accepted"];
   const now = new Date().toISOString();
   let count = 0;
   let skippedSod = 0;
 
   for (const id of assignmentIds) {
-    const assignment = db
+    const [assignment] = await db
       .select({
         id: schema.userTargetRoleAssignments.id,
         status: schema.userTargetRoleAssignments.status,
@@ -127,7 +125,7 @@ function handleIdsApprove(assignmentIds: number[], actorEmail: string) {
       })
       .from(schema.userTargetRoleAssignments)
       .where(eq(schema.userTargetRoleAssignments.id, id))
-      .get();
+      .limit(1);
 
     if (!assignment || !approvableStatuses.includes(assignment.status)) continue;
 
@@ -137,34 +135,33 @@ function handleIdsApprove(assignmentIds: number[], actorEmail: string) {
       continue;
     }
 
-    db.update(schema.userTargetRoleAssignments)
+    await db.update(schema.userTargetRoleAssignments)
       .set({
         status: "approved",
         approvedBy: actorEmail,
         approvedAt: now,
         updatedAt: now,
       })
-      .where(eq(schema.userTargetRoleAssignments.id, id))
-      .run();
+      .where(eq(schema.userTargetRoleAssignments.id, id));
     count++;
   }
 
   if (count > 0) {
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "userTargetRoleAssignment",
       entityId: 0,
       action: "bulk_approved",
       actorEmail,
       newValue: JSON.stringify({ count, assignmentIds, skippedSod }),
-    }).run();
+    });
   }
 
   return NextResponse.json({ success: true, count, skippedSod });
 }
 
 /** Legacy: approve all ready_for_approval with high confidence */
-function handleLegacyBulkApprove(actorEmail: string) {
-  const candidates = db.select({
+async function handleLegacyBulkApprove(actorEmail: string) {
+  const candidates = await db.select({
     assignmentId: schema.userTargetRoleAssignments.id,
     userId: schema.userTargetRoleAssignments.userId,
     confidence: sql<number | null>`(
@@ -174,31 +171,30 @@ function handleLegacyBulkApprove(actorEmail: string) {
       LIMIT 1
     )`,
   }).from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "ready_for_approval"))
-    .all();
+    .where(eq(schema.userTargetRoleAssignments.status, "ready_for_approval"));
 
   const highConfidence = candidates.filter(c => c.confidence !== null && c.confidence >= 85);
 
   let count = 0;
   const now = new Date().toISOString();
   for (const candidate of highConfidence) {
-    db.update(schema.userTargetRoleAssignments).set({
+    await db.update(schema.userTargetRoleAssignments).set({
       status: "approved",
       approvedBy: actorEmail,
       approvedAt: now,
       updatedAt: now,
-    }).where(eq(schema.userTargetRoleAssignments.id, candidate.assignmentId)).run();
+    }).where(eq(schema.userTargetRoleAssignments.id, candidate.assignmentId));
     count++;
   }
 
   if (count > 0) {
-    db.insert(schema.auditLog).values({
+    await db.insert(schema.auditLog).values({
       entityType: "userTargetRoleAssignment",
       entityId: 0,
       action: "bulk_approved",
       actorEmail,
       newValue: JSON.stringify({ count, threshold: 85 }),
-    }).run();
+    });
   }
 
   return NextResponse.json({ success: true, count });
