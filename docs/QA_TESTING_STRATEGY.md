@@ -27,6 +27,7 @@ Validate every user-facing feature, API endpoint, role-based access control, dat
 | demo.admin | DemoGuide2026! | admin | All data (unrestricted) |
 | demo.mapper.finance | DemoGuide2026! | mapper | Finance org unit + descendants |
 | demo.mapper.operations | DemoGuide2026! | mapper | Operations org unit + descendants |
+| demo.pm | DemoGuide2026! | project_manager | All data (unrestricted, PM-level) |
 | demo.approver | DemoGuide2026! | approver | All data (unrestricted) |
 | demo.viewer | DemoGuide2026! | viewer | All data (read-only) |
 | demo.coordinator | DemoGuide2026! | coordinator | Assigned org unit + descendants |
@@ -688,7 +689,7 @@ The database is seeded with:
 - **Preconditions:** Logged in as demo.approver
 - **Steps:**
   1. Navigate to /approvals via sidebar
-- **Expected Result:** Page shows counts (Ready for Approval, Approved, Compliance Approved, SOD Risk Accepted, Total). Table of assignments with columns: user name, department, target role, status, confidence badge, SOD conflict count. Department filter available.
+- **Expected Result:** Page shows counts (Ready for Approval, Approved, Compliance OK, SOD Risk Accepted, Total). Table of assignments with columns: user name, department, target role, status, confidence badge, SOD conflict count. Department filter available.
 
 #### APR-002: Approve Single Assignment
 - **Preconditions:** Logged in as demo.approver, assignments in "compliance_approved" or "ready_for_approval" status
@@ -842,7 +843,7 @@ The database is seeded with:
 - **Preconditions:** Logged in as demo.admin
 - **Steps:**
   1. Navigate to /exports
-  2. Click "Generate Review Link" (ReviewLinkButton component)
+  2. Click "Generate Reviewer Link" (ReviewLinkButton component)
 - **Expected Result:** Shareable read-only link generated with expiration. Link URL shown or copied.
 
 #### EXP-010: Review Link Access
@@ -1370,48 +1371,109 @@ The database is seeded with:
   1. Check sidebar for "Release Comparison" and "Project Timeline"
 - **Expected Result:** These links are not visible (minRole restriction to admin, system_admin, project_manager).
 
+### 2.24 Lumen AI Assistant (LUM)
+
+#### LUM-001: Open Lumen Chat
+- **Preconditions:** Logged in as any role
+- **Steps:**
+  1. Look for the Lumen AI chat trigger in the sidebar or floating button
+  2. Click to open the chat interface
+- **Expected Result:** Chat panel opens with a greeting/prompt. The input field is functional. Typing a question and pressing Enter sends a message.
+
+#### LUM-002: Send Query to Lumen
+- **Preconditions:** Logged in as demo.admin, Lumen chat open
+- **Steps:**
+  1. Type "What is SOD analysis?" and press Enter
+  2. Wait for AI response
+- **Expected Result:** AI streams a response about Segregation of Duties analysis. Response renders with proper formatting (markdown, paragraphs). No raw `**` or `##` characters visible.
+
+#### LUM-003: Lumen Context Awareness
+- **Preconditions:** Logged in as demo.admin, on the mapping page
+- **Steps:**
+  1. Open Lumen and ask "How many personas are mapped?"
+- **Expected Result:** Lumen responds with contextually relevant information about the current project state.
+
+---
+
+### 2.25 Demo Environment Selector (DEM)
+
+#### DEM-001: Demo Environment Dropdown on Login
+- **Preconditions:** On the login page (logged out)
+- **Steps:**
+  1. Locate the "Demo Environment" card below the login form
+  2. Click the dropdown to see available environments
+- **Expected Result:** Dropdown shows multiple industry scenarios (SAP S/4HANA, Oracle, Workday, etc.). Default is "SAP S/4HANA — 1K Users".
+
+#### DEM-002: Switch Demo Environment
+- **Preconditions:** On the login page
+- **Steps:**
+  1. Select a different demo environment (e.g., "Energy & Chemicals")
+  2. Wait for the switch to complete (loading spinner appears)
+  3. Log in with demo.admin / DemoGuide2026!
+- **Expected Result:** After switching, the spinner shows "Switching demo environment..." and then clears. After login, dashboard reflects data from the selected environment.
+
+---
+
+### 2.26 Welcome Tour (WEL)
+
+#### WEL-001: Welcome Tour on First Visit
+- **Preconditions:** Clear browser cookies/storage, then log in as demo.admin
+- **Steps:**
+  1. Log in and land on the dashboard
+  2. Observe whether a welcome tour modal or overlay appears
+- **Expected Result:** A welcome tour or onboarding guide appears highlighting key areas of the dashboard. User can step through or dismiss.
+
+#### WEL-002: Tour Dismissal Persists
+- **Preconditions:** Completed WEL-001
+- **Steps:**
+  1. Dismiss the welcome tour
+  2. Navigate away from dashboard and return
+- **Expected Result:** The tour does not reappear after being dismissed.
+
 ---
 
 ## 3. Role-Based Access Matrix
 
-| Feature/Action | system_admin | admin | approver | coordinator | mapper | viewer |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Login** | Y | Y | Y | Y | Y | Y |
-| **View Dashboard** | Y | Y | Y | Y | Y | Y |
-| **Dashboard Scope** | All | All | All | Org unit | Org unit | All |
-| **View Releases** | Y | Y | Y | Y | Y | Y |
-| **Create/Edit/Delete Releases** | Y | Y | N | N | N | N |
-| **Data Upload** | Y | Y | N | N | N | View only |
-| **View Personas** | Y | Y | Y | Y | Y | Y |
-| **Generate Personas** | Y | Y | N | N | Y | N |
-| **Delete Personas (Bulk)** | Y | Y | N | N | N | N |
-| **View Mapping** | Y | Y | Y | Y | Y | Y |
-| **Auto-Map Roles** | Y | Y | N | N | Y | N |
-| **Edit Role Assignments** | Y | Y | N | N | Y | N |
-| **Submit for Review** | Y | Y | N | N | Y | N |
-| **View SOD Analysis** | Y | Y | Y | Y | Y | Y |
-| **Run SOD Analysis** | Y | Y | N | N | Y | N |
-| **Fix Mapping (SOD)** | Y | Y | N | N | Y | N |
-| **Accept Risk (SOD)** | Y | Y | Y | N | N | N |
-| **Escalate SOD** | Y | Y | Y | N | N | N |
-| **See Within-Role SOD** | Y | Y | Y | N | security.lead only | N |
-| **View Approvals** | Y | Y | Y | Y | Y | Y |
-| **Approve Assignments** | Y | Y | Y | N | N | N |
-| **Send Back Assignments** | Y | Y | Y | N | Y | N |
-| **Bulk Approve** | Y | Y | Y | N | N | N |
-| **View Risk Analysis** | Y | Y | Y | Y | Y | Y |
-| **View Exports** | Y | Y | Y | Y | Y | Y |
-| **Download Exports** | Y | Y | Y | Y | Y | Y |
-| **Generate Review Link** | Y | Y | N | N | N | N |
-| **View Admin Console** | Y | N* | N | N | N | N |
-| **App Users CRUD** | Y | Y | N | N | N | N |
-| **Assignments Management** | Y | Y | N | N | N | N |
-| **Send Notifications** | Y | Y | N | Y | N | N |
-| **View Inbox** | Y | Y | Y | Y | Y | Y |
-| **View Audit Log** | Y | Y | Y | Y | Y | Y |
-| **Pipeline Validation** | Y | N* | N | N | N | N |
-| **Validation Export** | Y | N* | N | N | N | N |
-| **Accept Provisioning Exception** | Y | Y | Y | N | N | N |
+| Feature/Action | system_admin | admin | project_manager | approver | coordinator | mapper | viewer |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Login** | Y | Y | Y | Y | Y | Y | Y |
+| **View Dashboard** | Y | Y | Y | Y | Y | Y | Y |
+| **Dashboard Scope** | All | All | All | All | Org unit | Org unit | All |
+| **View Releases** | Y | Y | Y | Y | Y | Y | Y |
+| **Create/Edit/Delete Releases** | Y | Y | Y | N | N | N | N |
+| **Release Comparison** | Y | Y | Y | N | N | N | N |
+| **Project Timeline** | Y | Y | Y | N | N | N | N |
+| **Data Upload** | Y | Y | Y | N | N | N | View only |
+| **View Personas** | Y | Y | Y | Y | Y | Y | Y |
+| **Generate Personas** | Y | Y | Y | N | N | Y | N |
+| **Delete Personas (Bulk)** | Y | Y | Y | N | N | N | N |
+| **View Mapping** | Y | Y | Y | Y | Y | Y | Y |
+| **Auto-Map Roles** | Y | Y | Y | N | N | Y | N |
+| **Edit Role Assignments** | Y | Y | Y | N | N | Y | N |
+| **Submit for Review** | Y | Y | Y | N | N | Y | N |
+| **View SOD Analysis** | Y | Y | Y | Y | Y | Y | Y |
+| **Run SOD Analysis** | Y | Y | Y | N | N | Y | N |
+| **Fix Mapping (SOD)** | Y | Y | Y | N | N | Y | N |
+| **Accept Risk (SOD)** | Y | Y | Y | Y | N | N | N |
+| **Escalate SOD** | Y | Y | Y | Y | N | N | N |
+| **See Within-Role SOD** | Y | Y | Y | Y | N | security.lead only | N |
+| **View Approvals** | Y | Y | Y | Y | Y | Y | Y |
+| **Approve Assignments** | Y | Y | N | Y | N | N | N |
+| **Send Back Assignments** | Y | Y | Y | Y | N | Y | N |
+| **Bulk Approve** | Y | Y | N | Y | N | N | N |
+| **View Risk Analysis** | Y | Y | Y | Y | Y | Y | Y |
+| **View Exports** | Y | Y | Y | Y | Y | Y | Y |
+| **Download Exports** | Y | Y | Y | Y | Y | Y | Y |
+| **Generate Reviewer Link** | Y | Y | Y | N | N | N | N |
+| **View Admin Console** | Y | N* | N | N | N | N | N |
+| **App Users CRUD** | Y | Y | N | N | N | N | N |
+| **Assignments Management** | Y | Y | N | N | N | N | N |
+| **Send Notifications** | Y | Y | Y | N | Y | N | N |
+| **View Inbox** | Y | Y | Y | Y | Y | Y | Y |
+| **View Audit Log** | Y | Y | Y | Y | Y | Y | Y |
+| **Pipeline Validation** | Y | N* | N | N | N | N | N |
+| **Validation Export** | Y | N* | N | N | N | N | N |
+| **Accept Provisioning Exception** | Y | Y | Y | Y | N | N | N |
 | **View Data Pages** | Y | Y | Y | Y | Y | Y |
 | **View Public Pages** | Y | Y | Y | Y | Y | Y |
 | **Release Comparison/Timeline** | Y | Y | N | N | N | N |

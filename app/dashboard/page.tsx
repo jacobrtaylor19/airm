@@ -4,7 +4,7 @@ import { getUserScopeDepartments, getUserScope } from "@/lib/scope";
 import { getSetting } from "@/lib/settings";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
-import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Database, Info, AlertTriangle, CheckCircle2, Zap, TrendingUp } from "lucide-react";
+import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Database, Info, AlertTriangle, CheckCircle2, Zap, TrendingUp, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,32 @@ export const maxDuration = 60;
 export default async function DashboardPage() {
   const user = await requireAuth();
 
+  try {
+    return await renderDashboard(user);
+  } catch (err) {
+    console.error("[dashboard] Server-side error:", err);
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="rounded-lg border border-red-200 bg-red-50/50 p-6 max-w-md text-center space-y-3">
+          <AlertTriangle className="h-8 w-8 text-red-500 mx-auto" />
+          <h2 className="text-lg font-semibold">Dashboard failed to load</h2>
+          <p className="text-sm text-muted-foreground">
+            An error occurred while loading dashboard data. This is usually transient — please try again.
+          </p>
+          <a
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </a>
+        </div>
+      </div>
+    );
+  }
+}
+
+async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
   // Run all independent data fetches in parallel
   const [stats, allDeptStatus, sourceSystemStats, scopeDepts] = await Promise.all([
     getDashboardStats(),

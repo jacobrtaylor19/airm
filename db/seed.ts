@@ -734,6 +734,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
     { username: "demo.mapper.finance", displayName: "Demo Finance Mapper", role: "mapper", orgUnit: "Finance" },
     { username: "demo.mapper.operations", displayName: "Demo Operations Mapper", role: "mapper", orgUnit: "Operations" },
     { username: "demo.approver", displayName: "Demo Approver", role: "approver", orgUnit: null as string | null },
+    { username: "demo.pm", displayName: "Demo Project Manager", role: "project_manager", orgUnit: null as string | null },
     { username: "demo.coordinator", displayName: "Demo Coordinator", role: "coordinator", orgUnit: null as string | null },
     { username: "demo.viewer", displayName: "Demo Viewer", role: "viewer", orgUnit: null as string | null },
   ];

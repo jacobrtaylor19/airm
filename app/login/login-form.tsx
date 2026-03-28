@@ -88,8 +88,10 @@ export function LoginForm() {
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      // Hard navigation ensures browser has processed Set-Cookie headers
+      // before the next request. router.push races the cookie write and
+      // middleware redirects back to /login before cookies are stored.
+      window.location.href = "/dashboard";
     } catch {
       setError("An error occurred");
     } finally {
@@ -139,6 +141,7 @@ export function LoginForm() {
               {[
                 { user: "demo.admin", label: "Admin" },
                 { user: "demo.mapper.finance", label: "Mapper" },
+                { user: "demo.pm", label: "PM" },
                 { user: "demo.approver", label: "Approver" },
                 { user: "demo.coordinator", label: "Coordinator" },
                 { user: "demo.viewer", label: "Viewer" },
