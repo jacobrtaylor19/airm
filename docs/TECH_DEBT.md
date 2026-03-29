@@ -25,7 +25,7 @@ Higher score = fix first.
 |---|------|----------|:------:|:----:|:------:|:-----:|-------|
 | 1 | **Zero test coverage** — No unit, integration, or E2E tests. No test runner installed. 37+ pages and 100+ files with 0% coverage. | Test | 5 | 5 | 4 | 20 | — |
 | 2 | **No error tracking** — `lib/monitoring.ts` has TODO stubs for Sentry. Production errors only visible in Vercel function logs. No alerting. | Infrastructure | 4 | 5 | 2 | 36 | `lib/monitoring.ts` |
-| 3 | **N+1 queries in AI pipeline** — Nested loops issue 1000+ individual queries per persona generation run instead of bulk joins. | Code | 5 | 4 | 3 | 27 | `lib/ai/persona-generation.ts`, `lib/ai/persona-assignment.ts` |
+| 3 | ~~**N+1 queries in AI pipeline**~~ ✅ FIXED — Extracted bulk loader in `lib/ai/load-user-profiles.ts` (3 queries total). | Code | 5 | 4 | 3 | 27 | `lib/ai/load-user-profiles.ts` |
 | 4 | **No database indexes** — 39 tables, zero compound indexes. Common filter columns (`userId`, `status`, `personaId`) unindexed. | Architecture | 4 | 5 | 2 | 36 | `db/schema.ts` |
 | 5 | **In-memory rate limiter** — Single-instance only. TODO comment acknowledges this. Vercel runs multiple isolates. | Infrastructure | 3 | 5 | 2 | 32 | `lib/rate-limit.ts` |
 
@@ -33,10 +33,10 @@ Higher score = fix first.
 
 | # | Item | Category | Impact | Risk | Effort | Score | Files |
 |---|------|----------|:------:|:----:|:------:|:-----:|-------|
-| 6 | **Monolithic `queries.ts`** — 2,125 lines, 50+ exports. Impossible to unit-test or reason about. | Code | 4 | 3 | 4 | 14 | `lib/queries.ts` |
-| 7 | **Hardcoded route allowlist in middleware** — Adding a new route requires updating a manual array. Easy to forget, creates auth bypass. | Architecture | 3 | 5 | 2 | 32 | `middleware.ts` |
+| 6 | ~~**Monolithic `queries.ts`**~~ ✅ FIXED — Split into 11 domain modules in `lib/queries/` with barrel re-export. | Code | 4 | 3 | 4 | 14 | `lib/queries/` |
+| 7 | ~~**Hardcoded route allowlist in middleware**~~ ✅ FIXED — Inverted to default-secure model with exact-match Set + prefix array. | Architecture | 3 | 5 | 2 | 32 | `middleware.ts` |
 | 8 | **No staging environment** — Pushes to `main` deploy directly to production. No pre-prod verification. | Infrastructure | 3 | 4 | 2 | 28 | `.github/workflows/` |
-| 9 | **Duplicate interfaces in AI modules** — `UserAccessProfile` defined identically in 2 files. Shared query logic also duplicated. | Code | 2 | 2 | 1 | 20 | `lib/ai/persona-generation.ts`, `lib/ai/persona-assignment.ts` |
+| 9 | ~~**Duplicate interfaces in AI modules**~~ ✅ FIXED — Extracted to `lib/ai/types.ts` + shared bulk loader. | Code | 2 | 2 | 1 | 20 | `lib/ai/types.ts` |
 | 10 | **Large client components** — `mapping-client.tsx` (1,286 lines), `admin-console-client.tsx` (1,234 lines), `sod-client.tsx` (900 lines). | Code | 3 | 2 | 4 | 10 | `app/mapping/`, `app/admin/`, `app/sod/` |
 
 ### Tier 3 — Plan for Next Release (Score 10–19)
@@ -47,7 +47,7 @@ Higher score = fix first.
 | 12 | **Fire-and-forget AI jobs** — Background jobs use `waitUntil()` with no retry, dead-letter, or status recovery. | Architecture | 3 | 3 | 4 | 12 | `app/api/ai/*/route.ts` |
 | 13 | **No structured logging** — All logging via `console.error`. No correlation IDs, no log levels, no aggregation. | Infrastructure | 2 | 3 | 2 | 20 | All API routes |
 | 14 | **Upload route type safety** — File-level `@typescript-eslint/no-explicit-any` disable on 727-line CSV upload handler. | Code | 2 | 3 | 3 | 15 | `app/api/upload/[type]/route.ts` |
-| 15 | **CI audit non-blocking** — `pnpm audit` runs with `continue-on-error: true`. Vulnerable deps pass CI silently. | Infrastructure | 2 | 4 | 1 | 30 | `.github/workflows/` |
+| 15 | ~~**CI audit non-blocking**~~ ✅ FIXED — Removed `continue-on-error: true` from security-scan job. | Infrastructure | 2 | 4 | 1 | 30 | `.github/workflows/ci.yml` |
 | 16 | **No encryption key rotation** — `ENCRYPTION_KEY` for AES-256-GCM has no rotation mechanism or docs. | Infrastructure | 1 | 3 | 3 | 12 | `lib/encryption.ts` |
 
 ### Tier 4 — Backlog (Score < 10)
@@ -113,15 +113,23 @@ Higher score = fix first.
 
 ---
 
-## Current Health Summary
+## Current Health Summary (updated 2026-03-28)
 
 | Category | Grade | Key Issue |
 |----------|:-----:|-----------|
-| **Code** | C | 5 files >800 lines; duplicated AI logic |
-| **Architecture** | B- | Solid stack choice; needs indexing + query split |
+| **Code** | B- | Queries split into 11 modules; AI N+1 eliminated; 3 large client components remain |
+| **Architecture** | B | Default-secure middleware; scoped queries push filters to DB; needs indexing |
 | **Testing** | F | Zero tests, zero infrastructure |
 | **Dependencies** | B+ | Current versions; missing monitoring/logging deps |
 | **Documentation** | B+ | Strong dev docs; missing API spec + runbook |
 | **Infrastructure** | C+ | Good deploy pipeline; no monitoring, no staging, no durable jobs |
 
-**Overall: C+** — Production-viable for demo; needs hardening before scaling or handoff to a larger team.
+**Overall: B-** — Production-viable for demo; 6 of 20 debt items resolved this sprint. Testing and monitoring remain the critical gaps.
+
+### Resolved This Sprint
+- ✅ #3 — N+1 queries in AI pipeline (bulk loader)
+- ✅ #6 — Monolithic queries.ts (split into 11 modules)
+- ✅ #7 — Hardcoded route allowlist (inverted to default-secure)
+- ✅ #9 — Duplicate AI interfaces (shared types.ts)
+- ✅ #15 — CI audit non-blocking (now fails build)
+- ✅ Scoped queries (approvals + users) now filter at DB level

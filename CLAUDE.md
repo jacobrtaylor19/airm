@@ -58,7 +58,7 @@ await requireRole(["admin", "mapper"]);    // throws redirect to /unauthorized i
 system_admin: 100 → admin: 80 → approver: 60 → coordinator: 50 → mapper: 40 → viewer: 20
 ```
 
-Session cookie: `airm_session` (httpOnly, 24h expiry). Middleware uses an **allowlist** of authenticated route prefixes — only known app routes require a session cookie. Unknown routes pass through to Next.js (renders branded 404 page). Public pages: `/`, `/login`, `/setup`, `/methodology`, `/overview`, `/quick-reference`, `/review`, `/api/auth/*`, `/api/health`.
+Session cookie: Supabase JWT (httpOnly, managed by `@supabase/ssr`). Middleware uses a **default-secure** model — all routes require authentication unless explicitly listed as public. Public paths are split into exact matches (`PUBLIC_EXACT` Set) and prefix matches (`PUBLIC_PREFIXES` array) to prevent accidental exposure. Public pages: `/`, `/login`, `/setup`, `/methodology`, `/overview`, `/quick-reference`. Public prefixes: `/api/auth/`, `/api/health`, `/review/`.
 
 **Password policy:** 12-char minimum, uppercase + lowercase + digit + special character. Validated in `lib/password-policy.ts`. Enforced on user creation and password change.
 
@@ -153,22 +153,25 @@ export async function POST(req: NextRequest) {
 
 ---
 
-## Queries (`lib/queries.ts`)
+## Queries (`lib/queries/`)
 
-Central file for all shared DB queries. Key functions:
+Split into domain modules with a barrel re-export from `lib/queries/index.ts`. All consumers import from `@/lib/queries`.
 
-| Function | Returns |
-|----------|---------|
-| `getDashboardStats()` | Aggregate counts for KPI cards and strapline |
-| `getDepartmentMappingStatus()` | Per-department stage breakdown |
-| `getSourceSystemStats()` | Per-system role/user counts |
-| `getLeastAccessAnalysis(threshold)` | Over-provisioned mappings with exception status |
-| `getPersonaIdsForUsers(userIds)` | Persona IDs belonging to a set of users |
-| `getPersonaDetail(personaId)` | Full persona with mapped roles and excess % |
-| `getUserGapAnalysis(userId)` | Source vs target permission gaps per user |
-| `getUserRefinementDetails()` | All users with assignments, overrides, status for mapping tab |
+| Module | Key Exports |
+|--------|-------------|
+| `dashboard.ts` | `getDashboardStats()`, `getDepartmentMappingStatus()`, `getSourceSystemStats()` |
+| `users.ts` | `getUsers(filterUserIds?)`, `getUserDetail()`, `getAllSimpleUsers()` |
+| `personas.ts` | `getPersonas()`, `getPersonaDetail()`, `getPersonaIdsForUsers()` |
+| `roles.ts` | `getSourceRoles()`, `getTargetRoles()`, role detail functions |
+| `sod.ts` | `getSodConflicts()`, `getSodConflictsDetailed()`, `getOpenSodConflictsByPersona()` |
+| `approvals.ts` | `getApprovalQueue()`, `getApprovalQueueScoped()` (DB-level filter) |
+| `mapping.ts` | `getUserGapAnalysis()`, `getUserRefinementDetails()` |
+| `risk.ts` | `getLeastAccessAnalysis()`, `getAggregateRiskAnalysis()` (parallelized bulk queries) |
+| `common.ts` | `getUsersScoped()` (DB-level filter), release scoping, work assignment helpers |
+| `jobs.ts` | `getJobs()` |
+| `audit.ts` | `getAuditLog()` |
 
-When adding new queries, add them here (not inline in page files) unless they're trivial single-row lookups.
+When adding new queries, add them to the appropriate domain module (not inline in page files).
 
 ---
 
@@ -342,7 +345,9 @@ All integration endpoints must validate an API key (`PROVISUM_API_KEY` env var) 
 
 8. **AI pipeline** — Persona generation uses a 2-phase approach: AI analyzes a 100-user sample to design personas, then programmatic permission-overlap matching assigns all users. This prevents JSON truncation. Jobs run fire-and-forget in background; client polls `/api/jobs/[id]` for status.
 
-9. **Self-guided demo accounts** — `demo.admin`, `demo.mapper.finance`, `demo.approver`, `demo.viewer`, `demo.coordinator` (all password `DemoGuide2026!`). Always created in every seed. Quick-login pills shown on login page.
+9. **Self-guided demo accounts** — `demo.admin`, `demo.mapper.finance`, `demo.approver`, `demo.viewer`, `demo.coordinator`, `demo.pm` (all password `DemoGuide2026!`). Always created in every seed. Quick-login pills shown on login page.
+
+10. **`maxDuration` on heavy pages** — Pages that run multiple DB queries (dashboard, risk-analysis, mapping, admin/validation, releases/compare) export `maxDuration = 60` to extend Vercel's serverless function timeout. AI pipeline routes use `maxDuration = 300`.
 
 ---
 
@@ -353,9 +358,11 @@ All integration endpoints must validate an API key (`PROVISUM_API_KEY` env var) 
 | Add a setting | `lib/settings.ts` (document key), `app/admin/admin-console-client.tsx` |
 | Add a new role | `lib/auth.ts` (ROLE_HIERARCHY), `lib/scope.ts`, `app/admin/users/users-client.tsx` |
 | Add a DB table | `db/schema.ts`, then `pnpm db:push` |
+| Add a new query | `lib/queries/<domain>.ts` + re-export from `lib/queries/index.ts` |
 | New dashboard section | `app/dashboard/page.tsx` (data), `app/dashboard/dashboard-filtered.tsx` (UI) |
 | New sidebar nav item | `components/layout/sidebar.tsx` |
 | New API mutation | `app/api/<path>/route.ts` |
 | Validation dashboard | `app/admin/validation/`, `app/api/admin/validation/` |
 | Change strapline language | `lib/strapline.ts` |
 | Change notification template | `app/notifications/notifications-client.tsx` (QUICK_MESSAGES) |
+| AI pipeline internals | `lib/ai/types.ts` (shared interfaces), `lib/ai/load-user-profiles.ts` (bulk loader) |
