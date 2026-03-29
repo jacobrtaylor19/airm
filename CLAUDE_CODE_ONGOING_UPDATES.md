@@ -1,16 +1,6 @@
 # Provisum — Ongoing Updates (Session State)
 
-**Last updated:** 2026-03-28 | **Version:** v0.7.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 41 passing
-
----
-
-## Latest Commit
-
-```
-c7451b3 feat: production hardening + user invite flow
-```
-
-Auto-deployed to https://demo.provisum.io via GitHub → Vercel pipeline.
+**Last updated:** 2026-03-28 | **Version:** v0.7.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 41 passing | **Tech Debt:** 18/20 resolved (A-)
 
 ---
 
@@ -30,10 +20,49 @@ These manual steps block features from going live:
 
 ## Recent Changes (This Session)
 
-### Production Hardening
-- **56 database indexes** created across all 39 tables via Supabase MCP — covers user assignments, SOD conflicts, persona mappings, permission junctions, release scoping, audit logs
-- **Sentry error tracking** installed: `@sentry/nextjs` with client/server/edge configs, `global-error.tsx` boundary, `lib/monitoring.ts` wired to real Sentry calls
-- **Vitest test infrastructure**: 41 smoke tests across 4 files (auth, settings, strapline, middleware) — all passing in 266ms
+### Tech Debt Mega-Sprint (18 of 20 items resolved)
+
+**Infrastructure:**
+- **DB-backed rate limiter** — Replaced in-memory `Map` with `rate_limit_entries` Postgres table using atomic upsert. Works across Vercel isolates.
+- **Staging environment** — `develop` branch configured for Vercel preview deploys; CI runs on both branches + PRs; `vercel.json` added
+- **Structured logging** — `lib/monitoring.ts` rewritten with JSON output, log levels (debug/info/warn/error), `withCorrelationId()` scoped logger factory
+- **Encryption key rotation** — `ENCRYPTION_KEY_PREVIOUS` env var for dual-key decryption, `rotateAllSettings()`, `POST /api/admin/rotate-keys` (system_admin only)
+- **Sentry error tracking** installed + all API route `console.error` calls → `reportError()` from monitoring module
+
+**Code Quality:**
+- **Large components split** — 9 sub-components extracted: mapping (4: persona-selector, role-assignment-panel, auto-map-progress, user-refinements), admin (2: org-tree-section, settings-section), sod (3: summary-cards, conflict-list, resolution-dialogs)
+- **Upload route type safety** — File-level `eslint-disable` removed; `CsvRow` type alias, `getErrorMessage()`/`isDuplicateError()` helpers, all catches use `unknown`
+- **eslint-disable cleanup** — 10 → 6 justified disables
+- **Console.error cleanup** — All API routes now use `reportError()` with structured context
+
+**Architecture:**
+- **Job retry + dead-letter** — `lib/job-runner.ts` wraps all AI pipeline tasks with configurable retry (default 3 attempts, exponential backoff). Dead-letters on exhaustion.
+- **56 database indexes** across all 39 tables
+- **Vitest** — 41 smoke tests across auth, settings, strapline, middleware
+
+### Lumen Phase 2 (AI Chatbot Tool Calling)
+- **6 tools**: `get_dashboard_stats`, `get_persona_details`, `get_sod_conflicts`, `get_mapping_status`, `trigger_auto_map`, `trigger_sod_analysis`
+- **Org-unit scoped** — All data tools filter results through `getUserScope()`. Mappers/approvers only see their org unit's data. Admins see everything.
+- **Multi-turn tool loop** — Claude can chain up to 3 tool calls per message. SSE events show "Checking data..." status while tools execute.
+- **Role-gated actions** — `trigger_auto_map` and `trigger_sod_analysis` check role permissions server-side
+- **UI indicators** — "Live data" badge on tool-backed responses, teal spinner during tool execution
+
+### Bulk Mapping UI Enhancements
+- **Persona search** — Text search input to filter persona list
+- **Filter chips** — "All", "Unmapped" (no target roles), "Low Coverage" (<70%)
+- **Coverage badges** — Color-coded coverage % on each persona row
+- **Select All visible** — Checkbox toggles all filtered/visible personas for bulk assign
+
+### Data Upload Template Enhancements
+- **Dynamic picklist templates** — `GET /api/upload/templates?type={type}` generates CSV with headers + valid values comment row + example rows
+- **DB-backed picklists** — Templates fetch org units, role names, user IDs from live database
+- **Template download button** — Every upload card now has a "Download Template" link
+- **Enhanced validation** — Added picklist warnings for source/target role types, SOD severity, user types
+
+### User Invite Flow
+- Single invite, bulk CSV, accept, resend — all built and deployed
+- `lib/email.ts` — Resend client with graceful degradation
+- ⚠️ Blocked on Owner Action #4 (RESEND_API_KEY)
 
 ### User Invite Flow
 - `POST /api/admin/users/invite` — create Supabase auth user + app_users + send email

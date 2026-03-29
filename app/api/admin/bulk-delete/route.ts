@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
-  const rateLimited = checkBulkRate(request, String(user.id));
+  const rateLimited = await checkBulkRate(request, String(user.id));
   if (rateLimited) return rateLimited;
 
   const body = await request.json();

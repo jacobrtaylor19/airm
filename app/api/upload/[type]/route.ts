@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -7,6 +6,17 @@ import { eq } from "drizzle-orm";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
+
+type CsvRow = Record<string, string>;
+
+function getErrorMessage(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
+}
+
+function isDuplicateError(e: unknown): boolean {
+  const msg = getErrorMessage(e);
+  return msg.includes("UNIQUE") || msg.includes("unique") || msg.includes("duplicate");
+}
 
 type UploadType =
   | "users"
@@ -71,7 +81,7 @@ export async function POST(
       columns: true,
       skip_empty_lines: true,
       trim: true,
-    }) as Record<string, string>[];
+    }) as CsvRow[];
 
     if (records.length === 0) {
       return NextResponse.json({ error: "CSV file is empty" }, { status: 400 });
@@ -96,10 +106,16 @@ export async function POST(
 
     // Static picklists
     const STATIC_PICKLISTS: Partial<Record<UploadType, Record<string, string[]>>> = {
-      "app-users": { role: ["admin", "mapper", "approver", "coordinator", "viewer"] },
-      "sod-rules": { severity: ["critical", "high", "medium", "low"] },
+      "app-users": { role: ["system_admin", "admin", "coordinator", "mapper", "approver", "viewer", "project_manager"] },
+      "sod-rules": {
+        severity: ["critical", "high", "medium", "low"],
+        conflict_type: ["cross_role", "within_role"],
+      },
+      "source-roles": { role_type: ["business", "technical", "composite"] },
+      "target-roles": { role_type: ["single", "composite", "master"] },
       "org-units": { level: ["L1", "L2", "L3"] },
       releases: { status: ["planning", "active", "completed", "paused"] },
+      users: { user_type: ["standard", "service", "admin"] },
     };
 
     // Dynamic picklists from existing DB data
@@ -198,9 +214,9 @@ export async function POST(
       status: "committed",
       ...result,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { error: err.message || "Upload failed" },
+      { error: err instanceof Error ? err.message : String(err) || "Upload failed" },
       { status: 500 }
     );
   }
@@ -208,7 +224,7 @@ export async function POST(
 
 async function commitUpload(
   type: UploadType,
-  records: Record<string, string>[]
+  records: CsvRow[]
 ) {
   let inserted = 0;
   let skipped = 0;
@@ -242,11 +258,11 @@ async function commitUpload(
               costCenter: row.cost_center || null,
             });
           inserted++;
-        } catch (e: any) {
-          if (e.message?.includes("UNIQUE") || e.message?.includes("unique") || e.message?.includes("duplicate")) {
+        } catch (e: unknown) {
+          if (isDuplicateError(e)) {
             skipped++;
           } else {
-            errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+            errors.push(`Row ${inserted + skipped + 1}: ${getErrorMessage(e)}`);
           }
         }
       }
@@ -268,9 +284,9 @@ async function commitUpload(
               roleOwner: row.role_owner || null,
             });
           inserted++;
-        } catch (e: any) {
-          if (e.message?.includes("UNIQUE") || e.message?.includes("unique") || e.message?.includes("duplicate")) skipped++;
-          else errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+        } catch (e: unknown) {
+          if (isDuplicateError(e)) skipped++;
+          else errors.push(`Row ${inserted + skipped + 1}: ${getErrorMessage(e)}`);
         }
       }
       break;
@@ -370,9 +386,9 @@ async function commitUpload(
               roleOwner: row.role_owner || null,
             });
           inserted++;
-        } catch (e: any) {
-          if (e.message?.includes("UNIQUE") || e.message?.includes("unique") || e.message?.includes("duplicate")) skipped++;
-          else errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+        } catch (e: unknown) {
+          if (isDuplicateError(e)) skipped++;
+          else errors.push(`Row ${inserted + skipped + 1}: ${getErrorMessage(e)}`);
         }
       }
       break;
@@ -392,9 +408,9 @@ async function commitUpload(
               riskLevel: row.risk_level || null,
             });
           inserted++;
-        } catch (e: any) {
-          if (e.message?.includes("UNIQUE") || e.message?.includes("unique") || e.message?.includes("duplicate")) skipped++;
-          else errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+        } catch (e: unknown) {
+          if (isDuplicateError(e)) skipped++;
+          else errors.push(`Row ${inserted + skipped + 1}: ${getErrorMessage(e)}`);
         }
       }
       break;
@@ -415,9 +431,9 @@ async function commitUpload(
               riskDescription: row.risk_description || null,
             });
           inserted++;
-        } catch (e: any) {
-          if (e.message?.includes("UNIQUE") || e.message?.includes("unique") || e.message?.includes("duplicate")) skipped++;
-          else errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+        } catch (e: unknown) {
+          if (isDuplicateError(e)) skipped++;
+          else errors.push(`Row ${inserted + skipped + 1}: ${getErrorMessage(e)}`);
         }
       }
       break;
@@ -435,9 +451,9 @@ async function commitUpload(
               source: "manual_upload",
             });
           inserted++;
-        } catch (e: any) {
-          if (e.message?.includes("UNIQUE") || e.message?.includes("unique") || e.message?.includes("duplicate")) skipped++;
-          else errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+        } catch (e: unknown) {
+          if (isDuplicateError(e)) skipped++;
+          else errors.push(`Row ${inserted + skipped + 1}: ${getErrorMessage(e)}`);
         }
       }
       break;
@@ -468,8 +484,8 @@ async function commitUpload(
                 releasePhase: "existing",
               });
             inserted++;
-          } catch (e: any) {
-            errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+          } catch (e: unknown) {
+            errors.push(`Row ${inserted + skipped + 1}: ${getErrorMessage(e)}`);
             skipped++;
           }
         } else {
@@ -515,8 +531,8 @@ async function commitUpload(
             } else {
               skipped++;
             }
-          } catch (e: any) {
-            errors.push(`Row (${row.name}): ${e.message}`);
+          } catch (e: unknown) {
+            errors.push(`Row (${row.name}): ${getErrorMessage(e)}`);
           }
         }
       }
@@ -551,8 +567,8 @@ async function commitUpload(
               createdBy: "data_upload",
             });
           inserted++;
-        } catch (e: any) {
-          errors.push(`Row (${row.name}): ${e.message}`);
+        } catch (e: unknown) {
+          errors.push(`Row (${row.name}): ${getErrorMessage(e)}`);
         }
       }
       break;
@@ -592,8 +608,8 @@ async function commitUpload(
           await db.insert(schema.releaseOrgUnits)
             .values({ releaseId: release.id, orgUnitId: orgUnit.id, addedBy: "data_upload" });
           inserted++;
-        } catch (e: any) {
-          errors.push(`Row (${row.release_name} / ${row.org_unit_name}): ${e.message}`);
+        } catch (e: unknown) {
+          errors.push(`Row (${row.release_name} / ${row.org_unit_name}): ${getErrorMessage(e)}`);
         }
       }
       break;
@@ -657,9 +673,9 @@ async function commitUpload(
             supabaseAuthId: authData.user.id,
           });
           inserted++;
-        } catch (e: any) {
-          if (e.message?.includes("UNIQUE") || e.message?.includes("unique") || e.message?.includes("duplicate")) skipped++;
-          else errors.push(`Row ${inserted + skipped + 1}: ${e.message}`);
+        } catch (e: unknown) {
+          if (isDuplicateError(e)) skipped++;
+          else errors.push(`Row ${inserted + skipped + 1}: ${getErrorMessage(e)}`);
         }
       }
       break;

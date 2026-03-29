@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { notifyUsersWithRoles } from "@/lib/notifications";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
+import { runWithRetry } from "@/lib/job-runner";
 import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
-  const rateLimited = checkAIRate(req, String(user.id));
+  const rateLimited = await checkAIRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
   // Capture user scope at enqueue time for job isolation
@@ -38,41 +39,40 @@ export async function POST(req: NextRequest) {
     }),
   }).returning();
 
-  // Fire-and-forget: run generation in background, return job ID immediately.
-  const promise = runPersonaGeneration(job.id)
-    .then(async (result) => {
-      await db.update(schema.processingJobs).set({
-        status: "completed",
-        totalRecords: result.usersAssigned,
-        processed: result.usersAssigned,
-        completedAt: new Date().toISOString(),
-      }).where(eq(schema.processingJobs.id, job.id));
+  // Fire-and-forget with retry: run generation in background, return job ID immediately.
+  let generationResult: Awaited<ReturnType<typeof runPersonaGeneration>>;
 
-      await db.insert(schema.auditLog).values({
-        entityType: "processingJob",
-        entityId: job.id,
-        action: "persona_generation_completed",
-        newValue: JSON.stringify(result),
-      });
+  const promise = runWithRetry(
+    async () => {
+      generationResult = await runPersonaGeneration(job.id);
 
-      await notifyUsersWithRoles({
-        roles: ["coordinator", "admin", "system_admin"],
-        notificationType: "workflow_event",
-        subject: "Persona generation complete",
-        message: `Persona generation finished: ${result.personasCreated ?? 0} personas created, ${result.usersAssigned ?? 0} users assigned.`,
-        actionUrl: "/personas",
-      });
-    })
-    .catch(async (err: unknown) => {
-      // Store the REAL error in the DB for debugging (not sanitized)
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`[persona-generation] Job ${job.id} failed:`, message);
+      // Update job stats on success (runner handles status + completedAt)
       await db.update(schema.processingJobs).set({
-        status: "failed",
-        errorLog: message,
-        completedAt: new Date().toISOString(),
+        totalRecords: generationResult.usersAssigned,
+        processed: generationResult.usersAssigned,
       }).where(eq(schema.processingJobs.id, job.id));
-    });
+    },
+    {
+      jobId: job.id,
+      maxRetries: 2,
+      onComplete: async () => {
+        await db.insert(schema.auditLog).values({
+          entityType: "processingJob",
+          entityId: job.id,
+          action: "persona_generation_completed",
+          newValue: JSON.stringify(generationResult),
+        });
+
+        await notifyUsersWithRoles({
+          roles: ["coordinator", "admin", "system_admin"],
+          notificationType: "workflow_event",
+          subject: "Persona generation complete",
+          message: `Persona generation finished: ${generationResult?.personasCreated ?? 0} personas created, ${generationResult?.usersAssigned ?? 0} users assigned.`,
+          actionUrl: "/personas",
+        });
+      },
+    }
+  );
 
   waitUntil(promise);
 

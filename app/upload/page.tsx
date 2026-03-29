@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { count, ne, eq } from "drizzle-orm";
+import { PgTable } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/auth";
 import { getSourceSystemStats } from "@/lib/queries";
 
@@ -15,8 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Eye } from "lucide-react";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function getCount(table: any) {
+async function getCount(table: PgTable) {
   return (await db.select({ count: count() }).from(table))[0]!.count;
 }
 

@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,39 +21,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
 import {
   Building2,
-  Users,
-  UserCog,
-  ChevronRight,
-  ChevronDown,
-  Plus,
-  Pencil,
-  Trash2,
-  Save,
-  Loader2,
   Settings,
   Cpu,
   GitBranch,
   RotateCcw,
+  Loader2,
 } from "lucide-react";
 
-// ─────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────
+import { OrgTreeSection } from "./org-tree-section";
+import type { OrgTreeNode, AppUserOption } from "./org-tree-section";
+import {
+  ProjectSettingsSection,
+  AIConfigSection,
+  WorkflowSettingsSection,
+  DemoResetCard,
+} from "./settings-section";
 
-interface OrgTreeNode {
-  id: number;
-  name: string;
-  level: string;
-  parentId: number | null;
-  description: string | null;
-  children: OrgTreeNode[];
-  userCount: number;
-  assignedMapper: string | null;
-  assignedApprover: string | null;
-}
+// -----------------------------------------------
+// Types
+// -----------------------------------------------
 
 interface OrgUnitFlat {
   id: number;
@@ -65,214 +51,12 @@ interface OrgUnitFlat {
   description: string | null;
 }
 
-interface AppUserOption {
-  id: number;
-  displayName: string;
-  role: string;
-}
-
-// ─────────────────────────────────────────────
-// OrgTreeItem (editable)
-// ─────────────────────────────────────────────
-
-function OrgTreeItem({
-  node,
-  depth = 0,
-  mappers,
-  approvers,
-  onEdit,
-  onDelete,
-  onAssign,
-}: {
-  node: OrgTreeNode;
-  depth?: number;
-  mappers: AppUserOption[];
-  approvers: AppUserOption[];
-  onEdit: (node: OrgTreeNode) => void;
-  onDelete: (node: OrgTreeNode) => void;
-  onAssign: (nodeId: number, mapperId: number | null, approverId: number | null) => void;
-}) {
-  const [expanded, setExpanded] = useState(depth < 2);
-  const [showAssign, setShowAssign] = useState(false);
-  const [mapperId, setMapperId] = useState<string>("");
-  const [approverId, setApproverId] = useState<string>("");
-  const hasChildren = node.children.length > 0;
-
-  const levelColors: Record<string, string> = {
-    L1: "bg-blue-100 text-blue-800",
-    L2: "bg-emerald-100 text-emerald-800",
-    L3: "bg-amber-100 text-amber-800",
-  };
-
-  return (
-    <div>
-      <div
-        className={`flex items-center gap-2 rounded-md px-3 py-2 hover:bg-muted/50 group ${depth === 0 ? "border-b" : ""}`}
-        style={{ paddingLeft: `${depth * 24 + 12}px` }}
-      >
-        <span
-          className="cursor-pointer shrink-0"
-          onClick={() => hasChildren && setExpanded(!expanded)}
-        >
-          {hasChildren ? (
-            expanded ? (
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            )
-          ) : (
-            <span className="w-4" />
-          )}
-        </span>
-        <Badge
-          variant="secondary"
-          className={`text-[10px] px-1.5 py-0 ${levelColors[node.level] || ""}`}
-        >
-          {node.level}
-        </Badge>
-        <span className="font-medium text-sm">{node.name}</span>
-        {node.description && (
-          <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-            — {node.description}
-          </span>
-        )}
-        <span className="text-xs text-muted-foreground ml-auto flex items-center gap-3">
-          <span className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {node.userCount}
-          </span>
-          {node.assignedMapper && (
-            <span className="flex items-center gap-1 text-blue-600">
-              <UserCog className="h-3 w-3" />
-              {node.assignedMapper}
-            </span>
-          )}
-          {node.assignedApprover && (
-            <span className="flex items-center gap-1 text-emerald-600">
-              <UserCog className="h-3 w-3" />
-              {node.assignedApprover}
-            </span>
-          )}
-          <span className="hidden group-hover:flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAssign(!showAssign);
-              }}
-              title="Assign mapper/approver"
-            >
-              <UserCog className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(node);
-              }}
-              title="Edit"
-            >
-              <Pencil className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-destructive"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(node);
-              }}
-              title="Delete"
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </span>
-        </span>
-      </div>
-
-      {/* Inline assign mapper/approver */}
-      {showAssign && (
-        <div
-          className="flex items-center gap-2 py-2 px-4 bg-muted/20 border-b"
-          style={{ paddingLeft: `${depth * 24 + 40}px` }}
-        >
-          <Label className="text-xs whitespace-nowrap">Mapper:</Label>
-          <Select value={mapperId} onValueChange={setMapperId}>
-            <SelectTrigger className="h-7 text-xs w-40">
-              <SelectValue placeholder="None" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">None</SelectItem>
-              {mappers.map((m) => (
-                <SelectItem key={m.id} value={String(m.id)}>
-                  {m.displayName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Label className="text-xs whitespace-nowrap ml-2">Approver:</Label>
-          <Select value={approverId} onValueChange={setApproverId}>
-            <SelectTrigger className="h-7 text-xs w-40">
-              <SelectValue placeholder="None" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">None</SelectItem>
-              {approvers.map((a) => (
-                <SelectItem key={a.id} value={String(a.id)}>
-                  {a.displayName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            size="sm"
-            variant="outline"
-            className="h-7 text-xs"
-            onClick={() => {
-              onAssign(
-                node.id,
-                mapperId && mapperId !== "__none__" ? Number(mapperId) : null,
-                approverId && approverId !== "__none__" ? Number(approverId) : null
-              );
-              setShowAssign(false);
-            }}
-          >
-            <Save className="h-3 w-3 mr-1" />
-            Save
-          </Button>
-        </div>
-      )}
-
-      {expanded && hasChildren && (
-        <div>
-          {node.children.map((child) => (
-            <OrgTreeItem
-              key={child.id}
-              node={child}
-              depth={depth + 1}
-              mappers={mappers}
-              approvers={approvers}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onAssign={onAssign}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
+// -----------------------------------------------
 // Main AdminConsoleClient
-// ─────────────────────────────────────────────
+// -----------------------------------------------
 
 export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
-  // ── Org hierarchy state ──
+  // -- Org hierarchy state --
   const [orgTree, setOrgTree] = useState<OrgTreeNode[]>([]);
   const [allUnits, setAllUnits] = useState<OrgUnitFlat[]>([]);
   const [mappers, setMappers] = useState<AppUserOption[]>([]);
@@ -300,13 +84,13 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
   // Delete form
   const [deleteNode, setDeleteNode] = useState<OrgTreeNode | null>(null);
 
-  // ── Settings state ──
+  // -- Settings state --
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [settingsLoading, setSettingsLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsMsg, setSettingsMsg] = useState("");
 
-  // ── Load org hierarchy ──
+  // -- Load org hierarchy --
   const loadOrgHierarchy = useCallback(() => {
     setLoading(true);
     fetch("/api/org-hierarchy")
@@ -321,7 +105,7 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
       .catch(() => setLoading(false));
   }, []);
 
-  // ── Load settings ──
+  // -- Load settings --
   const loadSettings = useCallback(() => {
     setSettingsLoading(true);
     fetch("/api/admin/settings")
@@ -338,7 +122,7 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
     loadSettings();
   }, [loadOrgHierarchy, loadSettings]);
 
-  // ── Org hierarchy handlers ──
+  // -- Org hierarchy handlers --
 
   async function handleAddOrgUnit() {
     if (!addName.trim()) return;
@@ -460,14 +244,14 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
     }
   }
 
-  // ── Potential parents for a given level ──
+  // -- Potential parents for a given level --
   function getParentOptions(level: string): OrgUnitFlat[] {
     if (level === "L2") return allUnits.filter((u) => u.level === "L1");
     if (level === "L3") return allUnits.filter((u) => u.level === "L2");
     return [];
   }
 
-  // ── Settings handlers ──
+  // -- Settings handlers --
 
   function updateSetting(key: string, value: string) {
     setSettings((prev) => ({ ...prev, [key]: value }));
@@ -500,36 +284,9 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
     }
   }
 
-  // ── AI provider options ──
-  const aiProviders = [
-    { value: "anthropic", label: "Claude (Anthropic)" },
-    { value: "azure_openai", label: "Azure OpenAI" },
-    { value: "aws_bedrock", label: "AWS Bedrock" },
-    { value: "ollama", label: "Ollama (Local)" },
-    { value: "none", label: "None (Manual Only)" },
-  ];
-
-  const providerNeedsKey = (provider: string) =>
-    ["anthropic", "azure_openai", "aws_bedrock"].includes(provider);
-
-  const defaultModelForProvider = (provider: string) => {
-    switch (provider) {
-      case "anthropic":
-        return "claude-sonnet-4-20250514";
-      case "azure_openai":
-        return "gpt-4o";
-      case "aws_bedrock":
-        return "anthropic.claude-sonnet-4-20250514-v1:0";
-      case "ollama":
-        return "llama3";
-      default:
-        return "";
-    }
-  };
-
-  // ─────────────────────────────────────────────
+  // -----------------------------------------------
   // Render
-  // ─────────────────────────────────────────────
+  // -----------------------------------------------
 
   return (
     <>
@@ -557,424 +314,64 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
           </TabsTrigger>
         </TabsList>
 
-        {/* ── ORG HIERARCHY TAB ── */}
+        {/* -- ORG HIERARCHY TAB -- */}
         <TabsContent value="org-hierarchy" className="mt-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    Organizational Hierarchy
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Tree view of the org hierarchy (L1 / L2 / L3). Hover nodes to edit, delete, or assign mapper/approver.
-                  </p>
-                </div>
-                <Button size="sm" onClick={() => setAddDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add Org Unit
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Loading org hierarchy...</p>
-              ) : orgTree.length === 0 ? (
-                <div className="text-center py-8">
-                  <p className="text-sm text-muted-foreground">No org hierarchy configured.</p>
-                  <Button size="sm" variant="outline" className="mt-2" onClick={() => setAddDialogOpen(true)}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add your first org unit
-                  </Button>
-                </div>
-              ) : (
-                <div className="rounded-md border divide-y">
-                  {/* Legend */}
-                  <div className="flex gap-4 text-xs px-3 py-2 bg-muted/30">
-                    <span className="flex items-center gap-1">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-800">L1</Badge>
-                      Division
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-100 text-emerald-800">L2</Badge>
-                      Department
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-amber-100 text-amber-800">L3</Badge>
-                      Section
-                    </span>
-                    <span className="ml-auto flex items-center gap-3">
-                      <span className="flex items-center gap-1 text-blue-600">
-                        <UserCog className="h-3 w-3" /> Mapper
-                      </span>
-                      <span className="flex items-center gap-1 text-emerald-600">
-                        <UserCog className="h-3 w-3" /> Approver
-                      </span>
-                    </span>
-                  </div>
-                  {orgTree.map((node) => (
-                    <OrgTreeItem
-                      key={node.id}
-                      node={node}
-                      mappers={mappers}
-                      approvers={approvers}
-                      onEdit={openEditDialog}
-                      onDelete={openDeleteDialog}
-                      onAssign={handleAssign}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          <OrgTreeSection
+            orgTree={orgTree}
+            mappers={mappers}
+            approvers={approvers}
+            loading={loading}
+            onEdit={openEditDialog}
+            onDelete={openDeleteDialog}
+            onAssign={handleAssign}
+            onAddClick={() => setAddDialogOpen(true)}
+          />
         </TabsContent>
 
-        {/* ── PROJECT SETTINGS TAB ── */}
+        {/* -- PROJECT SETTINGS TAB -- */}
         <TabsContent value="project" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Project Settings</CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Configure project identity displayed throughout the application. Logged in as <span className="font-medium">{currentUser}</span>.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {settingsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : (
-                <>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="project-name">Project Name</Label>
-                      <Input
-                        id="project-name"
-                        value={settings["project.name"] || ""}
-                        onChange={(e) => updateSetting("project.name", e.target.value)}
-                        placeholder="Provisum"
-                      />
-                      <p className="text-xs text-muted-foreground">Displayed in the sidebar header</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="project-org">Organization Name</Label>
-                      <Input
-                        id="project-org"
-                        value={settings["project.organization"] || ""}
-                        onChange={(e) => updateSetting("project.organization", e.target.value)}
-                        placeholder="Acme Corp"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="source-system">Source System Name</Label>
-                      <Input
-                        id="source-system"
-                        value={settings["project.sourceSystem"] || ""}
-                        onChange={(e) => updateSetting("project.sourceSystem", e.target.value)}
-                        placeholder="SAP ECC"
-                      />
-                      <p className="text-xs text-muted-foreground">Shown on upload and mapping pages</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="target-system">Target System Name</Label>
-                      <Input
-                        id="target-system"
-                        value={settings["project.targetSystem"] || ""}
-                        onChange={(e) => updateSetting("project.targetSystem", e.target.value)}
-                        placeholder="S/4HANA"
-                      />
-                      <p className="text-xs text-muted-foreground">Shown on upload and mapping pages</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() =>
-                        saveSettings([
-                          "project.name",
-                          "project.sourceSystem",
-                          "project.targetSystem",
-                          "project.organization",
-                        ])
-                      }
-                      disabled={settingsSaving}
-                    >
-                      {settingsSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                      Save Project Settings
-                    </Button>
-                    {settingsMsg && <span className="text-xs text-emerald-600">{settingsMsg}</span>}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <ProjectSettingsSection
+            settings={settings}
+            settingsLoading={settingsLoading}
+            settingsSaving={settingsSaving}
+            settingsMsg={settingsMsg}
+            currentUser={currentUser}
+            onUpdateSetting={updateSetting}
+            onSaveSettings={saveSettings}
+          />
         </TabsContent>
 
-        {/* ── AI CONFIGURATION TAB ── */}
+        {/* -- AI CONFIGURATION TAB -- */}
         <TabsContent value="ai-config" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">AI Configuration</CardTitle>
-              <p className="text-xs text-muted-foreground">Configure the AI provider used for persona generation and role mapping.</p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {settingsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : (
-                <>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>AI Provider</Label>
-                      <Select
-                        value={settings["ai.provider"] || "anthropic"}
-                        onValueChange={(v) => {
-                          updateSetting("ai.provider", v);
-                          if (!settings["ai.model"]) {
-                            updateSetting("ai.model", defaultModelForProvider(v));
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {aiProviders.map((p) => (
-                            <SelectItem key={p.value} value={p.value}>
-                              {p.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Model</Label>
-                      <Input
-                        value={settings["ai.model"] || ""}
-                        onChange={(e) => updateSetting("ai.model", e.target.value)}
-                        placeholder={defaultModelForProvider(settings["ai.provider"] || "anthropic")}
-                      />
-                    </div>
-                    {providerNeedsKey(settings["ai.provider"] || "anthropic") && (
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label>API Key</Label>
-                        <Input
-                          type="password"
-                          value={settings["ai.apiKey"] || ""}
-                          onChange={(e) => updateSetting("ai.apiKey", e.target.value)}
-                          placeholder="sk-..."
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Stored in the database. Overrides ANTHROPIC_API_KEY environment variable when set.
-                        </p>
-                      </div>
-                    )}
-                    <div className="space-y-2 sm:col-span-2">
-                      <Label>
-                        Confidence Threshold: {settings["ai.confidenceThreshold"] || "85"}%
-                      </Label>
-                      <input
-                        type="range"
-                        min={0}
-                        max={100}
-                        value={Number(settings["ai.confidenceThreshold"] || "85")}
-                        onChange={(e) => updateSetting("ai.confidenceThreshold", e.target.value)}
-                        className="w-full accent-primary"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Assignments below this threshold will be flagged for manual review.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() =>
-                        saveSettings(["ai.provider", "ai.apiKey", "ai.model", "ai.confidenceThreshold"])
-                      }
-                      disabled={settingsSaving}
-                    >
-                      {settingsSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                      Save AI Configuration
-                    </Button>
-                    {settingsMsg && <span className="text-xs text-emerald-600">{settingsMsg}</span>}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <AIConfigSection
+            settings={settings}
+            settingsLoading={settingsLoading}
+            settingsSaving={settingsSaving}
+            settingsMsg={settingsMsg}
+            onUpdateSetting={updateSetting}
+            onSaveSettings={saveSettings}
+          />
         </TabsContent>
 
-        {/* ── WORKFLOW SETTINGS TAB ── */}
+        {/* -- WORKFLOW SETTINGS TAB -- */}
         <TabsContent value="workflow" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Workflow Settings</CardTitle>
-              <p className="text-xs text-muted-foreground">Configure approval and risk acceptance workflows.</p>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {settingsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading...</p>
-              ) : (
-                <>
-                  {/* Auto-approve */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        id="auto-approve"
-                        checked={settings["workflow.autoApprove"] === "true"}
-                        onChange={(e) =>
-                          updateSetting("workflow.autoApprove", e.target.checked ? "true" : "false")
-                        }
-                        className="h-4 w-4 accent-primary"
-                      />
-                      <Label htmlFor="auto-approve">
-                        Auto-recommend SOD-clean mappings for bulk approval
-                      </Label>
-                    </div>
-                    <p className="text-xs text-muted-foreground ml-7">
-                      When enabled, SOD-clean mappings with confidence above the threshold will be routed to approvers for bulk review. Approvers still review and confirm — this does not skip the approval step.
-                    </p>
-                  </div>
-
-                  {/* Approval Mode */}
-                  <div className="space-y-2">
-                    <Label>Approval Mode</Label>
-                    <Select
-                      value={settings["workflow.approvalMode"] || "single"}
-                      onValueChange={(v) => updateSetting("workflow.approvalMode", v)}
-                    >
-                      <SelectTrigger className="w-48">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="single">Single Approval</SelectItem>
-                        <SelectItem value="dual">Dual Approval</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      Dual approval requires two separate approvers for each mapping.
-                    </p>
-                  </div>
-
-                  {/* SOD Risk Acceptance */}
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">SOD Risk Acceptance by Severity</Label>
-                    <div className="space-y-2 ml-1">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={false}
-                          disabled
-                          className="h-4 w-4"
-                        />
-                        <span className="text-sm text-muted-foreground">
-                          Critical — <span className="text-destructive font-medium">Never allowed</span>
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          id="sod-high"
-                          checked={settings["workflow.sodHighRiskAcceptable"] !== "false"}
-                          onChange={(e) =>
-                            updateSetting(
-                              "workflow.sodHighRiskAcceptable",
-                              e.target.checked ? "true" : "false"
-                            )
-                          }
-                          className="h-4 w-4 accent-primary"
-                        />
-                        <Label htmlFor="sod-high" className="font-normal">
-                          High — Allow risk acceptance
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          id="sod-medium"
-                          checked={settings["workflow.sodMediumRiskAcceptable"] !== "false"}
-                          onChange={(e) =>
-                            updateSetting(
-                              "workflow.sodMediumRiskAcceptable",
-                              e.target.checked ? "true" : "false"
-                            )
-                          }
-                          className="h-4 w-4 accent-primary"
-                        />
-                        <Label htmlFor="sod-medium" className="font-normal">
-                          Medium — Allow risk acceptance
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          id="sod-low"
-                          checked={settings["workflow.sodLowRiskAcceptable"] !== "false"}
-                          onChange={(e) =>
-                            updateSetting(
-                              "workflow.sodLowRiskAcceptable",
-                              e.target.checked ? "true" : "false"
-                            )
-                          }
-                          className="h-4 w-4 accent-primary"
-                        />
-                        <Label htmlFor="sod-low" className="font-normal">
-                          Low — Allow risk acceptance
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Least Access Threshold */}
-                  <div className="space-y-2">
-                    <Label>Least Access Excess Threshold (%)</Label>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        className="w-24 h-8 text-sm"
-                        value={settings["least_access_threshold"] ?? "30"}
-                        onChange={(e) => updateSetting("least_access_threshold", e.target.value)}
-                      />
-                      <span className="text-xs text-muted-foreground">%</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Persona-to-role mappings where excess permissions exceed this percentage will appear in Least Access analysis and trigger inline warnings in Role Mapping. Default: 30%.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() =>
-                        saveSettings([
-                          "workflow.autoApprove",
-                          "workflow.approvalMode",
-                          "workflow.sodCriticalRiskAcceptable",
-                          "workflow.sodHighRiskAcceptable",
-                          "workflow.sodMediumRiskAcceptable",
-                          "workflow.sodLowRiskAcceptable",
-                          "least_access_threshold",
-                        ])
-                      }
-                      disabled={settingsSaving}
-                    >
-                      {settingsSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
-                      Save Workflow Settings
-                    </Button>
-                    {settingsMsg && <span className="text-xs text-emerald-600">{settingsMsg}</span>}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          <WorkflowSettingsSection
+            settings={settings}
+            settingsLoading={settingsLoading}
+            settingsSaving={settingsSaving}
+            settingsMsg={settingsMsg}
+            onUpdateSetting={updateSetting}
+            onSaveSettings={saveSettings}
+          />
         </TabsContent>
 
-        {/* ── DEMO TAB ── */}
+        {/* -- DEMO TAB -- */}
         <TabsContent value="demo" className="mt-4">
           <DemoResetCard />
         </TabsContent>
       </Tabs>
 
-      {/* ── ADD ORG UNIT DIALOG ── */}
+      {/* -- ADD ORG UNIT DIALOG -- */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1050,7 +447,7 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
         </DialogContent>
       </Dialog>
 
-      {/* ── EDIT ORG UNIT DIALOG ── */}
+      {/* -- EDIT ORG UNIT DIALOG -- */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1104,7 +501,7 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
         </DialogContent>
       </Dialog>
 
-      {/* ── DELETE ORG UNIT DIALOG ── */}
+      {/* -- DELETE ORG UNIT DIALOG -- */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -1146,89 +543,5 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Demo Reset Card
-// ─────────────────────────────────────────────
-
-function DemoResetCard() {
-  const [resetting, setResetting] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [activePack, setActivePack] = useState<string | null>(null);
-
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((data) => setActivePack(data.active_demo_pack || "default"))
-      .catch(() => setActivePack("default"));
-  }, []);
-
-  async function handleReset() {
-    setResetting(true);
-    try {
-      const res = await fetch("/api/demo/reset", { method: "POST" });
-      if (res.ok) {
-        toast.success("Demo environment reset successfully");
-        setConfirmOpen(false);
-        window.location.reload();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Reset failed");
-      }
-    } catch {
-      toast.error("Failed to reset demo environment");
-    } finally {
-      setResetting(false);
-    }
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-base flex items-center gap-2">
-          <RotateCcw className="h-4 w-4" />
-          Demo Environment
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Active pack:</span>
-          <Badge variant="outline" className="font-mono text-xs">{activePack ?? "loading..."}</Badge>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Reset the demo environment to its initial state. This clears all generated data
-          (personas, mappings, SOD conflicts, approvals) and re-seeds from the demo pack.
-        </p>
-        <Button
-          variant="destructive"
-          size="sm"
-          onClick={() => setConfirmOpen(true)}
-          disabled={resetting}
-        >
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Reset Demo Environment
-        </Button>
-
-        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Reset Demo Environment?</DialogTitle>
-              <DialogDescription>
-                This will delete all generated data and re-seed the database with the
-                &quot;{activePack}&quot; demo pack. This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setConfirmOpen(false)}>Cancel</Button>
-              <Button variant="destructive" onClick={handleReset} disabled={resetting}>
-                {resetting ? <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Resetting...</> : "Reset Now"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
   );
 }

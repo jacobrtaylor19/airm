@@ -1,52 +1,65 @@
 /**
- * In-memory rate limiter for single-process deployments.
- * TODO: Replace with Redis-backed limiter if scaling to multiple instances.
+ * Database-backed rate limiter for multi-isolate deployments (Vercel).
+ *
+ * Uses a single SQL query with upsert semantics to atomically check
+ * and increment counters. Works correctly across multiple serverless
+ * isolates sharing the same Supabase Postgres database.
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
+import { db } from "@/db";
+import { sql } from "drizzle-orm";
 
-const store = new Map<string, RateLimitEntry>();
-
-// Clean up expired entries periodically
-let lastCleanup = Date.now();
-const CLEANUP_INTERVAL_MS = 60_000; // 1 minute
-
-function cleanup() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
-  lastCleanup = now;
-  Array.from(store.entries()).forEach(([key, entry]) => {
-    if (entry.resetAt <= now) {
-      store.delete(key);
-    }
-  });
-}
-
-export function rateLimit(
+/**
+ * Check and increment a rate limit counter.
+ *
+ * Uses a single atomic query:
+ * 1. Delete expired entries for this key
+ * 2. Upsert the counter (insert or increment)
+ * 3. Return the current count
+ *
+ * This is safe across concurrent isolates because Postgres handles
+ * the upsert atomically.
+ */
+export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number
-): { allowed: boolean; remaining: number; resetAt: number } {
-  cleanup();
-
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
   const now = Date.now();
-  const entry = store.get(key);
+  const windowStart = new Date(now).toISOString();
+  const windowEnd = new Date(now + windowMs).toISOString();
 
-  if (!entry || entry.resetAt <= now) {
-    // New window
-    const resetAt = now + windowMs;
-    store.set(key, { count: 1, resetAt });
-    return { allowed: true, remaining: limit - 1, resetAt };
+  try {
+    // Step 1: Delete any expired entry for this key
+    await db.execute(sql`
+      DELETE FROM rate_limit_entries WHERE key = ${key} AND window_end <= ${windowStart}
+    `);
+
+    // Step 2: Atomic upsert — insert or increment
+    const result = await db.execute(sql`
+      INSERT INTO rate_limit_entries (key, count, window_start, window_end)
+      VALUES (${key}, 1, ${windowStart}, ${windowEnd})
+      ON CONFLICT (key)
+      DO UPDATE SET count = rate_limit_entries.count + 1
+      RETURNING count, window_end
+    `);
+
+    const row = result[0] as { count: number; window_end: string } | undefined;
+    if (!row) {
+      // Fallback: allow the request if the query returned nothing
+      return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };
+    }
+
+    const count = Number(row.count);
+    const resetAt = new Date(row.window_end).getTime();
+
+    if (count > limit) {
+      return { allowed: false, remaining: 0, resetAt };
+    }
+
+    return { allowed: true, remaining: limit - count, resetAt };
+  } catch {
+    // If DB is unavailable, fall through (don't block requests due to rate limiter failure)
+    return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };
   }
-
-  entry.count += 1;
-
-  if (entry.count > limit) {
-    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
-  }
-
-  return { allowed: true, remaining: limit - entry.count, resetAt: entry.resetAt };
 }

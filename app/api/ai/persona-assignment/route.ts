@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
+import { reportError } from "@/lib/monitoring";
 import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
@@ -183,7 +184,7 @@ export async function POST() {
       return { jobId: job.id, usersAssigned, failed };
     } catch (err: unknown) {
       const realError = err instanceof Error ? err.message : String(err);
-      console.error("[persona-assignment]", realError);
+      reportError(realError, { source: "persona-assignment" });
       await db.update(schema.processingJobs).set({
         status: "failed",
         errorLog: realError,

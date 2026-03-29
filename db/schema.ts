@@ -591,6 +591,22 @@ export const reviewLinks = pgTable("review_links", {
 // PERSONA CONFIRMATIONS (gate before target role mapping)
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+// RATE LIMIT ENTRIES (DB-backed rate limiter for multi-isolate deployments)
+// ─────────────────────────────────────────────
+
+export const rateLimitEntries = pgTable("rate_limit_entries", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull(),
+  count: integer("count").notNull().default(1),
+  windowStart: text("window_start").notNull(),
+  windowEnd: text("window_end").notNull(),
+});
+
+// ─────────────────────────────────────────────
+// PERSONA CONFIRMATIONS (gate before target role mapping)
+// ─────────────────────────────────────────────
+
 export const personaConfirmations = pgTable("persona_confirmations", {
   id: serial("id").primaryKey(),
   orgUnitId: integer("org_unit_id").notNull().references(() => orgUnits.id, { onDelete: "cascade" }),

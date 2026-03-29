@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const rateLimited = checkAIRate(req, String(user.id));
+  const rateLimited = await checkAIRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
   const [job] = await db.insert(schema.processingJobs).values({

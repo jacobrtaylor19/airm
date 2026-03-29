@@ -23,9 +23,9 @@ function rateLimitResponse(resetAt: number, remaining: number): NextResponse {
 /**
  * Login rate limit: per IP.
  */
-export function checkLoginRate(req: NextRequest): NextResponse | null {
+export async function checkLoginRate(req: NextRequest): Promise<NextResponse | null> {
   const ip = getClientIP(req);
-  const { allowed, remaining, resetAt } = rateLimit(
+  const { allowed, remaining, resetAt } = await rateLimit(
     `login:${ip}`,
     RATE_LIMITS.LOGIN_LIMIT,
     RATE_LIMITS.LOGIN_WINDOW_MS
@@ -37,8 +37,8 @@ export function checkLoginRate(req: NextRequest): NextResponse | null {
 /**
  * AI endpoint rate limit: per user.
  */
-export function checkAIRate(req: NextRequest, userId: string): NextResponse | null {
-  const { allowed, remaining, resetAt } = rateLimit(
+export async function checkAIRate(req: NextRequest, userId: string): Promise<NextResponse | null> {
+  const { allowed, remaining, resetAt } = await rateLimit(
     `ai:${userId}`,
     RATE_LIMITS.AI_LIMIT,
     RATE_LIMITS.AI_WINDOW_MS
@@ -50,8 +50,8 @@ export function checkAIRate(req: NextRequest, userId: string): NextResponse | nu
 /**
  * Bulk operation rate limit: per user.
  */
-export function checkBulkRate(req: NextRequest, userId: string): NextResponse | null {
-  const { allowed, remaining, resetAt } = rateLimit(
+export async function checkBulkRate(req: NextRequest, userId: string): Promise<NextResponse | null> {
+  const { allowed, remaining, resetAt } = await rateLimit(
     `bulk:${userId}`,
     RATE_LIMITS.BULK_LIMIT,
     RATE_LIMITS.BULK_WINDOW_MS

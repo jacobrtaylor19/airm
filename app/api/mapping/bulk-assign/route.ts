@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Only mappers and admins can bulk assign roles" }, { status: 403 });
   }
 
-  const rateLimited = checkBulkRate(req, String(user.id));
+  const rateLimited = await checkBulkRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
   let body: { personaIds: number[]; targetRoleId: number };

@@ -29,6 +29,7 @@ export function UploadCard({
   expectedColumns,
   required,
   existingCount,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   templateUrl,
   systemTag,
   isAdmin = true,
@@ -167,14 +168,12 @@ export function UploadCard({
                 {status === "done" ? "Replace" : "Upload CSV"}
               </Button>
             )}
-            {templateUrl && (
-              <a href={templateUrl} download>
-                <Button variant="ghost" size="sm" type="button" className="text-muted-foreground hover:text-foreground">
-                  <Download className="mr-1 h-3 w-3" />
-                  Template
-                </Button>
-              </a>
-            )}
+            <a href={`/api/upload/templates?type=${type}`} download={`template-${type}.csv`}>
+              <Button variant="ghost" size="sm" type="button" className="text-muted-foreground hover:text-foreground">
+                <Download className="mr-1 h-3 w-3" />
+                Template
+              </Button>
+            </a>
           </div>
         </CardContent>
       </Card>

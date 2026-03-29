@@ -6,6 +6,7 @@ import { runTargetRoleMapping } from "@/lib/ai/target-role-mapping";
 import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
+import { runWithRetry } from "@/lib/job-runner";
 import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Insufficient permissions. Viewer role cannot invoke mapping operations." }, { status: 403 });
   }
 
-  const rateLimited = checkAIRate(req, String(user.id));
+  const rateLimited = await checkAIRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
   const scopedUserIds = await getUserScope(user);
@@ -36,32 +37,32 @@ export async function POST(req: NextRequest) {
     }),
   }).returning();
 
-  // Fire-and-forget: run in background so navigation doesn't kill it
-  const promise = runTargetRoleMapping(job.id)
-    .then(async (result) => {
-      await db.update(schema.processingJobs).set({
-        status: "completed",
-        totalRecords: result.personasMapped,
-        processed: result.personasMapped,
-        completedAt: new Date().toISOString(),
-      }).where(eq(schema.processingJobs.id, job.id));
+  // Fire-and-forget with retry: run mapping in background, return job ID immediately.
+  let mappingResult: Awaited<ReturnType<typeof runTargetRoleMapping>>;
 
-      await db.insert(schema.auditLog).values({
-        entityType: "processingJob",
-        entityId: job.id,
-        action: "target_role_mapping_completed",
-        newValue: JSON.stringify(result),
-      });
-    })
-    .catch(async (err: unknown) => {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`[target-role-mapping] Job ${job.id} failed:`, message);
+  const promise = runWithRetry(
+    async () => {
+      mappingResult = await runTargetRoleMapping(job.id);
+
+      // Update job stats on success (runner handles status + completedAt)
       await db.update(schema.processingJobs).set({
-        status: "failed",
-        errorLog: message,
-        completedAt: new Date().toISOString(),
+        totalRecords: mappingResult.personasMapped,
+        processed: mappingResult.personasMapped,
       }).where(eq(schema.processingJobs.id, job.id));
-    });
+    },
+    {
+      jobId: job.id,
+      maxRetries: 2,
+      onComplete: async () => {
+        await db.insert(schema.auditLog).values({
+          entityType: "processingJob",
+          entityId: job.id,
+          action: "target_role_mapping_completed",
+          newValue: JSON.stringify(mappingResult),
+        });
+      },
+    }
+  );
 
   waitUntil(promise);
 

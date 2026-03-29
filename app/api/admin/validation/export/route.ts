@@ -11,13 +11,13 @@ const HEADER_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fg
 const HEADER_FONT: Partial<ExcelJS.Font> = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
 // Color fills for conditional formatting (available for future use)
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const TEAL_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D9488" } };
+const _TEAL_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FF0D9488" } };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const RED_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEF4444" } };
+const _RED_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEF4444" } };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const AMBER_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF59E0B" } };
+const _AMBER_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF59E0B" } };
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const GREEN_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FF22C55E" } };
+const _GREEN_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FF22C55E" } };
 
 function applyHeaderRow(sheet: ExcelJS.Worksheet, headers: string[]) {
   const row = sheet.addRow(headers);

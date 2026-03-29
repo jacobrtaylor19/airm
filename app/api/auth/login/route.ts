@@ -4,6 +4,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
+import { reportError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err: unknown) {
-    console.error("[login] Unhandled error:", err);
+    reportError(err, { source: "login" });
     const message = safeError(err, "Login failed");
     return NextResponse.json({ error: message }, { status: 500 });
   }

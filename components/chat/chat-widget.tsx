@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { MessageCircle, X, Send, Loader2, Sparkles, RotateCcw } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Sparkles, RotateCcw, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  usedTools?: boolean;
+  toolStatus?: string;
 }
 
 /** Lightweight inline markdown: **bold**, *italic*, `code`, and newlines */
@@ -193,6 +195,19 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
 
           try {
             const parsed = JSON.parse(payload);
+            if (parsed.tool_status) {
+              // Show tool-use status indicator on the current assistant message
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last = updated[updated.length - 1];
+                updated[updated.length - 1] = {
+                  ...last,
+                  toolStatus: parsed.tool_status,
+                  usedTools: true,
+                };
+                return updated;
+              });
+            }
             if (parsed.text) {
               setMessages((prev) => {
                 const updated = [...prev];
@@ -200,6 +215,7 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
                 updated[updated.length - 1] = {
                   ...last,
                   content: last.content + parsed.text,
+                  toolStatus: undefined, // Clear status once text arrives
                 };
                 return updated;
               });
@@ -318,8 +334,21 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
                     : "bg-teal-50 text-slate-700"
                 )}
               >
-                {msg.content ? (
-                  renderMarkdown(msg.content)
+                {msg.toolStatus && !msg.content ? (
+                  <span className="inline-flex items-center gap-1 text-teal-600">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {msg.toolStatus}
+                  </span>
+                ) : msg.content ? (
+                  <>
+                    {renderMarkdown(msg.content)}
+                    {msg.usedTools && msg.role === "assistant" && (
+                      <span className="mt-1 inline-flex items-center gap-1 text-[10px] text-teal-500 opacity-70">
+                        <Database className="h-2.5 w-2.5" />
+                        Live data
+                      </span>
+                    )}
+                  </>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-slate-400">
                     <Loader2 className="h-3 w-3 animate-spin" />

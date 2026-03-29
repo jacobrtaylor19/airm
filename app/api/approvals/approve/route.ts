@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
   }
 
-  const rateLimited = checkBulkRate(req, String(user.id));
+  const rateLimited = await checkBulkRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
   try {

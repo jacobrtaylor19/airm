@@ -7,9 +7,11 @@ import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
 import { notifyUsersWithRoles } from "@/lib/notifications";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
-import { safeError } from "@/lib/errors";
+import { runWithRetry } from "@/lib/job-runner";
+import { waitUntil } from "@vercel/functions";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
@@ -20,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
-  const rateLimited = checkAIRate(req, String(user.id));
+  const rateLimited = await checkAIRate(req, String(user.id));
   if (rateLimited) return rateLimited;
 
   // Capture user scope at enqueue time for job isolation (WORKFLOW.md Note 6)
@@ -37,44 +39,47 @@ export async function POST(req: NextRequest) {
     }),
   }).returning();
 
-  try {
-    const result = await runSodAnalysis(scopedUserIds);
+  // Fire-and-forget with retry: run SOD analysis in background, return job ID immediately.
+  let analysisResult: Awaited<ReturnType<typeof runSodAnalysis>>;
 
-    await db.update(schema.processingJobs).set({
-      status: "completed",
-      totalRecords: result.usersAnalyzed,
-      processed: result.usersAnalyzed,
-      completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id));
+  const promise = runWithRetry(
+    async () => {
+      analysisResult = await runSodAnalysis(scopedUserIds);
 
-    await db.insert(schema.auditLog).values({
-      entityType: "processingJob",
-      entityId: job.id,
-      action: "sod_analysis_completed",
-      newValue: JSON.stringify(result),
-    });
+      // Update job stats on success (runner handles status + completedAt)
+      await db.update(schema.processingJobs).set({
+        totalRecords: analysisResult.usersAnalyzed,
+        processed: analysisResult.usersAnalyzed,
+      }).where(eq(schema.processingJobs.id, job.id));
+    },
+    {
+      jobId: job.id,
+      maxRetries: 2,
+      onComplete: async () => {
+        await db.insert(schema.auditLog).values({
+          entityType: "processingJob",
+          entityId: job.id,
+          action: "sod_analysis_completed",
+          newValue: JSON.stringify(analysisResult),
+        });
 
-    // Notify coordinators and admins about SOD analysis results
-    const conflictCount = result.conflictsFound ?? 0;
-    if (conflictCount > 0) {
-      notifyUsersWithRoles({
-        roles: ["coordinator", "admin", "system_admin"],
-        notificationType: "workflow_event",
-        subject: "SOD conflicts detected",
-        message: `SOD analysis found ${conflictCount} conflict(s) across ${result.usersAnalyzed ?? 0} users analyzed. Review and resolve these conflicts.`,
-        actionUrl: "/sod",
-      });
+        // Notify coordinators and admins about SOD analysis results
+        const conflictCount = analysisResult?.conflictsFound ?? 0;
+        if (conflictCount > 0) {
+          await notifyUsersWithRoles({
+            roles: ["coordinator", "admin", "system_admin"],
+            notificationType: "workflow_event",
+            subject: "SOD conflicts detected",
+            message: `SOD analysis found ${conflictCount} conflict(s) across ${analysisResult?.usersAnalyzed ?? 0} users analyzed. Review and resolve these conflicts.`,
+            actionUrl: "/sod",
+          });
+        }
+      },
     }
+  );
 
-    return NextResponse.json({ jobId: job.id, ...result });
-  } catch (err: unknown) {
-    const message = safeError(err, "Unknown error");
-    await db.update(schema.processingJobs).set({
-      status: "failed",
-      errorLog: message,
-      completedAt: new Date().toISOString(),
-    }).where(eq(schema.processingJobs.id, job.id));
+  waitUntil(promise);
 
-    return NextResponse.json({ error: message }, { status: 500 });
-  }
+  // Return immediately — client polls /api/jobs/[id] for status
+  return NextResponse.json({ jobId: job.id, status: "running" });
 }
