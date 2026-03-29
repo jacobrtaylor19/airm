@@ -23,9 +23,31 @@ export async function GET() {
     role: schema.appUsers.role,
     isActive: schema.appUsers.isActive,
     createdAt: schema.appUsers.createdAt,
+    passwordHash: schema.appUsers.passwordHash,
   }).from(schema.appUsers);
 
-  return NextResponse.json(users);
+  // Get invite statuses
+  const invites = await db.select({
+    appUserId: schema.userInvites.appUserId,
+    status: schema.userInvites.status,
+  }).from(schema.userInvites);
+
+  // Build a map of latest invite status per user
+  const inviteStatusMap = new Map<number, string>();
+  for (const inv of invites) {
+    // Keep the most relevant status: accepted > pending > expired
+    const existing = inviteStatusMap.get(inv.appUserId);
+    if (!existing || inv.status === "accepted" || (inv.status === "pending" && existing === "expired")) {
+      inviteStatusMap.set(inv.appUserId, inv.status);
+    }
+  }
+
+  const result = users.map(({ passwordHash, ...u }) => ({
+    ...u,
+    inviteStatus: inviteStatusMap.get(u.id) ?? (passwordHash ? null : "no_invite"),
+  }));
+
+  return NextResponse.json(result);
 }
 
 export async function POST(req: NextRequest) {

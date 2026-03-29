@@ -535,6 +535,21 @@ export const appUsers = pgTable("app_users", {
 });
 
 // ─────────────────────────────────────────────
+// USER INVITES (email-based invite flow)
+// ─────────────────────────────────────────────
+
+export const userInvites = pgTable("user_invites", {
+  id: serial("id").primaryKey(),
+  appUserId: integer("app_user_id").notNull().references(() => appUsers.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  email: text("email").notNull(),
+  status: text("status").notNull().default("pending"), // pending | accepted | expired
+  expiresAt: text("expires_at").notNull(),
+  acceptedAt: text("accepted_at"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
 // APP USER SESSIONS
 // ─────────────────────────────────────────────
 

@@ -86,6 +86,14 @@ This document outlines planned features and improvements. Sprint 2 is the active
 - Not a query API — this is a push-based export of finalized, approved mappings
 - Initial scope: generate the export file; direct API push to GRC is a later phase
 
+### 15. Sales site design fixes (provisum.io)
+- **Fix demo embed** — iframe shows broken image; `demo.provisum.io` likely blocks framing via `X-Frame-Options` or CSP. Fix response headers to allow framing from `provisum.io`, or replace with screenshot carousel + "Open Live Demo" link
+- **Fix Workflow Animation** — "Five stages. Full audit trail." only renders 3 of 5 steps with ~400px dead space below. Framer Motion scroll-trigger thresholds likely misconfigured. Ensure all 5 stages (Upload, Personas, Mapping, SOD Analysis, Approval) render
+- **Tighten vertical spacing** — excessive padding (100–150px) between sections. Reduce to 64–80px for tighter cohesion
+- **Add favicon** — teal shield `.ico` matching nav logo (currently shows generic Next.js icon)
+- **Enrich footer** — add company links (About, Blog, Privacy), social links, repeat Provisum logo. Standard for enterprise SaaS and helps SEO
+- **Accessibility** — increase contrast on gray subtext in dark sections (e.g. "AI does the analysis" tagline); increase formula text size below ROI calculator
+
 ---
 
 ## Deferred — Keep in Roadmap

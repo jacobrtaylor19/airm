@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { MessageCircle, X, Send, Loader2, Sparkles } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Sparkles, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
@@ -103,6 +103,19 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [isOpen]);
+
+  const handleNewChat = useCallback(() => {
+    // Abort any in-flight stream
+    if (abortRef.current) {
+      abortRef.current.abort();
+      abortRef.current = null;
+    }
+    setIsStreaming(false);
+    setInput("");
+    setMessages([
+      { role: "assistant", content: getWelcomeMessage(userName, userRole) },
+    ]);
+  }, [userName, userRole]);
 
   // Cmd+K / Ctrl+K toggle
   useEffect(() => {
@@ -269,6 +282,14 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
             <span className="text-xs text-slate-400 hidden sm:inline">
               {navigator?.platform?.includes("Mac") ? "\u2318" : "Ctrl"}+K
             </span>
+            <button
+              onClick={handleNewChat}
+              className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+              aria-label="New chat"
+              title="New Chat"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
             <button
               onClick={() => setIsOpen(false)}
               className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
