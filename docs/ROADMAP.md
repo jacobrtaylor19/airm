@@ -92,10 +92,11 @@ This document outlines planned features and improvements. Sprint 2 is the active
 
 These are valuable features that are not prioritised for the current sprint. They remain in the roadmap for future scheduling.
 
-### Email transport for notifications
-- Current state: notifications are demo-only (stored in DB, no email sent)
-- Goal: wire a real SMTP/transactional email provider (Resend, SendGrid, or similar) so coordinators can notify mappers and approvers out-of-band
-- Scope: `lib/email.ts` adapter, `POST /api/notifications` triggers send, undeliverable handling
+### Resend integration (email transport)
+- **Sales site lead notifications** — `RESEND_API_KEY` env var not yet set on `provisum-site` Vercel project. Once set, lead capture emails fire to `jacob@provisum.io` via `leads@provisum.io` sender.
+- **Resend domain verification** — verify `provisum.io` in Resend dashboard so `leads@provisum.io` is an authorized sender
+- **Product app notifications** — wire Resend into the product app so coordinators can notify mappers and approvers out-of-band (currently demo-only, stored in DB, no email sent)
+- Scope for product app: `lib/email.ts` adapter, `POST /api/notifications` triggers send, undeliverable handling
 - Config: `email_provider`, `email_from_address` settings in admin console
 
 ### Target system security design integration adapter (evergreen role library)
@@ -125,6 +126,19 @@ These are valuable features that are not prioritised for the current sprint. The
 ### Webhook event layer
 - AIRM fires events to external URLs when things happen — e.g., "all approvals complete for Release 1" triggers a Jira ticket, or "new critical SOD conflict" pings a Slack channel
 - Deferred: not needed right now
+
+### Automated technical support / self-healing
+- Detect errors automatically (runtime exceptions, failed health checks, broken integrations) or accept user-submitted support tickets
+- AI diagnostic agent triages incidents: classifies error type, cross-references known failure patterns, assesses severity and blast radius
+- Three-path resolution: auto-remediate (high confidence, low risk), suggest-fix-await-approval (medium confidence), escalate-to-human (low confidence or high blast radius)
+- Remediation executes pre-defined actions (restart service, roll back config, re-run migration, clear cache, toggle feature flag) — not freeform code generation
+- Guardrails: retry budget, circuit breaker to prevent cascading remediation, approval gate for high-blast-radius actions
+- Notification loop: user receives email/in-app notification with what was detected, what was done, and verification evidence (e.g., diff of restored state)
+- **Incident report per remediation:** Every action (auto or manual) generates a structured report: incident ID, timestamp, affected tenant/component, root cause classification, action taken, before/after state, confidence score, resolution time, and whether the fix held or regressed. Reports surface to `system_admin` only (platform operator, not customer admin). Queryable from a platform operations view and exportable for compliance. Note: as multi-tenancy scales, this should evolve into a dedicated platform ops console outside the tenant boundary.
+- **Phase 1 (MVP):** Error detection → agent classification → notification with suggested fix. No auto-remediation. Value prop: near-instant triage and transparency.
+- **Phase 2:** Auto-remediation for low-risk, known-pattern failures (expired tokens, config drift, cache invalidation). Pattern library built from real incident history.
+- **Phase 3:** Full closed-loop remediation with approval workflows for medium/high-risk actions.
+- **Blocked on:** Production incident volume to build the pattern library. Revisit after first enterprise deployments generate real failure data.
 
 ### ML confidence enrichment layer (XGBoost sidecar)
 - XGBoost model trained on 411K+ synthetic users, validated with three-tier holdout evaluation (99.6% easy, 92% novel titles, 97.4% adversarial)
@@ -180,3 +194,11 @@ These are valuable features that are not prioritised for the current sprint. The
 | **QA fixes: lockout, password validation, 404 page, UX polish** | v0.6.0 |
 | **E2E QA pass: 186 tests, 139 pass, 3 HIGH fixed (Run Pipeline role-gate, public Quick Ref, branded 404)** | v0.6.0 |
 | **Tech debt: centralized constants, auth guard helper, env validation, CSP tightened** | v0.6.0 |
+| **Supabase Postgres migration (SQLite → Supabase pooler, Drizzle pgTable)** | v0.7.0 |
+| **Supabase Auth migration (JWT sessions, 17 auth users, RLS on 39 tables)** | v0.7.0 |
+| **Risk Quantification Dashboard + /risk-analysis page** | v0.7.0 |
+| **Coordinator Due Dates on releases (mapping/review/approval deadlines)** | v0.7.0 |
+| **AI Pipeline full run: 1K users → 20 personas → 37 mappings → 2130 assignments → 1173 SOD conflicts** | v0.7.0 |
+| **Vercel deployment + custom domains (demo.provisum.io, app.provisum.io)** | v0.7.0 |
+| **GitHub auto-deploy (push to main → Vercel production)** | v0.7.0 |
+| **Provisum sales site (provisum.io) — 10-section marketing page, leads API, Supabase leads table** | v0.7.0 |

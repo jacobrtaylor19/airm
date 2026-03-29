@@ -71,13 +71,13 @@ export async function getSourceUserIdsInScope(scope: { departments: string[]; us
 
 export async function getUsersScoped(appUserId: number, assignmentType: string): Promise<UserRow[]> {
   const scope = await getAssignedScope(appUserId, assignmentType);
-  const all = await getUsers();
 
   if (scope.departments.length === 0 && scope.userIds.length === 0) return [];
 
   const scopedUserIds = await getSourceUserIdsInScope(scope);
-  const idSet = new Set(scopedUserIds);
-  return all.filter((u) => idSet.has(u.id));
+  if (scopedUserIds.length === 0) return [];
+
+  return await getUsers(scopedUserIds);
 }
 
 export interface AssignedMapperApprover {

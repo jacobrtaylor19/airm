@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, inArray } from "drizzle-orm";
 
 export interface UserRow {
   id: number;
@@ -16,8 +16,12 @@ export interface UserRow {
   groupName: string | null;
 }
 
-export async function getUsers(): Promise<UserRow[]> {
-  return await db
+/**
+ * Returns all users with persona/group info. Pass `filterUserIds` to restrict
+ * to a specific set of user IDs at the DB level (avoids fetching all rows).
+ */
+export async function getUsers(filterUserIds?: number[]): Promise<UserRow[]> {
+  const query = db
     .select({
       id: schema.users.id,
       sourceUserId: schema.users.sourceUserId,
@@ -49,6 +53,12 @@ export async function getUsers(): Promise<UserRow[]> {
       schema.consolidatedGroups,
       eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId)
     );
+
+  if (filterUserIds && filterUserIds.length > 0) {
+    return await query.where(inArray(schema.users.id, filterUserIds));
+  }
+
+  return await query;
 }
 
 export interface UserDetail {
