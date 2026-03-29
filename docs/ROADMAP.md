@@ -2,34 +2,43 @@
 
 This document outlines planned features and improvements. Sprint 2 is the active build queue. Items below it are prioritised but not yet scheduled.
 
-*Last updated: March 26, 2026 (night — QA pass complete, all HIGH severity items fixed, deploying for demo)*
+*Last updated: March 28, 2026*
+
+---
+
+## Owner Action Required
+
+Manual steps that block features from going live. These cannot be automated.
+
+| # | Action | Blocks | Status |
+|---|--------|--------|--------|
+| 1 | **Create Sentry project** at sentry.io → get DSN | Error tracking on demo.provisum.io | ⬜ TODO |
+| 2 | **Set `NEXT_PUBLIC_SENTRY_DSN`** on Vercel `airm` project (production env var) | Error tracking on demo.provisum.io | ⬜ TODO |
+| 3 | **Set `SENTRY_AUTH_TOKEN`** on Vercel `airm` project (for source map uploads) | Stack traces in Sentry showing original source | ⬜ TODO |
+| 4 | **Set `RESEND_API_KEY`** on Vercel `airm` project (`re_aJokyp43_...`) | User invite emails from demo.provisum.io | ⬜ TODO |
+| 5 | **Set `NEXT_PUBLIC_APP_URL`** on Vercel `airm` project (`https://demo.provisum.io`) | Invite email links point to correct URL | ⬜ TODO |
+
+All code is deployed and waiting on these env vars. Once set, trigger a redeploy (push to main or manual redeploy in Vercel dashboard).
 
 ---
 
 ## Sprint 2 — Active Build Queue
 
-### 1. AI Agent / Chatbot (contextual assistant on every page)
-- Embedded AI assistant that understands the data on screen and helps users make decisions
-- Page-aware: on SOD Analysis it explains conflicts; on Mapping it suggests roles; on Dashboard it summarises status
-- Answers natural-language questions: "Why was this user assigned to this persona?", "What happens if I remove this role?", "Which conflicts are blocking approval?"
-- Suggests next actions based on workflow state
+### ~~1. AI Agent / Chatbot (contextual assistant on every page)~~ ✅ DONE (Phase 1)
+- Phase 1 (read-only assistant) is live: floating teal widget, Claude streaming, role-aware context, Cmd+K toggle
+- Phase 2 (tool calling / actions) and Phase 3 (RAG) remain on the roadmap
 - Full PRD: `docs/product/PRD_AGENT_CHATBOT_CURRENT.md`
 
 ### ~~2. Persona confirmation gate~~ — REMOVED
-- **Decision (2026-03-26):** Removed during demo prep. Added friction without clear value. The persona workflow works better without a gate — mappers generate, review, and proceed to mapping directly. If a quality gate is needed later, revisit as a lighter-weight "lock personas" toggle rather than per-org-unit confirmation.
 
 ### 3. Bulk mapping actions
 - Allow mappers to assign the same target role to multiple personas in a single action
 - Filter personas by coverage gap, then multi-select and bulk-assign
 - Useful when one source role maps cleanly to one target role across a department
 
-### 4. User invite flow + mass user upload
-- **Single user:** Admin adds user with First Name, Last Name, Email, and AIRM Role only — no password field. System sends an invite email so the user sets their own password.
-- **Mass upload:** Admin/system_admin uploads a CSV template (first_name, last_name, email, role). System creates all accounts and sends invite emails in batch. Restricted to admin and system_admin only.
-- CSV template available as a downloadable file from the App Users page with the role column pre-populated as a picklist of valid AIRM roles
-- Passwords are never visible to admin or system admin in production environments (demo environments may expose them for testing convenience)
-- Admin can trigger a password reset email from the user management page at any time
-- Scope: `POST /api/admin/users` triggers invite; `POST /api/admin/users/bulk-upload` handles CSV; `POST /api/admin/users/[id]/reset-password` triggers reset email; invite token flow through `lib/email.ts`
+### ~~4. User invite flow + mass user upload~~ ✅ DONE
+- Single invite + bulk CSV upload + accept flow + resend invite — all built and deployed
+- **⚠️ Blocked on:** Owner Action #4 (set `RESEND_API_KEY` on `airm` Vercel project) — without it, invite emails silently skip
 
 ### 5. Data upload template enhancements
 - All CSV upload templates should include **preconfigured picklists** for fields/values that are already defined in the tool
@@ -86,13 +95,15 @@ This document outlines planned features and improvements. Sprint 2 is the active
 - Not a query API — this is a push-based export of finalized, approved mappings
 - Initial scope: generate the export file; direct API push to GRC is a later phase
 
-### 15. Sales site design fixes (provisum.io)
-- **Fix demo embed** — iframe shows broken image; `demo.provisum.io` likely blocks framing via `X-Frame-Options` or CSP. Fix response headers to allow framing from `provisum.io`, or replace with screenshot carousel + "Open Live Demo" link
-- **Fix Workflow Animation** — "Five stages. Full audit trail." only renders 3 of 5 steps with ~400px dead space below. Framer Motion scroll-trigger thresholds likely misconfigured. Ensure all 5 stages (Upload, Personas, Mapping, SOD Analysis, Approval) render
-- **Tighten vertical spacing** — excessive padding (100–150px) between sections. Reduce to 64–80px for tighter cohesion
-- **Add favicon** — teal shield `.ico` matching nav logo (currently shows generic Next.js icon)
-- **Enrich footer** — add company links (About, Blog, Privacy), social links, repeat Provisum logo. Standard for enterprise SaaS and helps SEO
-- **Accessibility** — increase contrast on gray subtext in dark sections (e.g. "AI does the analysis" tagline); increase formula text size below ROI calculator
+### ~~15. Sales site design fixes (provisum.io)~~ — COMPLETE (2026-03-28)
+- ~~Fix demo embed~~ — replaced broken iframe with static simulated dashboard (stat cards + progress bars inside browser chrome)
+- ~~Fix Workflow Animation~~ — switched from `useInView`+`animate` to `whileInView` pattern; all 5 stages now render
+- ~~Tighten vertical spacing~~ — reduced from py-28 to py-20 across all sections
+- ~~Add favicon~~ — teal shield SVG favicon added via Next.js metadata
+- ~~Enrich footer~~ — added ShieldIcon + brand tagline, Product links, Company links (no social links per preference)
+- ~~Redesign Trust Signals~~ — customer-facing metrics (10K+ users, 50% reduction, <5min, 100% audit trail) + 4 compliance badges (SOC 2, GDPR, ISO 27001, NIST CSF)
+- ~~Update demo form header~~ — "See Provisum in Action" / "Book a Demo"
+- **Remaining:** Accessibility pass (contrast on gray subtext, ROI formula text size), OG image
 
 ---
 
@@ -100,12 +111,12 @@ This document outlines planned features and improvements. Sprint 2 is the active
 
 These are valuable features that are not prioritised for the current sprint. They remain in the roadmap for future scheduling.
 
-### Resend integration (email transport)
-- **Sales site lead notifications** — `RESEND_API_KEY` env var not yet set on `provisum-site` Vercel project. Once set, lead capture emails fire to `jacob@provisum.io` via `leads@provisum.io` sender.
-- **Resend domain verification** — verify `provisum.io` in Resend dashboard so `leads@provisum.io` is an authorized sender
-- **Product app notifications** — wire Resend into the product app so coordinators can notify mappers and approvers out-of-band (currently demo-only, stored in DB, no email sent)
-- Scope for product app: `lib/email.ts` adapter, `POST /api/notifications` triggers send, undeliverable handling
-- Config: `email_provider`, `email_from_address` settings in admin console
+### Resend integration (email transport) — PARTIALLY COMPLETE
+- ~~**Resend domain verification**~~ ✅ `provisum.io` verified in Resend dashboard
+- ~~**Sales site lead notifications**~~ ✅ `RESEND_API_KEY` + `NOTIFICATION_EMAIL` set on `provisum-site` Vercel project. Leads send to `jacobrtaylor@gmail.com` from `Provisum <leads@provisum.io>`
+- ~~**Product app invite emails**~~ ✅ `lib/email.ts` built with Resend client, `sendInviteEmail()` function. **⚠️ Blocked on:** Owner Action #4 (set `RESEND_API_KEY` on `airm` Vercel project)
+- **Product app notifications** — wire Resend into coordinator notifications so mappers/approvers get real emails (currently demo-only, stored in DB)
+- Scope remaining: `POST /api/notifications` triggers send, undeliverable handling, `email_provider` + `email_from_address` settings in admin console
 
 ### Target system security design integration adapter (evergreen role library)
 - Connect AIRM directly to the client's target system (SAP S/4HANA, Workday, ServiceNow, Oracle Fusion) to import and continuously sync the security design — specifically: target roles, task roles, and their permission assignments
@@ -210,3 +221,11 @@ These are valuable features that are not prioritised for the current sprint. The
 | **Vercel deployment + custom domains (demo.provisum.io, app.provisum.io)** | v0.7.0 |
 | **GitHub auto-deploy (push to main → Vercel production)** | v0.7.0 |
 | **Provisum sales site (provisum.io) — 10-section marketing page, leads API, Supabase leads table** | v0.7.0 |
+| **Sales site design polish — static demo preview, workflow fix, trust signals, favicon, footer, spacing** | v0.7.0 |
+| **Tech debt sprint: queries split (11 modules), N+1 fix, middleware hardened, scoped queries push to DB** | v0.7.0 |
+| **QA bug fixes: login redirect race condition, dashboard error boundary, demo.pm account** | v0.7.0 |
+| **Database indexes: 56 indexes across 39 tables for hot query paths** | v0.7.0 |
+| **Sentry error tracking: @sentry/nextjs installed, client/server/edge configs, monitoring.ts wired** | v0.7.0 |
+| **Vitest test infrastructure: 41 smoke tests across auth, settings, strapline, middleware** | v0.7.0 |
+| **User invite flow: single invite, bulk CSV, accept, resend — Resend email integration** | v0.7.0 |
+| **Resend email: domain verified, sales site lead notifications live, product app lib/email.ts built** | v0.7.0 |

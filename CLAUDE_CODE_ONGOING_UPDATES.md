@@ -1,51 +1,85 @@
 # Provisum — Ongoing Updates (Session State)
 
-**Last updated:** 2026-03-28 | **Version:** v0.7.0 | **Build:** clean (zero errors, zero warnings)
+**Last updated:** 2026-03-28 | **Version:** v0.7.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 41 passing
 
 ---
 
 ## Latest Commit
 
 ```
-d7c1da4 fix: push scoped filters to DB and harden middleware public path matching
+c7451b3 feat: production hardening + user invite flow
 ```
 
 Auto-deployed to https://demo.provisum.io via GitHub → Vercel pipeline.
 
 ---
 
+## Owner Actions Required
+
+These manual steps block features from going live:
+
+| # | Action | Blocks | Status |
+|---|--------|--------|--------|
+| 1 | Create Sentry project at sentry.io → get DSN | Error tracking | ⬜ TODO |
+| 2 | Set `NEXT_PUBLIC_SENTRY_DSN` on Vercel `airm` project | Error tracking | ⬜ TODO |
+| 3 | Set `SENTRY_AUTH_TOKEN` on Vercel `airm` project | Source map uploads | ⬜ TODO |
+| 4 | Set `RESEND_API_KEY` on Vercel `airm` project | User invite emails | ⬜ TODO |
+| 5 | Set `NEXT_PUBLIC_APP_URL=https://demo.provisum.io` on Vercel `airm` project | Invite link URLs | ⬜ TODO |
+
+---
+
 ## Recent Changes (This Session)
 
-### QA Bug Fixes
-- **BUG-001 — Login redirect race condition:** Changed `router.push("/dashboard")` → `window.location.href = "/dashboard"` to ensure browser processes Set-Cookie headers before the next request
-- **Dashboard timeout (504):** Added `export const maxDuration = 60` to dashboard and 4 other heavy pages; wrapped `renderDashboard()` in try/catch with graceful retry UI
-- **Dashboard query parallelization:** Reorganized heavy queries (risk analysis, scoped stats, overprovisioning alerts) to run concurrently via `Promise.all`
-- **Version bump:** package.json `0.6.0` → `0.7.0`
-- **demo.pm account:** Created in seed file + live Supabase DB (auth user + identity + app_users row)
+### Production Hardening
+- **56 database indexes** created across all 39 tables via Supabase MCP — covers user assignments, SOD conflicts, persona mappings, permission junctions, release scoping, audit logs
+- **Sentry error tracking** installed: `@sentry/nextjs` with client/server/edge configs, `global-error.tsx` boundary, `lib/monitoring.ts` wired to real Sentry calls
+- **Vitest test infrastructure**: 41 smoke tests across 4 files (auth, settings, strapline, middleware) — all passing in 266ms
+
+### User Invite Flow
+- `POST /api/admin/users/invite` — create Supabase auth user + app_users + send email
+- `POST /api/admin/users/invite/accept` — set password via token (no auth required)
+- `POST /api/admin/users/invite/resend` — refresh expired tokens
+- `POST /api/admin/users/bulk-invite` — CSV upload (max 100 rows)
+- `lib/email.ts` — Resend client with `sendInviteEmail()`, graceful degradation
+- `user_invites` table created in Supabase with indexes
+- Setup page shows "Set Your Password" form when `?token=` param present
+- Admin UI: Invite User dialog, Bulk Upload button, Resend Invite per-row action
+
+### Resend Email Integration
+- `provisum.io` domain verified in Resend
+- `RESEND_API_KEY` + `NOTIFICATION_EMAIL` set on `provisum-site` Vercel project
+- Sales site lead notifications live → `jacobrtaylor@gmail.com` from `Provisum <leads@provisum.io>`
+
+### Lumen AI Chatbot
+- Already built from previous sprint — added `maxDuration = 60` and "New Chat" button
+
+### Sales Site Fixes
+- Demo embed: redesigned from broken tab mockup → simulated dashboard with stat cards + progress bars
+- Workflow animation: viewport trigger 0.3 → 0.05, all 5 stages now render
+- Favicon already configured
+
+### QA Bug Fixes (earlier this session)
+- Login redirect race condition (BUG-001): `window.location.href` instead of `router.push`
+- Dashboard timeout: `maxDuration = 60` + query parallelization + error boundary
+- demo.pm account created in seed + live DB
 
 ### Tech Debt Remediation (6 of 20 items resolved)
-1. **Queries split:** Monolithic `lib/queries.ts` (2,125 lines) → 11 domain modules in `lib/queries/` with barrel re-export
-2. **N+1 elimination:** AI pipeline bulk loader in `lib/ai/load-user-profiles.ts` (3 queries instead of 2000+)
-3. **Shared AI types:** `UserAccessProfile` extracted to `lib/ai/types.ts`
-4. **Middleware hardened:** Inverted from route allowlist to default-secure; split public paths into exact-match Set + prefix array
-5. **CI audit blocking:** Removed `continue-on-error: true` from security-scan job
-6. **Scoped queries:** `getApprovalQueueScoped` and `getUsersScoped` now push `inArray` filter to SQL instead of fetch-all-then-filter
-
-### Code Review Fixes
-- Middleware: `PUBLIC_PATHS` prefix matching could expose routes like `/setup-admin` → fixed with exact-match Set for pages
-- Approvals: `getApprovalQueueScoped` fetched all rows then filtered in JS → now filters at DB level
-- Users: `getUsersScoped` same pattern → `getUsers(filterUserIds?)` accepts optional filter param
+1. Queries split: monolithic 2,125-line file → 11 domain modules
+2. N+1 elimination: AI pipeline bulk loader (3 queries instead of 2000+)
+3. Shared AI types extracted to `lib/ai/types.ts`
+4. Middleware hardened: default-secure with exact-match Set + prefix array
+5. CI audit blocking: removed `continue-on-error`
+6. Scoped queries push `inArray` filter to SQL
 
 ---
 
 ## Known Issues
 
-- **No test coverage** — Vitest not yet installed. Zero unit/integration/E2E tests.
-- **No error tracking** — `lib/monitoring.ts` has TODO stubs for Sentry.
-- **No database indexes** — 39 tables, zero compound indexes on hot query paths.
-- **In-memory rate limiter** — Single-instance only; Vercel runs multiple isolates.
-- **No staging environment** — Pushes to `main` deploy directly to production.
-- **Large client components** — `mapping-client.tsx` (1,286 lines), `admin-console-client.tsx` (1,234 lines) still need splitting.
+- **Sentry not active** — Code deployed, DSN env var not set yet (Owner Action #1-3)
+- **Invite emails don't send** — Code deployed, `RESEND_API_KEY` not set on `airm` project (Owner Action #4)
+- **In-memory rate limiter** — Single-instance only; Vercel runs multiple isolates
+- **No staging environment** — Pushes to `main` deploy directly to production
+- **Large client components** — `mapping-client.tsx` (1,286 lines), `admin-console-client.tsx` (1,234 lines) still need splitting
 
 ---
 
@@ -54,7 +88,7 @@ Auto-deployed to https://demo.provisum.io via GitHub → Vercel pipeline.
 ### Middleware Auth Model (default-secure)
 ```
 PUBLIC_EXACT = Set(["/", "/login", "/setup", "/methodology", "/overview", "/quick-reference"])
-PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/review/"]
+PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/review/", "/api/admin/users/invite/accept"]
 
 Everything else → requires Supabase JWT session → redirects to /login if missing
 ```
@@ -74,6 +108,17 @@ lib/queries/
 ├── common.ts         # getUsersScoped (DB-level filter), release scoping helpers
 ├── jobs.ts           # getJobs
 └── audit.ts          # getAuditLog
+```
+
+### Email / Invite Architecture
+```
+lib/email.ts                          # Resend client, sendInviteEmail()
+app/api/admin/users/invite/route.ts   # Create user + send invite
+app/api/admin/users/invite/accept/    # Set password (no auth)
+app/api/admin/users/invite/resend/    # Refresh token + re-send
+app/api/admin/users/bulk-invite/      # CSV upload
+app/setup/invite-accept-form.tsx      # Password form (client component)
+db/schema.ts → userInvites            # Token storage with 24h expiry
 ```
 
 ### AI Pipeline Bulk Loading
