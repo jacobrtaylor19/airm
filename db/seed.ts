@@ -889,6 +889,17 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   console.log("    compliance.officer / Compliance@2026! (approver — all depts, approves risk acceptances & reviews escalated conflicts)");
   console.log("    grc.analyst / GrcAnalyst@2026! (viewer — all depts, read-only audit & reporting)");
 
+  // ─── Feature Flags ───
+  const now = new Date().toISOString();
+  await db.insert(schema.featureFlags).values([
+    { key: "lumen_tool_calling", description: "Enable Lumen AI tool calling (Phase 2)", enabled: true, createdAt: now, updatedAt: now },
+    { key: "bulk_mapping_ui", description: "Enable bulk mapping UI enhancements", enabled: true, createdAt: now, updatedAt: now },
+    { key: "webhook_events", description: "Enable webhook event dispatching", enabled: false, createdAt: now, updatedAt: now },
+    { key: "scheduled_exports", description: "Enable scheduled CSV export jobs", enabled: false, createdAt: now, updatedAt: now },
+    { key: "confidence_calibration", description: "Enable AI confidence calibration review queue", enabled: false, createdAt: now, updatedAt: now },
+  ]).onConflictDoNothing();
+  console.log("  ✓ 5 default feature flags");
+
   // ─── Verification ───
   console.log("\n📊 Verification:");
   const counts = {

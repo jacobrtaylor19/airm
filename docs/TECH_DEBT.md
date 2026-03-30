@@ -43,7 +43,7 @@ Higher score = fix first.
 
 | # | Item | Category | Impact | Risk | Effort | Score | Files |
 |---|------|----------|:------:|:----:|:------:|:-----:|-------|
-| 11 | **No API documentation** — 44 API routes with no OpenAPI/Swagger spec. Integration partners must read source. | Documentation | 3 | 2 | 3 | 15 | `app/api/` |
+| 11 | ~~**No API documentation**~~ ✅ FIXED — OpenAPI 3.1 spec at `docs/openapi.yaml` covering all 68 route files (90 operations). Served at `/api/docs/openapi`. | Documentation | 3 | 2 | 3 | 15 | `docs/openapi.yaml`, `app/api/docs/openapi/route.ts` |
 | 12 | ~~**Fire-and-forget AI jobs**~~ ✅ FIXED — `lib/job-runner.ts` wraps all pipeline tasks with configurable retry (default 3 attempts), exponential backoff, dead-letter on exhaustion. | Architecture | 3 | 3 | 4 | 12 | `lib/job-runner.ts`, `app/api/ai/*/route.ts` |
 | 13 | ~~**No structured logging**~~ ✅ FIXED — `lib/monitoring.ts` now outputs structured JSON with timestamp, level, correlationId. `withCorrelationId()` creates scoped loggers. All API route console.error calls replaced with `reportError()`. | Infrastructure | 2 | 3 | 2 | 20 | `lib/monitoring.ts`, all API routes |
 | 14 | ~~**Upload route type safety**~~ ✅ FIXED — Removed file-level eslint-disable, added `CsvRow` type alias, `getErrorMessage()`/`isDuplicateError()` helpers, all catches use `unknown`. | Code | 2 | 3 | 3 | 15 | `app/api/upload/[type]/route.ts` |

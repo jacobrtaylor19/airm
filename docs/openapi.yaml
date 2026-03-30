@@ -1,0 +1,3347 @@
+openapi: 3.1.0
+info:
+  title: Provisum API
+  version: 0.7.0
+  description: |
+    REST API for Provisum — enterprise security role mapping platform for ERP migrations
+    (e.g. SAP ECC to S/4HANA). Manages the full workflow: data upload, AI persona generation,
+    role mapping, SOD conflict analysis, approvals, and provisioning exports.
+
+    **Authentication:** All endpoints (except `/api/auth/login`, `/api/auth/setup`, and
+    `/api/health`) require a valid Supabase JWT session cookie. The cookie is set automatically
+    on successful login via `/api/auth/login`.
+
+    **Role hierarchy (higher = more access):**
+    `system_admin (100) > admin (80) > approver (60) > coordinator (50) > mapper (40) > viewer (20)`
+  contact:
+    name: Provisum Support
+    url: https://provisum.io
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://demo.provisum.io
+    description: Demo instance
+
+tags:
+  - name: Auth
+    description: Authentication — login, logout, initial setup, password management
+  - name: Dashboard & Health
+    description: System health check and public project settings
+  - name: Admin
+    description: Administrative operations — user management, settings, data management
+  - name: Admin - Users
+    description: User invitation and onboarding workflows
+  - name: Upload
+    description: CSV data upload (users, roles, permissions, SOD rules, etc.)
+  - name: Personas
+    description: Persona confirmation and reset workflows
+  - name: AI Pipeline
+    description: AI-powered persona generation, assignment, and role mapping (async jobs)
+  - name: Mapping
+    description: Manual and bulk persona-to-target-role mapping
+  - name: SOD
+    description: Segregation of Duties conflict analysis and resolution
+  - name: SOD Rules
+    description: CRUD operations for SOD rule definitions
+  - name: Approvals
+    description: Assignment approval workflow
+  - name: Exports
+    description: Report and data exports (Excel, PDF, provisioning, GRC)
+  - name: Releases
+    description: Release (go-live wave) management
+  - name: Jobs
+    description: Background job status polling
+  - name: Notifications
+    description: In-app notification inbox and sending
+  - name: Review Links
+    description: Shareable read-only review links for external stakeholders
+  - name: Refinements
+    description: User-level mapping refinement persistence
+  - name: Least Access
+    description: Provisioning alert exception management
+  - name: Org Hierarchy
+    description: Organizational unit tree management
+  - name: Assistant
+    description: Lumen AI assistant chat (SSE streaming)
+  - name: Demo
+    description: Demo environment management
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sb-access-token
+      description: Supabase JWT session cookie (set by /api/auth/login)
+
+  schemas:
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: "Unauthorized"
+
+    Success:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+
+    JobCreated:
+      type: object
+      properties:
+        jobId:
+          type: integer
+          example: 42
+        status:
+          type: string
+          enum: [running]
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobType:
+          type: string
+          enum: [persona_generation, persona_assignment, target_role_mapping, end_user_mapping, sod_analysis]
+        status:
+          type: string
+          enum: [running, completed, failed]
+        totalRecords:
+          type: integer
+          nullable: true
+        processed:
+          type: integer
+          nullable: true
+        failed:
+          type: integer
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        errorLog:
+          type: string
+          nullable: true
+
+    AppUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+          nullable: true
+        role:
+          type: string
+          enum: [system_admin, admin, coordinator, mapper, approver, viewer, project_manager]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        inviteStatus:
+          type: string
+          nullable: true
+          enum: [pending, accepted, expired, no_invite]
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        fromUserId:
+          type: integer
+        toUserId:
+          type: integer
+        notificationType:
+          type: string
+        subject:
+          type: string
+        message:
+          type: string
+        relatedEntityType:
+          type: string
+          nullable: true
+        relatedEntityId:
+          type: integer
+          nullable: true
+        actionUrl:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [sent, read]
+        readAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        fromDisplayName:
+          type: string
+
+    Release:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [planning, active, completed, paused]
+        releaseType:
+          type: string
+        targetSystem:
+          type: string
+          nullable: true
+        targetDate:
+          type: string
+          nullable: true
+        mappingDeadline:
+          type: string
+          nullable: true
+        reviewDeadline:
+          type: string
+          nullable: true
+        approvalDeadline:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        stats:
+          type: object
+          properties:
+            total:
+              type: integer
+            approved:
+              type: integer
+            pending:
+              type: integer
+
+    SodRule:
+      type: object
+      properties:
+        id:
+          type: integer
+        ruleId:
+          type: string
+        ruleName:
+          type: string
+        permissionA:
+          type: string
+        permissionB:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        riskDescription:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+
+    ReviewLink:
+      type: object
+      properties:
+        id:
+          type: integer
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    OrgUnit:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        level:
+          type: string
+          enum: [L1, L2, L3]
+        parentId:
+          type: integer
+          nullable: true
+        description:
+          type: string
+          nullable: true
+
+    UploadPreview:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [preview]
+        totalRows:
+          type: integer
+        headers:
+          type: array
+          items:
+            type: string
+        preview:
+          type: array
+          items:
+            type: object
+        uploadType:
+          type: string
+        warnings:
+          type: array
+          items:
+            type: string
+
+    UploadCommit:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [committed]
+        inserted:
+          type: integer
+        skipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+        totalRows:
+          type: integer
+
+  responses:
+    Unauthorized:
+      description: Not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "Unauthorized"
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "Insufficient permissions"
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "Not found"
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    RateLimited:
+      description: Rate limited
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error: "Too many requests"
+
+security:
+  - cookieAuth: []
+
+paths:
+  # ===========================================================================
+  # Auth
+  # ===========================================================================
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate with username and password
+      description: |
+        Signs in via Supabase Auth and sets JWT session cookies on the response.
+        Logs success/failure to the audit log with client IP.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                  example: demo.admin
+                password:
+                  type: string
+                  format: password
+                  example: DemoGuide2026!
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      role:
+                        type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Invalid credentials"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: End the current session
+      description: Signs out via Supabase Auth and clears session cookies.
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+
+  /api/auth/setup:
+    post:
+      tags: [Auth]
+      summary: Initial admin account setup
+      description: |
+        Creates the first admin user. Only works when no app users exist in the database.
+        Creates a Supabase Auth user and links it to the app user record.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, displayName, password]
+              properties:
+                username:
+                  type: string
+                displayName:
+                  type: string
+                password:
+                  type: string
+                  format: password
+                  description: Must meet password policy (12+ chars, upper, lower, digit, special)
+      responses:
+        "200":
+          description: Setup complete
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          description: Setup already completed or validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change the current user's password
+      description: Updates the password via Supabase Auth. Must meet the password policy.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [newPassword]
+              properties:
+                newPassword:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          description: Password does not meet policy requirements
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  details:
+                    type: array
+                    items:
+                      type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Dashboard & Health
+  # ===========================================================================
+  /api/health:
+    get:
+      tags: [Dashboard & Health]
+      summary: System health check
+      description: Returns database connectivity status. No authentication required.
+      security: []
+      responses:
+        "200":
+          description: System healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, degraded]
+                  components:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: [connected, disconnected, error]
+                  timestamp:
+                    type: integer
+                    description: Unix timestamp in milliseconds
+        "503":
+          description: System degraded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: degraded
+                  components:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+
+  /api/settings:
+    get:
+      tags: [Dashboard & Health]
+      summary: Get public project settings
+      description: Returns non-sensitive project info (project name, source/target system) for any authenticated user.
+      responses:
+        "200":
+          description: Project settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  projectName:
+                    type: string
+                  sourceSystem:
+                    type: string
+                  targetSystem:
+                    type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ===========================================================================
+  # Admin
+  # ===========================================================================
+  /api/admin/app-users:
+    get:
+      tags: [Admin]
+      summary: List all application users
+      description: Returns all app users with invite status. Requires admin or system_admin role.
+      responses:
+        "200":
+          description: List of app users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppUser"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Admin]
+      summary: Create a new application user
+      description: |
+        Creates a Supabase Auth user and a linked app user record.
+        Requires admin or system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, displayName, password, role]
+              properties:
+                username:
+                  type: string
+                displayName:
+                  type: string
+                email:
+                  type: string
+                  nullable: true
+                password:
+                  type: string
+                  format: password
+                role:
+                  type: string
+                  enum: [system_admin, admin, coordinator, mapper, approver, viewer, project_manager]
+      responses:
+        "200":
+          description: User created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  id:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/settings:
+    get:
+      tags: [Admin]
+      summary: Get all system settings
+      description: Returns all key-value system settings. Requires system_admin role.
+      responses:
+        "200":
+          description: Settings key-value map
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      tags: [Admin]
+      summary: Update system settings
+      description: Bulk-update system settings. Requires system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+              example:
+                least_access_threshold: "30"
+                ai.model: "claude-sonnet-4-20250514"
+      responses:
+        "200":
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  updated:
+                    type: integer
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/assignments:
+    get:
+      tags: [Admin]
+      summary: Get assignment statistics by release
+      description: Returns assignment counts grouped by status for administrative dashboards.
+      responses:
+        "200":
+          description: Assignment statistics
+          content:
+            application/json:
+              schema:
+                type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/release-assignments:
+    get:
+      tags: [Admin]
+      summary: Get release-scoped assignment data
+      description: Returns assignment data scoped to the active release for admin views.
+      responses:
+        "200":
+          description: Release assignment data
+          content:
+            application/json:
+              schema:
+                type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /api/admin/bulk-delete:
+    post:
+      tags: [Admin]
+      summary: Bulk delete entities
+      description: |
+        Deletes multiple records of a given entity type by ID array.
+        Requires admin or system_admin role. Rate limited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [entityType, ids]
+              properties:
+                entityType:
+                  type: string
+                  enum: [users, personas, sourceRoles, targetRoles, sodRules]
+                ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: Entities deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deleted:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/data-export:
+    get:
+      tags: [Admin]
+      summary: Export all project data
+      description: Exports the full dataset as a downloadable archive. Requires admin or system_admin.
+      responses:
+        "200":
+          description: Data export file
+          content:
+            application/json:
+              schema:
+                type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/data-deletion:
+    post:
+      tags: [Admin]
+      summary: Delete project data by category
+      description: Permanently deletes data from specified tables. Requires system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category:
+                  type: string
+                  description: The data category to delete
+      responses:
+        "200":
+          description: Data deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/validation:
+    get:
+      tags: [Admin]
+      summary: Get pipeline validation data
+      description: |
+        Returns the full enriched validation dataset: per-user attribution chains,
+        persona distribution, confidence buckets, edge cases. Requires system_admin role.
+      responses:
+        "200":
+          description: Validation dataset
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Full attribution chain data including users, personas, roles, SOD conflicts
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/validation/export:
+    get:
+      tags: [Admin]
+      summary: Export pipeline validation as Excel
+      description: |
+        Downloads a 5-tab XLSX workbook: Validation Summary, Full Attribution Chain,
+        Persona Distribution, SOD Conflicts, Methodology. Requires system_admin role.
+      responses:
+        "200":
+          description: Excel file download
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/audit-export:
+    get:
+      tags: [Admin]
+      summary: Export audit log
+      description: Downloads the full audit log as a structured export. Requires admin or system_admin.
+      responses:
+        "200":
+          description: Audit log export
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/rotate-keys:
+    post:
+      tags: [Admin]
+      summary: Rotate encryption keys
+      description: |
+        Rotates the AES-256-GCM encryption key used for sensitive settings.
+        Re-encrypts all encrypted values with the new key. Requires system_admin role.
+      responses:
+        "200":
+          description: Keys rotated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/feature-flags:
+    get:
+      tags: [Admin]
+      summary: Get feature flags
+      description: Returns the current state of all feature flags. Requires admin or system_admin.
+      responses:
+        "200":
+          description: Feature flags
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: boolean
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Admin]
+      summary: Update feature flags
+      description: Toggles one or more feature flags. Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: boolean
+      responses:
+        "200":
+          description: Flags updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Admin - Users (Invitations)
+  # ===========================================================================
+  /api/admin/users/invite:
+    post:
+      tags: [Admin - Users]
+      summary: Send a user invitation
+      description: |
+        Creates an invite record and sends an invitation email (via Resend) to a new or existing
+        app user. Requires admin or system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [appUserId]
+              properties:
+                appUserId:
+                  type: integer
+      responses:
+        "200":
+          description: Invitation sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  inviteId:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/users/invite/accept:
+    post:
+      tags: [Admin - Users]
+      summary: Accept a user invitation
+      description: Accepts an invitation using the invite token and sets the user's password.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, password]
+              properties:
+                token:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        "200":
+          description: Invitation accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/users/invite/resend:
+    post:
+      tags: [Admin - Users]
+      summary: Resend a user invitation
+      description: Regenerates the invite token and resends the invitation email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [appUserId]
+              properties:
+                appUserId:
+                  type: integer
+      responses:
+        "200":
+          description: Invitation resent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/admin/users/bulk-invite:
+    post:
+      tags: [Admin - Users]
+      summary: Bulk invite users via CSV
+      description: |
+        Accepts a CSV file with user details and creates accounts + sends invitations
+        for each row. Requires admin or system_admin role.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV file with columns username, display_name, email, role
+      responses:
+        "200":
+          description: Bulk invite results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  created:
+                    type: integer
+                  failed:
+                    type: integer
+                  errors:
+                    type: array
+                    items:
+                      type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Upload
+  # ===========================================================================
+  /api/upload/{type}:
+    post:
+      tags: [Upload]
+      summary: Upload CSV data
+      description: |
+        Uploads a CSV file for the specified data type. Supports two modes:
+
+        - **Preview** (default): Validates columns, checks picklist values, returns first 5 rows.
+        - **Commit**: Inserts data into the database (pass `action=commit` in form data).
+
+        Auto-associates uploaded data with the active release.
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - users
+              - source-roles
+              - role-assignments
+              - role-permissions
+              - target-roles
+              - target-permissions
+              - sod-rules
+              - personas
+              - app-users
+              - existing-access
+              - org-units
+              - releases
+              - release-scope
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV file
+                action:
+                  type: string
+                  enum: [preview, commit]
+                  default: preview
+                  description: "preview = validate only; commit = insert into database"
+      responses:
+        "200":
+          description: Preview or commit result
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/UploadPreview"
+                  - $ref: "#/components/schemas/UploadCommit"
+        "400":
+          description: Missing file, empty CSV, or missing required columns
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  headers:
+                    type: array
+                    items:
+                      type: string
+                  required:
+                    type: array
+                    items:
+                      type: string
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/upload/templates:
+    get:
+      tags: [Upload]
+      summary: Download CSV templates
+      description: Returns a ZIP archive containing blank CSV templates for all supported upload types.
+      responses:
+        "200":
+          description: ZIP archive of CSV templates
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Personas
+  # ===========================================================================
+  /api/personas/confirm:
+    post:
+      tags: [Personas]
+      summary: Confirm personas for an org unit
+      description: |
+        Marks personas for the specified org unit as confirmed by the current user.
+        Admin/system_admin can confirm any org unit; mapper can only confirm their assigned unit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orgUnitId]
+              properties:
+                orgUnitId:
+                  type: integer
+      responses:
+        "200":
+          description: Personas confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  confirmation:
+                    type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Already confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error: "Personas already confirmed for this org unit"
+
+  /api/personas/reset-confirmation:
+    post:
+      tags: [Personas]
+      summary: Reset persona confirmation for an org unit
+      description: Resets the confirmation so personas can be re-reviewed. Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orgUnitId]
+              properties:
+                orgUnitId:
+                  type: integer
+      responses:
+        "200":
+          description: Confirmation reset
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/personas/confirmations:
+    get:
+      tags: [Personas]
+      summary: Get persona confirmation status for all org units
+      description: Returns the current confirmation state for each org unit.
+      responses:
+        "200":
+          description: Confirmation statuses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    orgUnitId:
+                      type: integer
+                    confirmedAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+                    confirmedBy:
+                      type: integer
+                      nullable: true
+                    resetAt:
+                      type: string
+                      format: date-time
+                      nullable: true
+
+  # ===========================================================================
+  # AI Pipeline
+  # ===========================================================================
+  /api/ai/persona-generation:
+    post:
+      tags: [AI Pipeline]
+      summary: Generate personas via AI
+      description: |
+        Triggers AI-powered persona generation. Analyzes a sample of users to design personas,
+        then programmatically assigns all users. Runs as a background job (fire-and-forget).
+        Poll `/api/jobs/{id}` for status. Rate limited. maxDuration=300s.
+      responses:
+        "200":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobCreated"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/ai/persona-assignment:
+    post:
+      tags: [AI Pipeline]
+      summary: Assign personas to users
+      description: |
+        Runs the persona assignment pipeline — assigns existing personas to users based on
+        permission overlap. Background job. Poll `/api/jobs/{id}` for status.
+      responses:
+        "200":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobCreated"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/ai/target-role-mapping:
+    post:
+      tags: [AI Pipeline]
+      summary: Auto-map personas to target roles
+      description: |
+        Triggers AI-powered mapping of personas to target roles based on permission analysis.
+        Background job. Poll `/api/jobs/{id}` for status.
+      responses:
+        "200":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobCreated"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/ai/end-user-mapping:
+    post:
+      tags: [AI Pipeline]
+      summary: Map end users to target roles
+      description: |
+        Propagates persona-level target role mappings down to individual user assignments.
+        Background job. Poll `/api/jobs/{id}` for status.
+      responses:
+        "200":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobCreated"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  # ===========================================================================
+  # Mapping
+  # ===========================================================================
+  /api/mapping/persona-roles:
+    put:
+      tags: [Mapping]
+      summary: Update persona-to-target-role mappings
+      description: |
+        Replaces all manually-managed target role mappings for a persona.
+        Requires mapper, admin, or system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personaId, targetRoleIds]
+              properties:
+                personaId:
+                  type: integer
+                targetRoleIds:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: Mappings updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  personaId:
+                    type: integer
+                  roleCount:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/mapping/bulk-assign:
+    post:
+      tags: [Mapping]
+      summary: Bulk assign a target role to multiple personas
+      description: |
+        Creates persona-target-role mappings for each persona in the list.
+        Skips existing mappings. Notifies approvers. Rate limited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personaIds, targetRoleId]
+              properties:
+                personaIds:
+                  type: array
+                  items:
+                    type: integer
+                targetRoleId:
+                  type: integer
+      responses:
+        "200":
+          description: Bulk assign results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created:
+                    type: integer
+                  skipped:
+                    type: integer
+                  total:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/mapping/submit-review:
+    post:
+      tags: [Mapping]
+      summary: Submit assignments for review
+      description: |
+        Transitions draft assignments to pending_review status, locking them for SOD analysis.
+        Requires mapper, admin, or system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignmentIds:
+                  type: array
+                  items:
+                    type: integer
+                  description: Specific assignment IDs to submit (optional — submits all drafts if omitted)
+      responses:
+        "200":
+          description: Assignments submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  submitted:
+                    type: integer
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # SOD
+  # ===========================================================================
+  /api/sod/analyze:
+    post:
+      tags: [SOD]
+      summary: Run SOD conflict analysis
+      description: |
+        Analyzes all user-target-role assignments for Segregation of Duties conflicts.
+        Scoped to the current user's org unit. Runs as a background job.
+        Poll `/api/jobs/{id}` for status. maxDuration=300s.
+      responses:
+        "200":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobCreated"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+
+  /api/sod/fix-mapping:
+    post:
+      tags: [SOD]
+      summary: Fix an SOD conflict by removing a role assignment
+      description: |
+        Resolves an SOD conflict by removing one of the two conflicting target role assignments.
+        Marks the conflict as `mapping_fixed`. If all conflicts for the user are resolved,
+        transitions `sod_rejected` assignments back to `draft`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conflictId, removeRoleId]
+              properties:
+                conflictId:
+                  type: integer
+                removeRoleId:
+                  type: integer
+                  description: The target role ID to remove (must be one of the conflicting roles)
+      responses:
+        "200":
+          description: Conflict resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  removedAssignments:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/sod/accept-risk:
+    post:
+      tags: [SOD]
+      summary: Accept risk for an SOD conflict
+      description: |
+        Marks an SOD conflict as risk-accepted with a justification.
+        Requires approver, admin, or system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conflictId, justification]
+              properties:
+                conflictId:
+                  type: integer
+                justification:
+                  type: string
+      responses:
+        "200":
+          description: Risk accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/sod/request-risk-acceptance:
+    post:
+      tags: [SOD]
+      summary: Request risk acceptance from an approver
+      description: |
+        Sends a notification to approvers requesting risk acceptance for an SOD conflict.
+        Used by mappers who cannot accept risk themselves.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conflictId, justification]
+              properties:
+                conflictId:
+                  type: integer
+                justification:
+                  type: string
+      responses:
+        "200":
+          description: Request sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/sod/escalate:
+    post:
+      tags: [SOD]
+      summary: Escalate an SOD conflict
+      description: |
+        Escalates an SOD conflict to a higher authority (e.g., from mapper to admin).
+        Creates a notification for the escalation target.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [conflictId]
+              properties:
+                conflictId:
+                  type: integer
+                notes:
+                  type: string
+      responses:
+        "200":
+          description: Conflict escalated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # SOD Rules
+  # ===========================================================================
+  /api/sod-rules:
+    post:
+      tags: [SOD Rules]
+      summary: Create or update an SOD rule
+      description: |
+        Creates a new SOD rule or updates an existing one (when `id` is provided).
+        Requires admin, system_admin, or a compliance/security role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ruleId, ruleName, permissionA, permissionB, severity]
+              properties:
+                id:
+                  type: integer
+                  description: Include to update an existing rule; omit to create
+                ruleId:
+                  type: string
+                ruleName:
+                  type: string
+                permissionA:
+                  type: string
+                permissionB:
+                  type: string
+                severity:
+                  type: string
+                  enum: [critical, high, medium, low]
+                riskDescription:
+                  type: string
+                isActive:
+                  type: boolean
+                  default: true
+      responses:
+        "200":
+          description: Rule created or updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  action:
+                    type: string
+                    enum: [created, updated]
+                  id:
+                    type: integer
+                    description: Only present on creation
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    patch:
+      tags: [SOD Rules]
+      summary: Toggle SOD rule active/inactive
+      description: Activates or deactivates an SOD rule without modifying other fields.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, isActive]
+              properties:
+                id:
+                  type: integer
+                isActive:
+                  type: boolean
+      responses:
+        "200":
+          description: Rule toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [SOD Rules]
+      summary: Delete an SOD rule
+      description: Permanently deletes an SOD rule by ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: Rule deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Approvals
+  # ===========================================================================
+  /api/approvals/approve:
+    post:
+      tags: [Approvals]
+      summary: Approve an assignment
+      description: |
+        Transitions an assignment from `ready_for_approval` to `approved`.
+        Requires system_admin, admin, or approver role. Rate limited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assignmentId]
+              properties:
+                assignmentId:
+                  type: integer
+      responses:
+        "200":
+          description: Assignment approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          description: Assignment not in approvable state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/approvals/send-back:
+    post:
+      tags: [Approvals]
+      summary: Send an assignment back to draft
+      description: |
+        Transitions an assignment back to `draft` status for re-work.
+        Available to system_admin, admin, mapper, and approver roles.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assignmentId]
+              properties:
+                assignmentId:
+                  type: integer
+                reason:
+                  type: string
+                  description: Reason for sending back
+      responses:
+        "200":
+          description: Assignment sent back
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/approvals/bulk-approve:
+    post:
+      tags: [Approvals]
+      summary: Bulk approve multiple assignments
+      description: |
+        Approves multiple assignments at once. All must be in `ready_for_approval` status.
+        Requires system_admin, admin, or approver role. Rate limited.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [assignmentIds]
+              properties:
+                assignmentIds:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: Bulk approval results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  approved:
+                    type: integer
+                  skipped:
+                    type: integer
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Exports
+  # ===========================================================================
+  /api/exports/excel:
+    get:
+      tags: [Exports]
+      summary: Download Excel report
+      description: Generates and downloads a comprehensive XLSX report of the role mapping project.
+      responses:
+        "200":
+          description: Excel file
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="provisum-report-2026-03-28.xlsx"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/exports/pdf:
+    get:
+      tags: [Exports]
+      summary: Download PDF report
+      description: Generates and downloads a PDF summary report of the role mapping project.
+      responses:
+        "200":
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/exports/provisioning:
+    get:
+      tags: [Exports]
+      summary: Download provisioning export
+      description: |
+        Generates a structured export of approved role assignments for import into
+        the target identity/provisioning system.
+      responses:
+        "200":
+          description: Provisioning data file
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/exports/sod-exceptions:
+    get:
+      tags: [Exports]
+      summary: Download SOD exceptions report
+      description: Exports all risk-accepted SOD conflicts with justifications and approver details.
+      responses:
+        "200":
+          description: SOD exceptions data
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/exports/grc/sap:
+    get:
+      tags: [Exports]
+      summary: Export in SAP GRC format
+      description: Generates a role mapping export formatted for SAP Access Control / GRC.
+      responses:
+        "200":
+          description: SAP GRC formatted export
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/exports/grc/sailpoint:
+    get:
+      tags: [Exports]
+      summary: Export in SailPoint format
+      description: Generates a role mapping export formatted for SailPoint IdentityNow.
+      responses:
+        "200":
+          description: SailPoint formatted export
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/exports/grc/servicenow:
+    get:
+      tags: [Exports]
+      summary: Export in ServiceNow format
+      description: Generates a role mapping export formatted for ServiceNow IRM/GRC.
+      responses:
+        "200":
+          description: ServiceNow formatted export
+          content:
+            application/json:
+              schema:
+                type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Releases
+  # ===========================================================================
+  /api/releases:
+    get:
+      tags: [Releases]
+      summary: List all releases
+      description: Returns all releases with assignment statistics (total, approved, pending).
+      responses:
+        "200":
+          description: List of releases with stats
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Release"
+    post:
+      tags: [Releases]
+      summary: Create a new release
+      description: Creates a new release (go-live wave). Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                  enum: [planning, active, completed, paused]
+                  default: planning
+                releaseType:
+                  type: string
+                  default: initial
+                targetSystem:
+                  type: string
+                targetDate:
+                  type: string
+                  format: date
+                mappingDeadline:
+                  type: string
+                  format: date
+                reviewDeadline:
+                  type: string
+                  format: date
+                approvalDeadline:
+                  type: string
+                  format: date
+                isActive:
+                  type: boolean
+                  default: false
+      responses:
+        "201":
+          description: Release created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Release"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    put:
+      tags: [Releases]
+      summary: Update a release
+      description: Updates an existing release by ID. Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                description:
+                  type: string
+                status:
+                  type: string
+                releaseType:
+                  type: string
+                targetSystem:
+                  type: string
+                targetDate:
+                  type: string
+                completedDate:
+                  type: string
+                mappingDeadline:
+                  type: string
+                reviewDeadline:
+                  type: string
+                approvalDeadline:
+                  type: string
+                isActive:
+                  type: boolean
+      responses:
+        "200":
+          description: Updated release
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Release"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Releases]
+      summary: Delete a release
+      description: |
+        Deletes a release by ID (passed as query param). Unlinks assignments first.
+        Requires admin or system_admin.
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Release deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/releases/select:
+    post:
+      tags: [Releases]
+      summary: Set the active release
+      description: Switches the active release. Deactivates all others and activates the specified one.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [releaseId]
+              properties:
+                releaseId:
+                  type: integer
+      responses:
+        "200":
+          description: Active release switched
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/releases/{id}/scope:
+    get:
+      tags: [Releases]
+      summary: Get release scope (org units and data counts)
+      description: Returns the org units linked to a release and associated data counts.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Release scope data
+          content:
+            application/json:
+              schema:
+                type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Releases]
+      summary: Update release scope
+      description: Adds or removes org units from a release's scope.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                addOrgUnitIds:
+                  type: array
+                  items:
+                    type: integer
+                removeOrgUnitIds:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: Scope updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Jobs
+  # ===========================================================================
+  /api/jobs/{id}:
+    get:
+      tags: [Jobs]
+      summary: Get background job status
+      description: |
+        Returns the current status of a background processing job.
+        Used to poll for completion of AI pipeline and SOD analysis operations.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "400":
+          description: Invalid job ID
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===========================================================================
+  # Notifications
+  # ===========================================================================
+  /api/notifications:
+    get:
+      tags: [Notifications]
+      summary: Get notifications (inbox or sent)
+      description: |
+        Returns notifications for the current user. Use `?view=inbox` (default) for received
+        notifications or `?view=sent` for sent notifications.
+      parameters:
+        - name: view
+          in: query
+          schema:
+            type: string
+            enum: [inbox, sent]
+            default: inbox
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+    post:
+      tags: [Notifications]
+      summary: Send notifications to users
+      description: |
+        Sends a notification to one or more users. Requires coordinator, admin,
+        or system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [toUserIds, subject, message]
+              properties:
+                toUserIds:
+                  type: array
+                  items:
+                    type: integer
+                notificationType:
+                  type: string
+                  default: reminder
+                subject:
+                  type: string
+                message:
+                  type: string
+                relatedEntityType:
+                  type: string
+                relatedEntityId:
+                  type: integer
+      responses:
+        "200":
+          description: Notifications sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  sent:
+                    type: integer
+                  ids:
+                    type: array
+                    items:
+                      type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    patch:
+      tags: [Notifications]
+      summary: Mark a notification as read
+      description: Sets the notification status to `read` with the current timestamp.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /api/notifications/mark-all-read:
+    post:
+      tags: [Notifications]
+      summary: Mark all notifications as read
+      description: Marks all unread notifications for the current user as read.
+      responses:
+        "200":
+          description: All marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  updated:
+                    type: integer
+
+  # ===========================================================================
+  # Review Links
+  # ===========================================================================
+  /api/review-links:
+    get:
+      tags: [Review Links]
+      summary: List all review links
+      description: Returns all shareable review links. Requires admin or system_admin.
+      responses:
+        "200":
+          description: List of review links
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  links:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ReviewLink"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      tags: [Review Links]
+      summary: Create a review link
+      description: |
+        Generates a new shareable read-only review link with a 7-day expiry.
+        Requires admin or system_admin.
+      responses:
+        "200":
+          description: Review link created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  url:
+                    type: string
+                    format: uri
+                  expiresAt:
+                    type: string
+                    format: date-time
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ===========================================================================
+  # Refinements
+  # ===========================================================================
+  /api/refinements/save:
+    post:
+      tags: [Refinements]
+      summary: Save user-level mapping refinements
+      description: |
+        Persists mapper refinements (notes, confidence overrides, manual adjustments)
+        for a specific user's role assignments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [userId]
+              properties:
+                userId:
+                  type: integer
+                refinements:
+                  type: object
+                  description: Refinement data (notes, overrides, etc.)
+      responses:
+        "200":
+          description: Refinements saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Least Access (Provisioning Alerts)
+  # ===========================================================================
+  /api/least-access/exceptions:
+    post:
+      tags: [Least Access]
+      summary: Accept a provisioning alert exception
+      description: |
+        Records an exception acceptance for an over-provisioned persona-role mapping
+        with a required justification. Requires admin, system_admin, or approver role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personaId, targetRoleId, justification]
+              properties:
+                personaId:
+                  type: integer
+                targetRoleId:
+                  type: integer
+                excessPercent:
+                  type: number
+                  nullable: true
+                justification:
+                  type: string
+      responses:
+        "200":
+          description: Exception accepted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    delete:
+      tags: [Least Access]
+      summary: Revoke a provisioning alert exception
+      description: Revokes a previously accepted exception. Requires admin, system_admin, or approver.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [personaId, targetRoleId]
+              properties:
+                personaId:
+                  type: integer
+                targetRoleId:
+                  type: integer
+      responses:
+        "200":
+          description: Exception revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  # ===========================================================================
+  # Org Hierarchy
+  # ===========================================================================
+  /api/org-hierarchy:
+    get:
+      tags: [Org Hierarchy]
+      summary: Get org unit tree with assigned staff
+      description: |
+        Returns the full organizational unit tree, plus flat lists of mappers and approvers
+        for assignment dropdowns. Any authenticated user can read.
+      responses:
+        "200":
+          description: Org hierarchy data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tree:
+                    type: array
+                    items:
+                      type: object
+                      description: Nested org unit tree nodes
+                  mappers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        displayName:
+                          type: string
+                        role:
+                          type: string
+                  approvers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        displayName:
+                          type: string
+                        role:
+                          type: string
+                  allUnits:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/OrgUnit"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Org Hierarchy]
+      summary: Create an org unit
+      description: |
+        Creates a new org unit at the specified level. L2 requires an L1 parent;
+        L3 requires an L2 parent. Requires system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, level]
+              properties:
+                name:
+                  type: string
+                level:
+                  type: string
+                  enum: [L1, L2, L3]
+                parentId:
+                  type: integer
+                  nullable: true
+                description:
+                  type: string
+      responses:
+        "200":
+          description: Org unit created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  orgUnit:
+                    $ref: "#/components/schemas/OrgUnit"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    put:
+      tags: [Org Hierarchy]
+      summary: Update an org unit
+      description: |
+        Updates an org unit's name, description, parent, and assigned mapper/approver.
+        Requires system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                description:
+                  type: string
+                parentId:
+                  type: integer
+                  nullable: true
+                assignedMapperId:
+                  type: integer
+                  nullable: true
+                  description: App user ID of the mapper to assign to this org unit
+                assignedApproverId:
+                  type: integer
+                  nullable: true
+                  description: App user ID of the approver to assign to this org unit
+      responses:
+        "200":
+          description: Org unit updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Org Hierarchy]
+      summary: Delete an org unit
+      description: |
+        Deletes an org unit. Cannot delete units that have children (delete children first).
+        Unassigns linked users. Requires system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: Org unit deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  warning:
+                    type: string
+                    nullable: true
+                    description: Present if users were unassigned as a side effect
+        "400":
+          description: Cannot delete (has children)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Assistant (Lumen)
+  # ===========================================================================
+  /api/assistant/chat:
+    post:
+      tags: [Assistant]
+      summary: Chat with Lumen AI assistant
+      description: |
+        Sends a message to the Lumen AI assistant and receives a Server-Sent Events (SSE)
+        stream in response. Supports tool calling (up to 3 rounds) for live data queries
+        and action triggers. Rate limited (10 AI requests/min per user). maxDuration=60s.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                  description: The user's message
+                history:
+                  type: array
+                  items:
+                    type: object
+                    required: [role, content]
+                    properties:
+                      role:
+                        type: string
+                        enum: [user, assistant]
+                      content:
+                        type: string
+                  description: Previous conversation messages for context
+                context:
+                  type: object
+                  properties:
+                    page:
+                      type: string
+                      description: Current page the user is viewing
+                    userRole:
+                      type: string
+                    userName:
+                      type: string
+      responses:
+        "200":
+          description: SSE stream of chat responses
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: |
+                  Server-sent events. Each event is `data: {json}\n\n`.
+                  Payload types:
+                  - `{"text": "..."}` — streamed text chunk
+                  - `{"tool_status": "...", "tool_name": "..."}` — tool execution progress
+                  - `{"error": "..."}` — error message
+                  - `[DONE]` — stream complete
+        "400":
+          description: Invalid request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Demo
+  # ===========================================================================
+  /api/demo/reset:
+    post:
+      tags: [Demo]
+      summary: Reset demo environment
+      description: |
+        Re-seeds the database with demo data using the active demo pack.
+        Requires admin or system_admin role.
+      responses:
+        "200":
+          description: Demo reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  demo:
+                    type: string
+                    description: Name of the demo pack used
+                  message:
+                    type: string
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /api/demo/switch:
+    post:
+      tags: [Demo]
+      summary: Switch demo data pack
+      description: |
+        Switches the active demo data pack and re-seeds the database.
+        Requires admin or system_admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pack]
+              properties:
+                pack:
+                  type: string
+                  description: Name of the demo data pack to activate
+      responses:
+        "200":
+          description: Demo pack switched
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  demo:
+                    type: string
+                  message:
+                    type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Admin - Webhooks
+  # ===========================================================================
+  /api/admin/webhooks:
+    get:
+      tags: [Admin]
+      summary: List webhook endpoints or deliveries
+      description: |
+        Returns all webhook endpoints and supported event types. If `endpointId` query param
+        is provided, returns delivery history for that endpoint. Requires admin or system_admin.
+      parameters:
+        - name: endpointId
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: If provided, returns deliveries for this endpoint instead of the endpoint list
+      responses:
+        "200":
+          description: Webhook endpoints or deliveries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  endpoints:
+                    type: array
+                    items:
+                      type: object
+                  eventTypes:
+                    type: array
+                    items:
+                      type: string
+                  deliveries:
+                    type: array
+                    items:
+                      type: object
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Admin]
+      summary: Create a webhook endpoint
+      description: Creates a new webhook endpoint with a generated signing secret. Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url, events]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  description: Must be an HTTPS URL
+                description:
+                  type: string
+                events:
+                  type: array
+                  items:
+                    type: string
+                  description: Event types to subscribe to
+                enabled:
+                  type: boolean
+                  default: true
+      responses:
+        "200":
+          description: Webhook created (includes signing secret)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  endpoint:
+                    type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    patch:
+      tags: [Admin]
+      summary: Update a webhook endpoint
+      description: Updates fields on an existing webhook endpoint. Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                url:
+                  type: string
+                description:
+                  type: string
+                events:
+                  type: array
+                  items:
+                    type: string
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Webhook updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Admin]
+      summary: Delete a webhook endpoint
+      description: Deletes a webhook endpoint and all its delivery history. Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: Webhook deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Admin - Scheduled Exports
+  # ===========================================================================
+  /api/admin/scheduled-exports:
+    get:
+      tags: [Admin]
+      summary: List scheduled exports
+      description: Returns all scheduled export configurations and supported export types. Requires admin or system_admin.
+      responses:
+        "200":
+          description: Scheduled exports list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exports:
+                    type: array
+                    items:
+                      type: object
+                  exportTypes:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        value:
+                          type: string
+                        label:
+                          type: string
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    post:
+      tags: [Admin]
+      summary: Create a scheduled export
+      description: Creates a new recurring export schedule. Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, exportType, schedule]
+              properties:
+                name:
+                  type: string
+                exportType:
+                  type: string
+                schedule:
+                  type: string
+                  enum: [daily, weekly, monthly]
+                dayOfWeek:
+                  type: integer
+                  nullable: true
+                  description: 0-6 (Sunday-Saturday), used for weekly
+                dayOfMonth:
+                  type: integer
+                  nullable: true
+                  description: 1-31, used for monthly
+                hour:
+                  type: integer
+                  default: 6
+                  description: Hour of day (0-23) to run the export
+                enabled:
+                  type: boolean
+                  default: true
+      responses:
+        "200":
+          description: Scheduled export created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  export:
+                    type: object
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    patch:
+      tags: [Admin]
+      summary: Update a scheduled export
+      description: Updates fields on an existing scheduled export. Recalculates next run time if schedule changes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                schedule:
+                  type: string
+                  enum: [daily, weekly, monthly]
+                dayOfWeek:
+                  type: integer
+                  nullable: true
+                dayOfMonth:
+                  type: integer
+                  nullable: true
+                hour:
+                  type: integer
+                enabled:
+                  type: boolean
+      responses:
+        "200":
+          description: Scheduled export updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+    delete:
+      tags: [Admin]
+      summary: Delete a scheduled export
+      description: Permanently deletes a scheduled export configuration. Requires admin or system_admin.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: integer
+      responses:
+        "200":
+          description: Scheduled export deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Success"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Calibration
+  # ===========================================================================
+  /api/calibration:
+    get:
+      tags: [Dashboard & Health]
+      summary: Get low-confidence persona assignments for calibration
+      description: |
+        Returns persona assignments below the specified confidence threshold for manual
+        review and calibration. Scoped to the current user's org unit.
+      parameters:
+        - name: threshold
+          in: query
+          schema:
+            type: integer
+            default: 70
+          description: Confidence score threshold (0-100). Returns assignments at or below this value.
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+          description: Maximum number of results to return
+      responses:
+        "200":
+          description: Low-confidence assignments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    assignmentId:
+                      type: integer
+                    userId:
+                      type: integer
+                    personaId:
+                      type: integer
+                    confidenceScore:
+                      type: number
+                    aiReasoning:
+                      type: string
+                      nullable: true
+                    userName:
+                      type: string
+                    department:
+                      type: string
+                      nullable: true
+                    personaName:
+                      type: string
+                    personaDescription:
+                      type: string
+                      nullable: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  # ===========================================================================
+  # Cron
+  # ===========================================================================
+  /api/cron/exports:
+    get:
+      tags: [Admin]
+      summary: Process due scheduled exports (cron endpoint)
+      description: |
+        Called by Vercel cron jobs to process any scheduled exports that are due.
+        Authenticated via `CRON_SECRET` bearer token in the Authorization header.
+      security:
+        - {}
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+          description: "Bearer {CRON_SECRET}"
+      responses:
+        "200":
+          description: Cron run results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  processed:
+                    type: integer
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        status:
+                          type: string
+        "401":
+          description: Invalid cron secret
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ===========================================================================
+  # Docs (this spec)
+  # ===========================================================================
+  /api/docs/openapi:
+    get:
+      tags: [Dashboard & Health]
+      summary: Serve this OpenAPI spec
+      description: Returns the OpenAPI 3.1 YAML specification for the Provisum API.
+      security: []
+      responses:
+        "200":
+          description: OpenAPI YAML spec
+          content:
+            application/yaml:
+              schema:
+                type: string
+        "404":
+          description: Spec file not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"

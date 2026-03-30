@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
+import { sendNotificationEmail } from "@/lib/email";
 
 /**
  * Create a workflow/system notification for a user.
@@ -30,6 +31,26 @@ export async function createWorkflowNotification(params: {
     actionUrl: params.actionUrl ?? null,
     status: "sent",
   });
+
+  // Also send email notification (fire-and-forget)
+  try {
+    const [recipient] = await db
+      .select({ email: schema.appUsers.email })
+      .from(schema.appUsers)
+      .where(eq(schema.appUsers.id, params.toUserId));
+
+    if (recipient?.email) {
+      // Don't await — fire and forget
+      sendNotificationEmail(
+        recipient.email,
+        params.subject,
+        params.message,
+        params.actionUrl,
+      ).catch(() => {}); // silently ignore email failures
+    }
+  } catch {
+    // Email is best-effort, don't fail the notification
+  }
 }
 
 /**
@@ -48,6 +69,7 @@ export async function notifyUsersWithRoles(params: {
       .from(schema.appUsers)
   ).filter((u) => params.roles.includes(u.role));
 
+  // createWorkflowNotification handles both DB insert and email send per user
   for (const u of users) {
     await createWorkflowNotification({
       toUserId: u.id,

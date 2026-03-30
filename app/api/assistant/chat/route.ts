@@ -10,6 +10,7 @@ import * as schema from "@/db/schema";
 import { inArray, sql } from "drizzle-orm";
 import Anthropic from "@anthropic-ai/sdk";
 import { LUMEN_TOOLS, executeTool } from "@/lib/assistant/tools";
+import { buildRagContext } from "@/lib/assistant/rag-context";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -144,11 +145,12 @@ export async function POST(req: NextRequest) {
   const model = await getSetting("ai.model") || "claude-sonnet-4-20250514";
 
   const dataContext = await getLumenDataContext(user);
+  const ragContext = buildRagContext(message, context?.page || "unknown");
   const systemPrompt = buildSystemPrompt(
     context?.userName || user.displayName,
     context?.userRole || user.role,
     context?.page || "unknown",
-    dataContext
+    dataContext + ragContext
   );
 
   const messages: Anthropic.MessageParam[] = [
@@ -316,6 +318,10 @@ function getToolStatusLabel(toolName: string): string {
       return "Starting auto-mapping...";
     case "trigger_sod_analysis":
       return "Running SOD analysis...";
+    case "get_job_status":
+      return "Checking job status...";
+    case "get_calibration_summary":
+      return "Reviewing confidence data...";
     default:
       return "Processing...";
   }

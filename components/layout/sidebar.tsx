@@ -31,6 +31,7 @@ import {
   Calendar,
   FlaskConical,
   BarChart3,
+  Brain,
 } from "lucide-react";
 
 interface NavItem {
@@ -76,6 +77,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/exports", label: "Exports", icon: FileText },
       { href: "/risk-analysis", label: "Risk Analysis", icon: BarChart3 },
+      { href: "/calibration", label: "Calibration", icon: Brain, minRole: ["system_admin", "admin", "mapper"] },
       { href: "/admin/validation", label: "Validation", icon: FlaskConical },
       { href: "/releases/compare", label: "Release Comparison", icon: GitCompare, minRole: ["admin", "system_admin", "project_manager"] },
       { href: "/releases/timeline", label: "Project Timeline", icon: Calendar, minRole: ["admin", "system_admin", "project_manager"] },

@@ -604,6 +604,23 @@ export const rateLimitEntries = pgTable("rate_limit_entries", {
 });
 
 // ─────────────────────────────────────────────
+// FEATURE FLAGS (DB-backed gradual rollouts)
+// ─────────────────────────────────────────────
+
+export const featureFlags = pgTable("feature_flags", {
+  id: serial("id").primaryKey(),
+  key: text("key").notNull().unique(),
+  description: text("description"),
+  enabled: boolean("enabled").notNull().default(false),
+  enabledForRoles: text("enabled_for_roles"), // JSON array of role strings, null = all roles
+  enabledForUsers: text("enabled_for_users"), // JSON array of app_user IDs, null = all users
+  percentage: integer("percentage"), // 0-100 for gradual rollout, null = use enabled flag
+  metadata: text("metadata"), // JSON blob for extra config
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
 // PERSONA CONFIRMATIONS (gate before target role mapping)
 // ─────────────────────────────────────────────
 
@@ -615,6 +632,37 @@ export const personaConfirmations = pgTable("persona_confirmations", {
   resetAt: text("reset_at"),
   resetBy: integer("reset_by").references(() => appUsers.id),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// WEBHOOK ENDPOINTS & DELIVERIES
+// ─────────────────────────────────────────────
+
+export const webhookEndpoints = pgTable("webhook_endpoints", {
+  id: serial("id").primaryKey(),
+  url: text("url").notNull(),
+  description: text("description"),
+  secret: text("secret").notNull(), // HMAC signing secret
+  events: text("events").notNull(), // JSON array of event types to subscribe to
+  enabled: boolean("enabled").notNull().default(true),
+  failureCount: integer("failure_count").notNull().default(0),
+  lastFailureAt: text("last_failure_at"),
+  lastSuccessAt: text("last_success_at"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+export const webhookDeliveries = pgTable("webhook_deliveries", {
+  id: serial("id").primaryKey(),
+  endpointId: integer("endpoint_id").notNull(),
+  eventType: text("event_type").notNull(),
+  payload: text("payload").notNull(), // JSON
+  status: text("status").notNull().default("pending"), // pending, delivered, failed
+  httpStatus: integer("http_status"),
+  responseBody: text("response_body"),
+  attempts: integer("attempts").notNull().default(0),
+  nextRetryAt: text("next_retry_at"),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
 });
 
 // ═══════════════════════════════════════════════
@@ -807,3 +855,25 @@ export const personaConfirmationsRelations = relations(personaConfirmations, ({ 
   confirmer: one(appUsers, { fields: [personaConfirmations.confirmedBy], references: [appUsers.id], relationName: "confirmer" }),
   resetter: one(appUsers, { fields: [personaConfirmations.resetBy], references: [appUsers.id], relationName: "resetter" }),
 }));
+
+// ─────────────────────────────────────────────
+// SCHEDULED EXPORTS (recurring CSV/Excel exports)
+// ─────────────────────────────────────────────
+
+export const scheduledExports = pgTable("scheduled_exports", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  exportType: text("export_type").notNull(), // "excel", "csv_users", "csv_mappings", "csv_sod", "provisioning"
+  schedule: text("schedule").notNull(), // "daily", "weekly", "monthly"
+  dayOfWeek: integer("day_of_week"), // 0-6 for weekly, null for daily
+  dayOfMonth: integer("day_of_month"), // 1-28 for monthly, null for others
+  hour: integer("hour").notNull().default(6), // UTC hour to run (0-23)
+  enabled: boolean("enabled").notNull().default(true),
+  lastRunAt: text("last_run_at"),
+  lastRunStatus: text("last_run_status"), // "success", "failed"
+  lastRunError: text("last_run_error"),
+  nextRunAt: text("next_run_at"),
+  createdBy: integer("created_by").notNull(),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});

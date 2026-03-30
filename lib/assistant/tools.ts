@@ -84,6 +84,36 @@ export const LUMEN_TOOLS: Anthropic.Tool[] = [
       required: [],
     },
   },
+  {
+    name: "get_job_status",
+    description:
+      "Check the status of a processing job (persona generation, auto-mapping, SOD analysis). Returns job type, status, progress, and any errors.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        job_id: {
+          type: "number",
+          description: "The job ID to check. If not provided, returns the most recent jobs.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "get_calibration_summary",
+    description:
+      "Get a summary of low-confidence AI persona assignments that need manual review. Shows how many assignments are below the confidence threshold.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        threshold: {
+          type: "number",
+          description: "Confidence threshold percentage (default 70). Assignments below this are flagged.",
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -126,6 +156,12 @@ export async function executeTool(
 
     case "trigger_sod_analysis":
       return handleTriggerSodAnalysis(user);
+
+    case "get_job_status":
+      return handleGetJobStatus(toolInput as { job_id?: number });
+
+    case "get_calibration_summary":
+      return handleGetCalibrationSummary(toolInput as { threshold?: number }, scopedUserIds);
 
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` });
@@ -487,5 +523,112 @@ async function handleTriggerSodAnalysis(user: AppUser): Promise<string> {
       error: "Failed to queue SOD analysis job",
       details: String(error),
     });
+  }
+}
+
+async function handleGetJobStatus(input: { job_id?: number }): Promise<string> {
+  try {
+    if (input.job_id) {
+      const [job] = await db
+        .select()
+        .from(schema.processingJobs)
+        .where(eq(schema.processingJobs.id, input.job_id));
+
+      if (!job) {
+        return JSON.stringify({ error: `Job #${input.job_id} not found` });
+      }
+
+      return JSON.stringify({
+        id: job.id,
+        type: job.jobType,
+        status: job.status,
+        totalRecords: job.totalRecords,
+        processed: job.processed,
+        failed: job.failed,
+        errorLog: job.errorLog,
+        createdAt: job.createdAt,
+        completedAt: job.completedAt,
+      });
+    }
+
+    // No specific job — return the 5 most recent
+    const jobs = await db
+      .select()
+      .from(schema.processingJobs)
+      .orderBy(sql`${schema.processingJobs.createdAt} DESC`)
+      .limit(5);
+
+    return JSON.stringify({
+      recentJobs: jobs.map((j) => ({
+        id: j.id,
+        type: j.jobType,
+        status: j.status,
+        totalRecords: j.totalRecords,
+        processed: j.processed,
+        createdAt: j.createdAt,
+        completedAt: j.completedAt,
+      })),
+    });
+  } catch (error) {
+    return JSON.stringify({ error: "Failed to fetch job status", details: String(error) });
+  }
+}
+
+async function handleGetCalibrationSummary(
+  input: { threshold?: number },
+  scopedUserIds: number[] | null,
+): Promise<string> {
+  try {
+    const threshold = input.threshold ?? 70;
+
+    const baseCondition = sql`CAST(${schema.userPersonaAssignments.confidenceScore} AS INTEGER) <= ${threshold}`;
+
+    const condition = scopedUserIds === null
+      ? baseCondition
+      : sql`${baseCondition} AND ${inArray(schema.userPersonaAssignments.userId, scopedUserIds)}`;
+
+    const [countRow] = await db
+      .select({ count: count() })
+      .from(schema.userPersonaAssignments)
+      .where(condition);
+
+    const [totalRow] = scopedUserIds === null
+      ? await db.select({ count: count() }).from(schema.userPersonaAssignments)
+      : await db
+          .select({ count: count() })
+          .from(schema.userPersonaAssignments)
+          .where(inArray(schema.userPersonaAssignments.userId, scopedUserIds));
+
+    const lowCount = countRow?.count ?? 0;
+    const totalCount = totalRow?.count ?? 0;
+
+    // Get breakdown by confidence range
+    const ranges = await db
+      .select({
+        bucket: sql<string>`
+          CASE
+            WHEN CAST(${schema.userPersonaAssignments.confidenceScore} AS INTEGER) < 30 THEN 'very_low'
+            WHEN CAST(${schema.userPersonaAssignments.confidenceScore} AS INTEGER) < 50 THEN 'low'
+            WHEN CAST(${schema.userPersonaAssignments.confidenceScore} AS INTEGER) < 70 THEN 'medium'
+            ELSE 'acceptable'
+          END
+        `,
+        count: count(),
+      })
+      .from(schema.userPersonaAssignments)
+      .where(scopedUserIds === null ? undefined : inArray(schema.userPersonaAssignments.userId, scopedUserIds))
+      .groupBy(sql`1`);
+
+    return JSON.stringify({
+      scope: scopedUserIds === null ? "all" : "org_unit",
+      threshold,
+      belowThreshold: lowCount,
+      totalAssignments: totalCount,
+      percentBelowThreshold: totalCount > 0 ? Math.round((lowCount / totalCount) * 100) : 0,
+      confidenceDistribution: Object.fromEntries(ranges.map((r) => [r.bucket, r.count])),
+      reviewUrl: "/calibration",
+    });
+  } catch (error) {
+    return JSON.stringify({ error: "Failed to fetch calibration summary", details: String(error) });
   }
 }
