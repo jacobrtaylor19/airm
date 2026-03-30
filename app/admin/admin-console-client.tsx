@@ -28,6 +28,9 @@ import {
   GitBranch,
   RotateCcw,
   Loader2,
+  Flag,
+  Webhook,
+  CalendarClock,
 } from "lucide-react";
 
 import { OrgTreeSection } from "./org-tree-section";
@@ -38,6 +41,9 @@ import {
   WorkflowSettingsSection,
   DemoResetCard,
 } from "./settings-section";
+import { FeatureFlagsSection } from "./feature-flags-section";
+import { WebhooksSection } from "./webhooks-section";
+import { ScheduledExportsSection } from "./scheduled-exports-section";
 
 // -----------------------------------------------
 // Types
@@ -312,6 +318,18 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
             <RotateCcw className="h-4 w-4" />
             Demo
           </TabsTrigger>
+          <TabsTrigger value="feature-flags" className="flex items-center gap-1.5">
+            <Flag className="h-4 w-4" />
+            Feature Flags
+          </TabsTrigger>
+          <TabsTrigger value="webhooks" className="flex items-center gap-1.5">
+            <Webhook className="h-4 w-4" />
+            Webhooks
+          </TabsTrigger>
+          <TabsTrigger value="scheduled-exports" className="flex items-center gap-1.5">
+            <CalendarClock className="h-4 w-4" />
+            Scheduled Exports
+          </TabsTrigger>
         </TabsList>
 
         {/* -- ORG HIERARCHY TAB -- */}
@@ -368,6 +386,21 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
         {/* -- DEMO TAB -- */}
         <TabsContent value="demo" className="mt-4">
           <DemoResetCard />
+        </TabsContent>
+
+        {/* -- FEATURE FLAGS TAB -- */}
+        <TabsContent value="feature-flags" className="mt-4">
+          <FeatureFlagsSection />
+        </TabsContent>
+
+        {/* -- WEBHOOKS TAB -- */}
+        <TabsContent value="webhooks" className="mt-4">
+          <WebhooksSection />
+        </TabsContent>
+
+        {/* -- SCHEDULED EXPORTS TAB -- */}
+        <TabsContent value="scheduled-exports" className="mt-4">
+          <ScheduledExportsSection />
         </TabsContent>
       </Tabs>
 

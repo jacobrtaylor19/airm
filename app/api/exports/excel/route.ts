@@ -3,6 +3,7 @@ import { generateExcelReport } from "@/lib/exports/excel-report";
 import { getSessionUser } from "@/lib/auth";
 import { safeError } from "@/lib/errors";
 import { auditLog } from "@/lib/audit";
+import { dispatchWebhookEvent } from "@/lib/webhooks";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,9 @@ export async function GET() {
     });
 
     const buffer = await generateExcelReport(user.displayName);
+
+    dispatchWebhookEvent("export.completed", { type: "excel", exportedBy: user.displayName }).catch(() => {});
+
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

@@ -2,11 +2,27 @@ import { pgTable, text, integer, real, serial, boolean } from "drizzle-orm/pg-co
 import { relations } from "drizzle-orm";
 
 // ─────────────────────────────────────────────
+// ORGANIZATIONS (multi-tenant isolation)
+// ─────────────────────────────────────────────
+
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").notNull().unique(),
+  description: text("description"),
+  settings: text("settings"), // JSON blob for org-level config
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
 // ORG UNITS (organizational hierarchy L1/L2/L3)
 // ─────────────────────────────────────────────
 
 export const orgUnits = pgTable("org_units", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   name: text("name").notNull(),
   level: text("level").notNull(), // "L1", "L2", "L3"
   parentId: integer("parent_id"),
@@ -19,6 +35,7 @@ export const orgUnits = pgTable("org_units", {
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   sourceUserId: text("source_user_id").notNull().unique(),
   displayName: text("display_name").notNull(),
   email: text("email"),
@@ -39,6 +56,7 @@ export const users = pgTable("users", {
 
 export const sourceRoles = pgTable("source_roles", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   roleId: text("role_id").notNull().unique(),
   roleName: text("role_name").notNull(),
   description: text("description"),
@@ -90,6 +108,7 @@ export const userSourceRoleAssignments = pgTable("user_source_role_assignments",
 
 export const consolidatedGroups = pgTable("consolidated_groups", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   name: text("name").notNull().unique(),
   description: text("description"),
   accessLevel: text("access_level"),
@@ -104,6 +123,7 @@ export const consolidatedGroups = pgTable("consolidated_groups", {
 
 export const personas = pgTable("personas", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   name: text("name").notNull().unique(),
   description: text("description"),
   businessFunction: text("business_function"),
@@ -150,6 +170,7 @@ export const userPersonaAssignments = pgTable("user_persona_assignments", {
 
 export const targetRoles = pgTable("target_roles", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   roleId: text("role_id").notNull().unique(),
   roleName: text("role_name").notNull(),
   description: text("description"),
@@ -240,6 +261,7 @@ export const personaTargetRoleMappings = pgTable("persona_target_role_mappings",
 
 export const releases = pgTable("releases", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   name: text("name").notNull(),                                     // e.g. "Wave 1 — Finance Go-Live"
   description: text("description"),
   status: text("status").notNull().default("planning"),              // planning | in_progress | approved | completed | archived
@@ -362,6 +384,7 @@ export const userTargetRoleAssignments = pgTable("user_target_role_assignments",
 
 export const sodRules = pgTable("sod_rules", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   ruleId: text("rule_id").notNull().unique(),
   ruleName: text("rule_name").notNull(),
   description: text("description"),
@@ -470,6 +493,7 @@ export const processingJobs = pgTable("processing_jobs", {
 
 export const auditLog = pgTable("audit_log", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   entityType: text("entity_type").notNull(),
   entityId: integer("entity_id").notNull(),
   action: text("action").notNull(),
@@ -519,6 +543,7 @@ export const systemSettings = pgTable("system_settings", {
 
 export const appUsers = pgTable("app_users", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id"),
   username: text("username").notNull().unique(),
   displayName: text("display_name").notNull(),
   email: text("email"),
@@ -874,6 +899,21 @@ export const scheduledExports = pgTable("scheduled_exports", {
   lastRunError: text("last_run_error"),
   nextRunAt: text("next_run_at"),
   createdBy: integer("created_by").notNull(),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// CHAT CONVERSATIONS (Lumen chat history persistence)
+// ─────────────────────────────────────────────
+
+export const chatConversations = pgTable("chat_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(), // FK to app_users
+  title: text("title"), // auto-generated from first message
+  messages: text("messages").notNull(), // JSON array of {role, content, toolUse?}
+  messageCount: integer("message_count").notNull().default(0),
+  lastMessageAt: text("last_message_at"),
   createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
 });

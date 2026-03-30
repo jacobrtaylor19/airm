@@ -2,7 +2,18 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { MessageCircle, X, Send, Loader2, Sparkles, RotateCcw, Database } from "lucide-react";
+import {
+  MessageCircle,
+  X,
+  Send,
+  Loader2,
+  Sparkles,
+  RotateCcw,
+  Database,
+  History,
+  Trash2,
+  ChevronLeft,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ChatMessage {
@@ -12,12 +23,18 @@ interface ChatMessage {
   toolStatus?: string;
 }
 
+interface ConversationSummary {
+  id: number;
+  title: string | null;
+  messageCount: number;
+  lastMessageAt: string | null;
+  createdAt: string | null;
+}
+
 /** Lightweight inline markdown: **bold**, *italic*, `code`, and newlines */
 function renderMarkdown(text: string) {
-  // Split into paragraphs on double newlines
   const paragraphs = text.split(/\n{2,}/);
   return paragraphs.map((para, pi) => {
-    // Split each paragraph into lines
     const lines = para.split("\n");
     return (
       <p key={pi} className={pi > 0 ? "mt-2" : undefined}>
@@ -33,7 +50,6 @@ function renderMarkdown(text: string) {
 }
 
 function renderInline(text: string) {
-  // Match **bold**, *italic*, `code`
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
@@ -51,6 +67,21 @@ function renderInline(text: string) {
     }
     return part;
   });
+}
+
+function formatRelativeTime(isoString: string | null): string {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
 }
 
 interface ChatWidgetProps {
@@ -85,6 +116,14 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
   const pathname = usePathname();
   const abortRef = useRef<AbortController | null>(null);
 
+  // Conversation persistence state
+  const [conversationId, setConversationId] = useState<number | null>(null);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [loadingConversation, setLoadingConversation] = useState(false);
+  const saveInFlightRef = useRef(false);
+
   // Initialize welcome message
   useEffect(() => {
     if (messages.length === 0) {
@@ -94,6 +133,12 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
     }
   }, [userName, userRole, messages.length]);
 
+  // Fetch conversation list on mount
+  useEffect(() => {
+    fetchConversations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,10 +146,116 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
 
   // Focus input when panel opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !showHistory) {
       setTimeout(() => inputRef.current?.focus(), 150);
     }
-  }, [isOpen]);
+  }, [isOpen, showHistory]);
+
+  const fetchConversations = useCallback(async () => {
+    try {
+      setLoadingHistory(true);
+      const res = await fetch("/api/assistant/conversations");
+      if (res.ok) {
+        const data = await res.json();
+        setConversations(data.conversations || []);
+      }
+    } catch {
+      // Silently fail — history is non-critical
+    } finally {
+      setLoadingHistory(false);
+    }
+  }, []);
+
+  const loadConversation = useCallback(async (id: number) => {
+    try {
+      setLoadingConversation(true);
+      const res = await fetch(`/api/assistant/conversations/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        const conv = data.conversation;
+        setMessages(conv.messages);
+        setConversationId(conv.id);
+        setShowHistory(false);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setLoadingConversation(false);
+    }
+  }, []);
+
+  const deleteConversation = useCallback(async (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const res = await fetch("/api/assistant/conversations", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setConversations((prev) => prev.filter((c) => c.id !== id));
+        if (conversationId === id) {
+          setConversationId(null);
+          setMessages([
+            { role: "assistant", content: getWelcomeMessage(userName, userRole) },
+          ]);
+        }
+      }
+    } catch {
+      // Silently fail
+    }
+  }, [conversationId, userName, userRole]);
+
+  /** Fire-and-forget save of the current conversation */
+  const saveConversation = useCallback(async (msgs: ChatMessage[], currentConvId: number | null) => {
+    if (saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
+
+    // Only save messages that are user or assistant with content
+    const saveable = msgs.filter((m) => m.content.trim().length > 0);
+    if (saveable.length <= 1) {
+      // Only the welcome message — nothing to save
+      saveInFlightRef.current = false;
+      return;
+    }
+
+    // Auto-generate title from first user message
+    const firstUserMsg = saveable.find((m) => m.role === "user");
+    const title = firstUserMsg
+      ? firstUserMsg.content.slice(0, 50) + (firstUserMsg.content.length > 50 ? "..." : "")
+      : "New conversation";
+
+    try {
+      if (currentConvId) {
+        // Update existing
+        await fetch(`/api/assistant/conversations/${currentConvId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: saveable, title }),
+        });
+      } else {
+        // Create new
+        const res = await fetch("/api/assistant/conversations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ messages: saveable, title }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const newId = data.conversation?.id;
+          if (newId) {
+            setConversationId(newId);
+          }
+        }
+      }
+      // Refresh the conversation list in background
+      fetchConversations();
+    } catch {
+      // Silently fail — save is non-critical
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }, [fetchConversations]);
 
   const handleNewChat = useCallback(() => {
     // Abort any in-flight stream
@@ -114,6 +265,8 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
     }
     setIsStreaming(false);
     setInput("");
+    setConversationId(null);
+    setShowHistory(false);
     setMessages([
       { role: "assistant", content: getWelcomeMessage(userName, userRole) },
     ]);
@@ -147,6 +300,9 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
 
     const controller = new AbortController();
     abortRef.current = controller;
+
+    // Capture current conversation ID for the save call
+    const currentConvId = conversationId;
 
     try {
       const res = await fetch("/api/assistant/chat", {
@@ -196,7 +352,6 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
           try {
             const parsed = JSON.parse(payload);
             if (parsed.tool_status) {
-              // Show tool-use status indicator on the current assistant message
               setMessages((prev) => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
@@ -215,7 +370,7 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
                 updated[updated.length - 1] = {
                   ...last,
                   content: last.content + parsed.text,
-                  toolStatus: undefined, // Clear status once text arrives
+                  toolStatus: undefined,
                 };
                 return updated;
               });
@@ -235,6 +390,13 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
           }
         }
       }
+
+      // Auto-save after streaming completes
+      setMessages((prev) => {
+        // Schedule save with the final messages (fire-and-forget)
+        saveConversation(prev, currentConvId);
+        return prev;
+      });
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
         setMessages((prev) => {
@@ -250,7 +412,7 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
       setIsStreaming(false);
       abortRef.current = null;
     }
-  }, [input, isStreaming, messages, pathname, userRole, userName]);
+  }, [input, isStreaming, messages, pathname, userRole, userName, conversationId, saveConversation]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -291,13 +453,40 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
         {/* Header */}
         <div className="flex items-center justify-between bg-slate-900 px-4 py-3 shrink-0">
           <div className="flex items-center gap-2">
-            <MessageCircle className="h-5 w-5 text-teal-400" />
-            <h2 className="text-sm font-semibold text-white">Lumen</h2>
+            {showHistory ? (
+              <button
+                onClick={() => setShowHistory(false)}
+                className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                aria-label="Back to chat"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </button>
+            ) : (
+              <MessageCircle className="h-5 w-5 text-teal-400" />
+            )}
+            <h2 className="text-sm font-semibold text-white">
+              {showHistory ? "Chat History" : "Lumen"}
+            </h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 hidden sm:inline">
-              {navigator?.platform?.includes("Mac") ? "\u2318" : "Ctrl"}+K
-            </span>
+            {!showHistory && (
+              <span className="text-xs text-slate-400 hidden sm:inline">
+                {typeof navigator !== "undefined" && navigator?.platform?.includes("Mac") ? "\u2318" : "Ctrl"}+K
+              </span>
+            )}
+            {!showHistory && (
+              <button
+                onClick={() => {
+                  setShowHistory(true);
+                  fetchConversations();
+                }}
+                className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                aria-label="Chat history"
+                title="Chat History"
+              >
+                <History className="h-4 w-4" />
+              </button>
+            )}
             <button
               onClick={handleNewChat}
               className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
@@ -316,88 +505,138 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-          {messages.map((msg, i) => (
-            <div
-              key={i}
-              className={cn(
-                "flex",
-                msg.role === "user" ? "justify-end" : "justify-start"
-              )}
-            >
-              <div
-                className={cn(
-                  "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed",
-                  msg.role === "user"
-                    ? "bg-indigo-50 text-slate-700"
-                    : "bg-teal-50 text-slate-700"
-                )}
-              >
-                {msg.toolStatus && !msg.content ? (
-                  <span className="inline-flex items-center gap-1 text-teal-600">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    {msg.toolStatus}
-                  </span>
-                ) : msg.content ? (
-                  <>
-                    {renderMarkdown(msg.content)}
-                    {msg.usedTools && msg.role === "assistant" && (
-                      <span className="mt-1 inline-flex items-center gap-1 text-[10px] text-teal-500 opacity-70">
-                        <Database className="h-2.5 w-2.5" />
-                        Live data
+        {showHistory ? (
+          /* Conversation history sidebar */
+          <div className="flex-1 overflow-y-auto">
+            {loadingHistory ? (
+              <div className="flex items-center justify-center py-8 text-slate-400">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                Loading...
+              </div>
+            ) : conversations.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-slate-400">
+                No saved conversations yet.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {conversations.map((conv) => (
+                  <button
+                    key={conv.id}
+                    onClick={() => loadConversation(conv.id)}
+                    disabled={loadingConversation}
+                    className={cn(
+                      "w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors",
+                      "group flex items-start justify-between gap-2",
+                      loadingConversation && "opacity-50 cursor-not-allowed"
+                    )}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-slate-700 truncate">
+                        {conv.title || "Untitled"}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {conv.messageCount} messages
+                        {conv.lastMessageAt && ` \u00b7 ${formatRelativeTime(conv.lastMessageAt)}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => deleteConversation(conv.id, e)}
+                      className="shrink-0 rounded p-1 text-slate-300 opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 transition-all"
+                      aria-label="Delete conversation"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              {messages.map((msg, i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "flex",
+                    msg.role === "user" ? "justify-end" : "justify-start"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed",
+                      msg.role === "user"
+                        ? "bg-indigo-50 text-slate-700"
+                        : "bg-teal-50 text-slate-700"
+                    )}
+                  >
+                    {msg.toolStatus && !msg.content ? (
+                      <span className="inline-flex items-center gap-1 text-teal-600">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        {msg.toolStatus}
+                      </span>
+                    ) : msg.content ? (
+                      <>
+                        {renderMarkdown(msg.content)}
+                        {msg.usedTools && msg.role === "assistant" && (
+                          <span className="mt-1 inline-flex items-center gap-1 text-[10px] text-teal-500 opacity-70">
+                            <Database className="h-2.5 w-2.5" />
+                            Live data
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-slate-400">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Thinking...
                       </span>
                     )}
-                  </>
-                ) : (
-                  <span className="inline-flex items-center gap-1 text-slate-400">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    Thinking...
-                  </span>
-                )}
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input area */}
+            <div className="shrink-0 border-t border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex items-center gap-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask Lumen about this project..."
+                  disabled={isStreaming}
+                  className={cn(
+                    "flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm",
+                    "placeholder:text-slate-400",
+                    "focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-400",
+                    "disabled:opacity-50 disabled:cursor-not-allowed"
+                  )}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || isStreaming}
+                  className={cn(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
+                    "bg-teal-500 text-white transition-colors",
+                    "hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400",
+                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-teal-500"
+                  )}
+                  aria-label="Send message"
+                >
+                  {isStreaming ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input area */}
-        <div className="shrink-0 border-t border-slate-200 bg-slate-50 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <input
-              ref={inputRef}
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask Lumen about this project..."
-              disabled={isStreaming}
-              className={cn(
-                "flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm",
-                "placeholder:text-slate-400",
-                "focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-400",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || isStreaming}
-              className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                "bg-teal-500 text-white transition-colors",
-                "hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-400",
-                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-teal-500"
-              )}
-              aria-label="Send message"
-            >
-              {isStreaming ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </button>
-          </div>
-        </div>
+          </>
+        )}
       </div>
     </>
   );

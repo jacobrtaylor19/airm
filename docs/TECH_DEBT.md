@@ -56,8 +56,8 @@ Higher score = fix first.
 |---|------|----------|:------:|:----:|:------:|:-----:|-------|
 | 17 | ~~**10 eslint-disable comments**~~ ✅ FIXED — File-level `no-explicit-any` removed from upload route, provider.ts stubs use targeted line disables, validation export reserves fill constants with disables. Down from 10 to 6 justified disables. | Code | 1 | 1 | 1 | 10 | Various |
 | 18 | ~~**Console.log in production**~~ ✅ FIXED — All API route `console.error` calls replaced with `reportError()` from `lib/monitoring.ts`. Remaining console usage is in the monitoring module itself (structured JSON output) and seed script (acceptable). | Code | 1 | 1 | 1 | 10 | `app/api/ai/`, `lib/` |
-| 19 | **No ER diagram** — Schema is well-structured but lacks a visual diagram for onboarding. | Documentation | 1 | 1 | 2 | 8 | `db/schema.ts` |
-| 20 | **No feature flags** — Mentioned in docs but not implemented. Needed for gradual rollouts. | Architecture | 1 | 1 | 3 | 6 | — |
+| 19 | ~~**No ER diagram**~~ ✅ FIXED — Mermaid ER diagram in `docs/ER_DIAGRAM.md` covering all 39+ tables with relationships, domain groupings, and data flow overview. | Documentation | 1 | 1 | 2 | 8 | `docs/ER_DIAGRAM.md` |
+| 20 | ~~**No feature flags**~~ ✅ FIXED — `feature_flags` table in schema, `lib/feature-flags.ts` with 60s memory cache, role/user/percentage targeting, CRUD operations, and cache invalidation. | Architecture | 1 | 1 | 3 | 6 | `lib/feature-flags.ts`, `db/schema.ts` |
 
 ---
 
@@ -113,18 +113,18 @@ Higher score = fix first.
 
 ---
 
-## Current Health Summary (updated 2026-03-28)
+## Current Health Summary (updated 2026-03-30)
 
 | Category | Grade | Key Issue |
 |----------|:-----:|-----------|
-| **Code** | A- | All large components split; upload route fully typed; eslint-disable reduced to 6 justified |
-| **Architecture** | A | Default-secure middleware; 56 DB indexes; DB-backed rate limiter; job retry with dead-letter |
+| **Code** | A | All large components split; upload route fully typed; eslint-disable reduced to 6 justified |
+| **Architecture** | A | Default-secure middleware; 56 DB indexes; DB-backed rate limiter; job retry with dead-letter; feature flags |
 | **Testing** | D+ | 41 smoke tests (auth, settings, strapline, middleware); no integration or E2E |
 | **Dependencies** | A- | Current versions; Sentry + Resend installed |
-| **Documentation** | B+ | Strong dev docs; missing API spec + runbook |
+| **Documentation** | A | OpenAPI spec, ER diagram, strong dev docs |
 | **Infrastructure** | A- | Sentry installed (needs DSN); staging branch configured; structured JSON logging; encryption key rotation |
 
-**Overall: A-** — Production-ready. 18 of 20 debt items resolved. Only ER diagram and feature flags remain. Sentry activation (env var) is the priority blocker.
+**Overall: A** — All 20 of 20 debt items resolved. Sentry activation (env var) is the remaining operational blocker.
 
 ### Resolved This Sprint
 - ✅ #1 — Test coverage started (41 smoke tests via Vitest)
@@ -144,5 +144,7 @@ Higher score = fix first.
 - ✅ #16 — Encryption key rotation mechanism
 - ✅ #17 — eslint-disable cleanup (10 → 6 justified)
 - ✅ #18 — Console.error → reportError() in all API routes
+- ✅ #19 — ER diagram (Mermaid diagram in `docs/ER_DIAGRAM.md`)
+- ✅ #20 — Feature flags (DB-backed with role/user/percentage targeting)
 - ✅ Scoped queries (approvals + users) now filter at DB level
 - ✅ User invite flow with Resend email integration

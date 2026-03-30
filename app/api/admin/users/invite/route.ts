@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendInviteEmail } from "@/lib/email";
 import { safeError } from "@/lib/errors";
+import { dispatchWebhookEvent } from "@/lib/webhooks";
 
 export const dynamic = "force-dynamic";
 
@@ -107,6 +108,8 @@ export async function POST(req: NextRequest) {
       newValue: JSON.stringify({ email, role, displayName }),
       actorEmail: user.username,
     });
+
+    dispatchWebhookEvent("user.invited", { email, invitedBy: user.displayName }).catch(() => {});
 
     return NextResponse.json({
       success: true,

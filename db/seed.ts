@@ -74,6 +74,15 @@ export async function seedDatabase(seedDb: ReturnType<typeof drizzle<typeof sche
 async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string) => T[]) {
   console.log("🌱 Seeding database...\n");
 
+  // ─── Ensure default organization exists ───
+  await db.insert(schema.organizations).values({
+    name: "Demo Organization",
+    slug: "demo",
+    description: "Default organization for the demo instance",
+    isActive: true,
+  }).onConflictDoNothing();
+  console.log("  ✓ Default organization");
+
   // ─── Clear tables (reverse dependency order) ───
   await db.delete(schema.auditLog);
   await db.delete(schema.processingJobs);

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface AppUser {
   id: number;
+  organizationId: number | null;
   username: string;
   displayName: string;
   email: string | null;
@@ -27,6 +28,7 @@ export async function getSessionUser(): Promise<AppUser | null> {
     const [appUser] = await db
       .select({
         id: schema.appUsers.id,
+        organizationId: schema.appUsers.organizationId,
         username: schema.appUsers.username,
         displayName: schema.appUsers.displayName,
         email: schema.appUsers.email,
@@ -41,6 +43,7 @@ export async function getSessionUser(): Promise<AppUser | null> {
 
     return {
       id: appUser.id,
+      organizationId: appUser.organizationId,
       username: appUser.username,
       displayName: appUser.displayName,
       email: appUser.email,
@@ -96,6 +99,7 @@ export async function getAppUserByAuthId(supabaseAuthId: string): Promise<AppUse
   const [appUser] = await db
     .select({
       id: schema.appUsers.id,
+      organizationId: schema.appUsers.organizationId,
       username: schema.appUsers.username,
       displayName: schema.appUsers.displayName,
       email: schema.appUsers.email,
@@ -110,6 +114,7 @@ export async function getAppUserByAuthId(supabaseAuthId: string): Promise<AppUse
 
   return {
     id: appUser.id,
+    organizationId: appUser.organizationId,
     username: appUser.username,
     displayName: appUser.displayName,
     email: appUser.email,

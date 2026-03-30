@@ -9,6 +9,7 @@ import { notifyUsersWithRoles } from "@/lib/notifications";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
 import { runWithRetry } from "@/lib/job-runner";
 import { waitUntil } from "@vercel/functions";
+import { dispatchWebhookEvent } from "@/lib/webhooks";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -63,11 +64,14 @@ export async function POST(req: NextRequest) {
           newValue: JSON.stringify(generationResult),
         });
 
+        const personaCount = generationResult?.personasCreated ?? 0;
+        dispatchWebhookEvent("persona.generated", { personaCount, triggeredBy: user.username }).catch(() => {});
+
         await notifyUsersWithRoles({
           roles: ["coordinator", "admin", "system_admin"],
           notificationType: "workflow_event",
           subject: "Persona generation complete",
-          message: `Persona generation finished: ${generationResult?.personasCreated ?? 0} personas created, ${generationResult?.usersAssigned ?? 0} users assigned.`,
+          message: `Persona generation finished: ${personaCount} personas created, ${generationResult?.usersAssigned ?? 0} users assigned.`,
           actionUrl: "/personas",
         });
       },

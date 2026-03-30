@@ -9,6 +9,7 @@ import { notifyUsersWithRoles } from "@/lib/notifications";
 import { checkAIRate } from "@/lib/rate-limit-middleware";
 import { runWithRetry } from "@/lib/job-runner";
 import { waitUntil } from "@vercel/functions";
+import { dispatchWebhookEvent } from "@/lib/webhooks";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -63,8 +64,12 @@ export async function POST(req: NextRequest) {
           newValue: JSON.stringify(analysisResult),
         });
 
-        // Notify coordinators and admins about SOD analysis results
+        // Dispatch webhook for SOD analysis completion
         const conflictCount = analysisResult?.conflictsFound ?? 0;
+        const usersAnalyzed = analysisResult?.usersAnalyzed ?? 0;
+        dispatchWebhookEvent("sod.analysis_complete", { conflictCount, usersAnalyzed }).catch(() => {});
+
+        // Notify coordinators and admins about SOD analysis results
         if (conflictCount > 0) {
           await notifyUsersWithRoles({
             roles: ["coordinator", "admin", "system_admin"],

@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
 import { getSessionUser } from "@/lib/auth";
 import { checkBulkRate } from "@/lib/rate-limit-middleware";
+import { dispatchWebhookEvent } from "@/lib/webhooks";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,8 @@ export async function POST(req: NextRequest) {
       oldValue: JSON.stringify({ status: assignment.status }),
       newValue: JSON.stringify({ status: "draft", reason }),
     });
+
+    dispatchWebhookEvent("mapping.rejected", { assignmentId, rejectedBy: user.displayName }).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {

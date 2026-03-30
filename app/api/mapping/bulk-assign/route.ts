@@ -5,6 +5,7 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { notifyUsersWithRoles } from "@/lib/notifications";
 import { checkBulkRate } from "@/lib/rate-limit-middleware";
+import { dispatchWebhookEvent } from "@/lib/webhooks";
 
 export const dynamic = "force-dynamic";
 
@@ -79,6 +80,10 @@ export async function POST(req: NextRequest) {
       message: `${created} new mapping(s) assigned to target role "${targetRole.roleName}". Please review in the Approvals queue.`,
       actionUrl: "/approvals",
     });
+  }
+
+  if (created > 0) {
+    dispatchWebhookEvent("mapping.created", { count: created, assignedBy: user.displayName }).catch(() => {});
   }
 
   return NextResponse.json({ created, skipped, total: personaIds.length });
