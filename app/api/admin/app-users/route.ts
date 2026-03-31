@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { safeError } from "@/lib/errors";
 import { validatePassword } from "@/lib/password-policy";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -96,9 +97,11 @@ export async function POST(req: NextRequest) {
       passwordHash: "",
       role,
       supabaseAuthId: authData.user.id,
+      organizationId: getOrgId(user),
     }).returning();
 
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "appUser",
       entityId: created.id,
       action: "created",

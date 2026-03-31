@@ -11,6 +11,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { reportError } from "@/lib/monitoring";
+import { detectIncident } from "@/lib/incidents/detection";
 
 interface JobRunnerOptions {
   jobId: number;
@@ -110,4 +111,14 @@ export async function runWithRetry(
     })
     .where(eq(schema.processingJobs.id, jobId))
     .catch(() => {});
+
+  // Raise an incident for the dead-lettered job
+  detectIncident({
+    title: `Job failed: ${jobId}`,
+    description: `Job ${jobId} exhausted all ${maxRetries + 1} retries. Last error: ${message}`,
+    severity: "high",
+    source: "job_failure",
+    sourceRef: String(jobId),
+    affectedComponent: "ai_pipeline",
+  }).catch(() => {});
 }

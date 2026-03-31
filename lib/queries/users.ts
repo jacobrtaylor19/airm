@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { sql, eq, inArray } from "drizzle-orm";
+import { sql, eq, and, inArray } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 
 export interface UserRow {
   id: number;
@@ -20,7 +21,7 @@ export interface UserRow {
  * Returns all users with persona/group info. Pass `filterUserIds` to restrict
  * to a specific set of user IDs at the DB level (avoids fetching all rows).
  */
-export async function getUsers(filterUserIds?: number[]): Promise<UserRow[]> {
+export async function getUsers(orgId: number, filterUserIds?: number[]): Promise<UserRow[]> {
   const query = db
     .select({
       id: schema.users.id,
@@ -55,10 +56,10 @@ export async function getUsers(filterUserIds?: number[]): Promise<UserRow[]> {
     );
 
   if (filterUserIds && filterUserIds.length > 0) {
-    return await query.where(inArray(schema.users.id, filterUserIds));
+    return await query.where(and(inArray(schema.users.id, filterUserIds), orgScope(schema.users.organizationId, orgId)));
   }
 
-  return await query;
+  return await query.where(orgScope(schema.users.organizationId, orgId));
 }
 
 export interface UserDetail {
@@ -113,11 +114,11 @@ export interface UserDetail {
   }[];
 }
 
-export async function getUserDetail(id: number): Promise<UserDetail | null> {
+export async function getUserDetail(orgId: number, id: number): Promise<UserDetail | null> {
   const [user] = await db
     .select()
     .from(schema.users)
-    .where(eq(schema.users.id, id));
+    .where(and(eq(schema.users.id, id), orgScope(schema.users.organizationId, orgId)));
   if (!user) return null;
 
   const [assignment] = await db
@@ -225,12 +226,13 @@ export interface SimpleUser {
   department: string | null;
 }
 
-export async function getAllSimpleUsers(): Promise<SimpleUser[]> {
+export async function getAllSimpleUsers(orgId: number): Promise<SimpleUser[]> {
   return await db
     .select({
       id: schema.users.id,
       displayName: schema.users.displayName,
       department: schema.users.department,
     })
-    .from(schema.users);
+    .from(schema.users)
+    .where(orgScope(schema.users.organizationId, orgId));
 }

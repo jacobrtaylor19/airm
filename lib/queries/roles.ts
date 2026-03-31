@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 
 export interface SourceRoleRow {
   id: number;
@@ -13,7 +14,7 @@ export interface SourceRoleRow {
   userCount: number;
 }
 
-export async function getSourceRoles(): Promise<SourceRoleRow[]> {
+export async function getSourceRoles(orgId: number): Promise<SourceRoleRow[]> {
   return await db
     .select({
       id: schema.sourceRoles.id,
@@ -31,7 +32,8 @@ export async function getSourceRoles(): Promise<SourceRoleRow[]> {
         WHERE usra.source_role_id = source_roles.id
       )`,
     })
-    .from(schema.sourceRoles);
+    .from(schema.sourceRoles)
+    .where(orgScope(schema.sourceRoles.organizationId, orgId));
 }
 
 export interface SourceRoleDetail {
@@ -51,8 +53,8 @@ export interface SourceRoleDetail {
   }[];
 }
 
-export async function getSourceRoleDetail(id: number): Promise<SourceRoleDetail | null> {
-  const [role] = await db.select().from(schema.sourceRoles).where(eq(schema.sourceRoles.id, id));
+export async function getSourceRoleDetail(orgId: number, id: number): Promise<SourceRoleDetail | null> {
+  const [role] = await db.select().from(schema.sourceRoles).where(and(eq(schema.sourceRoles.id, id), orgScope(schema.sourceRoles.organizationId, orgId)));
   if (!role) return null;
 
   const permissions = await db
@@ -81,7 +83,7 @@ export interface TargetRoleRow {
   permissionCount: number;
 }
 
-export async function getTargetRoles(): Promise<TargetRoleRow[]> {
+export async function getTargetRoles(orgId: number): Promise<TargetRoleRow[]> {
   return await db
     .select({
       id: schema.targetRoles.id,
@@ -96,7 +98,8 @@ export async function getTargetRoles(): Promise<TargetRoleRow[]> {
         WHERE trp.target_role_id = target_roles.id
       )`,
     })
-    .from(schema.targetRoles);
+    .from(schema.targetRoles)
+    .where(orgScope(schema.targetRoles.organizationId, orgId));
 }
 
 export interface TargetPermissionInfo {
@@ -131,7 +134,7 @@ export interface SimpleTargetRole {
   domain: string | null;
 }
 
-export async function getAllSimpleTargetRoles(): Promise<SimpleTargetRole[]> {
+export async function getAllSimpleTargetRoles(orgId: number): Promise<SimpleTargetRole[]> {
   return await db
     .select({
       id: schema.targetRoles.id,
@@ -139,5 +142,6 @@ export async function getAllSimpleTargetRoles(): Promise<SimpleTargetRole[]> {
       roleName: schema.targetRoles.roleName,
       domain: schema.targetRoles.domain,
     })
-    .from(schema.targetRoles);
+    .from(schema.targetRoles)
+    .where(orgScope(schema.targetRoles.organizationId, orgId));
 }

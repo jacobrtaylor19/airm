@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 import { safeError } from "@/lib/errors";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,7 @@ export async function POST(request: NextRequest) {
 
       // Audit log
       await db.insert(schema.auditLog).values({
+        organizationId: user.organizationId,
         entityType: "sodRule",
         entityId: id,
         action: "updated",
@@ -67,6 +69,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Create new rule
       const [inserted] = await db.insert(schema.sodRules).values({
+        organizationId: getOrgId(user),
         ruleId,
         ruleName,
         permissionA,
@@ -77,6 +80,7 @@ export async function POST(request: NextRequest) {
       }).returning();
 
       await db.insert(schema.auditLog).values({
+        organizationId: user.organizationId,
         entityType: "sodRule",
         entityId: inserted.id,
         action: "created",
@@ -117,6 +121,7 @@ export async function PATCH(request: NextRequest) {
       .where(eq(schema.sodRules.id, id));
 
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "sodRule",
       entityId: id,
       action: isActive ? "activated" : "deactivated",
@@ -160,6 +165,7 @@ export async function DELETE(request: NextRequest) {
     await db.delete(schema.sodRules).where(eq(schema.sodRules.id, id));
 
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "sodRule",
       entityId: id,
       action: "deleted",

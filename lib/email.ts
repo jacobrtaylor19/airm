@@ -1,4 +1,6 @@
 import { Resend } from "resend";
+import { getSetting } from "@/lib/settings";
+import { reportError } from "@/lib/monitoring";
 
 let resend: Resend | null = null;
 
@@ -18,6 +20,35 @@ function getBaseUrl(): string {
   return "http://localhost:3000";
 }
 
+/** Default from address used when no setting is configured */
+const DEFAULT_FROM = "Provisum <notifications@provisum.io>";
+
+/**
+ * Read email settings from DB. Returns null if email is disabled.
+ */
+async function getEmailConfig(): Promise<{
+  from: string;
+  replyTo?: string;
+} | null> {
+  try {
+    const enabled = await getSetting("email_enabled");
+    if (enabled === "false") {
+      return null;
+    }
+
+    const fromAddress = await getSetting("email_from_address");
+    const replyTo = await getSetting("email_reply_to");
+
+    return {
+      from: fromAddress || DEFAULT_FROM,
+      ...(replyTo ? { replyTo } : {}),
+    };
+  } catch {
+    // If settings can't be read (e.g. during build), fall back to defaults
+    return { from: DEFAULT_FROM };
+  }
+}
+
 export async function sendInviteEmail(
   to: string,
   inviteToken: string,
@@ -29,13 +60,20 @@ export async function sendInviteEmail(
     return { success: true }; // graceful degradation
   }
 
+  const config = await getEmailConfig();
+  if (!config) {
+    console.info("[email] Email disabled via settings — skipping invite email to", to);
+    return { success: true };
+  }
+
   const baseUrl = getBaseUrl();
   const setupUrl = `${baseUrl}/setup?token=${inviteToken}`;
 
   try {
     await client.emails.send({
-      from: "Provisum <noreply@provisum.io>",
+      from: config.from,
       to,
+      ...(config.replyTo ? { reply_to: config.replyTo } : {}),
       subject: "You've been invited to Provisum",
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
@@ -62,15 +100,15 @@ export async function sendInviteEmail(
     });
     return { success: true };
   } catch (err) {
+    reportError(err, { context: "sendInviteEmail", to });
     const message = err instanceof Error ? err.message : "Unknown email error";
-    console.error("[email] Failed to send invite email:", message);
     return { success: false, error: message };
   }
 }
 
 /**
  * Send a workflow notification email.
- * Gracefully degrades if RESEND_API_KEY is not set.
+ * Gracefully degrades if RESEND_API_KEY is not set or email is disabled.
  */
 export async function sendNotificationEmail(
   to: string,
@@ -83,6 +121,11 @@ export async function sendNotificationEmail(
     return { sent: false, error: "Email service not configured" };
   }
 
+  const config = await getEmailConfig();
+  if (!config) {
+    return { sent: false, error: "Email disabled via settings" };
+  }
+
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://demo.provisum.io";
   const actionButton = actionUrl
     ? `<a href="${appUrl}${actionUrl}" style="display: inline-block; padding: 10px 20px; background-color: #10b981; color: white; text-decoration: none; border-radius: 6px; margin-top: 16px;">View Details</a>`
@@ -90,8 +133,9 @@ export async function sendNotificationEmail(
 
   try {
     await client.emails.send({
-      from: "Provisum <notifications@provisum.io>",
+      from: config.from,
       to,
+      ...(config.replyTo ? { reply_to: config.replyTo } : {}),
       subject: `[Provisum] ${subject}`,
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -110,7 +154,57 @@ export async function sendNotificationEmail(
     });
     return { sent: true };
   } catch (err) {
+    reportError(err, { context: "sendNotificationEmail", to, subject });
     return { sent: false, error: String(err) };
+  }
+}
+
+/**
+ * Send a test email to verify configuration.
+ */
+export async function sendTestEmail(
+  to: string,
+): Promise<{ success: boolean; error?: string }> {
+  const client = getResendClient();
+  if (!client) {
+    return { success: false, error: "RESEND_API_KEY environment variable is not set" };
+  }
+
+  const config = await getEmailConfig();
+  if (!config) {
+    return { success: false, error: "Email is disabled in settings" };
+  }
+
+  try {
+    await client.emails.send({
+      from: config.from,
+      to,
+      ...(config.replyTo ? { reply_to: config.replyTo } : {}),
+      subject: "[Provisum] Test Email",
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
+          <h1 style="font-size: 24px; font-weight: 600; color: #111;">Test Email</h1>
+          <p style="font-size: 16px; color: #555; line-height: 1.5;">
+            This is a test email from Provisum. If you received this, your email configuration is working correctly.
+          </p>
+          <div style="margin: 24px 0; padding: 16px; background: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
+            <p style="margin: 0; color: #166534; font-size: 14px;">
+              <strong>From:</strong> ${config.from}<br/>
+              ${config.replyTo ? `<strong>Reply-To:</strong> ${config.replyTo}<br/>` : ""}
+              <strong>Sent at:</strong> ${new Date().toISOString()}
+            </p>
+          </div>
+          <p style="font-size: 13px; color: #999;">
+            Sent from the Provisum Admin Console.
+          </p>
+        </div>
+      `,
+    });
+    return { success: true };
+  } catch (err) {
+    reportError(err, { context: "sendTestEmail", to });
+    const message = err instanceof Error ? err.message : "Unknown email error";
+    return { success: false, error: message };
   }
 }
 

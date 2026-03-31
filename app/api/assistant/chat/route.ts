@@ -30,9 +30,10 @@ interface ChatRequestBody {
   };
 }
 
-async function getLumenDataContext(user: { id: number; role: string }): Promise<string> {
+async function getLumenDataContext(user: { id: number; role: string; organizationId: number }): Promise<string> {
   try {
-    const stats = await getDashboardStats();
+    const orgId = user.organizationId;
+    const stats = await getDashboardStats(orgId);
     const scopedUserIds = await getUserScope(user as Parameters<typeof getUserScope>[0]);
     const scopeDepts = await getUserScopeDepartments(user as Parameters<typeof getUserScopeDepartments>[0]);
 
@@ -322,6 +323,16 @@ function getToolStatusLabel(toolName: string): string {
       return "Checking job status...";
     case "get_calibration_summary":
       return "Reviewing confidence data...";
+    case "create_role_mapping":
+      return "Creating role mapping...";
+    case "resolve_sod_conflict":
+      return "Resolving SOD conflict...";
+    case "accept_calibration_items":
+      return "Accepting calibration items...";
+    case "submit_for_review":
+      return "Submitting assignments for review...";
+    case "send_reminder":
+      return "Sending reminder notifications...";
     default:
       return "Processing...";
   }

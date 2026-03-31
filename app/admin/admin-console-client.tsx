@@ -31,6 +31,7 @@ import {
   Flag,
   Webhook,
   CalendarClock,
+  Mail,
 } from "lucide-react";
 
 import { OrgTreeSection } from "./org-tree-section";
@@ -44,6 +45,7 @@ import {
 import { FeatureFlagsSection } from "./feature-flags-section";
 import { WebhooksSection } from "./webhooks-section";
 import { ScheduledExportsSection } from "./scheduled-exports-section";
+import { EmailSettingsSection } from "./email-settings-section";
 
 // -----------------------------------------------
 // Types
@@ -330,6 +332,10 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
             <CalendarClock className="h-4 w-4" />
             Scheduled Exports
           </TabsTrigger>
+          <TabsTrigger value="email" className="flex items-center gap-1.5">
+            <Mail className="h-4 w-4" />
+            Email
+          </TabsTrigger>
         </TabsList>
 
         {/* -- ORG HIERARCHY TAB -- */}
@@ -401,6 +407,18 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
         {/* -- SCHEDULED EXPORTS TAB -- */}
         <TabsContent value="scheduled-exports" className="mt-4">
           <ScheduledExportsSection />
+        </TabsContent>
+
+        {/* -- EMAIL TAB -- */}
+        <TabsContent value="email" className="mt-4">
+          <EmailSettingsSection
+            settings={settings}
+            settingsLoading={settingsLoading}
+            settingsSaving={settingsSaving}
+            settingsMsg={settingsMsg}
+            onUpdateSetting={updateSetting}
+            onSaveSettings={saveSettings}
+          />
         </TabsContent>
       </Tabs>
 

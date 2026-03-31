@@ -32,13 +32,13 @@ export async function POST(request: NextRequest) {
 
     if (department) {
       // Department-based bulk approve
-      return handleDepartmentApprove(department, user.email || user.username);
+      return handleDepartmentApprove(department, user.email || user.username, user.organizationId);
     } else if (assignmentIds && Array.isArray(assignmentIds) && assignmentIds.length > 0) {
       // ID-based bulk approve
-      return handleIdsApprove(assignmentIds, user.email || user.username);
+      return handleIdsApprove(assignmentIds, user.email || user.username, user.organizationId);
     } else {
       // Legacy: approve all high-confidence ready_for_approval
-      return handleLegacyBulkApprove(user.email || user.username);
+      return handleLegacyBulkApprove(user.email || user.username, user.organizationId);
     }
   } catch (err: unknown) {
     const message = safeError(err, "Unknown error");
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 }
 
 /** Approve all eligible assignments for a specific department */
-async function handleDepartmentApprove(department: string, actorEmail: string) {
+async function handleDepartmentApprove(department: string, actorEmail: string, orgId: number) {
   // Get all assignments for users in this department with approvable status
   const approvableStatuses = ["ready_for_approval", "compliance_approved"];
 
@@ -97,6 +97,7 @@ async function handleDepartmentApprove(department: string, actorEmail: string) {
 
   if (count > 0) {
     await db.insert(schema.auditLog).values({
+      organizationId: orgId,
       entityType: "userTargetRoleAssignment",
       entityId: 0,
       action: "bulk_approved",
@@ -109,7 +110,7 @@ async function handleDepartmentApprove(department: string, actorEmail: string) {
 }
 
 /** Approve specific assignment IDs */
-async function handleIdsApprove(assignmentIds: number[], actorEmail: string) {
+async function handleIdsApprove(assignmentIds: number[], actorEmail: string, orgId: number) {
   const approvableStatuses = ["ready_for_approval", "compliance_approved", "sod_risk_accepted"];
   const now = new Date().toISOString();
   let count = 0;
@@ -148,6 +149,7 @@ async function handleIdsApprove(assignmentIds: number[], actorEmail: string) {
 
   if (count > 0) {
     await db.insert(schema.auditLog).values({
+      organizationId: orgId,
       entityType: "userTargetRoleAssignment",
       entityId: 0,
       action: "bulk_approved",
@@ -160,7 +162,7 @@ async function handleIdsApprove(assignmentIds: number[], actorEmail: string) {
 }
 
 /** Legacy: approve all ready_for_approval with high confidence */
-async function handleLegacyBulkApprove(actorEmail: string) {
+async function handleLegacyBulkApprove(actorEmail: string, orgId: number) {
   const candidates = await db.select({
     assignmentId: schema.userTargetRoleAssignments.id,
     userId: schema.userTargetRoleAssignments.userId,
@@ -189,6 +191,7 @@ async function handleLegacyBulkApprove(actorEmail: string) {
 
   if (count > 0) {
     await db.insert(schema.auditLog).values({
+      organizationId: orgId,
       entityType: "userTargetRoleAssignment",
       entityId: 0,
       action: "bulk_approved",

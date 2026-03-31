@@ -58,6 +58,7 @@ export async function POST(req: NextRequest) {
       maxRetries: 2,
       onComplete: async () => {
         await db.insert(schema.auditLog).values({
+          organizationId: user.organizationId,
           entityType: "processingJob",
           entityId: job.id,
           action: "sod_analysis_completed",

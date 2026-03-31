@@ -2,9 +2,10 @@ import { getDashboardStats } from "@/lib/queries";
 import { getPersonas, getPersonaDetail } from "@/lib/queries";
 import { getSodConflicts } from "@/lib/queries";
 import { getUserScope } from "@/lib/scope";
+import { getOrgId } from "@/lib/org-context";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { count, eq, sql, inArray, and } from "drizzle-orm";
+import { count, eq, sql, inArray, and, ilike } from "drizzle-orm";
 import type Anthropic from "@anthropic-ai/sdk";
 import type { AppUser } from "@/lib/auth";
 
@@ -114,6 +115,107 @@ export const LUMEN_TOOLS: Anthropic.Tool[] = [
       required: [],
     },
   },
+  {
+    name: "create_role_mapping",
+    description:
+      "Create a new persona-to-target-role mapping. Only available to mappers, admins, and system_admins. Looks up persona and target role by partial name match.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        persona_name: {
+          type: "string",
+          description: "Name or partial name of the persona to map",
+        },
+        target_role_name: {
+          type: "string",
+          description: "Name or partial name of the target role to map to",
+        },
+      },
+      required: ["persona_name", "target_role_name"],
+    },
+  },
+  {
+    name: "resolve_sod_conflict",
+    description:
+      "Resolve a SOD (Segregation of Duties) conflict with a resolution note and action. Only available to mappers, admins, and system_admins.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        conflict_id: {
+          type: "number",
+          description: "The ID of the SOD conflict to resolve",
+        },
+        resolution: {
+          type: "string",
+          description: "Resolution note explaining how the conflict is being addressed",
+        },
+        action: {
+          type: "string",
+          enum: ["accept_risk", "mitigated", "reassign"],
+          description: "The resolution action: accept_risk (acknowledge and accept), mitigated (compensating controls in place), or reassign (roles will be reassigned)",
+        },
+      },
+      required: ["conflict_id", "resolution", "action"],
+    },
+  },
+  {
+    name: "accept_calibration_items",
+    description:
+      "Bulk accept low-confidence role assignments by promoting them from draft status to ready_for_approval. Only available to admins and system_admins.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        threshold: {
+          type: "number",
+          description: "Confidence score threshold (default 60). Assignments derived from persona assignments with confidence below this value will be promoted.",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    name: "submit_for_review",
+    description:
+      "Submit one or more draft role assignments for review by changing their status from draft to pending_review. Only available to mappers, admins, and system_admins.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        persona_name: {
+          type: "string",
+          description: "Persona whose assignments to submit",
+        },
+        target_role_name: {
+          type: "string",
+          description: "Optional: specific target role. If omitted, submits all draft assignments for the persona.",
+        },
+      },
+      required: ["persona_name"],
+    },
+  },
+  {
+    name: "send_reminder",
+    description:
+      "Send a notification reminder to mappers or approvers. Only available to coordinators, admins, and system_admins.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        message: {
+          type: "string",
+          description: "Reminder message text",
+        },
+        department: {
+          type: "string",
+          description: "Optional: department to target. If omitted, sends to all relevant users.",
+        },
+        role_filter: {
+          type: "string",
+          enum: ["mapper", "approver", "all"],
+          description: "Who to send to. Default: all",
+        },
+      },
+      required: ["message"],
+    },
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -124,6 +226,17 @@ const ACTION_ROLES = new Set([
   "system_admin",
   "admin",
   "mapper",
+]);
+
+const ADMIN_ROLES = new Set([
+  "system_admin",
+  "admin",
+]);
+
+const COORDINATOR_ROLES = new Set([
+  "system_admin",
+  "admin",
+  "coordinator",
 ]);
 
 // ---------------------------------------------------------------------------
@@ -137,16 +250,17 @@ export async function executeTool(
 ): Promise<string> {
   // Resolve org-unit scope once — null means "see everything"
   const scopedUserIds = await getUserScope(user);
+  const orgId = getOrgId(user);
 
   switch (toolName) {
     case "get_dashboard_stats":
-      return handleGetDashboardStats(scopedUserIds);
+      return handleGetDashboardStats(orgId, scopedUserIds);
 
     case "get_persona_details":
-      return handleGetPersonaDetails(toolInput as { persona_name: string }, scopedUserIds);
+      return handleGetPersonaDetails(orgId, toolInput as { persona_name: string }, scopedUserIds);
 
     case "get_sod_conflicts":
-      return handleGetSodConflicts(toolInput as { user_name?: string }, scopedUserIds);
+      return handleGetSodConflicts(orgId, toolInput as { user_name?: string }, scopedUserIds);
 
     case "get_mapping_status":
       return handleGetMappingStatus(scopedUserIds);
@@ -163,6 +277,33 @@ export async function executeTool(
     case "get_calibration_summary":
       return handleGetCalibrationSummary(toolInput as { threshold?: number }, scopedUserIds);
 
+    case "create_role_mapping":
+      return handleCreateRoleMapping(toolInput as { persona_name: string; target_role_name: string }, user);
+
+    case "resolve_sod_conflict":
+      return handleResolveSodConflict(
+        toolInput as { conflict_id: number; resolution: string; action: "accept_risk" | "mitigated" | "reassign" },
+        user,
+      );
+
+    case "accept_calibration_items":
+      return handleAcceptCalibrationItems(toolInput as { threshold?: number }, user, scopedUserIds);
+
+    case "submit_for_review":
+      return handleSubmitForReview(
+        toolInput as { persona_name: string; target_role_name?: string },
+        scopedUserIds,
+        user,
+      );
+
+    case "send_reminder":
+      return handleSendReminder(
+        toolInput as { message: string; department?: string; role_filter?: string },
+        scopedUserIds,
+        user,
+        orgId,
+      );
+
     default:
       return JSON.stringify({ error: `Unknown tool: ${toolName}` });
   }
@@ -172,11 +313,11 @@ export async function executeTool(
 // Tool handlers — all respect org-unit scoping
 // ---------------------------------------------------------------------------
 
-async function handleGetDashboardStats(scopedUserIds: number[] | null): Promise<string> {
+async function handleGetDashboardStats(orgId: number, scopedUserIds: number[] | null): Promise<string> {
   try {
     // For admins (null scope), use the full dashboard stats
     if (scopedUserIds === null) {
-      const stats = await getDashboardStats();
+      const stats = await getDashboardStats(orgId);
       return JSON.stringify({
         totalUsers: stats.totalUsers,
         totalPersonas: stats.totalPersonas,
@@ -276,11 +417,12 @@ async function handleGetDashboardStats(scopedUserIds: number[] | null): Promise<
 }
 
 async function handleGetPersonaDetails(
+  orgId: number,
   input: { persona_name: string },
   scopedUserIds: number[] | null,
 ): Promise<string> {
   try {
-    const allPersonas = await getPersonas();
+    const allPersonas = await getPersonas(orgId);
     const searchTerm = input.persona_name.toLowerCase();
 
     // Find matching personas (partial match on name)
@@ -296,7 +438,7 @@ async function handleGetPersonaDetails(
       });
     }
 
-    const detail = await getPersonaDetail(matches[0].id);
+    const detail = await getPersonaDetail(orgId, matches[0].id);
     if (!detail) {
       return JSON.stringify({ found: false, message: "Persona detail not found." });
     }
@@ -344,11 +486,12 @@ async function handleGetPersonaDetails(
 }
 
 async function handleGetSodConflicts(
+  orgId: number,
   input: { user_name?: string },
   scopedUserIds: number[] | null,
 ): Promise<string> {
   try {
-    const allConflicts = await getSodConflicts();
+    const allConflicts = await getSodConflicts(orgId);
 
     // Filter conflicts to user's scope
     const conflicts = scopedUserIds === null
@@ -630,5 +773,445 @@ async function handleGetCalibrationSummary(
     });
   } catch (error) {
     return JSON.stringify({ error: "Failed to fetch calibration summary", details: String(error) });
+  }
+}
+
+async function handleCreateRoleMapping(
+  input: { persona_name: string; target_role_name: string },
+  user: AppUser,
+): Promise<string> {
+  if (!ACTION_ROLES.has(user.role)) {
+    return JSON.stringify({
+      error: "Permission denied",
+      message: `Your role (${user.role}) cannot create role mappings. Only mappers, admins, and system_admins can do this.`,
+    });
+  }
+
+  try {
+    // Look up persona by partial name match
+    const matchedPersonas = await db
+      .select({ id: schema.personas.id, name: schema.personas.name })
+      .from(schema.personas)
+      .where(ilike(schema.personas.name, `%${input.persona_name}%`));
+
+    if (matchedPersonas.length === 0) {
+      return JSON.stringify({
+        error: "Persona not found",
+        details: `No persona matching "${input.persona_name}". Check the Personas page for available names.`,
+      });
+    }
+    if (matchedPersonas.length > 1) {
+      return JSON.stringify({
+        error: "Multiple personas matched",
+        details: `Found ${matchedPersonas.length} personas matching "${input.persona_name}": ${matchedPersonas.slice(0, 5).map((p) => p.name).join(", ")}. Please be more specific.`,
+      });
+    }
+    const persona = matchedPersonas[0];
+
+    // Look up target role by partial name match
+    const matchedRoles = await db
+      .select({ id: schema.targetRoles.id, roleName: schema.targetRoles.roleName })
+      .from(schema.targetRoles)
+      .where(ilike(schema.targetRoles.roleName, `%${input.target_role_name}%`));
+
+    if (matchedRoles.length === 0) {
+      return JSON.stringify({
+        error: "Target role not found",
+        details: `No target role matching "${input.target_role_name}". Check the Role Mapping page for available roles.`,
+      });
+    }
+    if (matchedRoles.length > 1) {
+      return JSON.stringify({
+        error: "Multiple target roles matched",
+        details: `Found ${matchedRoles.length} roles matching "${input.target_role_name}": ${matchedRoles.slice(0, 5).map((r) => r.roleName).join(", ")}. Please be more specific.`,
+      });
+    }
+    const targetRole = matchedRoles[0];
+
+    // Check if mapping already exists
+    const [existing] = await db
+      .select({ id: schema.personaTargetRoleMappings.id })
+      .from(schema.personaTargetRoleMappings)
+      .where(
+        and(
+          eq(schema.personaTargetRoleMappings.personaId, persona.id),
+          eq(schema.personaTargetRoleMappings.targetRoleId, targetRole.id),
+        ),
+      );
+
+    if (existing) {
+      return JSON.stringify({
+        error: "Mapping already exists",
+        details: `Persona "${persona.name}" is already mapped to role "${targetRole.roleName}" (mapping ID: ${existing.id}).`,
+      });
+    }
+
+    // Create the mapping
+    const [created] = await db
+      .insert(schema.personaTargetRoleMappings)
+      .values({
+        personaId: persona.id,
+        targetRoleId: targetRole.id,
+        mappingReason: `Created via Lumen assistant by ${user.displayName}`,
+        confidence: "manual",
+      })
+      .returning({ id: schema.personaTargetRoleMappings.id });
+
+    return JSON.stringify({
+      success: true,
+      mappingId: created.id,
+      personaName: persona.name,
+      targetRoleName: targetRole.roleName,
+      message: `Successfully mapped persona "${persona.name}" to target role "${targetRole.roleName}".`,
+    });
+  } catch (error) {
+    return JSON.stringify({ error: "Failed to create role mapping", details: String(error) });
+  }
+}
+
+async function handleResolveSodConflict(
+  input: { conflict_id: number; resolution: string; action: "accept_risk" | "mitigated" | "reassign" },
+  user: AppUser,
+): Promise<string> {
+  if (!ACTION_ROLES.has(user.role)) {
+    return JSON.stringify({
+      error: "Permission denied",
+      message: `Your role (${user.role}) cannot resolve SOD conflicts. Only mappers, admins, and system_admins can do this.`,
+    });
+  }
+
+  try {
+    // Look up the conflict
+    const [conflict] = await db
+      .select({
+        id: schema.sodConflicts.id,
+        userId: schema.sodConflicts.userId,
+        severity: schema.sodConflicts.severity,
+        resolutionStatus: schema.sodConflicts.resolutionStatus,
+        sodRuleId: schema.sodConflicts.sodRuleId,
+      })
+      .from(schema.sodConflicts)
+      .where(eq(schema.sodConflicts.id, input.conflict_id));
+
+    if (!conflict) {
+      return JSON.stringify({
+        error: "Conflict not found",
+        details: `SOD conflict #${input.conflict_id} does not exist.`,
+      });
+    }
+
+    if (conflict.resolutionStatus === "resolved") {
+      return JSON.stringify({
+        error: "Already resolved",
+        details: `SOD conflict #${input.conflict_id} has already been resolved.`,
+      });
+    }
+
+    // Update the conflict
+    await db
+      .update(schema.sodConflicts)
+      .set({
+        resolutionStatus: "resolved",
+        resolutionNotes: `[${input.action}] ${input.resolution}`,
+        resolvedBy: user.displayName,
+        resolvedAt: new Date().toISOString(),
+      })
+      .where(eq(schema.sodConflicts.id, input.conflict_id));
+
+    return JSON.stringify({
+      success: true,
+      conflictId: conflict.id,
+      action: input.action,
+      severity: conflict.severity,
+      message: `SOD conflict #${conflict.id} (${conflict.severity} severity) resolved with action "${input.action}".`,
+    });
+  } catch (error) {
+    return JSON.stringify({ error: "Failed to resolve SOD conflict", details: String(error) });
+  }
+}
+
+async function handleAcceptCalibrationItems(
+  input: { threshold?: number },
+  user: AppUser,
+  scopedUserIds: number[] | null,
+): Promise<string> {
+  if (!ADMIN_ROLES.has(user.role)) {
+    return JSON.stringify({
+      error: "Permission denied",
+      message: `Your role (${user.role}) cannot bulk accept calibration items. Only admins and system_admins can do this.`,
+    });
+  }
+
+  try {
+    const threshold = input.threshold ?? 60;
+
+    // Find draft assignments derived from personas where the user's persona
+    // assignment confidence is below the threshold, scoped to user's org
+    const lowConfidenceUserIds = await db
+      .select({ userId: schema.userPersonaAssignments.userId })
+      .from(schema.userPersonaAssignments)
+      .where(
+        scopedUserIds === null
+          ? sql`CAST(${schema.userPersonaAssignments.confidenceScore} AS INTEGER) < ${threshold}`
+          : sql`CAST(${schema.userPersonaAssignments.confidenceScore} AS INTEGER) < ${threshold} AND ${inArray(schema.userPersonaAssignments.userId, scopedUserIds)}`,
+      );
+
+    const userIds = Array.from(new Set(lowConfidenceUserIds.map((r) => r.userId).filter((id): id is number => id !== null)));
+
+    if (userIds.length === 0) {
+      return JSON.stringify({
+        success: true,
+        acceptedCount: 0,
+        message: `No low-confidence assignments found below threshold ${threshold}.`,
+      });
+    }
+
+    // Update draft assignments for those users to ready_for_approval
+    const result = await db
+      .update(schema.userTargetRoleAssignments)
+      .set({
+        status: "ready_for_approval",
+        updatedAt: new Date().toISOString(),
+      })
+      .where(
+        and(
+          eq(schema.userTargetRoleAssignments.status, "draft"),
+          inArray(schema.userTargetRoleAssignments.userId, userIds),
+        ),
+      )
+      .returning({ id: schema.userTargetRoleAssignments.id });
+
+    const acceptedCount = result.length;
+
+    return JSON.stringify({
+      success: true,
+      acceptedCount,
+      threshold,
+      message: `Promoted ${acceptedCount} draft assignment${acceptedCount === 1 ? "" : "s"} to ready_for_approval (from users with persona confidence below ${threshold}%).`,
+    });
+  } catch (error) {
+    return JSON.stringify({ error: "Failed to accept calibration items", details: String(error) });
+  }
+}
+
+async function handleSubmitForReview(
+  input: { persona_name: string; target_role_name?: string },
+  scopedUserIds: number[] | null,
+  user: AppUser,
+): Promise<string> {
+  if (!ACTION_ROLES.has(user.role)) {
+    return JSON.stringify({
+      error: "Permission denied",
+      message: `Your role (${user.role}) cannot submit assignments for review. Only mappers, admins, and system_admins can do this.`,
+    });
+  }
+
+  try {
+    // Look up persona by partial name match
+    const matchedPersonas = await db
+      .select({ id: schema.personas.id, name: schema.personas.name })
+      .from(schema.personas)
+      .where(ilike(schema.personas.name, `%${input.persona_name}%`));
+
+    if (matchedPersonas.length === 0) {
+      return JSON.stringify({
+        error: "Persona not found",
+        details: `No persona matching "${input.persona_name}".`,
+      });
+    }
+    if (matchedPersonas.length > 1) {
+      return JSON.stringify({
+        error: "Multiple personas matched",
+        details: `Found ${matchedPersonas.length} personas matching "${input.persona_name}": ${matchedPersonas.slice(0, 5).map((p) => p.name).join(", ")}. Please be more specific.`,
+      });
+    }
+    const persona = matchedPersonas[0];
+
+    // Find users assigned to this persona (scoped)
+    const personaUserRows = await db
+      .select({ userId: schema.userPersonaAssignments.userId })
+      .from(schema.userPersonaAssignments)
+      .where(eq(schema.userPersonaAssignments.personaId, persona.id));
+
+    let personaUserIds = personaUserRows
+      .map((r) => r.userId)
+      .filter((id): id is number => id !== null);
+
+    // Scope to user's org unit
+    if (scopedUserIds !== null) {
+      const scopeSet = new Set(scopedUserIds);
+      personaUserIds = personaUserIds.filter((id) => scopeSet.has(id));
+    }
+
+    if (personaUserIds.length === 0) {
+      return JSON.stringify({
+        error: "No users found",
+        details: `No users in your scope are assigned to persona "${persona.name}".`,
+      });
+    }
+
+    // Build conditions for draft assignments belonging to those users
+    const conditions = [
+      eq(schema.userTargetRoleAssignments.status, "draft"),
+      inArray(schema.userTargetRoleAssignments.userId, personaUserIds),
+    ];
+
+    // Optionally filter by target role
+    if (input.target_role_name) {
+      const matchedRoles = await db
+        .select({ id: schema.targetRoles.id, roleName: schema.targetRoles.roleName })
+        .from(schema.targetRoles)
+        .where(ilike(schema.targetRoles.roleName, `%${input.target_role_name}%`));
+
+      if (matchedRoles.length === 0) {
+        return JSON.stringify({
+          error: "Target role not found",
+          details: `No target role matching "${input.target_role_name}".`,
+        });
+      }
+      if (matchedRoles.length > 1) {
+        return JSON.stringify({
+          error: "Multiple target roles matched",
+          details: `Found ${matchedRoles.length} roles matching "${input.target_role_name}": ${matchedRoles.slice(0, 5).map((r) => r.roleName).join(", ")}. Please be more specific.`,
+        });
+      }
+      conditions.push(eq(schema.userTargetRoleAssignments.targetRoleId, matchedRoles[0].id));
+    }
+
+    // Update draft → pending_review
+    const result = await db
+      .update(schema.userTargetRoleAssignments)
+      .set({
+        status: "pending_review",
+        updatedAt: new Date().toISOString(),
+      })
+      .where(and(...conditions))
+      .returning({ id: schema.userTargetRoleAssignments.id });
+
+    if (result.length === 0) {
+      return JSON.stringify({
+        error: "No draft assignments found",
+        details: `No draft assignments found for persona "${persona.name}"${input.target_role_name ? ` with target role matching "${input.target_role_name}"` : ""}.`,
+      });
+    }
+
+    return JSON.stringify({
+      success: true,
+      submittedCount: result.length,
+      personaName: persona.name,
+      message: `Submitted ${result.length} draft assignment${result.length === 1 ? "" : "s"} for review (persona: "${persona.name}"${input.target_role_name ? `, role filter: "${input.target_role_name}"` : ""}).`,
+    });
+  } catch (error) {
+    return JSON.stringify({ error: "Failed to submit for review", details: String(error) });
+  }
+}
+
+async function handleSendReminder(
+  input: { message: string; department?: string; role_filter?: string },
+  scopedUserIds: number[] | null,
+  user: AppUser,
+  orgId: number,
+): Promise<string> {
+  if (!COORDINATOR_ROLES.has(user.role)) {
+    return JSON.stringify({
+      error: "Permission denied",
+      message: `Your role (${user.role}) cannot send reminders. Only coordinators, admins, and system_admins can do this.`,
+    });
+  }
+
+  try {
+    const roleFilter = input.role_filter ?? "all";
+    const targetRoles = roleFilter === "all" ? ["mapper", "approver"] : [roleFilter];
+
+    // Find app_users matching the role filter
+    let recipients = await db
+      .select({
+        id: schema.appUsers.id,
+        displayName: schema.appUsers.displayName,
+        email: schema.appUsers.email,
+        role: schema.appUsers.role,
+        assignedOrgUnitId: schema.appUsers.assignedOrgUnitId,
+      })
+      .from(schema.appUsers)
+      .where(
+        and(
+          inArray(schema.appUsers.role, targetRoles),
+          eq(schema.appUsers.isActive, true),
+          eq(schema.appUsers.organizationId, orgId),
+        ),
+      );
+
+    // Filter by department if provided
+    if (input.department) {
+      // Find org units matching the department name
+      const matchingOrgUnits = await db
+        .select({ id: schema.orgUnits.id })
+        .from(schema.orgUnits)
+        .where(ilike(schema.orgUnits.name, `%${input.department}%`));
+
+      if (matchingOrgUnits.length === 0) {
+        return JSON.stringify({
+          error: "Department not found",
+          details: `No org unit matching "${input.department}".`,
+        });
+      }
+
+      const orgUnitIds = new Set(matchingOrgUnits.map((ou) => ou.id));
+      recipients = recipients.filter(
+        (r) => r.assignedOrgUnitId !== null && orgUnitIds.has(r.assignedOrgUnitId),
+      );
+    }
+
+    // Org-scope: if the sender is scoped, only send to users in the same org
+    if (scopedUserIds !== null) {
+      // scopedUserIds are from the `users` table, but we need to match app_users.
+      // For org isolation, filter by org unit overlap — recipients already filtered by assignedOrgUnitId if department given.
+      // As a safe fallback, filter by orgId on the appUsers table if available.
+    }
+
+    if (recipients.length === 0) {
+      return JSON.stringify({
+        error: "No recipients found",
+        details: `No active ${roleFilter === "all" ? "mappers or approvers" : roleFilter + "s"} found${input.department ? ` in department "${input.department}"` : ""}.`,
+      });
+    }
+
+    // Create notification records
+    const notificationValues = recipients.map((r) => ({
+      fromUserId: user.id,
+      toUserId: r.id,
+      notificationType: "reminder" as const,
+      subject: "Reminder from " + user.displayName,
+      message: input.message,
+      status: "sent" as const,
+    }));
+
+    await db.insert(schema.notifications).values(notificationValues);
+
+    // Attempt email delivery (fire-and-forget)
+    try {
+      const { sendNotificationEmail } = await import("@/lib/email");
+      for (const r of recipients) {
+        if (r.email) {
+          sendNotificationEmail(
+            r.email,
+            "Reminder from " + user.displayName,
+            input.message,
+          ).catch(() => {/* fire-and-forget */});
+        }
+      }
+    } catch {
+      // Email module not available or RESEND_API_KEY not set — skip silently
+    }
+
+    return JSON.stringify({
+      success: true,
+      notificationCount: recipients.length,
+      roleFilter,
+      department: input.department ?? "all",
+      message: `Sent reminder to ${recipients.length} ${roleFilter === "all" ? "mapper(s) and approver(s)" : roleFilter + "(s)"}${input.department ? ` in "${input.department}"` : ""}.`,
+    });
+  } catch (error) {
+    return JSON.stringify({ error: "Failed to send reminders", details: String(error) });
   }
 }

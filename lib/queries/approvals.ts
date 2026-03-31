@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { sql, eq, inArray } from "drizzle-orm";
+import { sql, eq, and, inArray } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 import { getAssignedScope, getSourceUserIdsInScope } from "./common";
 
 export interface ApprovalRow {
@@ -47,11 +48,11 @@ function approvalQueueBase() {
     .leftJoin(schema.personas, eq(schema.personas.id, schema.userTargetRoleAssignments.derivedFromPersonaId));
 }
 
-export async function getApprovalQueue(): Promise<ApprovalRow[]> {
-  return await approvalQueueBase();
+export async function getApprovalQueue(orgId: number): Promise<ApprovalRow[]> {
+  return await approvalQueueBase().where(orgScope(schema.users.organizationId, orgId));
 }
 
-export async function getApprovalQueueScoped(appUserId: number): Promise<ApprovalRow[]> {
+export async function getApprovalQueueScoped(orgId: number, appUserId: number): Promise<ApprovalRow[]> {
   const scope = await getAssignedScope(appUserId, "approver");
 
   // If no assignments, return empty (not everything)
@@ -61,5 +62,5 @@ export async function getApprovalQueueScoped(appUserId: number): Promise<Approva
   if (scopedUserIds.length === 0) return [];
 
   return await approvalQueueBase()
-    .where(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds));
+    .where(and(inArray(schema.userTargetRoleAssignments.userId, scopedUserIds), orgScope(schema.users.organizationId, orgId)));
 }

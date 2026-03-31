@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, CheckCircle, Clock, Archive, Zap, Trash2, Pencil, Star, CalendarClock } from "lucide-react";
+import { Plus, CheckCircle, Clock, Archive, Zap, Trash2, Pencil, Star, CalendarClock, ChevronDown, ChevronRight, Circle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 type ReleaseStats = { total: number; approved: number; sodFlagged: number; pending: number; pct: number; userCount: number; orgUnitCount: number };
@@ -76,6 +76,141 @@ const EMPTY_FORM = {
   approvalDeadline: "",
   isActive: false,
 };
+
+interface ReadinessCheck {
+  label: string;
+  passed: boolean;
+  severity: "error" | "warning" | "info";
+  detail?: string;
+}
+
+function getReadinessChecks(r: ReleaseRow): ReadinessCheck[] {
+  const now = new Date();
+  const checks: ReadinessCheck[] = [];
+
+  // 1. Scope defined
+  checks.push({
+    label: "Scope defined (users or business units)",
+    passed: r.stats.userCount > 0 || r.stats.orgUnitCount > 0,
+    severity: "error",
+    detail: r.stats.userCount > 0 || r.stats.orgUnitCount > 0
+      ? `${r.stats.userCount} users, ${r.stats.orgUnitCount} business units`
+      : "No users or business units assigned to this release",
+  });
+
+  // 2. Assignments exist
+  checks.push({
+    label: "Role assignments created",
+    passed: r.stats.total > 0,
+    severity: "error",
+    detail: r.stats.total > 0 ? `${r.stats.total} assignments` : "No role assignments yet",
+  });
+
+  // 3. SOD analysis complete (no flagged or all resolved)
+  checks.push({
+    label: "SOD conflicts resolved",
+    passed: r.stats.sodFlagged === 0,
+    severity: r.stats.sodFlagged > 5 ? "error" : "warning",
+    detail: r.stats.sodFlagged > 0 ? `${r.stats.sodFlagged} unresolved conflicts` : "All clear",
+  });
+
+  // 4. Approval progress
+  const approvalPct = r.stats.total > 0 ? Math.round((r.stats.approved / r.stats.total) * 100) : 0;
+  checks.push({
+    label: "All assignments approved",
+    passed: r.stats.total > 0 && approvalPct === 100,
+    severity: approvalPct < 50 ? "error" : "warning",
+    detail: `${approvalPct}% approved (${r.stats.approved}/${r.stats.total})`,
+  });
+
+  // 5. No pending assignments
+  checks.push({
+    label: "No assignments in draft/pending",
+    passed: r.stats.pending === 0,
+    severity: "warning",
+    detail: r.stats.pending > 0 ? `${r.stats.pending} still pending` : "All submitted",
+  });
+
+  // 6. Target date set
+  checks.push({
+    label: "Target go-live date set",
+    passed: !!r.targetDate,
+    severity: "info",
+  });
+
+  // 7. Mapping deadline not overdue
+  if (r.mappingDeadline) {
+    const overdue = new Date(r.mappingDeadline) < now;
+    checks.push({
+      label: "Mapping deadline met",
+      passed: !overdue || r.stats.total > 0,
+      severity: overdue ? "warning" : "info",
+      detail: overdue ? `Overdue since ${new Date(r.mappingDeadline).toLocaleDateString()}` : undefined,
+    });
+  }
+
+  // 8. Approval deadline not overdue
+  if (r.approvalDeadline) {
+    const overdue = new Date(r.approvalDeadline) < now && approvalPct < 100;
+    checks.push({
+      label: "Approval deadline met",
+      passed: !overdue,
+      severity: overdue ? "error" : "info",
+      detail: overdue ? `Overdue since ${new Date(r.approvalDeadline).toLocaleDateString()}` : undefined,
+    });
+  }
+
+  return checks;
+}
+
+function ReadinessChecklist({ release }: { release: ReleaseRow }) {
+  const [expanded, setExpanded] = useState(false);
+  const checks = getReadinessChecks(release);
+  const passed = checks.filter(c => c.passed).length;
+  const total = checks.length;
+  const allPassed = passed === total;
+  const errors = checks.filter(c => !c.passed && c.severity === "error").length;
+
+  return (
+    <div className="mt-2 pt-2 border-t border-dashed">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        className="flex items-center gap-2 text-xs w-full text-left hover:bg-muted/50 rounded px-1 py-0.5 transition-colors"
+      >
+        {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <span className="font-medium">Readiness</span>
+        <span className={`font-mono ${allPassed ? "text-emerald-600" : errors > 0 ? "text-red-600" : "text-yellow-600"}`}>
+          {passed}/{total}
+        </span>
+        {!allPassed && errors > 0 && (
+          <AlertCircle className="h-3 w-3 text-red-500" />
+        )}
+        {allPassed && (
+          <CheckCircle className="h-3 w-3 text-emerald-500" />
+        )}
+      </button>
+
+      {expanded && (
+        <div className="mt-1.5 space-y-1 pl-1">
+          {checks.map((c, i) => (
+            <div key={i} className="flex items-start gap-2 text-xs">
+              {c.passed ? (
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
+              ) : (
+                <Circle className={`h-3.5 w-3.5 mt-0.5 shrink-0 ${c.severity === "error" ? "text-red-500" : c.severity === "warning" ? "text-yellow-500" : "text-muted-foreground"}`} />
+              )}
+              <div>
+                <span className={c.passed ? "text-muted-foreground" : ""}>{c.label}</span>
+                {c.detail && <span className="text-muted-foreground ml-1">— {c.detail}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
   const router = useRouter();
@@ -319,6 +454,9 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                       <span className="text-yellow-600">No scope defined yet — add business units or users</span>
                     )}
                   </div>
+
+                  {/* Readiness Checklist */}
+                  <ReadinessChecklist release={r} />
 
                   {/* Actions (admin only) */}
                   {isAdmin && (

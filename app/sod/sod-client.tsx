@@ -14,6 +14,7 @@ import type { SodSummary } from "./sod-summary-cards";
 import { ConflictList } from "./conflict-list";
 import { ResolutionDialogs } from "./resolution-dialogs";
 import type { ConfirmDialogState } from "./resolution-dialogs";
+import { SodHeatmap } from "./sod-heatmap";
 
 export { type SodSummary } from "./sod-summary-cards";
 
@@ -210,6 +211,9 @@ export function SodPageClient({
 
       {/* Summary Cards */}
       <SodSummaryCards summary={summary} />
+
+      {/* Department × Severity Heatmap */}
+      <SodHeatmap conflicts={conflicts} />
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">

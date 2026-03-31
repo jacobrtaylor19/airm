@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export interface AppUser {
   id: number;
-  organizationId: number | null;
+  organizationId: number;
   username: string;
   displayName: string;
   email: string | null;

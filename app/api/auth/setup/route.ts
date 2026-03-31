@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
 
     // Create the app user with link to Supabase Auth
     await db.insert(schema.appUsers).values({
+      organizationId: 1,
       username,
       displayName,
       email,

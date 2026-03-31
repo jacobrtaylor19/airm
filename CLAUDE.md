@@ -9,7 +9,7 @@ This file gives Claude Code the context needed to work effectively in this codeb
 
 ## What this project is
 
-Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It has cookie-based auth with 6 roles and org-unit-based scoping. The `airm/` directory name is retained for now — display strings use "Provisum" everywhere.
+Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It uses Supabase Auth with JWT sessions, 7 roles (including `project_manager`), and org-unit-based scoping. Multi-tenant org isolation is Phase 3 complete (`organization_id` NOT NULL on all entity tables). The `airm/` directory name is retained for now — display strings use "Provisum" everywhere. Schema has **49 tables** in Supabase Postgres.
 
 ---
 
@@ -45,7 +45,7 @@ const rows = await db.select({...}).from(schema.table).where(...);
 
 ## Authentication
 
-`lib/auth.ts` — cookie-based sessions.
+`lib/auth.ts` — Supabase Auth JWT sessions via `@supabase/ssr`.
 
 ```ts
 const user = await requireAuth();          // throws redirect to /login if not authed
@@ -55,10 +55,10 @@ await requireRole(["admin", "mapper"]);    // throws redirect to /unauthorized i
 
 **Role hierarchy** (higher = more access):
 ```
-system_admin: 100 → admin: 80 → approver: 60 → coordinator: 50 → mapper: 40 → viewer: 20
+system_admin: 100 → admin: 80 → project_manager: 70 → approver: 60 → coordinator: 50 → mapper: 40 → viewer: 20
 ```
 
-Session cookie: Supabase JWT (httpOnly, managed by `@supabase/ssr`). Middleware uses a **default-secure** model — all routes require authentication unless explicitly listed as public. Public paths are split into exact matches (`PUBLIC_EXACT` Set) and prefix matches (`PUBLIC_PREFIXES` array) to prevent accidental exposure. Public pages: `/`, `/login`, `/setup`, `/methodology`, `/overview`, `/quick-reference`. Public prefixes: `/api/auth/`, `/api/health`, `/review/`.
+Session cookie: Supabase JWT (httpOnly, managed by `@supabase/ssr`). Middleware uses a **default-secure** model — all routes require authentication unless explicitly listed as public. Public paths are split into exact matches (`PUBLIC_EXACT` Set) and prefix matches (`PUBLIC_PREFIXES` array) to prevent accidental exposure. Public pages: `/`, `/login`, `/setup`, `/methodology`, `/overview`, `/quick-reference`. Public prefixes: `/api/auth/`, `/api/health`, `/review/`, `/api/cron/`, `/api/admin/users/invite/accept`.
 
 **Password policy:** 12-char minimum, uppercase + lowercase + digit + special character. Validated in `lib/password-policy.ts`. Enforced on user creation and password change.
 
@@ -196,15 +196,84 @@ Rule-based, opinionated status generator — no AI API call. Called in `app/dash
 
 ---
 
-## Notifications (demo mode)
+## Notifications
 
-No email is sent — all notifications are stored in the `notifications` table.
+Notifications are stored in the `notifications` table and optionally sent via email (Resend).
 
 - Coordinators, admins, and system_admins can compose and send to mappers/approvers.
 - Recipients see notifications in their inbox at `/notifications`.
 - Unread count shown as a badge in the sidebar (computed client-side from inbox length).
 - `POST /api/notifications` — send (accepts array of `toUserIds`)
 - `PATCH /api/notifications` — mark as read
+- Email delivery via `lib/email.ts` (Resend) — fires alongside DB insert, fire-and-forget. Requires `RESEND_API_KEY` env var.
+
+---
+
+## Lumen AI Chatbot
+
+Floating teal widget on every page. Uses `@anthropic-ai/sdk` (Claude) — NOT Vercel AI SDK.
+
+- **Phase 1**: Read-only streaming chat, role-aware system prompt, page context
+- **Phase 2**: Tool calling (13 tools) — 8 read + 5 write. Up to 3 tool calls per message. Org-unit scoped.
+  - Read: `get_dashboard_stats`, `get_persona_details`, `get_sod_conflicts`, `get_mapping_status`, `get_job_status`, `get_calibration_summary`
+  - Write: `trigger_auto_map`, `trigger_sod_analysis`, `create_role_mapping`, `resolve_sod_conflict`, `accept_calibration_items`, `submit_for_review`, `send_reminder`
+- **Phase 3**: RAG — `lib/assistant/rag-context.ts` with 10 domain knowledge chunks, keyword+page relevance scoring
+- **Phase 4**: Chat history — `chat_conversations` table, conversation sidebar, auto-save after each response
+- **Phase 5**: Write-action tools — create mappings, resolve SOD, accept calibration, submit for review, send reminders via chat
+
+Key files: `lib/assistant/tools.ts`, `lib/assistant/rag-context.ts`, `app/api/assistant/chat/route.ts`, `app/api/assistant/conversations/`, `components/chat/chat-widget.tsx`
+
+---
+
+## Feature Flags
+
+`lib/feature-flags.ts` — DB-backed with 60s in-memory cache.
+
+- `isFeatureEnabled(key, user?)` — checks targeting (role, user ID, percentage rollout)
+- CRUD via `GET/POST/DELETE /api/admin/feature-flags`
+- Admin UI tab in admin console
+- 5 default flags seeded
+
+---
+
+## Webhook Events
+
+`lib/webhooks.ts` — HMAC-SHA256 signed payload delivery to subscribed endpoints.
+
+- 11 event types: `persona.generated`, `mapping.created/approved/rejected`, `sod.analysis_complete/conflict_resolved`, `assignment.status_changed`, `export.completed`, `user.invited`, `job.completed/failed`
+- Auto-disable after 10 consecutive failures
+- Wired into 7 workflow routes (fire-and-forget)
+- Admin UI tab with delivery log
+
+---
+
+## Multi-Tenant Org Isolation
+
+`lib/org-context.ts` — Phase 3 complete (`organization_id` NOT NULL on all entity tables).
+
+```ts
+import { getOrgId, getOrgIdForInsert } from "@/lib/org-context";
+
+const orgId = getOrgId(user);              // user.organizationId (NOT NULL)
+// All queries accept orgId as first parameter
+// For inserts: organizationId: getOrgId(user)
+```
+
+- `organizations` table with name, slug, settings
+- `organization_id` is **NOT NULL** on: appUsers, users, personas, sourceRoles, consolidatedGroups, targetRoles, sodRules, releases, auditLog, orgUnits
+- All 44 query functions accept `orgId` and filter with `eq(table.organizationId, orgId)`
+- All insert sites include `organizationId`
+- Phase 4 (future): RLS policies enforce isolation at DB level
+
+---
+
+## Scheduled Exports
+
+`lib/scheduled-exports.ts` — Configurable export schedules (daily/weekly/monthly).
+
+- Vercel cron at `/api/cron/exports` (hourly check), secured by `CRON_SECRET` env var
+- Admin UI tab in admin console
+- `scheduled_exports` table with schedule config, next run, last status
 
 ---
 
@@ -224,6 +293,44 @@ System-admin-only feature at `/admin/validation` for proving the platform works 
 **API** (`/api/admin/validation`): Returns the full enriched dataset including per-user chain, distribution stats, confidence buckets, edge case counts, and persona-role mappings.
 
 **Access**: `system_admin` only. Sidebar link under SYSTEM section. Auth handled by existing `/admin` prefix in middleware.
+
+---
+
+## AI-Assisted Mapping v2
+
+`lib/ai/mapping-suggestions.ts` — AI reasoning layer on top of permission-overlap auto-map.
+
+- Claude analyzes business function, naming conventions, permission overlap, and historical patterns
+- Composite confidence: AI (60%) + overlap (30%) + historical acceptance (10%)
+- `mapping_feedback` table stores accept/reject decisions for the learning loop
+- API: `GET /api/mapping/ai-suggestions?personaId=N`, `POST /api/mapping/ai-suggestions/feedback`
+- UI: "AI Suggest" button (sparkles) in mapping workspace → modal with ranked suggestions
+
+---
+
+## Target System Adapter
+
+`lib/adapters/` — Framework for pulling security design from target systems.
+
+- `target-system-adapter.ts` — TypeScript interface (`TargetSystemAdapter`)
+- `mock-sap-adapter.ts` — Mock SAP S/4HANA with 9 roles + transaction codes
+- `index.ts` — Adapter registry factory (`getAdapter(type, config)`)
+- Admin UI: `/admin/security-design` — connection test, pull, diff review, change history
+- `securityDesignChanges` table tracks detected diffs (added/removed/modified roles)
+
+---
+
+## Automated Support (Incident Detection)
+
+`lib/incidents/detection.ts` + `lib/incidents/triage.ts` — Phase 1 (detect + classify + notify).
+
+- **Detection**: `detectIncident()` deduplicates (same source+sourceRef or same title within 5 min), inserts to `incidents` table, triggers AI triage fire-and-forget
+- **AI Triage**: `triageIncident()` sends incident + 10 recent incidents to Claude for classification (category, rootCause, suggestedFix, confidence, blastRadius). Critical incidents trigger admin email.
+- **Wired into**: job-runner (dead-letter), health check (degraded), webhooks (auto-disabled endpoint)
+- **Admin UI**: `/admin/incidents` — incident list with severity/status badges, AI triage card, re-triage button, resolution form, create form
+- **Access**: `system_admin` only
+
+Key files: `lib/incidents/detection.ts`, `lib/incidents/triage.ts`, `app/admin/incidents/`, `app/api/admin/incidents/`
 
 ---
 
@@ -324,6 +431,59 @@ All integration endpoints must validate an API key (`PROVISUM_API_KEY` env var) 
 
 ---
 
+## E2E Testing (Playwright)
+
+**46 tests** across 9 spec files. Run with `npx playwright test` (or `pnpm test:e2e`).
+
+### Architecture
+- **Config**: `playwright.config.ts` — serial execution (`workers: 1`), 120s test timeout, 1 retry, Chromium only
+- **Global setup**: `e2e/global-setup.ts` — pre-authenticates 6 test users via API, saves cookies to `e2e/.auth/*.json`
+- **Auth helper**: `e2e/helpers/auth.ts` — 3 login strategies:
+  1. **Storage state** (default) — loads pre-saved cookies, navigates directly to target page
+  2. **API fallback** — `POST /api/auth/login` if cookies expired, retries once on timeout
+  3. **Form login** (`loginViaForm`) — only for tests that specifically test the login UI
+- **Direct navigation**: `login(page, user, undefined, "/target-page")` skips intermediate `/dashboard` goto — critical for dev server performance
+
+### Key patterns & gotchas
+- **React hydration**: `fill()` on controlled inputs before React hydrates doesn't update state. Fix: `networkidle` wait + `click()` before `fill()` + `toBeEnabled()` check before submit
+- **Welcome tour overlay**: `fixed inset-0 z-50` blocks pointer events. Dismiss with "Skip Tour" button click before sidebar navigation
+- **Strict mode selectors**: Scope sidebar links to `aside nav` with `{ exact: true }`. Use `.first()` for repeated text like "Provisum"
+- **Admin console**: Requires `system_admin` role (not `admin`). Use `sysadmin` user for admin tests
+- **Dev server exhaustion**: After ~35 sequential tests, the Next.js dev server slows. Mitigated by: storage state auth (6 API calls vs 46), direct navigation, `waitUntil: "commit"` for heavy pages, 1 retry
+- **Heavy pages**: `/mapping`, `/sod`, `/calibration` need extended timeouts (45-90s) under server load
+
+### Spec files
+| File | Tests | What it covers |
+|------|-------|---------------|
+| `admin-features.spec.ts` | 8 | Admin console tabs, security design, audit log |
+| `approvals.spec.ts` | 2 | Approver queue, viewer read-only |
+| `auth.spec.ts` | 4 | Form login, invalid creds, unauthorized redirect, role blocking |
+| `dashboard.spec.ts` | 3 | Stat cards, sidebar nav, navigation |
+| `error-states.spec.ts` | 5 | 404, disabled button states, failed login |
+| `full-workflow.spec.ts` | 8 | Admin page traversal (7 pages), mapper personas+mapping |
+| `mapping-workflow.spec.ts` | 3 | Personas, mapping, SOD pages |
+| `notifications.spec.ts` | 3 | Inbox access, sidebar link |
+| `role-access-matrix.spec.ts` | 10 | /admin blocked for 5 roles, /calibration blocked for viewer, positive spot checks |
+
+### Running tests
+```bash
+# Full suite (Playwright starts dev server automatically if port 3000 is free)
+npx playwright test
+
+# Single spec file
+npx playwright test e2e/auth.spec.ts
+
+# With visible browser
+npx playwright test --headed
+
+# View last HTML report
+npx playwright show-report
+```
+
+**Important**: If a dev server is already running on port 3000, Playwright reuses it (`reuseExistingServer: true`). If port 3000 is occupied by something else, Playwright will start on a different port and tests will fail because `baseURL` is hardcoded to `localhost:3000`.
+
+---
+
 ## Common gotchas
 
 1. **`inArray` with nullable types** — always filter nulls first:
@@ -366,3 +526,20 @@ All integration endpoints must validate an API key (`PROVISUM_API_KEY` env var) 
 | Change strapline language | `lib/strapline.ts` |
 | Change notification template | `app/notifications/notifications-client.tsx` (QUICK_MESSAGES) |
 | AI pipeline internals | `lib/ai/types.ts` (shared interfaces), `lib/ai/load-user-profiles.ts` (bulk loader) |
+| Add Lumen tool | `lib/assistant/tools.ts` (define + handler), `app/api/assistant/chat/route.ts` (status label) |
+| AI mapping suggestions | `lib/ai/mapping-suggestions.ts`, `app/api/mapping/ai-suggestions/`, `app/mapping/ai-suggestions-modal.tsx` |
+| Target system adapter | `lib/adapters/`, `app/admin/security-design/`, `app/api/admin/security-design/` |
+| Email settings | `app/admin/email-settings-section.tsx`, `app/api/admin/test-email/route.ts` |
+| E2E tests | `e2e/`, `playwright.config.ts`, `e2e/helpers/auth.ts`, `e2e/global-setup.ts` |
+| Add feature flag | `lib/feature-flags.ts` (use `isFeatureEnabled()`), `db/seed.ts` (default value) |
+| Add webhook event | `lib/webhooks.ts` (add type), dispatch in the relevant API route |
+| Org-scoped query | `lib/org-context.ts` (use `orgScope()` or `withOrgFilter()` in WHERE clause) |
+| Email notification | `lib/email.ts` (`sendNotificationEmail()`), `lib/notifications.ts` |
+| Admin console tab | `app/admin/admin-console-client.tsx` (add TabsTrigger + TabsContent) |
+| Incident detection | `lib/incidents/detection.ts` (`detectIncident()`), `lib/incidents/triage.ts` |
+| Incidents admin UI | `app/admin/incidents/`, `app/api/admin/incidents/` |
+| Migration health dashboard | `lib/queries/migration-health.ts`, `app/admin/migration-health/` |
+| Activity pulse widget | `app/admin/activity-pulse.tsx`, `app/api/admin/activity-pulse/route.ts` |
+| SOD heatmap | `app/sod/sod-heatmap.tsx` (imported by `sod-client.tsx`) |
+| Release readiness checklist | `app/releases/releases-client.tsx` (ReadinessChecklist component) |
+| Confidence distribution chart | `app/calibration/page.tsx` (ConfidenceChart server component) |

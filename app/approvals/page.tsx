@@ -1,5 +1,6 @@
 import { getApprovalQueue } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { getUserScope } from "@/lib/scope";
 import { getReleasesForAppUser, getReleaseUserIds } from "@/lib/releases";
 import { cookies } from "next/headers";
@@ -9,9 +10,10 @@ export const dynamic = "force-dynamic";
 
 export default async function ApprovalsPage() {
   const user = await requireAuth();
+  const orgId = getOrgId(user);
 
   // Get full queue, then filter by org scope
-  let queue = await getApprovalQueue();
+  let queue = await getApprovalQueue(orgId);
   if (user.role === "approver") {
     const scopedUserIds = await getUserScope(user);
     if (scopedUserIds !== null) {

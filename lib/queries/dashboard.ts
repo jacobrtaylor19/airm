@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { count, sql, eq } from "drizzle-orm";
+import { count, sql, eq, and } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 
 export interface DepartmentMappingStatus {
   department: string;
@@ -18,89 +19,106 @@ export interface SourceSystemStat {
   userCount: number;
 }
 
-export async function getDashboardStats() {
-  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users);
+export async function getDashboardStats(orgId: number) {
+  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users).where(orgScope(schema.users.organizationId, orgId));
   const totalUsers = totalUsersRow!.count;
 
-  const [totalPersonasRow] = await db.select({ count: count() }).from(schema.personas);
+  const [totalPersonasRow] = await db.select({ count: count() }).from(schema.personas).where(orgScope(schema.personas.organizationId, orgId));
   const totalPersonas = totalPersonasRow!.count;
 
-  const [totalSourceRolesRow] = await db.select({ count: count() }).from(schema.sourceRoles);
+  const [totalSourceRolesRow] = await db.select({ count: count() }).from(schema.sourceRoles).where(orgScope(schema.sourceRoles.organizationId, orgId));
   const totalSourceRoles = totalSourceRolesRow!.count;
 
-  const [totalTargetRolesRow] = await db.select({ count: count() }).from(schema.targetRoles);
+  const [totalTargetRolesRow] = await db.select({ count: count() }).from(schema.targetRoles).where(orgScope(schema.targetRoles.organizationId, orgId));
   const totalTargetRoles = totalTargetRolesRow!.count;
 
-  const [totalGroupsRow] = await db.select({ count: count() }).from(schema.consolidatedGroups);
+  const [totalGroupsRow] = await db.select({ count: count() }).from(schema.consolidatedGroups).where(orgScope(schema.consolidatedGroups.organizationId, orgId));
   const totalGroups = totalGroupsRow!.count;
 
+  // Junction table counts — join to org-scoped parent (users) to enforce tenant isolation
   const [usersWithPersonaRow] = await db
     .select({ count: count() })
-    .from(schema.userPersonaAssignments);
+    .from(schema.userPersonaAssignments)
+    .innerJoin(schema.users, eq(schema.users.id, schema.userPersonaAssignments.userId))
+    .where(orgScope(schema.users.organizationId, orgId));
   const usersWithPersona = usersWithPersonaRow!.count;
 
   const [personasWithMappingRow] = await db
     .select({ count: sql<number>`count(distinct ${schema.personaTargetRoleMappings.personaId})` })
-    .from(schema.personaTargetRoleMappings);
+    .from(schema.personaTargetRoleMappings)
+    .innerJoin(schema.personas, eq(schema.personas.id, schema.personaTargetRoleMappings.personaId))
+    .where(orgScope(schema.personas.organizationId, orgId));
   const personasWithMapping = Number(personasWithMappingRow!.count);
 
   const [totalAssignmentsRow] = await db
     .select({ count: count() })
-    .from(schema.userTargetRoleAssignments);
+    .from(schema.userTargetRoleAssignments)
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .where(orgScope(schema.users.organizationId, orgId));
   const totalAssignments = totalAssignmentsRow!.count;
 
   const [approvedAssignmentsRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "approved"));
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .where(and(eq(schema.userTargetRoleAssignments.status, "approved"), orgScope(schema.users.organizationId, orgId)));
   const approvedAssignments = approvedAssignmentsRow!.count;
 
   const [complianceApprovedRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "compliance_approved"));
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .where(and(eq(schema.userTargetRoleAssignments.status, "compliance_approved"), orgScope(schema.users.organizationId, orgId)));
   const complianceApproved = complianceApprovedRow!.count;
 
   const [sodRejectedRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "sod_rejected"));
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .where(and(eq(schema.userTargetRoleAssignments.status, "sod_rejected"), orgScope(schema.users.organizationId, orgId)));
   const sodRejected = sodRejectedRow!.count;
 
   const [readyForApprovalRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "ready_for_approval"));
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .where(and(eq(schema.userTargetRoleAssignments.status, "ready_for_approval"), orgScope(schema.users.organizationId, orgId)));
   const readyForApproval = readyForApprovalRow!.count;
 
   const [pendingReviewRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "pending_review"));
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .where(and(eq(schema.userTargetRoleAssignments.status, "pending_review"), orgScope(schema.users.organizationId, orgId)));
   const pendingReview = pendingReviewRow!.count;
 
   const [draftAssignmentsRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.status, "draft"));
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .where(and(eq(schema.userTargetRoleAssignments.status, "draft"), orgScope(schema.users.organizationId, orgId)));
   const draftAssignments = draftAssignmentsRow!.count;
 
+  // sourcePermissions and sourceRolePermissions don't have org_id directly,
+  // but sourcePermissions are global reference data — no org scoping needed
   const [sourcePermissionsRow] = await db.select({ count: count() }).from(schema.sourcePermissions);
   const sourcePermissions = sourcePermissionsRow!.count;
 
   const [rolePermissionsRow] = await db.select({ count: count() }).from(schema.sourceRolePermissions);
   const rolePermissions = rolePermissionsRow!.count;
 
-  const [sodRulesCountRow] = await db.select({ count: count() }).from(schema.sodRules);
+  const [sodRulesCountRow] = await db.select({ count: count() }).from(schema.sodRules).where(orgScope(schema.sodRules.organizationId, orgId));
   const sodRulesCount = sodRulesCountRow!.count;
 
-  // SOD conflicts by severity
+  // SOD conflicts by severity — join to users for org scope
   const sodConflictsBySeverity = await db
     .select({
       severity: schema.sodConflicts.severity,
       count: count(),
     })
     .from(schema.sodConflicts)
+    .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
+    .where(orgScope(schema.users.organizationId, orgId))
     .groupBy(schema.sodConflicts.severity);
 
   // Department breakdown
@@ -110,6 +128,7 @@ export async function getDashboardStats() {
       count: count(),
     })
     .from(schema.users)
+    .where(orgScope(schema.users.organizationId, orgId))
     .groupBy(schema.users.department);
 
   // Users with persona by department
@@ -120,27 +139,31 @@ export async function getDashboardStats() {
     })
     .from(schema.userPersonaAssignments)
     .innerJoin(schema.users, eq(schema.userPersonaAssignments.userId, schema.users.id))
+    .where(orgScope(schema.users.organizationId, orgId))
     .groupBy(schema.users.department);
 
   // Low confidence assignments
   const [lowConfidenceRow] = await db
     .select({ count: count() })
     .from(schema.userPersonaAssignments)
-    .where(sql`${schema.userPersonaAssignments.confidenceScore} < 65`);
+    .innerJoin(schema.users, eq(schema.users.id, schema.userPersonaAssignments.userId))
+    .where(and(sql`${schema.userPersonaAssignments.confidenceScore} < 65`, orgScope(schema.users.organizationId, orgId)));
   const lowConfidence = lowConfidenceRow!.count;
 
   // Existing production access (from previous waves)
   const [existingAccessCountRow] = await db
     .select({ count: count() })
     .from(schema.userTargetRoleAssignments)
-    .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"));
+    .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+    .where(and(eq(schema.userTargetRoleAssignments.releasePhase, "existing"), orgScope(schema.users.organizationId, orgId)));
   const existingAccessCount = existingAccessCountRow!.count;
 
   const existingAccessUserCount = existingAccessCount > 0
     ? Number((await db
         .select({ count: sql<number>`count(distinct ${schema.userTargetRoleAssignments.userId})` })
         .from(schema.userTargetRoleAssignments)
-        .where(eq(schema.userTargetRoleAssignments.releasePhase, "existing"))
+        .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
+        .where(and(eq(schema.userTargetRoleAssignments.releasePhase, "existing"), orgScope(schema.users.organizationId, orgId)))
       )[0]!.count)
     : 0;
 
@@ -171,11 +194,11 @@ export async function getDashboardStats() {
   };
 }
 
-export async function getDepartmentMappingStatus(): Promise<DepartmentMappingStatus[]> {
+export async function getDepartmentMappingStatus(orgId: number): Promise<DepartmentMappingStatus[]> {
   const departments = await db.select({
     department: schema.users.department,
     totalUsers: count(),
-  }).from(schema.users).groupBy(schema.users.department);
+  }).from(schema.users).where(orgScope(schema.users.organizationId, orgId)).groupBy(schema.users.department);
 
   return await Promise.all(departments.map(async (d) => {
     const dept = d.department || "Unknown";
@@ -183,7 +206,7 @@ export async function getDepartmentMappingStatus(): Promise<DepartmentMappingSta
     const [withPersonaRow] = await db.select({ count: count() })
       .from(schema.userPersonaAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userPersonaAssignments.userId))
-      .where(eq(schema.users.department, dept));
+      .where(and(eq(schema.users.department, dept), orgScope(schema.users.organizationId, orgId)));
     const withPersona = withPersonaRow!.count;
 
     // Users who have at least one target role assignment
@@ -192,7 +215,7 @@ export async function getDepartmentMappingStatus(): Promise<DepartmentMappingSta
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(eq(schema.users.department, dept));
+      .where(and(eq(schema.users.department, dept), orgScope(schema.users.organizationId, orgId)));
     const mapped = Number(mappedRow!.count);
 
     // Users with at least one sod_rejected assignment
@@ -201,7 +224,7 @@ export async function getDepartmentMappingStatus(): Promise<DepartmentMappingSta
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'sod_rejected'`);
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'sod_rejected' AND (${schema.users.organizationId} = ${orgId} OR ${schema.users.organizationId} IS NULL)`);
     const sodRejected = Number(sodRejectedRow!.count);
 
     // Users whose ALL assignments are compliance_approved or sod_risk_accepted or approved
@@ -210,7 +233,7 @@ export async function getDepartmentMappingStatus(): Promise<DepartmentMappingSta
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status IN ('compliance_approved', 'sod_risk_accepted', 'ready_for_approval', 'approved')`);
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status IN ('compliance_approved', 'sod_risk_accepted', 'ready_for_approval', 'approved') AND (${schema.users.organizationId} = ${orgId} OR ${schema.users.organizationId} IS NULL)`);
     const sodClean = Number(sodCleanRow!.count);
 
     const [approvedRow] = await db.select({
@@ -218,14 +241,14 @@ export async function getDepartmentMappingStatus(): Promise<DepartmentMappingSta
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'approved'`);
+      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'approved' AND (${schema.users.organizationId} = ${orgId} OR ${schema.users.organizationId} IS NULL)`);
     const approved = Number(approvedRow!.count);
 
     return { department: dept, totalUsers: d.totalUsers, withPersona, mapped, sodRejected, sodClean, approved };
   }));
 }
 
-export async function getSourceSystemStats(): Promise<SourceSystemStat[]> {
+export async function getSourceSystemStats(orgId: number): Promise<SourceSystemStat[]> {
   return await db
     .select({
       system: sql<string>`coalesce(${schema.sourceRoles.system}, 'Unknown')`,
@@ -238,13 +261,15 @@ export async function getSourceSystemStats(): Promise<SourceSystemStat[]> {
       )`,
     })
     .from(schema.sourceRoles)
+    .where(orgScope(schema.sourceRoles.organizationId, orgId))
     .groupBy(schema.sourceRoles.system);
 }
 
-export async function getDistinctSourceSystems(): Promise<string[]> {
+export async function getDistinctSourceSystems(orgId: number): Promise<string[]> {
   const rows = await db
     .select({ system: sql<string>`coalesce(${schema.sourceRoles.system}, 'Unknown')` })
     .from(schema.sourceRoles)
+    .where(orgScope(schema.sourceRoles.organizationId, orgId))
     .groupBy(schema.sourceRoles.system);
   return rows.map((r) => r.system);
 }

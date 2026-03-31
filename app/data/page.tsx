@@ -3,12 +3,16 @@ import {
   getAllSourcePermissions,
   getAllTargetPermissions,
 } from "@/lib/queries";
+import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { DataExplorerClient } from "./data-explorer-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function DataExplorerPage() {
-  const userRoleAssignments = await getUserSourceRoleAssignments();
+  const user = await getSessionUser();
+  const orgId = getOrgId(user!);
+  const userRoleAssignments = await getUserSourceRoleAssignments(orgId);
   const sourcePermissions = await getAllSourcePermissions();
   const targetPermissions = await getAllTargetPermissions();
 

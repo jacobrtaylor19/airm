@@ -1,6 +1,7 @@
 import { getLeastAccessAnalysis, getPersonaIdsForUsers } from "@/lib/queries";
 import { getSetting } from "@/lib/settings";
 import { requireAuth } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { getUserScope } from "@/lib/scope";
 import { LeastAccessClient } from "./least-access-client";
 
@@ -8,15 +9,16 @@ export const dynamic = "force-dynamic";
 
 export default async function LeastAccessPage() {
   const user = await requireAuth();
+  const orgId = getOrgId(user);
 
   const threshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
-  let rows = await getLeastAccessAnalysis(threshold);
+  let rows = await getLeastAccessAnalysis(orgId, threshold);
 
   // Filter by org scope for mappers/approvers
   if (user && ["mapper", "approver"].includes(user.role)) {
     const scopedUserIds = await getUserScope(user);
     if (scopedUserIds !== null) {
-      const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
+      const scopedPersonaIds = new Set(await getPersonaIdsForUsers(orgId, scopedUserIds));
       rows = rows.filter(r => scopedPersonaIds.has(r.personaId));
     }
   }

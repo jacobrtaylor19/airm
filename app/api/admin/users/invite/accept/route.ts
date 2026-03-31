@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
 
     // Audit log
     await db.insert(schema.auditLog).values({
+      organizationId: appUser.organizationId,
       entityType: "appUser",
       entityId: appUser.id,
       action: "invite_accepted",

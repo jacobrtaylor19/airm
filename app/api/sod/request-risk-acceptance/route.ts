@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
 
     // Audit log
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "sodConflict",
       entityId: conflictId,
       action: "risk_acceptance_requested",

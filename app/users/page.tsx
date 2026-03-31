@@ -1,13 +1,15 @@
 import { getUsers } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
 import { getUserScope } from "@/lib/scope";
+import { getOrgId } from "@/lib/org-context";
 import { UsersTable } from "./users-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function UsersPage() {
   const currentUser = await getSessionUser();
-  let users = await getUsers();
+  const orgId = getOrgId(currentUser!);
+  let users = await getUsers(orgId);
 
   // Filter by org scope for mappers/approvers
   if (currentUser && ["mapper", "approver"].includes(currentUser.role)) {

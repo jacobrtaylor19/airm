@@ -159,6 +159,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
     for (const ou of orgHierarchy.filter(o => o.level === level)) {
       const parentId = ou.parentName ? orgUnitIdMap.get(ou.parentName) ?? null : null;
       const [result] = await db.insert(schema.orgUnits).values({
+        organizationId: 1,
         name: ou.name,
         level: ou.level,
         parentId,
@@ -184,6 +185,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
       const dept = row.department?.trim();
       const ouId = dept ? (deptToOrgUnit.get(dept) ?? null) : null;
       await db.insert(schema.users).values({
+        organizationId: 1,
         sourceUserId: row.source_user_id,
         displayName: row.display_name,
         email: row.email,
@@ -204,6 +206,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   if (groupsData.length > 0) {
     for (const row of groupsData) {
       await db.insert(schema.consolidatedGroups).values({
+        organizationId: 1,
         name: row.name,
         accessLevel: row.access_level,
         description: row.description,
@@ -219,6 +222,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   if (personasData.length > 0) {
     for (const row of personasData) {
       await db.insert(schema.personas).values({
+        organizationId: 1,
         name: row.name,
         description: row.description,
         businessFunction: row.business_function,
@@ -253,6 +257,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   const rolesData = readCsvFn<any>("source-roles.csv");
   for (const row of rolesData) {
     await db.insert(schema.sourceRoles).values({
+      organizationId: 1,
       roleId: row.role_id,
       roleName: row.role_name,
       description: row.description,
@@ -299,6 +304,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   for (const row of targetRolesData) {
     if (row.role_id === "Role ID") continue; // skip header row if duplicated
     await db.insert(schema.targetRoles).values({
+      organizationId: 1,
       roleId: row.role_id,
       roleName: row.role_name,
       description: row.description,
@@ -400,6 +406,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   if (sodData.length > 0) {
     for (const row of sodData) {
       await db.insert(schema.sodRules).values({
+        organizationId: 1,
         ruleId: row.rule_id,
         ruleName: row.rule_name,
         description: row.description || null,
@@ -525,6 +532,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   // Insert target-system SOD rules
   for (const r of targetSodRules) {
     await db.insert(schema.sodRules).values({
+      organizationId: 1,
       ruleId: r.ruleId,
       ruleName: r.ruleName,
       permissionA: r.permA,
@@ -700,6 +708,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
     const supabaseAuthId = await createSupabaseAuthUser(email, u.password);
 
     await db.insert(schema.appUsers).values({
+      organizationId: 1,
       username: u.username,
       displayName: u.displayName,
       email,
@@ -754,6 +763,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
     const supabaseAuthId = await createSupabaseAuthUser(email, demoPassword);
 
     await db.insert(schema.appUsers).values({
+      organizationId: 1,
       username: u.username,
       displayName: u.displayName,
       email,
@@ -803,6 +813,11 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
     { key: "workflow.sodSeverity.high", value: "allowed" },
     { key: "workflow.sodSeverity.medium", value: "allowed" },
     { key: "workflow.sodSeverity.low", value: "allowed" },
+    { key: "email_enabled", value: "true" },
+    { key: "email_provider", value: "resend" },
+    { key: "email_from_address", value: "Provisum <notifications@provisum.io>" },
+    { key: "email_from_name", value: "Provisum" },
+    { key: "email_reply_to", value: "" },
   ];
   for (const s of defaultSettings) {
     await db.insert(schema.systemSettings).values({
@@ -822,6 +837,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   await db.delete(schema.releases);
 
   const [wave1] = await db.insert(schema.releases).values({
+    organizationId: 1,
     name: "Wave 1 — Finance & Operations",
     description: "First migration wave covering Finance, Procurement, and Operations departments.",
     status: "in_progress",
@@ -832,6 +848,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   }).returning();
 
   const [wave2] = await db.insert(schema.releases).values({
+    organizationId: 1,
     name: "Wave 2 — Maintenance & IT",
     description: "Second wave covering Maintenance, Facilities, IT, and remaining departments.",
     status: "planning",

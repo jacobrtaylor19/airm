@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       }).where(eq(schema.sodConflicts.id, conflictId));
 
       await db.insert(schema.auditLog).values({
+        organizationId: user.organizationId,
         entityType: "sodConflict",
         entityId: conflictId,
         action: "risk_acceptance_rejected",
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
     }
 
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "sodConflict",
       entityId: conflictId,
       action: "risk_accepted",

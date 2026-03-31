@@ -13,6 +13,7 @@ import {
 import { getSetting } from "@/lib/settings";
 import type { PersonaSodConflict } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { getUserScope } from "@/lib/scope";
 import { getReleasesForAppUser, getReleaseUserIds } from "@/lib/releases";
 import { cookies } from "next/headers";
@@ -23,19 +24,20 @@ export const maxDuration = 60;
 
 export default async function MappingPage() {
   const user = await requireAuth();
+  const orgId = getOrgId(user);
 
-  let personas = await getPersonaMappingWorkspace();
-  let refinements = await getUserRefinements();
-  let gaps = await getGapAnalysis();
-  const targetRoles = await getTargetRoles();
-  const gapSummary = await getGapAnalysisSummary();
-  let refinementDetails = await getUserRefinementDetails();
+  let personas = await getPersonaMappingWorkspace(orgId);
+  let refinements = await getUserRefinements(orgId);
+  let gaps = await getGapAnalysis(orgId);
+  const targetRoles = await getTargetRoles(orgId);
+  const gapSummary = await getGapAnalysisSummary(orgId);
+  let refinementDetails = await getUserRefinementDetails(orgId);
 
   // Filter for mappers — only show personas containing their assigned users
   if (user.role === "mapper") {
     const scopedUserIds = await getUserScope(user);
     if (scopedUserIds && scopedUserIds.length > 0) {
-      const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
+      const scopedPersonaIds = new Set(await getPersonaIdsForUsers(orgId, scopedUserIds));
       personas = personas.filter((p) => scopedPersonaIds.has(p.personaId));
       refinements = refinements.filter((r) => scopedUserIds.includes(r.userId));
       gaps = gaps.filter((g) => scopedPersonaIds.has(g.personaId));
@@ -62,7 +64,7 @@ export default async function MappingPage() {
     const releaseUserIds = await getReleaseUserIds(activeReleaseId);
     if (releaseUserIds !== null) {
       const releaseSet = new Set(releaseUserIds);
-      const releasePersonaIds = new Set(await getPersonaIdsForUsers(Array.from(releaseSet)));
+      const releasePersonaIds = new Set(await getPersonaIdsForUsers(orgId, Array.from(releaseSet)));
       personas = personas.filter((p) => releasePersonaIds.has(p.personaId));
       refinements = refinements.filter((r) => releaseSet.has(r.userId));
       gaps = gaps.filter((g) => releasePersonaIds.has(g.personaId));
@@ -75,7 +77,7 @@ export default async function MappingPage() {
   // Pre-fetch persona details for the workspace
   const personaDetails: Record<number, { sourcePermissionCount: number; mappedRoles: { targetRoleId: number; roleName: string; roleId: string; coveragePercent: number | null; excessPercent: number | null; confidence: string | null; roleOwner: string | null }[] }> = {};
   for (const p of personas) {
-    const detail = await getPersonaDetail(p.personaId);
+    const detail = await getPersonaDetail(orgId, p.personaId);
     if (detail) {
       personaDetails[p.personaId] = {
         sourcePermissionCount: detail.sourcePermissions.length,
@@ -88,7 +90,7 @@ export default async function MappingPage() {
   }
 
   // Get source systems per persona for multi-system visibility
-  const personaSourceSystemsMap = await getPersonaSourceSystems();
+  const personaSourceSystemsMap = await getPersonaSourceSystems(orgId);
   const personaSourceSystemsObj: Record<number, string[]> = {};
   personaSourceSystemsMap.forEach((systems, personaId) => {
     if (personas.some(p => p.personaId === personaId)) {
@@ -97,7 +99,7 @@ export default async function MappingPage() {
   });
 
   // Get open SOD conflicts grouped by persona for warning banners
-  const sodConflictMap = await getOpenSodConflictsByPersona();
+  const sodConflictMap = await getOpenSodConflictsByPersona(orgId);
   const sodConflictsByPersona: Record<number, PersonaSodConflict[]> = {};
   sodConflictMap.forEach((conflicts, personaId) => {
     // Only include personas that are in the current workspace

@@ -32,6 +32,9 @@ import {
   FlaskConical,
   BarChart3,
   Brain,
+  Shield,
+  AlertTriangle as AlertTriangleIcon,
+  HeartPulse,
 } from "lucide-react";
 
 interface NavItem {
@@ -105,6 +108,9 @@ const navSections: NavSection[] = [
     sysadminOnly: true,
     items: [
       { href: "/admin", label: "Config Console", icon: Wrench },
+      { href: "/admin/security-design", label: "Security Design", icon: Shield },
+      { href: "/admin/incidents", label: "Incidents", icon: AlertTriangleIcon },
+      { href: "/admin/migration-health", label: "Migration Health", icon: HeartPulse },
     ],
   },
   {

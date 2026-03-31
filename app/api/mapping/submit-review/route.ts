@@ -92,6 +92,7 @@ export async function POST(req: NextRequest) {
     }
 
     await auditLog({
+      organizationId: user.organizationId,
       entityType: "mapping",
       action: "submit_for_review",
       actorEmail: user.email ?? user.username,

@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
     }).where(eq(schema.userTargetRoleAssignments.id, assignmentId));
 
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "userTargetRoleAssignment",
       entityId: assignmentId,
       action: "approved",

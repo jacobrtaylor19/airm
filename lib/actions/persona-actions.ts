@@ -5,6 +5,7 @@ import * as schema from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 
 export async function updatePersona(
   personaId: number,
@@ -40,6 +41,7 @@ export async function updatePersona(
 
   await db.insert(schema.auditLog)
     .values({
+      organizationId: getOrgId(user),
       entityType: "persona",
       entityId: personaId,
       action: "updated",
@@ -97,6 +99,7 @@ export async function updatePersonaUsers(
 
   await db.insert(schema.auditLog)
     .values({
+      organizationId: getOrgId(user),
       entityType: "persona",
       entityId: personaId,
       action: "users_updated",
@@ -148,6 +151,7 @@ export async function updatePersonaTargetRoles(
 
   await db.insert(schema.auditLog)
     .values({
+      organizationId: getOrgId(user),
       entityType: "persona",
       entityId: personaId,
       action: "target_roles_updated",

@@ -8,6 +8,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendInviteEmail } from "@/lib/email";
 import { safeError } from "@/lib/errors";
 import { dispatchWebhookEvent } from "@/lib/webhooks";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,7 @@ export async function POST(req: NextRequest) {
     const [appUser] = await db
       .insert(schema.appUsers)
       .values({
+        organizationId: getOrgId(user),
         username,
         displayName,
         email,
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest) {
 
     // Audit log
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "appUser",
       entityId: appUser.id,
       action: "invited",

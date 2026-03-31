@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     }).returning();
 
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "workAssignment",
       entityId: created.id,
       action: "created",
@@ -79,6 +80,7 @@ export async function DELETE(req: NextRequest) {
   await db.delete(schema.workAssignments).where(eq(schema.workAssignments.id, Number(id)));
 
   await db.insert(schema.auditLog).values({
+    organizationId: user.organizationId,
     entityType: "workAssignment",
     entityId: Number(id),
     action: "deleted",

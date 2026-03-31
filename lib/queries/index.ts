@@ -9,3 +9,4 @@ export * from "./risk";
 export * from "./common";
 export * from "./jobs";
 export * from "./audit";
+export * from "./migration-health";

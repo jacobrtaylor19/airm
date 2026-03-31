@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
 import { getSessionUser } from "@/lib/auth";
 import { MAPPER_ROLES } from "@/lib/constants";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,7 @@ export async function PUT(req: NextRequest) {
     // Log action
     await db.insert(schema.auditLog)
       .values({
+        organizationId: getOrgId(user),
         entityType: "personaTargetRoleMapping",
         entityId: personaId,
         action: "manual_mapping_updated",

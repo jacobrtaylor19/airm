@@ -6,6 +6,7 @@ import * as schema from "@/db/schema";
 import { validateBody } from "@/lib/validation";
 import { settingsSchema } from "@/lib/validation/admin";
 import { safeError } from "@/lib/errors";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +38,7 @@ export async function PUT(req: NextRequest) {
       // Audit log the setting change (key only, not the value)
       await db.insert(schema.auditLog)
         .values({
+          organizationId: getOrgId(user),
           entityType: "system_setting",
           entityId: 0,
           action: "setting_updated",

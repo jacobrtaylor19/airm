@@ -10,6 +10,7 @@ import { PersonaSelector } from "./persona-selector";
 import { RoleAssignmentPanel } from "./role-assignment-panel";
 import { AutoMapProgress } from "./auto-map-progress";
 import { RefinementsTab, GapAnalysisTab } from "./user-refinements";
+import { AISuggestionsModal } from "./ai-suggestions-modal";
 
 export interface PersonaDetailInfo {
   sourcePermissionCount: number;
@@ -39,6 +40,9 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
   const [bulkTargetRoleId, setBulkTargetRoleId] = useState<number | null>(null);
   const [bulkAssigning, setBulkAssigning] = useState(false);
   const router = useRouter();
+
+  // AI suggestions modal state
+  const [aiSuggestOpen, setAiSuggestOpen] = useState(false);
 
   // Drag-and-drop mapping state
   const [localMappedIds, setLocalMappedIds] = useState<number[]>([]);
@@ -91,6 +95,10 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
     } finally {
       setSavingMapping(false);
     }
+  }
+
+  function handleAISuggestAccept(targetRoleId: number) {
+    addRole(targetRoleId);
   }
 
   const [roleSearch, setRoleSearch] = useState("");
@@ -255,7 +263,19 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
             onAddRole={addRole}
             onRemoveRole={removeRole}
             onSaveMappings={saveMappings}
+            userRole={userRole}
+            onOpenAISuggest={() => setAiSuggestOpen(true)}
           />
+
+          {selectedPersonaId && selectedPersona && (
+            <AISuggestionsModal
+              personaId={selectedPersonaId}
+              personaName={selectedPersona.personaName}
+              open={aiSuggestOpen}
+              onOpenChange={setAiSuggestOpen}
+              onAccept={handleAISuggestAccept}
+            />
+          )}
         </div>
       </TabsContent>
 

@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { inArray } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { checkBulkRate } from "@/lib/rate-limit-middleware";
 import { validateBody } from "@/lib/validation";
 import { bulkDeleteSchema } from "@/lib/validation/admin";
@@ -46,6 +47,7 @@ export async function POST(request: NextRequest) {
     // Log each deletion to audit log
     await db.insert(schema.auditLog)
       .values({
+        organizationId: getOrgId(user),
         entityType,
         entityId: 0,
         action: "bulk_deleted",

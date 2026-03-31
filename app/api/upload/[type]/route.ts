@@ -248,6 +248,7 @@ async function commitUpload(
           }
           await db.insert(schema.users)
             .values({
+              organizationId: 1,
               sourceUserId: row.source_user_id,
               displayName: row.display_name,
               email: row.email || null,
@@ -275,6 +276,7 @@ async function commitUpload(
         try {
           await db.insert(schema.sourceRoles)
             .values({
+              organizationId: 1,
               roleId: row.role_id,
               roleName: row.role_name,
               description: row.description || null,
@@ -378,6 +380,7 @@ async function commitUpload(
         try {
           await db.insert(schema.targetRoles)
             .values({
+              organizationId: 1,
               roleId: row.role_id,
               roleName: row.role_name,
               description: row.description || null,
@@ -422,6 +425,7 @@ async function commitUpload(
         try {
           await db.insert(schema.sodRules)
             .values({
+              organizationId: 1,
               ruleId: row.rule_id,
               ruleName: row.rule_name,
               description: row.description || null,
@@ -445,6 +449,7 @@ async function commitUpload(
         try {
           await db.insert(schema.personas)
             .values({
+              organizationId: 1,
               name: row.name,
               description: row.description || null,
               businessFunction: row.business_function || null,
@@ -522,6 +527,7 @@ async function commitUpload(
             if (!existing) {
               await db.insert(schema.orgUnits)
                 .values({
+                  organizationId: 1,
                   name: row.name.trim(),
                   level: level,
                   parentId,
@@ -557,6 +563,7 @@ async function commitUpload(
           }
           await db.insert(schema.releases)
             .values({
+              organizationId: 1,
               name,
               description: row.description || null,
               status: row.status || "planning",
@@ -664,6 +671,7 @@ async function commitUpload(
           }
 
           await db.insert(schema.appUsers).values({
+            organizationId: 1,
             username: row.username.trim(),
             displayName: row.display_name.trim(),
             email: authEmail,

@@ -14,6 +14,7 @@ export async function GET() {
     }
 
     auditLog({
+      organizationId: user.organizationId,
       entityType: "export",
       action: "sod_exceptions_export",
       actorEmail: user.email || user.username,

@@ -5,22 +5,24 @@
  * to the user's organization. This module provides helpers to resolve and
  * apply org context consistently.
  *
- * Migration strategy:
- * - Phase 1 (current): organization_id columns added as nullable.
- *   Existing data defaults to org 1. Queries optionally filter by org.
- * - Phase 2: All queries use withOrgScope(). organization_id becomes NOT NULL.
- * - Phase 3: RLS policies enforce isolation at the DB level as a safety net.
+ * Phase 1 (complete): organization_id columns added as nullable.
+ * Phase 2 (complete): All queries use orgScope()/withOrgFilter().
+ * Phase 3 (current):  organization_id is NOT NULL on all entity tables.
+ *                     Queries use simple equality — no IS NULL fallback.
  */
 
-import { sql, type Column } from "drizzle-orm";
+import { eq, sql, type Column } from "drizzle-orm";
 import type { AppUser } from "@/lib/auth";
 
 /**
  * Get the organization ID for the current user.
- * Returns 1 as fallback for users without an org assignment (backward compat).
+ * Organization must always be set — throws if missing.
  */
 export function getOrgId(user: AppUser): number {
-  return user.organizationId ?? 1;
+  if (user.organizationId == null) {
+    throw new Error("User has no organizationId — cannot scope query");
+  }
+  return user.organizationId;
 }
 
 /**
@@ -35,16 +37,15 @@ export function getOrgId(user: AppUser): number {
  * ```
  */
 export function orgScope(orgIdColumn: Column, orgId: number) {
-  return sql`${orgIdColumn} = ${orgId} OR ${orgIdColumn} IS NULL`;
+  return eq(orgIdColumn, orgId);
 }
 
 /**
- * Simplified org scope that works with any Drizzle column reference.
- * Matches rows where organization_id equals the given org OR is NULL
- * (backward compat for un-migrated rows).
+ * Simplified org scope that works with raw SQL fragments.
+ * Matches rows where organization_id equals the given org.
  */
 export function withOrgFilter(orgId: number) {
-  return sql`(organization_id = ${orgId} OR organization_id IS NULL)`;
+  return sql`organization_id = ${orgId}`;
 }
 
 /**
@@ -52,5 +53,8 @@ export function withOrgFilter(orgId: number) {
  * Always returns a concrete number (never null) for new data.
  */
 export function getOrgIdForInsert(user: AppUser): number {
-  return user.organizationId ?? 1;
+  if (user.organizationId == null) {
+    throw new Error("User has no organizationId — cannot insert org-scoped record");
+  }
+  return user.organizationId;
 }

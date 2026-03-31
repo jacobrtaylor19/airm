@@ -61,6 +61,7 @@ export async function POST(req: NextRequest) {
     const emailResult = await sendInviteEmail(appUser.email, token, appUser.displayName);
 
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "appUser",
       entityId: appUserId,
       action: "invite_resent",

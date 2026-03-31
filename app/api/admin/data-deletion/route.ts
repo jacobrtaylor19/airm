@@ -67,6 +67,7 @@ export async function POST(req: NextRequest) {
       .where(eq(schema.notifications.toUserId, userId));
 
     await auditLog({
+      organizationId: actor.organizationId,
       entityType: "gdpr",
       entityId: userId,
       action: "data_deletion",

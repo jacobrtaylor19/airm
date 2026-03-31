@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, FileText, Download, AlertTriangle, Database, Cloud, Shield } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { ReviewLinkButton } from "./review-link-button";
 
 export const dynamic = "force-dynamic";
@@ -70,8 +71,9 @@ const grcExports = [
 ];
 
 export default async function ExportsPage() {
-  const stats = await getDashboardStats();
   const user = await getSessionUser();
+  const orgId = getOrgId(user!);
+  const stats = await getDashboardStats(orgId);
   const isAdmin = user ? ["admin", "system_admin"].includes(user.role) : false;
 
   return (

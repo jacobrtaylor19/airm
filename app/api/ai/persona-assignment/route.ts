@@ -175,6 +175,7 @@ export async function POST() {
       }).where(eq(schema.processingJobs.id, job.id));
 
       await db.insert(schema.auditLog).values({
+        organizationId: 1,
         entityType: "processingJob",
         entityId: job.id,
         action: "persona_assignment_completed",

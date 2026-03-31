@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 
 export interface PersonaRow {
   id: number;
@@ -13,7 +14,7 @@ export interface PersonaRow {
   userCount: number;
 }
 
-export async function getPersonas(): Promise<PersonaRow[]> {
+export async function getPersonas(orgId: number): Promise<PersonaRow[]> {
   return await db
     .select({
       id: schema.personas.id,
@@ -32,7 +33,8 @@ export async function getPersonas(): Promise<PersonaRow[]> {
     .leftJoin(
       schema.consolidatedGroups,
       eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId)
-    );
+    )
+    .where(orgScope(schema.personas.organizationId, orgId));
 }
 
 export interface PersonaDetail {
@@ -69,7 +71,7 @@ export interface PersonaDetail {
   }[];
 }
 
-export async function getPersonaDetail(id: number): Promise<PersonaDetail | null> {
+export async function getPersonaDetail(orgId: number, id: number): Promise<PersonaDetail | null> {
   const [persona] = await db
     .select({
       id: schema.personas.id,
@@ -82,7 +84,7 @@ export async function getPersonaDetail(id: number): Promise<PersonaDetail | null
     })
     .from(schema.personas)
     .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId))
-    .where(eq(schema.personas.id, id));
+    .where(and(eq(schema.personas.id, id), orgScope(schema.personas.organizationId, orgId)));
 
   if (!persona) return null;
 
@@ -143,7 +145,7 @@ export interface GroupRow {
   userCount: number;
 }
 
-export async function getConsolidatedGroups(): Promise<GroupRow[]> {
+export async function getConsolidatedGroups(orgId: number): Promise<GroupRow[]> {
   return await db
     .select({
       id: schema.consolidatedGroups.id,
@@ -161,10 +163,11 @@ export async function getConsolidatedGroups(): Promise<GroupRow[]> {
         WHERE p.consolidated_group_id = consolidated_groups.id
       )`,
     })
-    .from(schema.consolidatedGroups);
+    .from(schema.consolidatedGroups)
+    .where(orgScope(schema.consolidatedGroups.organizationId, orgId));
 }
 
-export async function getPersonaIdsForUsers(userIds: number[]): Promise<number[]> {
+export async function getPersonaIdsForUsers(orgId: number, userIds: number[]): Promise<number[]> {
   if (userIds.length === 0) return [];
   const idSet = new Set(userIds);
   const assignments = await db.select({
@@ -184,7 +187,7 @@ export interface PersonaSourceSystemInfo {
   systems: string[];
 }
 
-export async function getPersonaSourceSystems(): Promise<Map<number, string[]>> {
+export async function getPersonaSourceSystems(orgId: number): Promise<Map<number, string[]>> {
   const rows = await db
     .select({
       personaId: schema.personaSourcePermissions.personaId,
@@ -195,6 +198,11 @@ export async function getPersonaSourceSystems(): Promise<Map<number, string[]>> 
       schema.sourcePermissions,
       eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId)
     )
+    .innerJoin(
+      schema.personas,
+      eq(schema.personas.id, schema.personaSourcePermissions.personaId)
+    )
+    .where(orgScope(schema.personas.organizationId, orgId))
     .groupBy(schema.personaSourcePermissions.personaId, schema.sourcePermissions.system);
 
   const map = new Map<number, string[]>();

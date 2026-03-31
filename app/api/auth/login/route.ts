@@ -31,6 +31,7 @@ export async function POST(req: NextRequest) {
 
     if (!appUser || !appUser.supabaseAuthId) {
       await db.insert(schema.auditLog).values({
+        organizationId: 1,
         entityType: "auth",
         entityId: 0,
         action: "login_failure",
@@ -74,6 +75,7 @@ export async function POST(req: NextRequest) {
     if (signInError) {
       // Audit log failed attempt
       await db.insert(schema.auditLog).values({
+        organizationId: appUser.organizationId,
         entityType: "auth",
         entityId: appUser.id,
         action: "login_failure",
@@ -86,6 +88,7 @@ export async function POST(req: NextRequest) {
 
     // Audit log successful login
     await db.insert(schema.auditLog).values({
+      organizationId: appUser.organizationId ?? 1,
       entityType: "auth",
       entityId: appUser.id,
       action: "login_success",

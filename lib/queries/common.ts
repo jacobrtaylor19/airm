@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, inArray } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 import type { UserRow } from "./users";
 import { getUsers } from "./users";
 
@@ -69,7 +70,7 @@ export async function getSourceUserIdsInScope(scope: { departments: string[]; us
   return Array.from(ids);
 }
 
-export async function getUsersScoped(appUserId: number, assignmentType: string): Promise<UserRow[]> {
+export async function getUsersScoped(orgId: number, appUserId: number, assignmentType: string): Promise<UserRow[]> {
   const scope = await getAssignedScope(appUserId, assignmentType);
 
   if (scope.departments.length === 0 && scope.userIds.length === 0) return [];
@@ -77,7 +78,7 @@ export async function getUsersScoped(appUserId: number, assignmentType: string):
   const scopedUserIds = await getSourceUserIdsInScope(scope);
   if (scopedUserIds.length === 0) return [];
 
-  return await getUsers(scopedUserIds);
+  return await getUsers(orgId, scopedUserIds);
 }
 
 export interface AssignedMapperApprover {
@@ -148,7 +149,7 @@ export interface UserRoleAssignmentRow {
   assignedDate: string | null;
 }
 
-export async function getUserSourceRoleAssignments(): Promise<UserRoleAssignmentRow[]> {
+export async function getUserSourceRoleAssignments(orgId: number): Promise<UserRoleAssignmentRow[]> {
   return await db
     .select({
       id: schema.userSourceRoleAssignments.id,
@@ -159,7 +160,8 @@ export async function getUserSourceRoleAssignments(): Promise<UserRoleAssignment
     })
     .from(schema.userSourceRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userSourceRoleAssignments.userId))
-    .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId));
+    .innerJoin(schema.sourceRoles, eq(schema.sourceRoles.id, schema.userSourceRoleAssignments.sourceRoleId))
+    .where(orgScope(schema.users.organizationId, orgId));
 }
 
 export interface SourcePermissionRow {

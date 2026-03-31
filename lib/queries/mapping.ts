@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { sql, eq, ne } from "drizzle-orm";
+import { sql, eq, ne, and } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 
 export interface PersonaMappingRow {
   personaId: number;
@@ -11,7 +12,7 @@ export interface PersonaMappingRow {
   sourcePermissionCount: number;
 }
 
-export async function getPersonaMappingWorkspace(): Promise<PersonaMappingRow[]> {
+export async function getPersonaMappingWorkspace(orgId: number): Promise<PersonaMappingRow[]> {
   return await db
     .select({
       personaId: schema.personas.id,
@@ -31,7 +32,8 @@ export async function getPersonaMappingWorkspace(): Promise<PersonaMappingRow[]>
       )`,
     })
     .from(schema.personas)
-    .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId));
+    .leftJoin(schema.consolidatedGroups, eq(schema.consolidatedGroups.id, schema.personas.consolidatedGroupId))
+    .where(orgScope(schema.personas.organizationId, orgId));
 }
 
 export interface UserRefinementRow {
@@ -45,7 +47,7 @@ export interface UserRefinementRow {
   personaName: string | null;
 }
 
-export async function getUserRefinements(): Promise<UserRefinementRow[]> {
+export async function getUserRefinements(orgId: number): Promise<UserRefinementRow[]> {
   return await db
     .select({
       assignmentId: schema.userTargetRoleAssignments.id,
@@ -61,7 +63,7 @@ export async function getUserRefinements(): Promise<UserRefinementRow[]> {
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
     .leftJoin(schema.personas, eq(schema.personas.id, schema.userTargetRoleAssignments.derivedFromPersonaId))
-    .where(ne(schema.userTargetRoleAssignments.assignmentType, "persona_default"));
+    .where(and(ne(schema.userTargetRoleAssignments.assignmentType, "persona_default"), orgScope(schema.users.organizationId, orgId)));
 }
 
 export interface UserRefinementDetail {
@@ -81,7 +83,7 @@ export interface UserRefinementDetail {
  * Gets all users who have target role assignments, including both
  * persona defaults and individual overrides for the refinements tab.
  */
-export async function getUserRefinementDetails(): Promise<UserRefinementDetail[]> {
+export async function getUserRefinementDetails(orgId: number): Promise<UserRefinementDetail[]> {
   const assignments = await db
     .select({
       assignmentId: schema.userTargetRoleAssignments.id,
@@ -99,7 +101,8 @@ export async function getUserRefinementDetails(): Promise<UserRefinementDetail[]
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId));
+    .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
+    .where(orgScope(schema.users.organizationId, orgId));
 
   const personaAssignments = await db
     .select({
@@ -175,7 +178,7 @@ export interface GapRow {
   notes: string | null;
 }
 
-export async function getGapAnalysis(): Promise<GapRow[]> {
+export async function getGapAnalysis(orgId: number): Promise<GapRow[]> {
   return await db
     .select({
       gapId: schema.permissionGaps.id,
@@ -188,7 +191,8 @@ export async function getGapAnalysis(): Promise<GapRow[]> {
     })
     .from(schema.permissionGaps)
     .innerJoin(schema.personas, eq(schema.personas.id, schema.permissionGaps.personaId))
-    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.permissionGaps.sourcePermissionId));
+    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.permissionGaps.sourcePermissionId))
+    .where(orgScope(schema.personas.organizationId, orgId));
 }
 
 export interface UserGapAnalysis {
@@ -335,7 +339,7 @@ export interface GapAnalysisSummary {
  * against target role permissions to find uncovered permissions.
  * Uses the permission_gaps table if populated.
  */
-export async function getGapAnalysisSummary(): Promise<GapAnalysisSummary> {
+export async function getGapAnalysisSummary(orgId: number): Promise<GapAnalysisSummary> {
   const allPersonaPerms = await db
     .select({
       personaId: schema.personaSourcePermissions.personaId,
@@ -345,11 +349,14 @@ export async function getGapAnalysisSummary(): Promise<GapAnalysisSummary> {
       description: schema.sourcePermissions.description,
     })
     .from(schema.personaSourcePermissions)
-    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId));
+    .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.personaSourcePermissions.sourcePermissionId))
+    .innerJoin(schema.personas, eq(schema.personas.id, schema.personaSourcePermissions.personaId))
+    .where(orgScope(schema.personas.organizationId, orgId));
 
   const personas = await db
     .select({ id: schema.personas.id, name: schema.personas.name })
-    .from(schema.personas);
+    .from(schema.personas)
+    .where(orgScope(schema.personas.organizationId, orgId));
 
   const personaNameMap = new Map(personas.map(p => [p.id, p.name]));
 

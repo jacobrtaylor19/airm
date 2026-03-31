@@ -8,6 +8,7 @@ import { getSessionUser } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendInviteEmail } from "@/lib/email";
 import { safeError } from "@/lib/errors";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -141,6 +142,7 @@ export async function POST(req: NextRequest) {
         const [appUser] = await db
           .insert(schema.appUsers)
           .values({
+            organizationId: getOrgId(user),
             username,
             displayName,
             email: emailLower,
@@ -172,6 +174,7 @@ export async function POST(req: NextRequest) {
 
     // Audit log
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "appUser",
       entityId: 0,
       action: "bulk_invite",

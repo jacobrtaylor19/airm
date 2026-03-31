@@ -3,6 +3,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, isNull } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,7 @@ export async function POST(req: Request) {
   // Audit log
   await db.insert(schema.auditLog)
     .values({
+      organizationId: getOrgId(user),
       entityType: "personaConfirmation",
       entityId: row.id,
       action: "persona_confirmed",

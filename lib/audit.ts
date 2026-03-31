@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { desc, eq, gte, lte, and } from "drizzle-orm";
 
 export interface AuditEntry {
+  organizationId: number;
   entityType: string;
   entityId?: number;
   action: string;
@@ -22,6 +23,7 @@ export interface AuditEntry {
 export async function auditLog(entry: AuditEntry): Promise<void> {
   try {
     await db.insert(schema.auditLog).values({
+      organizationId: entry.organizationId,
       entityType: entry.entityType,
       entityId: entry.entityId ?? 0,
       action: entry.action,

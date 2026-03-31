@@ -1,4 +1,6 @@
 import { getUserDetail, getAssignedMapperApproverForUser, getUserGapAnalysis } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +13,9 @@ import { UserSodConflicts } from "./user-sod-conflicts";
 export const dynamic = "force-dynamic";
 
 export default async function UserDetailPage({ params }: { params: { userId: string } }) {
-  const user = await getUserDetail(Number(params.userId));
+  const appUser = await requireAuth();
+  const orgId = getOrgId(appUser);
+  const user = await getUserDetail(orgId, Number(params.userId));
   if (!user) return notFound();
 
   const { mapperName, mapperOrgUnitName, approverName, approverOrgUnitName } = await getAssignedMapperApproverForUser(user.orgUnitId);

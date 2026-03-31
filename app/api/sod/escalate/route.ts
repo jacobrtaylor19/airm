@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     ));
 
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "sodConflict",
       entityId: conflictId,
       action: "escalated",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
+import { detectIncident } from "@/lib/incidents/detection";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,17 @@ export async function GET() {
   }
 
   const status = dbStatus === "connected" ? "ok" : "degraded";
+
+  // Raise an incident if the health check detects degradation
+  if (status === "degraded") {
+    detectIncident({
+      title: "Health check: database degraded",
+      description: `Database connectivity check returned status "${dbStatus}". The database may be unreachable or experiencing issues.`,
+      severity: "critical",
+      source: "health_check",
+      affectedComponent: "database",
+    }).catch(() => {});
+  }
 
   return NextResponse.json(
     {

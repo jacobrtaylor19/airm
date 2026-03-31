@@ -1,14 +1,16 @@
 import { getJobs, getDashboardStats } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { JobsClient } from "./jobs-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function JobsPage() {
-  const jobs = await getJobs();
-  const stats = await getDashboardStats();
-  const hasData = stats.totalUsers > 0;
   const user = await getSessionUser();
+  const orgId = getOrgId(user!);
+  const jobs = await getJobs(orgId);
+  const stats = await getDashboardStats(orgId);
+  const hasData = stats.totalUsers > 0;
 
   return (
     <div className="space-y-4">

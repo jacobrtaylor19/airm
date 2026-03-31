@@ -134,6 +134,7 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
   const groupMap = new Map<string, number>();
   for (const group of result.consolidated_groups) {
     const [inserted] = await db.insert(schema.consolidatedGroups).values({
+      organizationId: 1,
       name: group.name,
       description: group.description,
       accessLevel: group.access_level,
@@ -146,6 +147,7 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
   for (const persona of result.personas) {
     const groupId = groupMap.get(persona.suggested_group) ?? null;
     const [inserted] = await db.insert(schema.personas).values({
+      organizationId: 1,
       name: persona.name,
       description: persona.description,
       businessFunction: persona.business_function,

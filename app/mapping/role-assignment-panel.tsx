@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, Loader2, Search, X, Save, GripVertical, TrendingUp } from "lucide-react";
+import { AlertTriangle, Loader2, Search, X, Save, GripVertical, TrendingUp, Sparkles } from "lucide-react";
 import type { PersonaMappingRow, TargetRoleRow, PersonaSodConflict } from "@/lib/queries";
 import type { PersonaDetailInfo } from "./mapping-client";
 
@@ -28,6 +28,8 @@ export interface RoleAssignmentPanelProps {
   onAddRole: (roleId: number) => void;
   onRemoveRole: (roleId: number) => void;
   onSaveMappings: () => void;
+  userRole?: string;
+  onOpenAISuggest?: () => void;
 }
 
 export function RoleAssignmentPanel({
@@ -50,7 +52,10 @@ export function RoleAssignmentPanel({
   onAddRole,
   onRemoveRole,
   onSaveMappings,
+  userRole,
+  onOpenAISuggest,
 }: RoleAssignmentPanelProps) {
+  const canAISuggest = userRole && ["system_admin", "admin", "mapper"].includes(userRole);
   return (
     <Card className="lg:col-span-2">
       <CardHeader>
@@ -148,12 +153,26 @@ export function RoleAssignmentPanel({
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <h4 className="text-sm font-medium">Mapped Target Roles ({localMappedIds.length})</h4>
-                  {isDirty && (
-                    <Button size="sm" className="h-7 text-xs gap-1.5" onClick={onSaveMappings} disabled={savingMapping}>
-                      {savingMapping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-                      Save
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {canAISuggest && onOpenAISuggest && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs gap-1.5 border-teal-200 text-teal-700 hover:bg-teal-50 hover:text-teal-800"
+                        onClick={onOpenAISuggest}
+                        title="Get AI-powered role suggestions"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        AI Suggest
+                      </Button>
+                    )}
+                    {isDirty && (
+                      <Button size="sm" className="h-7 text-xs gap-1.5" onClick={onSaveMappings} disabled={savingMapping}>
+                        {savingMapping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                        Save
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 <div
                   className={`min-h-[80px] rounded-md border-2 border-dashed p-2 transition-colors ${

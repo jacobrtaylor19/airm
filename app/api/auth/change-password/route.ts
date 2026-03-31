@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
 
     // Audit log the change (no password values)
     await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
       entityType: "auth",
       entityId: user.id,
       action: "password_changed",

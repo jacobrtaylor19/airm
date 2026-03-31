@@ -1,12 +1,14 @@
 import { getSodRules } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { SodRulesClient } from "./sod-rules-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function SodRulesPage() {
-  const rules = await getSodRules();
   const currentUser = await getSessionUser();
+  const orgId = getOrgId(currentUser!);
+  const rules = await getSodRules(orgId);
   const canEdit = currentUser
     ? ["admin", "system_admin"].includes(currentUser.role) ||
       currentUser.role.toLowerCase().includes("compliance") ||

@@ -15,7 +15,11 @@ export interface JobRow {
   errorLog: string | null;
 }
 
-export async function getJobs(): Promise<JobRow[]> {
+// Note: processingJobs does not have organization_id yet.
+// orgId param is accepted for API consistency; filtering will be added
+// when the column is added in a future migration.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function getJobs(_orgId: number): Promise<JobRow[]> {
   return await db
     .select()
     .from(schema.processingJobs)

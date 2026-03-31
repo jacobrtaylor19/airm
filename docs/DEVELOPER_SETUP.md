@@ -1,6 +1,6 @@
-# AIRM Developer Setup & Onboarding
+# Provisum Developer Setup & Onboarding
 
-Welcome to the AIRM team! This guide walks you through setting up your local development environment and understanding the codebase.
+Welcome to the Provisum team! This guide walks you through setting up your local development environment and understanding the codebase.
 
 ---
 
@@ -16,6 +16,7 @@ Before you start, make sure you have:
   ```
 - **Git**: v2.30+ ([download](https://git-scm.com))
 - **Code editor**: VS Code recommended (with TypeScript support)
+- **Supabase account**: Free tier works for development ([supabase.com](https://supabase.com))
 - **Anthropic Claude API key**: Get from [Anthropic Dashboard](https://console.anthropic.com)
 
 ---
@@ -32,9 +33,10 @@ pnpm install
 
 # This installs:
 # - Next.js 14 and dependencies
-# - Drizzle ORM for database
+# - Drizzle ORM + postgres-js driver
+# - @supabase/ssr for authentication
 # - shadcn/ui and Tailwind CSS
-# - TypeScript, ESLint, etc.
+# - TypeScript, ESLint, Vitest, etc.
 ```
 
 ---
@@ -51,34 +53,36 @@ Edit `.env.local` and fill in your values:
 
 ```
 NODE_ENV=development
-ANTHROPIC_API_KEY=sk-ant-v4-YOUR-KEY-HERE
-DATABASE_URL=file:./airm.db
+DATABASE_URL=postgresql://postgres.xxxxx:password@aws-1-us-east-1.pooler.supabase.com:6543/postgres
+ANTHROPIC_API_KEY=sk-ant-v4-...
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ```
 
-**Get your API key**:
-1. Go to [Anthropic Console](https://console.anthropic.com)
-2. Create or use an existing API key
-3. Copy and paste into `ANTHROPIC_API_KEY`
+**Get your credentials**:
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard) and create or select a project
+2. Under **Settings > Database**, copy the pooled connection string (port 6543) for `DATABASE_URL`
+3. Under **Settings > API**, copy the project URL and anon key for the `NEXT_PUBLIC_SUPABASE_*` vars
+4. Go to [Anthropic Console](https://console.anthropic.com) and copy your API key for `ANTHROPIC_API_KEY`
 
 ---
 
 ## Step 3: Initialize Database
 
 ```bash
-# Sync Drizzle schema to SQLite
+# Push Drizzle schema to Supabase Postgres (creates all 47 tables)
 pnpm db:push
 
-# Load demo data (users, roles, etc.)
+# Load demo data (1K users, 17 auth users, SOD rules, roles, etc.)
 pnpm db:seed
 ```
 
-This creates `airm.db` (SQLite database file) in the project root. The file is gitignored and only exists locally.
+There is no local database file. All data lives in your Supabase Postgres instance and persists across dev server restarts.
 
-**Verify it worked**:
-```bash
-# Check if airm.db was created
-ls -lh airm.db
-# Should show: -rw-r--r--  1 user  group  XXK  Mar 24 12:34 airm.db
+**Verify it worked**: Open the Supabase Dashboard SQL Editor and run:
+```sql
+SELECT COUNT(*) FROM users;
+-- Should return ~1000
 ```
 
 ---
@@ -104,21 +108,30 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Step 5: First Login
 
-You'll be redirected to the login page. Default credentials:
+You'll be redirected to the login page. Demo credentials seeded by `pnpm db:seed`:
 
-| Username | Password |
-|----------|----------|
-| `admin` | `admin123` |
+| Username | Password | Role |
+|----------|----------|------|
+| `demo.admin` | `DemoGuide2026!` | admin |
+| `demo.mapper.finance` | `DemoGuide2026!` | mapper |
+| `demo.mapper.operations` | `DemoGuide2026!` | mapper |
+| `demo.approver` | `DemoGuide2026!` | approver |
+| `demo.viewer` | `DemoGuide2026!` | viewer |
+| `demo.coordinator` | `DemoGuide2026!` | coordinator |
+| `demo.pm` | `DemoGuide2026!` | project_manager |
+| `sysadmin` | `Sysadmin@2026!` | system_admin |
+| `admin` | `AdminPass@2026!` | admin |
 
-Or, create a new admin account via the `/setup` page (if it's your first run and no admin exists).
+Quick-login pills are shown on the login page for convenience.
 
 ---
 
 ## Explore the Dashboard
 
 After logging in, you'll see:
-- **Dashboard**: Main entry point with KPIs and workflow status
-- **Sidebar**: Navigation to Mapping, Approvals, Personas, SOD analysis, Admin, etc.
+- **Dashboard**: Main entry point with KPIs, workflow status, and provisioning alerts
+- **Sidebar**: Navigation to Mapping, Approvals, Personas, SOD analysis, Risk Analysis, Admin, etc.
+- **Lumen**: AI chatbot assistant (bottom-right widget)
 - **Top bar**: Your username, notifications, logout button
 
 Familiarize yourself with the UI. You can upload sample data in the Admin section.
@@ -133,27 +146,54 @@ airm/
 │   ├── dashboard/page.tsx     # Main dashboard (server component)
 │   ├── mapping/page.tsx       # Role mapping workspace
 │   ├── approvals/page.tsx     # Approval queue
-│   ├── admin/                 # User management + settings
-│   ├── api/                   # API endpoints (mutations)
-│   └── middleware.ts          # Auth middleware (runs on every request)
+│   ├── risk-analysis/         # Risk quantification dashboard
+│   ├── admin/                 # User management, settings, validation
+│   ├── api/                   # API endpoints (mutations + integrations)
+│   └── layout.tsx             # Root layout with Lumen chat widget
 │
 ├── components/                # React components (UI only)
 │   ├── layout/                # Sidebar, header, navigation
 │   ├── dashboard/             # Dashboard-specific components
+│   ├── chat/                  # Lumen chat widget
 │   └── ui/                    # shadcn/ui components
 │
 ├── db/                        # Database layer
-│   ├── schema.ts              # Drizzle ORM schema (single source of truth)
-│   ├── index.ts               # Database connection setup
-│   └── seed.ts                # CSV seeding logic
+│   ├── schema.ts              # Drizzle ORM schema (pgTable — single source of truth)
+│   ├── index.ts               # Lazy database connection (postgres-js, prepare: false)
+│   └── seed.ts                # Demo data seeding logic
 │
 ├── lib/                       # Business logic & utilities
 │   ├── auth.ts                # Session management, roles, permissions
 │   ├── scope.ts               # Org-unit based user filtering
-│   ├── queries.ts             # Centralized database queries
+│   ├── queries/               # Database queries (11 domain modules)
+│   │   ├── index.ts           # Barrel re-export
+│   │   ├── dashboard.ts       # Dashboard stats
+│   │   ├── users.ts           # User queries
+│   │   ├── personas.ts        # Persona queries
+│   │   ├── roles.ts           # Source/target role queries
+│   │   ├── sod.ts             # SOD conflict queries
+│   │   ├── approvals.ts       # Approval queue queries
+│   │   ├── mapping.ts         # Gap analysis, refinement
+│   │   ├── risk.ts            # Risk analysis queries
+│   │   ├── common.ts          # Shared scoped queries
+│   │   ├── jobs.ts            # Pipeline job queries
+│   │   └── audit.ts           # Audit log queries
+│   ├── ai/                    # Claude API integration
+│   │   ├── types.ts           # Shared AI interfaces
+│   │   ├── load-user-profiles.ts  # Bulk user profile loader
+│   │   └── generatePersonas.ts    # Persona generation pipeline
+│   ├── assistant/             # Lumen chatbot
+│   │   ├── tools.ts           # Tool definitions for Lumen
+│   │   └── rag-context.ts     # Retrieval-augmented context
+│   ├── org-context.ts         # Multi-tenant helpers
+│   ├── feature-flags.ts       # Feature flag system
+│   ├── webhooks.ts            # Webhook dispatch
+│   ├── scheduled-exports.ts   # Scheduled export jobs
+│   ├── monitoring.ts          # Structured logging (Sentry integration)
+│   ├── email.ts               # Resend email integration
+│   ├── job-runner.ts          # Retry with dead-letter queue
 │   ├── settings.ts            # Project configuration (key-value)
 │   ├── strapline.ts           # Dashboard status messages
-│   ├── ai/                    # Claude API integration
 │   └── utils.ts               # Utility functions (formatting, etc.)
 │
 ├── data/                      # Seed CSV files (demo data)
@@ -161,17 +201,18 @@ airm/
 │   ├── sourceRoles.csv
 │   └── ...
 │
-├── docs/                      # Documentation (this is here!)
+├── docs/                      # Documentation
 │   ├── ARCHITECTURE.md        # System design & decisions
 │   ├── DEPLOYMENT.md          # Production deployment guide
 │   ├── CONTRIBUTING.md        # Code standards & PR process
-│   └── DEVELOPER_SETUP.md     # This file
+│   ├── QA_TESTING_STRATEGY.md # 130+ test cases across 23 modules
+│   ├── TECH_DEBT.md           # Prioritized tech debt register
+│   └── DEVELOPER_SETUP.md    # This file
 │
+├── middleware.ts               # Auth middleware (default-secure model)
 ├── package.json               # Dependencies & scripts
 ├── tsconfig.json              # TypeScript configuration
-├── next.config.js             # Next.js configuration
-├── middleware.ts              # Auth middleware
-└── airm.db                    # SQLite database (gitignored)
+└── next.config.js             # Next.js configuration
 ```
 
 ---
@@ -193,8 +234,8 @@ import { requireAuth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default function MyFeaturePage() {
-  const user = requireAuth(); // Throws redirect to /login if not authed
+export default async function MyFeaturePage() {
+  const user = await requireAuth(); // Throws redirect to /login if not authed
 
   return (
     <div>
@@ -214,7 +255,7 @@ import { getSessionUser } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   // Validate auth
-  const user = getSessionUser();
+  const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -231,19 +272,21 @@ export async function POST(req: NextRequest) {
 ### Add a Database Query
 
 ```typescript
-// In lib/queries.ts
-export function getMyData(userId: number) {
-  return db.select()
+// In lib/queries/<domain>.ts (pick the appropriate domain module)
+export async function getMyData(userId: number) {
+  const [row] = await db.select()
     .from(schema.users)
-    .where(eq(schema.users.id, userId))
-    .get();
+    .where(eq(schema.users.id, userId));
+  return row;
 }
 
-// Use in a page
+// Re-export from lib/queries/index.ts if needed
+
+// Use in a server component page
 import { getMyData } from "@/lib/queries";
 
-export default function MyPage() {
-  const data = getMyData(123); // Direct call in server component
+export default async function MyPage() {
+  const data = await getMyData(123); // Async DB call in server component
   return <div>{JSON.stringify(data)}</div>;
 }
 ```
@@ -252,10 +295,11 @@ export default function MyPage() {
 
 1. Edit `db/schema.ts`:
 ```typescript
-export const myTable = sqliteTable("my_table", {
-  id: integer("id").primaryKey(),
+export const myTable = pgTable("my_table", {
+  id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" }),
+  organizationId: integer("organization_id").references(() => organizations.id),
+  createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
 });
 ```
 
@@ -264,10 +308,10 @@ export const myTable = sqliteTable("my_table", {
 pnpm db:push
 ```
 
-3. Add queries to `lib/queries.ts`:
+3. Add queries to the appropriate domain module in `lib/queries/`:
 ```typescript
-export function getMyTableRows() {
-  return db.select().from(schema.myTable).all();
+export async function getMyTableRows() {
+  return await db.select().from(schema.myTable);
 }
 ```
 
@@ -297,7 +341,7 @@ Use in a page:
 ```typescript
 import { MyComponent } from "@/components/MyComponent";
 
-export default function Page() {
+export default async function Page() {
   return <MyComponent title="Example" onAction={() => console.log("Clicked")} />;
 }
 ```
@@ -306,10 +350,10 @@ export default function Page() {
 
 ## Running Tests
 
-Tests aren't comprehensive yet, but you can set up a testing framework:
+The project uses Vitest with 41+ smoke tests across auth, settings, strapline, and middleware:
 
 ```bash
-# Run tests (when available)
+# Run tests
 pnpm test
 
 # Run in watch mode (re-run on file change)
@@ -347,37 +391,34 @@ pnpm build
 pnpm start
 ```
 
-This builds the app and starts the production server (slower start than `pnpm dev`, closer to production behavior).
+This builds the app and starts the production server (slower start than `pnpm dev`, closer to production behavior). The build should complete with zero errors and zero warnings.
 
 ---
 
 ## Database Management
 
-### Reset Database (Start Fresh)
+### Re-seed Demo Data
 
 ```bash
-# Delete the database file
-rm airm.db
-
-# Recreate schema and load demo data
-pnpm db:push
+# Re-seed demo data (resets to known state)
 pnpm db:seed
 ```
 
 ### Inspect Database
 
-Use SQLite CLI:
-```bash
-sqlite3 airm.db
+Use the **Supabase Dashboard SQL Editor** to query your database directly:
 
-# In the sqlite3 prompt:
-.tables              # List all tables
-.schema users        # Show schema for 'users' table
-SELECT COUNT(*) FROM users;  # Count rows
-.exit                # Exit
+```sql
+-- List all tables
+SELECT tablename FROM pg_tables WHERE schemaname = 'public';
+
+-- Count users
+SELECT COUNT(*) FROM users;
+
+-- Inspect a specific table's schema
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_name = 'users' ORDER BY ordinal_position;
 ```
-
-Or use a GUI like [sqlitebrowser](https://sqlitebrowser.org).
 
 ### Make Schema Changes
 
@@ -391,11 +432,15 @@ Or use a GUI like [sqlitebrowser](https://sqlitebrowser.org).
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `NODE_ENV` | Development or production mode | `development` |
+| `DATABASE_URL` | Supabase Postgres pooled connection (port 6543) | `postgresql://postgres.xxx:pw@aws-1-us-east-1.pooler.supabase.com:6543/postgres` |
 | `ANTHROPIC_API_KEY` | Claude API authentication | `sk-ant-v4-...` |
-| `DATABASE_URL` | SQLite database location | `file:./airm.db` |
+| `ENCRYPTION_KEY` | AES-256-GCM key for encrypting sensitive settings | base64 string |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key (public, safe for client) | `eyJ...` |
+| `RESEND_API_KEY` | Email transport via Resend (optional) | `re_...` |
+| `CRON_SECRET` | Vercel cron job auth (optional, production only) | random string |
 
-AIRM uses custom cookie-based sessions (not NextAuth), so no `NEXTAUTH_SECRET` is required.
+Provisum uses Supabase JWT sessions (httpOnly cookies managed by `@supabase/ssr`), so no `NEXTAUTH_SECRET` is required.
 
 **Never commit `.env.local`** — it's gitignored and contains secrets.
 
@@ -425,11 +470,11 @@ Use your browser's **DevTools** (F12):
 Add `console.log()` statements:
 
 ```typescript
-export default function MyPage() {
-  const user = requireAuth();
+export default async function MyPage() {
+  const user = await requireAuth();
   console.log("User object:", user);
 
-  const data = getMyData(user.id);
+  const data = await getMyData(user.id);
   console.log("Query result:", data);
 
   return <div>{/* ... */}</div>;
@@ -451,22 +496,29 @@ DRIZZLE_DEBUG=true pnpm dev
 
 ## Common Issues & Solutions
 
+### Error: `ECONNREFUSED` or connection timeout
+
+**Cause**: Cannot reach Supabase Postgres.
+
+**Solution**: Verify your `DATABASE_URL` uses port `6543` (pooled connection) and the correct host (`aws-1-us-east-1.pooler.supabase.com`, not `aws-0`). Check that your Supabase project is not paused.
+
+### Error: Too many connections / connection pool exhausted
+
+**Cause**: Too many open database connections.
+
+**Solution**: The connection string should use the pooled endpoint (port 6543, transaction mode). The `db/index.ts` module uses a lazy connection with `prepare: false` — make sure you are not creating additional connection instances elsewhere.
+
+### Error: Prepared statement already exists / cannot prepare
+
+**Cause**: Supabase transaction pooler does not support prepared statements.
+
+**Solution**: Ensure `db/index.ts` initializes Drizzle with `{ prepare: false }`. This is the default in the codebase — do not override it.
+
 ### Error: `Cannot find module '@/lib/auth'`
 
 **Cause**: Path alias not resolved.
 
 **Solution**: Restart the dev server (`Ctrl+C`, then `pnpm dev`).
-
-### Error: `database disk image is malformed`
-
-**Cause**: SQLite database is corrupted.
-
-**Solution**: Delete `airm.db` and recreate:
-```bash
-rm airm.db
-pnpm db:push
-pnpm db:seed
-```
 
 ### Error: `ANTHROPIC_API_KEY is required`
 
@@ -508,13 +560,13 @@ export function MyComponent({ username, role }: MyComponentProps) {
 
 ### Server Components vs. Client Components
 
-- **Server components** (default): Render on the server; can access databases and secrets
-- **Client components**: Render in the browser; have access to hooks, interactivity
+- **Server components** (default): Render on the server; can access databases and secrets directly
+- **Client components**: Render in the browser; have access to hooks and interactivity
 
 ```typescript
-// Server Component (default)
-export default function Page() {
-  const data = getFromDatabase(); // OK
+// Server Component (default — must be async for DB calls)
+export default async function Page() {
+  const data = await getFromDatabase(); // OK — async DB call
   return <div>{data}</div>;
 }
 
@@ -532,7 +584,7 @@ Users see only data in their assigned org-unit subtree:
 
 ```typescript
 // In lib/scope.ts
-const scopedUserIds = getUserScope(appUser);
+const scopedUserIds = await getUserScope(appUser);
 // scopedUserIds = [1, 5, 7, 8]  (descendant users in their org unit)
 // null = admin (no scoping)
 
@@ -547,17 +599,17 @@ Project settings are stored in the database and configurable via admin console:
 ```typescript
 import { getSetting, setSetting } from "@/lib/settings";
 
-const threshold = parseInt(getSetting("least_access_threshold") ?? "30", 10);
+const threshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
 // Default is 30 if setting not found
 ```
 
 ### Authentication Flow
 
 1. User logs in at `/login` with username + password
-2. Server validates password hash and creates session
-3. Session cookie (`airm_session`) stored in browser
-4. On every request, middleware validates the cookie
-5. Pages/API routes call `requireAuth()` or `getSessionUser()`
+2. Server validates credentials against Supabase Auth
+3. Supabase JWT session cookie stored in browser (httpOnly, managed by `@supabase/ssr`)
+4. On every request, middleware validates the JWT
+5. Pages/API routes call `await requireAuth()` or `await getSessionUser()`
 
 ---
 
@@ -567,7 +619,8 @@ const threshold = parseInt(getSetting("least_access_threshold") ?? "30", 10);
 - **CLAUDE.md**: Developer context and common patterns
 - **ARCHITECTURE.md**: System design and technical decisions
 - **CONTRIBUTING.md**: Code standards and PR process
-- **README.md**: Project overview and quick start
+- **QA_TESTING_STRATEGY.md**: 130+ test cases across 23 modules
+- **TECH_DEBT.md**: Prioritized tech debt register
 
 ### Asking Questions
 - Comment in the GitHub PR if stuck
@@ -582,7 +635,7 @@ const threshold = parseInt(getSetting("least_access_threshold") ?? "30", 10);
 
 ## Next Steps
 
-1. **Familiarize yourself with the UI**: Log in and explore the dashboard, mapping, approvals, etc.
+1. **Familiarize yourself with the UI**: Log in as `demo.admin` and explore the dashboard, mapping, approvals, risk analysis, etc.
 2. **Read CLAUDE.md**: Understand the developer context and common patterns
 3. **Read ARCHITECTURE.md**: Get a mental model of how the system works
 4. **Make a small change**: Try adding a new setting or modifying a message

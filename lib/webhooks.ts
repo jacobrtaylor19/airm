@@ -2,6 +2,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { reportError, reportMessage } from "@/lib/monitoring";
+import { detectIncident } from "@/lib/incidents/detection";
 import crypto from "crypto";
 
 // Supported event types
@@ -150,6 +151,18 @@ async function deliverWebhook(
         endpointId: endpoint.id,
         deliveryId,
       });
+
+      // Check if endpoint just hit the auto-disable threshold (10 failures)
+      if (endpoint.failureCount + 1 >= 10) {
+        detectIncident({
+          title: `Webhook endpoint disabled: ${endpoint.url}`,
+          description: `Endpoint auto-disabled after 10 consecutive failures. Last HTTP status: ${response.status}.`,
+          severity: "medium",
+          source: "webhook_failure",
+          sourceRef: String(endpoint.id),
+          affectedComponent: "integration",
+        }).catch(() => {});
+      }
     }
   } catch (err) {
     await db
@@ -167,6 +180,18 @@ async function deliverWebhook(
       .where(eq(schema.webhookEndpoints.id, endpoint.id));
 
     reportError(err, { context: "deliverWebhook", endpointId: endpoint.id, deliveryId });
+
+    // Check if endpoint just hit the auto-disable threshold (10 failures)
+    if (endpoint.failureCount + 1 >= 10) {
+      detectIncident({
+        title: `Webhook endpoint disabled: ${endpoint.url}`,
+        description: `Endpoint auto-disabled after 10 consecutive failures. Last error: ${String(err).slice(0, 200)}`,
+        severity: "medium",
+        source: "webhook_failure",
+        sourceRef: String(endpoint.id),
+        affectedComponent: "integration",
+      }).catch(() => {});
+    }
   }
 }
 

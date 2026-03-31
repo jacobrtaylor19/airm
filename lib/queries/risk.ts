@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { count, sql, eq, and, inArray } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 
 export interface LeastAccessRow {
   personaId: number;
@@ -20,7 +21,7 @@ export interface LeastAccessRow {
   exceptionAcceptedAt: string | null;
 }
 
-export async function getLeastAccessAnalysis(threshold: number): Promise<LeastAccessRow[]> {
+export async function getLeastAccessAnalysis(orgId: number, threshold: number): Promise<LeastAccessRow[]> {
   const rows = await db
     .select({
       personaId: schema.personaTargetRoleMappings.personaId,
@@ -50,7 +51,7 @@ export async function getLeastAccessAnalysis(threshold: number): Promise<LeastAc
         eq(schema.leastAccessExceptions.status, "accepted"),
       )
     )
-    .where(sql`${schema.personaTargetRoleMappings.excessPercent} >= ${threshold}`);
+    .where(and(sql`${schema.personaTargetRoleMappings.excessPercent} >= ${threshold}`, orgScope(schema.personas.organizationId, orgId)));
 
   const userCounts = await db
     .select({
@@ -102,6 +103,7 @@ export interface AggregateRiskAnalysis {
  * Avoids N+1 by doing bulk queries and computing in memory.
  */
 export async function getAggregateRiskAnalysis(
+  orgId: number,
   scopedUserIds: number[] | null = null
 ): Promise<AggregateRiskAnalysis> {
   // 1. Get all users with target role assignments (these are the ones we can analyze)
@@ -115,7 +117,7 @@ export async function getAggregateRiskAnalysis(
         department: schema.users.department,
       })
       .from(schema.users)
-      .where(inArray(schema.users.id, scopedUserIds));
+      .where(and(inArray(schema.users.id, scopedUserIds), orgScope(schema.users.organizationId, orgId)));
   } else {
     usersWithAssignments = await db
       .select({
@@ -123,7 +125,8 @@ export async function getAggregateRiskAnalysis(
         displayName: schema.users.displayName,
         department: schema.users.department,
       })
-      .from(schema.users);
+      .from(schema.users)
+      .where(orgScope(schema.users.organizationId, orgId));
   }
 
   const userIds = usersWithAssignments.map(u => u.id);

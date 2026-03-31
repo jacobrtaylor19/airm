@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
 
     // Audit log the export itself
     await auditLog({
+      organizationId: user.organizationId,
       entityType: "audit_export",
       action: "export",
       actorEmail: user.email || user.username,

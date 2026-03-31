@@ -1,13 +1,15 @@
 import { getPersonas, getConsolidatedGroups } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { PersonasPageClient } from "./personas-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function PersonasPage() {
-  const personas = await getPersonas();
-  const groups = await getConsolidatedGroups();
   const currentUser = await getSessionUser();
+  const orgId = getOrgId(currentUser!);
+  const personas = await getPersonas(orgId);
+  const groups = await getConsolidatedGroups(orgId);
   const userRole = currentUser?.role ?? "viewer";
 
   return (

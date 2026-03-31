@@ -1,6 +1,7 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
+import { orgScope } from "@/lib/org-context";
 
 export interface SodRuleRow {
   id: number;
@@ -14,8 +15,8 @@ export interface SodRuleRow {
   isActive: boolean | null;
 }
 
-export async function getSodRules(): Promise<SodRuleRow[]> {
-  return await db.select().from(schema.sodRules);
+export async function getSodRules(orgId: number): Promise<SodRuleRow[]> {
+  return await db.select().from(schema.sodRules).where(orgScope(schema.sodRules.organizationId, orgId));
 }
 
 export interface SodConflictRow {
@@ -41,7 +42,7 @@ export interface SodConflictRow {
   riskExplanation: string | null;
 }
 
-export async function getSodConflicts(): Promise<SodConflictRow[]> {
+export async function getSodConflicts(orgId: number): Promise<SodConflictRow[]> {
   const conflicts = await db
     .select({
       id: schema.sodConflicts.id,
@@ -63,7 +64,8 @@ export async function getSodConflicts(): Promise<SodConflictRow[]> {
     })
     .from(schema.sodConflicts)
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
-    .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId));
+    .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
+    .where(orgScope(schema.users.organizationId, orgId));
 
   // Resolve role names and permission names
   return await Promise.all(conflicts.map(async (c) => {
@@ -116,8 +118,8 @@ export interface SodConflictDetailed extends SodConflictRow {
   roleBPermissions: { permissionId: string; permissionName: string | null }[];
 }
 
-export async function getSodConflictsDetailed(): Promise<SodConflictDetailed[]> {
-  const base = await getSodConflicts();
+export async function getSodConflictsDetailed(orgId: number): Promise<SodConflictDetailed[]> {
+  const base = await getSodConflicts(orgId);
 
   return await Promise.all(base.map(async (c) => {
     const roleAPermissions = c.roleIdA
@@ -144,8 +146,8 @@ export async function getSodConflictsDetailed(): Promise<SodConflictDetailed[]> 
   }));
 }
 
-export async function getSodConflictDetail(conflictId: number): Promise<SodConflictDetailed | null> {
-  const all = await getSodConflictsDetailed();
+export async function getSodConflictDetail(orgId: number, conflictId: number): Promise<SodConflictDetailed | null> {
+  const all = await getSodConflictsDetailed(orgId);
   return all.find(c => c.id === conflictId) ?? null;
 }
 
@@ -164,7 +166,7 @@ export interface PersonaSodConflict {
   roleNameB: string | null;
 }
 
-export async function getOpenSodConflictsByPersona(): Promise<Map<number, PersonaSodConflict[]>> {
+export async function getOpenSodConflictsByPersona(orgId: number): Promise<Map<number, PersonaSodConflict[]>> {
   // Get all open SOD conflicts with user-persona info
   const rows = await db
     .select({
@@ -183,7 +185,7 @@ export async function getOpenSodConflictsByPersona(): Promise<Map<number, Person
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
     .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
     .innerJoin(schema.userPersonaAssignments, eq(schema.userPersonaAssignments.userId, schema.sodConflicts.userId))
-    .where(eq(schema.sodConflicts.resolutionStatus, "open"));
+    .where(and(eq(schema.sodConflicts.resolutionStatus, "open"), orgScope(schema.users.organizationId, orgId)));
 
   const result = new Map<number, PersonaSodConflict[]>();
   for (const r of rows) {

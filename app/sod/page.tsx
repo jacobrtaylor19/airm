@@ -1,5 +1,6 @@
 import { getSodConflictsDetailed } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { getUserScope } from "@/lib/scope";
 import { SodPageClient } from "./sod-client";
 
@@ -7,7 +8,8 @@ export const dynamic = "force-dynamic";
 
 export default async function SodConflictAnalysisPage() {
   const currentUser = await getSessionUser();
-  let conflicts = await getSodConflictsDetailed();
+  const orgId = getOrgId(currentUser!);
+  let conflicts = await getSodConflictsDetailed(orgId);
 
   // Filter by org scope for mappers/approvers/coordinators
   if (currentUser && ["mapper", "approver", "coordinator"].includes(currentUser.role)) {

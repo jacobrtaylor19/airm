@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
     };
 
     await auditLog({
+      organizationId: actor.organizationId,
       entityType: "gdpr",
       entityId: userId,
       action: "data_export",

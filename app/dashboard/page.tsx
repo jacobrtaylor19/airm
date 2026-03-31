@@ -1,5 +1,6 @@
 import { getDashboardStats, getDepartmentMappingStatus, getSourceSystemStats, getLeastAccessAnalysis, getPersonaIdsForUsers, getAggregateRiskAnalysis } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { getUserScopeDepartments, getUserScope } from "@/lib/scope";
 import { getSetting } from "@/lib/settings";
 import { KpiCard } from "@/components/dashboard/kpi-card";
@@ -48,11 +49,13 @@ export default async function DashboardPage() {
 }
 
 async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
+  const orgId = getOrgId(user);
+
   // Run all independent data fetches in parallel
   const [stats, allDeptStatus, sourceSystemStats, scopeDepts] = await Promise.all([
-    getDashboardStats(),
-    getDepartmentMappingStatus(),
-    getSourceSystemStats(),
+    getDashboardStats(orgId),
+    getDepartmentMappingStatus(orgId),
+    getSourceSystemStats(orgId),
     getUserScopeDepartments(user),
   ]);
 
@@ -71,7 +74,7 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
   const overprovisioningThreshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
 
   const [riskAnalysis, scopedStatsData, overprovisioningAlertsRaw] = await Promise.all([
-    getAggregateRiskAnalysis(scopedUserIds),
+    getAggregateRiskAnalysis(orgId, scopedUserIds),
     // Scoped stats for strapline
     (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0)
       ? (async () => {
@@ -101,7 +104,7 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
         })()
       : Promise.resolve(null),
     // Overprovisioning alerts
-    getLeastAccessAnalysis(overprovisioningThreshold),
+    getLeastAccessAnalysis(orgId, overprovisioningThreshold),
   ]);
 
   const scopedStats = scopedStatsData;
@@ -111,7 +114,7 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
   // Filter provisioning alerts by threshold and scope
   let overprovisioningAlerts = overprovisioningAlertsRaw;
   if (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0) {
-    const scopedPersonaIds = new Set(await getPersonaIdsForUsers(scopedUserIds));
+    const scopedPersonaIds = new Set(await getPersonaIdsForUsers(orgId, scopedUserIds));
     overprovisioningAlerts = overprovisioningAlerts.filter(r => scopedPersonaIds.has(r.personaId));
   }
 

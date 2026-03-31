@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 import { safeError } from "@/lib/errors";
+import { getOrgId } from "@/lib/org-context";
 
 const ADMIN_ROLES = ["admin", "system_admin"];
 
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
     const [release] = await db
       .insert(schema.releases)
       .values({
+        organizationId: user ? getOrgId(user) : 1,
         name: name.trim(),
         description: description ?? null,
         status: status ?? "planning",

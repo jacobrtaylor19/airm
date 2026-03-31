@@ -1,12 +1,14 @@
 import { getTargetRoles, getTargetRolePermissions } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { TargetRolesClient } from "./target-roles-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function TargetRolesPage() {
-  const roles = await getTargetRoles();
   const currentUser = await getSessionUser();
+  const orgId = getOrgId(currentUser!);
+  const roles = await getTargetRoles(orgId);
   const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
 
   // Pre-fetch permission details for all roles (expandable rows need them)

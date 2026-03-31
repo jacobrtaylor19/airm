@@ -34,9 +34,9 @@ Provisum runs on **Vercel** (hosting) with **Supabase Postgres** (database). Thi
 
 ```bash
 # In the airm/ directory
-echo 'DATABASE_URL=postgresql://postgres.xxxxx:password@aws-0-us-east-1.pooler.supabase.com:6543/postgres' >> .env.local
+echo 'DATABASE_URL=postgresql://postgres.xxxxx:password@aws-1-us-east-1.pooler.supabase.com:6543/postgres' >> .env.local
 
-pnpm db:push    # Creates all 25 tables in Supabase
+pnpm db:push    # Creates all 47 tables in Supabase
 pnpm db:seed    # Loads demo data (1K users, app users, SOD rules, etc.)
 ```
 
@@ -47,6 +47,8 @@ vercel link                    # Connect repo to Vercel project
 vercel env add DATABASE_URL    # Add Supabase connection string
 vercel env add ANTHROPIC_API_KEY
 vercel env add ENCRYPTION_KEY  # Generate: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
 vercel deploy --prod           # Deploy to production
 ```
 
@@ -74,6 +76,13 @@ Or connect via Vercel dashboard:
 | `DATABASE_URL` | Yes | Supabase Postgres pooled connection string (port 6543) |
 | `ANTHROPIC_API_KEY` | Yes | Claude API key from console.anthropic.com |
 | `ENCRYPTION_KEY` | Prod | AES-256-GCM key for encrypting sensitive settings at rest |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL (e.g., `https://anjxhleuutdcwipassij.supabase.co`) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key for client-side auth |
+| `CRON_SECRET` | Prod | Authenticates Vercel cron job requests to `/api/cron/exports` |
+| `RESEND_API_KEY` | Prod | Resend email transport for invite emails and notifications |
+| `NEXT_PUBLIC_APP_URL` | Prod | Application URL for email links (e.g., `https://demo.provisum.io`) |
+| `NEXT_PUBLIC_SENTRY_DSN` | Prod | Sentry error tracking DSN |
+| `SENTRY_AUTH_TOKEN` | Prod | Sentry source map upload token |
 | `NODE_ENV` | Auto | Set automatically by Vercel (`production` on deploy) |
 
 **Generating encryption key:**
@@ -85,7 +94,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 
 ```bash
 # .env.local (git-ignored)
-DATABASE_URL=postgresql://postgres.xxxxx:password@aws-0-us-east-1.pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://postgres.xxxxx:password@aws-1-us-east-1.pooler.supabase.com:6543/postgres
 ANTHROPIC_API_KEY=sk-ant-v4-...
 # ENCRYPTION_KEY is optional in dev — settings stored in plaintext without it
 ```
@@ -143,9 +152,25 @@ AI pipeline routes have `maxDuration = 300` (5 minutes) for long-running operati
 
 These use `waitUntil()` from `@vercel/functions` for background processing.
 
+### Cron Jobs
+
+Configured in `vercel.json`:
+- `/api/cron/exports` — Runs hourly, processes scheduled export jobs
+- Secured by `CRON_SECRET` env var (Vercel sends it in the `Authorization` header)
+
 ### Build
 
 Build command: `pnpm build` (default). No `db:push` or `db:seed` in build — data persists in Supabase.
+
+---
+
+## Custom Domains
+
+| Domain | Purpose |
+|--------|---------|
+| demo.provisum.io | Demo instance (current deployment) |
+| app.provisum.io | Production app (future) |
+| provisum.io | Sales/marketing site (separate Vercel project) |
 
 ---
 
@@ -159,6 +184,12 @@ Build command: `pnpm build` (default). No `db:push` or `db:seed` in build — da
 ### Supabase Logs
 - **Database logs**: Supabase dashboard → Logs → Postgres
 - **Connection pool**: Monitor active connections in Supabase dashboard
+
+### Sentry Error Tracking
+- `@sentry/nextjs` installed with client/server/edge configs
+- `global-error.tsx` catches unhandled errors
+- `lib/monitoring.ts` provides `reportError()` and `reportMessage()`
+- **Requires** `NEXT_PUBLIC_SENTRY_DSN` and `SENTRY_AUTH_TOKEN` env vars
 
 ### Health Check
 
@@ -225,8 +256,15 @@ Build command: `pnpm build` (default). No `db:push` or `db:seed` in build — da
 **2026-03-26: SQLite → Supabase Postgres**
 - Removed `better-sqlite3` and `@types/better-sqlite3`
 - Added `postgres` (postgres-js) and `@vercel/functions`
-- Converted all 25 tables from `sqliteTable` to `pgTable`
+- Converted all 47 tables from `sqliteTable` to `pgTable`
 - Made all DB queries async (~100 files, ~800+ `await` additions)
 - Deleted `db/audit-db.ts` (audit now uses main Drizzle DB)
 - Demo reset uses in-process `seedDatabase()` instead of `execSync`
 - Pre-migration archive: `archive/provisum-v0.6.0-20260325_174316.zip`
+
+**2026-03-28: Supabase Auth Migration**
+- Replaced custom bcrypt cookie sessions with Supabase Auth JWT sessions
+- Added `@supabase/ssr` for server-side cookie management
+- Created 17 auth users in Supabase matching seed data
+- Enabled RLS on all 39+ tables (app bypasses via postgres role)
+- Session cookie now managed by Supabase (httpOnly JWT)

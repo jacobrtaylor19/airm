@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { getOrgTree, getAllOrgUnits } from "@/lib/org-hierarchy";
 import { getSessionUser } from "@/lib/auth";
 import { safeError } from "@/lib/errors";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,7 @@ export async function POST(req: NextRequest) {
     const [inserted] = await db
       .insert(schema.orgUnits)
       .values({
+        organizationId: getOrgId(user),
         name,
         level,
         parentId: parentId || null,
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
     // Audit log
     await db.insert(schema.auditLog)
       .values({
+        organizationId: getOrgId(user),
         entityType: "orgUnit",
         entityId: inserted.id,
         action: "created",
@@ -214,6 +217,7 @@ export async function PUT(req: NextRequest) {
     // Audit log
     await db.insert(schema.auditLog)
       .values({
+        organizationId: getOrgId(user),
         entityType: "orgUnit",
         entityId: id,
         action: "updated",
@@ -282,6 +286,7 @@ export async function DELETE(req: NextRequest) {
     // Audit log
     await db.insert(schema.auditLog)
       .values({
+        organizationId: getOrgId(user),
         entityType: "orgUnit",
         entityId: id,
         action: "deleted",

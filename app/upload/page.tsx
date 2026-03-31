@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { count, ne, eq } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 import { getSourceSystemStats } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -22,8 +23,9 @@ async function getCount(table: PgTable) {
 
 export default async function DataUploadPage() {
   const user = await requireAuth();
+  const orgId = getOrgId(user);
   const isAdmin = user.role === "admin" || user.role === "system_admin";
-  const sourceSystemStats = await getSourceSystemStats();
+  const sourceSystemStats = await getSourceSystemStats(orgId);
   const appUserCount = (await db.select({ count: count() }).from(schema.appUsers)
     .where(ne(schema.appUsers.role, "system_admin")))[0]!.count;
 
