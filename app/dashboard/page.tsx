@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DashboardFiltered } from "./dashboard-filtered";
 import { DashboardChat } from "@/components/chat/dashboard-chat";
+import { StatusSlideButton } from "@/components/dashboard/status-slide-button";
 import { generateStrapline } from "@/lib/strapline";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -220,9 +221,9 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
 
       {/* Status Strapline */}
       <div className={`rounded-lg border px-4 py-3 ${straplineBg}`}>
-        <div className="flex items-start gap-2.5">
+        <div className="flex items-center gap-2.5">
           {straplineIcon}
-          <div className="text-sm leading-relaxed">
+          <div className="flex-1 text-sm leading-relaxed">
             <span className="text-foreground">{strapline.project}</span>
             {strapline.area && (
               <>
@@ -231,6 +232,7 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
               </>
             )}
           </div>
+          <StatusSlideButton />
         </div>
       </div>
 
