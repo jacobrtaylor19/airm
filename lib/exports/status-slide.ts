@@ -3,26 +3,25 @@ import { getDashboardStats, getDepartmentMappingStatus } from "@/lib/queries";
 import { getAggregateRiskAnalysis } from "@/lib/queries";
 import { getUserScope, getUserScopeDepartments } from "@/lib/scope";
 import { getOrgId } from "@/lib/org-context";
-import { generateStrapline } from "@/lib/strapline";
 import type { AppUser } from "@/lib/auth";
 
-// Brand colors (6-digit hex only — pptxgenjs does not support 8-digit alpha hex)
+// Brand colors (6-digit hex only — pptxgenjs doesn't support alpha hex)
 const TEAL = "0D9488";
 const TEAL_DARK = "0F766E";
-const TEAL_LIGHT = "B2DFDB"; // Approximate teal at ~40% on white
-const CREAM = "FAF8F5";
-const CREAM_TEAL = "E8F5F3"; // Approximate teal at ~15% on cream
+const TEAL_LIGHT = "B2DFDB";
+const CREAM_WARM = "F5F0EA";
 const TEXT = "1A1A1A";
 const TEXT_MUTED = "6B6560";
 const TEXT_LIGHT = "9A928A";
 const WHITE = "FFFFFF";
 const GREEN = "059669";
-const GREEN_LIGHT = "D1FAE5"; // green-100
+const GREEN_LIGHT = "D1FAE5";
 const RED = "DC2626";
-const RED_LIGHT = "FEE2E2"; // red-100
+const RED_LIGHT = "FEE2E2";
 const AMBER = "D97706";
-const AMBER_LIGHT = "FEF3C7"; // amber-100
-const LIGHT_GRAY = "C0C0C0"; // for muted white text on dark bg
+const AMBER_LIGHT = "FEF3C7";
+const LIGHT_GRAY = "C0C0C0";
+const E8E2DA = "E8E2DA"; // brand border
 
 export async function generateStatusSlide(user: AppUser): Promise<Buffer> {
   const orgId = getOrgId(user);
@@ -45,304 +44,389 @@ export async function generateStatusSlide(user: AppUser): Promise<Buffer> {
   const personaCoverage = stats.totalUsers > 0
     ? Math.round((stats.usersWithPersona / stats.totalUsers) * 100) : 0;
 
-  const strapline = generateStrapline(stats, user.role, null, user.displayName);
-
-  // Filter department status to user's scope
   const depts = isScoped
     ? deptStatus.filter(d => scopeDepts!.includes(d.department))
     : deptStatus;
-  // Sort by most users, take top 6 (fits on slide)
-  const topDepts = [...depts].sort((a, b) => b.totalUsers - a.totalUsers).slice(0, 6);
+
+  const totalConflicts = stats.sodConflictsBySeverity.reduce((sum, s) => sum + s.count, 0);
+  const criticalConflicts = stats.sodConflictsBySeverity.find(s => s.severity === "critical")?.count ?? 0;
+  const highConflicts = stats.sodConflictsBySeverity.find(s => s.severity === "high")?.count ?? 0;
+
+  // Compute overall health score (0-100)
+  const healthFactors = [
+    personaCoverage,                                                    // persona coverage
+    mappedPercent,                                                       // mapping progress
+    approvedPercent,                                                     // approval progress
+    Math.max(0, 100 - Math.min(100, Math.round(totalConflicts / 5))),   // SOD (fewer = better)
+    riskAnalysis.businessContinuity.avgCoverage,                         // continuity
+  ];
+  const healthScore = Math.round(healthFactors.reduce((a, b) => a + b, 0) / healthFactors.length);
+  const healthLabel = healthScore >= 70 ? "On Track" : healthScore >= 40 ? "Needs Attention" : "At Risk";
+
+  // Determine blockers for PM
+  const blockers: string[] = [];
+  if (mappedPercent === 0 && personaCoverage > 0) blockers.push("Role mapping has not started — personas are ready");
+  if (criticalConflicts > 0) blockers.push(`${criticalConflicts} critical SOD conflicts need resolution`);
+  if (highConflicts > 0) blockers.push(`${highConflicts} high-severity SOD conflicts pending`);
+  if (approvedPercent === 0 && stats.totalAssignments > 0) blockers.push("No assignments approved yet");
+  if (riskAnalysis.incorrectAccess.flaggedUsers > 50) blockers.push(`${riskAnalysis.incorrectAccess.flaggedUsers} users flagged for incorrect access`);
+  if (blockers.length === 0) blockers.push("No critical blockers identified");
+
+  // Next steps
+  const nextSteps: string[] = [];
+  if (personaCoverage < 100) nextSteps.push("Complete persona assignment for remaining users");
+  else if (mappedPercent === 0) nextSteps.push("Begin target role mapping for generated personas");
+  else if (mappedPercent < 100) nextSteps.push("Complete role mapping for remaining personas");
+  if (totalConflicts > 0) nextSteps.push("Review and resolve SOD conflicts before approval");
+  if (approvedPercent < 100 && mappedPercent > 0) nextSteps.push("Route mapped assignments through approval workflow");
+  if (nextSteps.length === 0) nextSteps.push("Migration is complete — proceed with go-live planning");
 
   // Build the PPTX
   const pptx = new PptxGenJS();
-  pptx.layout = "LAYOUT_WIDE"; // 13.33 x 7.5
+  pptx.layout = "LAYOUT_WIDE";
   pptx.author = "Provisum";
   pptx.title = "Migration Status";
 
   const slide = pptx.addSlide();
+  slide.background = { color: WHITE };
 
-  // ── Background ──
-  slide.background = { color: CREAM };
+  // ════════════════════════════════════════════════
+  // LEFT PANEL — Dark teal sidebar (3.8" wide)
+  // ════════════════════════════════════════════════
+  const panelW = 3.8;
 
-  // ── Top teal header bar ──
   slide.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 1.1,
+    x: 0, y: 0, w: panelW, h: 7.5,
     fill: { color: TEAL_DARK },
   });
 
+  // Wordmark
   slide.addText("PROVISUM", {
-    x: 0.5, y: 0.2, w: 3, h: 0.35,
-    fontSize: 18, bold: true, color: WHITE,
+    x: 0.4, y: 0.35, w: 3, h: 0.4,
+    fontSize: 20, bold: true, color: WHITE,
     fontFace: "Arial",
   });
 
-  slide.addText("Migration Status Report", {
-    x: 0.5, y: 0.55, w: 4, h: 0.3,
+  slide.addText("Migration Status", {
+    x: 0.4, y: 0.75, w: 3, h: 0.25,
     fontSize: 11, color: LIGHT_GRAY,
     fontFace: "Arial",
   });
 
+  // Date + scope
   const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   slide.addText(today, {
-    x: 9.5, y: 0.2, w: 3.5, h: 0.35,
-    fontSize: 11, color: LIGHT_GRAY,
-    fontFace: "Arial", align: "right",
+    x: 0.4, y: 1.15, w: 3, h: 0.2,
+    fontSize: 9, color: TEAL_LIGHT,
+    fontFace: "Arial",
+  });
+  slide.addText(scopeLabel, {
+    x: 0.4, y: 1.35, w: 3, h: 0.2,
+    fontSize: 8, color: LIGHT_GRAY,
+    fontFace: "Arial",
   });
 
-  slide.addText(`Prepared by ${user.displayName} · ${scopeLabel}`, {
-    x: 9.5, y: 0.55, w: 3.5, h: 0.3,
-    fontSize: 9, color: LIGHT_GRAY,
-    fontFace: "Arial", align: "right",
-  });
-
-  // ── Strapline banner ──
+  // ── Health Score (big circle-like element) ──
+  // Rounded rect as "badge"
   slide.addShape(pptx.ShapeType.rect, {
-    x: 0.5, y: 1.3, w: 12.33, h: 0.45,
-    fill: { color: CREAM_TEAL },
-    rectRadius: 0.08,
-    line: { color: TEAL_LIGHT, width: 0.5 },
+    x: 0.6, y: 1.85, w: 2.6, h: 1.5,
+    fill: { color: TEAL },
+    rectRadius: 0.15,
   });
 
-  slide.addText(strapline.project, {
-    x: 0.7, y: 1.3, w: 11.9, h: 0.45,
-    fontSize: 9, color: TEXT_MUTED,
-    fontFace: "Arial", valign: "middle",
+  slide.addText(String(healthScore), {
+    x: 0.6, y: 1.85, w: 2.6, h: 0.95,
+    fontSize: 48, bold: true, color: WHITE,
+    fontFace: "Arial", align: "center", valign: "bottom",
+  });
+  slide.addText(healthLabel, {
+    x: 0.6, y: 2.8, w: 2.6, h: 0.35,
+    fontSize: 12, bold: true, color: WHITE,
+    fontFace: "Arial", align: "center", valign: "top",
+  });
+  slide.addText("HEALTH SCORE", {
+    x: 0.6, y: 3.1, w: 2.6, h: 0.2,
+    fontSize: 7, color: TEAL_LIGHT,
+    fontFace: "Arial", align: "center",
   });
 
-  // ── KPI Cards Row ──
-  const kpis = [
-    { label: "TOTAL USERS", value: stats.totalUsers.toLocaleString(), sub: `${stats.departmentStats.length} departments` },
-    { label: "PERSONAS", value: String(stats.totalPersonas), sub: `${personaCoverage}% coverage` },
-    { label: "MAPPED", value: `${stats.personasWithMapping} / ${stats.totalPersonas}`, sub: `${mappedPercent}%` },
-    { label: "SOD CONFLICTS", value: stats.sodConflictsBySeverity.reduce((sum, s) => sum + s.count, 0).toLocaleString(), sub: severitySummary(stats.sodConflictsBySeverity) },
-    { label: "APPROVED", value: `${approvedPercent}%`, sub: stats.totalAssignments > 0 ? `${stats.approvedAssignments} / ${stats.totalAssignments}` : "No assignments yet" },
+  // ── Pipeline Progress (vertical steps) ──
+  const pipeY = 3.65;
+  slide.addText("PIPELINE", {
+    x: 0.4, y: pipeY, w: 3, h: 0.25,
+    fontSize: 7, bold: true, color: TEAL_LIGHT,
+    fontFace: "Arial",
+  });
+
+  const pipeSteps = [
+    { label: "Data Upload", pct: stats.totalUsers > 0 ? 100 : 0 },
+    { label: "Persona Generation", pct: personaCoverage },
+    { label: "Role Mapping", pct: mappedPercent },
+    { label: "SOD Analysis", pct: stats.sodRulesCount > 0 ? 100 : 0 },
+    { label: "Approvals", pct: approvedPercent },
   ];
 
-  const cardW = 2.25;
-  const cardGap = 0.2;
-  const cardStartX = 0.5;
-  const cardY = 2.0;
+  pipeSteps.forEach((step, i) => {
+    const y = pipeY + 0.35 + i * 0.55;
+    const complete = step.pct === 100;
+    const started = step.pct > 0;
 
-  kpis.forEach((kpi, i) => {
-    const x = cardStartX + i * (cardW + cardGap);
-
-    // Card background
-    slide.addShape(pptx.ShapeType.rect, {
-      x, y: cardY, w: cardW, h: 1.1,
-      fill: { color: WHITE },
-      rectRadius: 0.1,
-      shadow: { type: "outer", blur: 4, offset: 1, opacity: 0.08, color: "000000" },
+    // Step indicator dot
+    slide.addShape(pptx.ShapeType.ellipse, {
+      x: 0.55, y: y + 0.03, w: 0.18, h: 0.18,
+      fill: { color: complete ? GREEN : started ? AMBER : TEXT_LIGHT },
     });
 
-    // Label
-    slide.addText(kpi.label, {
-      x: x + 0.15, y: cardY + 0.1, w: cardW - 0.3, h: 0.22,
-      fontSize: 7, bold: true, color: TEXT_LIGHT,
+    // Connecting line (except last)
+    if (i < pipeSteps.length - 1) {
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0.62, y: y + 0.21, w: 0.04, h: 0.34,
+        fill: { color: complete ? GREEN : TEAL },
+      });
+    }
+
+    slide.addText(step.label, {
+      x: 0.85, y, w: 2, h: 0.22,
+      fontSize: 9, bold: true, color: WHITE,
       fontFace: "Arial",
     });
-
-    // Value
-    slide.addText(kpi.value, {
-      x: x + 0.15, y: cardY + 0.32, w: cardW - 0.3, h: 0.4,
-      fontSize: 22, bold: true, color: TEXT,
-      fontFace: "Arial",
-    });
-
-    // Subtitle
-    slide.addText(kpi.sub, {
-      x: x + 0.15, y: cardY + 0.75, w: cardW - 0.3, h: 0.22,
-      fontSize: 8, color: TEXT_MUTED,
-      fontFace: "Arial",
+    slide.addText(`${step.pct}%`, {
+      x: 2.7, y, w: 0.7, h: 0.22,
+      fontSize: 9, bold: complete, color: complete ? GREEN_LIGHT : LIGHT_GRAY,
+      fontFace: "Arial", align: "right",
     });
   });
 
-  // ── Risk Assessment Section ──
-  const riskY = 3.35;
-  slide.addText("RISK ASSESSMENT", {
-    x: 0.5, y: riskY, w: 4, h: 0.3,
+  // ── Prepared by ──
+  slide.addText(`Prepared by ${user.displayName}`, {
+    x: 0.4, y: 6.95, w: 3, h: 0.2,
+    fontSize: 7, color: LIGHT_GRAY,
+    fontFace: "Arial",
+  });
+  slide.addText("provisum.io · Confidential", {
+    x: 0.4, y: 7.15, w: 3, h: 0.2,
+    fontSize: 7, color: TEAL,
+    fontFace: "Arial",
+  });
+
+  // ════════════════════════════════════════════════
+  // RIGHT PANEL — Main content area
+  // ════════════════════════════════════════════════
+  const rx = panelW + 0.5; // 4.3"
+  const rw = 13.33 - rx - 0.4; // ~8.63"
+
+  // ── Key Metrics Row ──
+  slide.addText("KEY METRICS", {
+    x: rx, y: 0.3, w: rw, h: 0.25,
     fontSize: 8, bold: true, color: TEXT_LIGHT,
     fontFace: "Arial",
   });
 
-  const risks = [
-    {
-      label: "Business Continuity",
-      value: `${riskAnalysis.businessContinuity.avgCoverage}%`,
-      severity: riskAnalysis.businessContinuity.avgCoverage >= 90 ? "low" as const : riskAnalysis.businessContinuity.avgCoverage >= 70 ? "med" as const : "high" as const,
-      detail: `${riskAnalysis.businessContinuity.usersAtRisk} users at risk`,
-    },
-    {
-      label: "Adoption Risk",
-      value: `${riskAnalysis.adoption.usersWithNewAccess}`,
-      severity: riskAnalysis.adoption.usersWithNewAccess === 0 ? "low" as const : riskAnalysis.adoption.usersWithNewAccess <= 50 ? "med" as const : "high" as const,
-      detail: `${riskAnalysis.adoption.totalNewPerms} new permissions`,
-    },
-    {
-      label: "Incorrect Access",
-      value: `${riskAnalysis.incorrectAccess.flaggedUsers}`,
-      severity: riskAnalysis.incorrectAccess.flaggedUsers === 0 ? "low" as const : riskAnalysis.incorrectAccess.flaggedUsers <= 50 ? "med" as const : "high" as const,
-      detail: "flagged users (gaps + SOD)",
-    },
+  const metrics = [
+    { label: "Users", value: stats.totalUsers.toLocaleString(), color: TEAL },
+    { label: "Personas", value: String(stats.totalPersonas), color: TEAL },
+    { label: "Mapped", value: `${mappedPercent}%`, color: mappedPercent > 50 ? TEAL : AMBER },
+    { label: "SOD Conflicts", value: totalConflicts.toLocaleString(), color: totalConflicts > 100 ? RED : totalConflicts > 0 ? AMBER : GREEN },
+    { label: "Approved", value: `${approvedPercent}%`, color: approvedPercent > 50 ? GREEN : approvedPercent > 0 ? AMBER : TEXT_LIGHT },
   ];
 
-  const riskCardW = 3.9;
-  const riskCardGap = 0.25;
+  const metricW = (rw - 0.4) / 5;
+  metrics.forEach((m, i) => {
+    const x = rx + i * (metricW + 0.1);
+    const y = 0.65;
 
-  risks.forEach((risk, i) => {
-    const x = 0.5 + i * (riskCardW + riskCardGap);
-    const y = riskY + 0.35;
-
-    slide.addShape(pptx.ShapeType.rect, {
-      x, y, w: riskCardW, h: 0.8,
-      fill: { color: WHITE },
-      rectRadius: 0.08,
-      shadow: { type: "outer", blur: 3, offset: 1, opacity: 0.06, color: "000000" },
+    slide.addText(m.value, {
+      x, y, w: metricW, h: 0.45,
+      fontSize: 24, bold: true, color: m.color,
+      fontFace: "Arial", align: "center",
     });
-
-    slide.addText(risk.label, {
-      x: x + 0.15, y: y + 0.08, w: 2.5, h: 0.25,
-      fontSize: 10, bold: true, color: TEXT,
-      fontFace: "Arial",
-    });
-
-    // Severity badge
-    const badgeColor = risk.severity === "high" ? RED : risk.severity === "med" ? AMBER : GREEN;
-    const badgeBg = risk.severity === "high" ? RED_LIGHT : risk.severity === "med" ? AMBER_LIGHT : GREEN_LIGHT;
-    const badgeLabel = risk.severity === "high" ? "High" : risk.severity === "med" ? "Medium" : "Low";
-    slide.addShape(pptx.ShapeType.rect, {
-      x: x + riskCardW - 0.85, y: y + 0.1, w: 0.65, h: 0.22,
-      fill: { color: badgeBg },
-      rectRadius: 0.04,
-    });
-    slide.addText(badgeLabel, {
-      x: x + riskCardW - 0.85, y: y + 0.1, w: 0.65, h: 0.22,
-      fontSize: 7, bold: true, color: badgeColor,
-      fontFace: "Arial", align: "center", valign: "middle",
-    });
-
-    slide.addText(`${risk.value} — ${risk.detail}`, {
-      x: x + 0.15, y: y + 0.4, w: riskCardW - 0.3, h: 0.3,
+    slide.addText(m.label, {
+      x, y: y + 0.45, w: metricW, h: 0.2,
       fontSize: 8, color: TEXT_MUTED,
-      fontFace: "Arial",
+      fontFace: "Arial", align: "center",
     });
   });
 
-  // ── Department Progress Section ──
-  const deptY = 4.75;
+  // Divider line
+  slide.addShape(pptx.ShapeType.rect, {
+    x: rx, y: 1.45, w: rw, h: 0.01,
+    fill: { color: E8E2DA },
+  });
+
+  // ── Department Progress (compact) ──
   slide.addText("DEPARTMENT PROGRESS", {
-    x: 0.5, y: deptY, w: 4, h: 0.3,
+    x: rx, y: 1.6, w: 4, h: 0.25,
     fontSize: 8, bold: true, color: TEXT_LIGHT,
     fontFace: "Arial",
   });
 
-  slide.addText(`${topDepts.length} of ${depts.length} departments shown`, {
-    x: 8.5, y: deptY, w: 4.3, h: 0.3,
-    fontSize: 7, color: TEXT_LIGHT,
-    fontFace: "Arial", align: "right",
-  });
-
-  const barStartY = deptY + 0.35;
-  const barH = 0.26;
-  const barGap = 0.06;
-  const barLabelW = 2.2;
-  const barChartW = 8.5;
-  const barX = 0.5 + barLabelW + 0.15;
+  const topDepts = [...depts].sort((a, b) => b.totalUsers - a.totalUsers).slice(0, 5);
+  const dBarX = rx + 1.6;
+  const dBarW = rw - 2.2;
 
   topDepts.forEach((dept, i) => {
-    const y = barStartY + i * (barH + barGap);
+    const y = 1.95 + i * 0.34;
     const total = dept.totalUsers || 1;
-    const personaPct = (dept.withPersona / total);
-    const approvedPct = (dept.approved / total);
+    const personaPct = dept.withPersona / total;
 
-    // Department name
-    slide.addText(dept.department.length > 20 ? dept.department.slice(0, 18) + "…" : dept.department, {
-      x: 0.5, y, w: barLabelW, h: barH,
+    slide.addText(dept.department.length > 14 ? dept.department.slice(0, 12) + "…" : dept.department, {
+      x: rx, y, w: 1.5, h: 0.24,
       fontSize: 8, color: TEXT,
       fontFace: "Arial", valign: "middle", align: "right",
     });
 
-    // Background bar
+    // Track bg
     slide.addShape(pptx.ShapeType.rect, {
-      x: barX, y: y + 0.06, w: barChartW, h: barH - 0.12,
-      fill: { color: CREAM },
+      x: dBarX, y: y + 0.05, w: dBarW, h: 0.14,
+      fill: { color: CREAM_WARM },
       rectRadius: 0.03,
     });
 
-    // Persona coverage bar
+    // Fill
     if (personaPct > 0) {
       slide.addShape(pptx.ShapeType.rect, {
-        x: barX, y: y + 0.06, w: Math.max(barChartW * personaPct, 0.05), h: barH - 0.12,
-        fill: { color: TEAL_LIGHT },
-        rectRadius: 0.03,
-      });
-    }
-
-    // Approved bar (layered)
-    if (approvedPct > 0) {
-      slide.addShape(pptx.ShapeType.rect, {
-        x: barX, y: y + 0.06, w: Math.max(barChartW * approvedPct, 0.05), h: barH - 0.12,
+        x: dBarX, y: y + 0.05, w: Math.max(dBarW * personaPct, 0.06), h: 0.14,
         fill: { color: TEAL },
         rectRadius: 0.03,
       });
     }
 
-    // User count
-    slide.addText(`${dept.totalUsers}`, {
-      x: barX + barChartW + 0.1, y, w: 0.6, h: barH,
+    slide.addText(`${Math.round(personaPct * 100)}%`, {
+      x: dBarX + dBarW + 0.08, y, w: 0.5, h: 0.24,
       fontSize: 7, color: TEXT_LIGHT,
       fontFace: "Arial", valign: "middle",
     });
   });
 
-  // Legend
-  const legendY = barStartY + topDepts.length * (barH + barGap) + 0.1;
-  // Approved legend
+  // Divider
+  const divY2 = 1.95 + topDepts.length * 0.34 + 0.15;
   slide.addShape(pptx.ShapeType.rect, {
-    x: barX, y: legendY, w: 0.15, h: 0.12,
-    fill: { color: TEAL }, rectRadius: 0.02,
-  });
-  slide.addText("Approved", {
-    x: barX + 0.2, y: legendY - 0.02, w: 1, h: 0.16,
-    fontSize: 7, color: TEXT_MUTED, fontFace: "Arial",
-  });
-  // Persona coverage legend
-  slide.addShape(pptx.ShapeType.rect, {
-    x: barX + 1.3, y: legendY, w: 0.15, h: 0.12,
-    fill: { color: TEAL_LIGHT }, rectRadius: 0.02,
-  });
-  slide.addText("Persona Assigned", {
-    x: barX + 1.5, y: legendY - 0.02, w: 1.5, h: 0.16,
-    fontSize: 7, color: TEXT_MUTED, fontFace: "Arial",
+    x: rx, y: divY2, w: rw, h: 0.01,
+    fill: { color: E8E2DA },
   });
 
-  // ── Footer ──
+  // ── Risk Summary (horizontal cards) ──
+  const riskStartY = divY2 + 0.15;
+  slide.addText("RISK SUMMARY", {
+    x: rx, y: riskStartY, w: 4, h: 0.25,
+    fontSize: 8, bold: true, color: TEXT_LIGHT,
+    fontFace: "Arial",
+  });
+
+  const riskItems = [
+    {
+      label: "Business Continuity",
+      metric: `${riskAnalysis.businessContinuity.avgCoverage}% avg coverage`,
+      severity: riskAnalysis.businessContinuity.avgCoverage >= 90 ? "low" : riskAnalysis.businessContinuity.avgCoverage >= 70 ? "med" : "high",
+    },
+    {
+      label: "Adoption Risk",
+      metric: `${riskAnalysis.adoption.usersWithNewAccess} users with role changes`,
+      severity: riskAnalysis.adoption.usersWithNewAccess === 0 ? "low" : riskAnalysis.adoption.usersWithNewAccess <= 50 ? "med" : "high",
+    },
+    {
+      label: "Incorrect Access",
+      metric: `${riskAnalysis.incorrectAccess.flaggedUsers} flagged users`,
+      severity: riskAnalysis.incorrectAccess.flaggedUsers === 0 ? "low" : riskAnalysis.incorrectAccess.flaggedUsers <= 50 ? "med" : "high",
+    },
+  ];
+
+  const riskRowY = riskStartY + 0.3;
+  const riskItemW = (rw - 0.3) / 3;
+
+  riskItems.forEach((r, i) => {
+    const x = rx + i * (riskItemW + 0.15);
+    const badgeColor = r.severity === "high" ? RED : r.severity === "med" ? AMBER : GREEN;
+    const badgeBg = r.severity === "high" ? RED_LIGHT : r.severity === "med" ? AMBER_LIGHT : GREEN_LIGHT;
+    const badgeText = r.severity === "high" ? "HIGH" : r.severity === "med" ? "MED" : "LOW";
+
+    // Colored left accent
+    slide.addShape(pptx.ShapeType.rect, {
+      x, y: riskRowY, w: 0.06, h: 0.6,
+      fill: { color: badgeColor },
+      rectRadius: 0.02,
+    });
+
+    slide.addText(r.label, {
+      x: x + 0.15, y: riskRowY + 0.02, w: riskItemW - 0.2, h: 0.2,
+      fontSize: 8, bold: true, color: TEXT,
+      fontFace: "Arial",
+    });
+
+    // Badge
+    slide.addShape(pptx.ShapeType.rect, {
+      x: x + riskItemW - 0.65, y: riskRowY + 0.03, w: 0.5, h: 0.18,
+      fill: { color: badgeBg },
+      rectRadius: 0.03,
+    });
+    slide.addText(badgeText, {
+      x: x + riskItemW - 0.65, y: riskRowY + 0.03, w: 0.5, h: 0.18,
+      fontSize: 6, bold: true, color: badgeColor,
+      fontFace: "Arial", align: "center", valign: "middle",
+    });
+
+    slide.addText(r.metric, {
+      x: x + 0.15, y: riskRowY + 0.28, w: riskItemW - 0.2, h: 0.2,
+      fontSize: 7, color: TEXT_MUTED,
+      fontFace: "Arial",
+    });
+  });
+
+  // Divider
+  const divY3 = riskRowY + 0.75;
   slide.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 7.2, w: 13.33, h: 0.3,
-    fill: { color: TEAL_DARK },
+    x: rx, y: divY3, w: rw, h: 0.01,
+    fill: { color: E8E2DA },
   });
 
-  slide.addText("Generated by Provisum · provisum.io", {
-    x: 0.5, y: 7.2, w: 5, h: 0.3,
-    fontSize: 7, color: LIGHT_GRAY,
-    fontFace: "Arial", valign: "middle",
+  // ── Blockers & Next Steps (two columns) ──
+  const bnY = divY3 + 0.15;
+  const colW = (rw - 0.3) / 2;
+
+  // Blockers column
+  slide.addText("BLOCKERS", {
+    x: rx, y: bnY, w: colW, h: 0.25,
+    fontSize: 8, bold: true, color: RED,
+    fontFace: "Arial",
   });
 
-  slide.addText("Confidential", {
-    x: 9.5, y: 7.2, w: 3.5, h: 0.3,
-    fontSize: 7, color: LIGHT_GRAY,
-    fontFace: "Arial", align: "right", valign: "middle",
+  blockers.slice(0, 4).forEach((b, i) => {
+    slide.addText(`•  ${b}`, {
+      x: rx, y: bnY + 0.3 + i * 0.3, w: colW, h: 0.28,
+      fontSize: 8, color: TEXT,
+      fontFace: "Arial", valign: "top",
+    });
+  });
+
+  // Next Steps column
+  const nsX = rx + colW + 0.3;
+  slide.addText("NEXT STEPS", {
+    x: nsX, y: bnY, w: colW, h: 0.25,
+    fontSize: 8, bold: true, color: TEAL,
+    fontFace: "Arial",
+  });
+
+  nextSteps.slice(0, 4).forEach((s, i) => {
+    slide.addText(`${i + 1}.  ${s}`, {
+      x: nsX, y: bnY + 0.3 + i * 0.3, w: colW, h: 0.28,
+      fontSize: 8, color: TEXT,
+      fontFace: "Arial", valign: "top",
+    });
+  });
+
+  // ── Bottom accent bar ──
+  slide.addShape(pptx.ShapeType.rect, {
+    x: panelW, y: 7.35, w: 13.33 - panelW, h: 0.15,
+    fill: { color: CREAM_WARM },
+  });
+
+  slide.addText(`${depts.length} departments · ${stats.totalUsers.toLocaleString()} users in scope`, {
+    x: rx, y: 7.05, w: rw, h: 0.2,
+    fontSize: 7, color: TEXT_LIGHT,
+    fontFace: "Arial",
   });
 
   // Generate buffer
   const arrayBuffer = await pptx.write({ outputType: "arraybuffer" }) as ArrayBuffer;
   return Buffer.from(arrayBuffer);
-}
-
-function severitySummary(bySeverity: { severity: string; count: number }[]): string {
-  const parts: string[] = [];
-  for (const s of bySeverity) {
-    if (s.count > 0) parts.push(`${s.count} ${s.severity}`);
-  }
-  return parts.join(", ") || "None";
 }
