@@ -12,7 +12,7 @@ export type WorkflowStage = {
 
 export function WorkflowStepper({ stages }: { stages: WorkflowStage[] }) {
   return (
-    <div className="mb-6 rounded-xl border bg-card p-4 shadow-sm">
+    <div className="mb-6 rounded-xl border p-4 glass-card">
       <div className="flex items-center justify-between gap-2">
         {stages.map((stage, i) => (
           <div key={stage.label} className="flex flex-1 items-center">

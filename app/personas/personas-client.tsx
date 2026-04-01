@@ -404,7 +404,7 @@ function PersonaExpandableRow({
 
   return (
     <>
-      <TableRow className={`hover:bg-muted/50 ${isSelected ? "bg-indigo-50" : ""}`}>
+      <TableRow className={`hover:bg-muted/50 ${isSelected ? "bg-teal-50" : ""}`}>
         {isAdminRole && (
           <TableCell>
             <input

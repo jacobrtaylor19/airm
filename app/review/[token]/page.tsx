@@ -112,7 +112,7 @@ export default async function ReviewPage({ params }: { params: { token: string }
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="pt-5 pb-4 text-center">
-              <Users className="h-5 w-5 mx-auto mb-1 text-indigo-500" />
+              <Users className="h-5 w-5 mx-auto mb-1 text-teal-500" />
               <p className="text-2xl font-bold">{data.totalUsers.toLocaleString()}</p>
               <p className="text-xs text-slate-500">Total Users</p>
             </CardContent>

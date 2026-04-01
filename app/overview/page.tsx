@@ -67,8 +67,8 @@ export default function OverviewPage() {
           {capabilities.map((cap, i) => (
             <Card key={i} className="border-slate-200 bg-white">
               <CardHeader className="flex flex-row items-center gap-3 pb-2">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
-                  <cap.icon className="h-5 w-5 text-indigo-600" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50">
+                  <cap.icon className="h-5 w-5 text-teal-600" />
                 </div>
                 <CardTitle className="text-base font-semibold text-slate-900">
                   {cap.title}
@@ -105,8 +105,8 @@ export default function OverviewPage() {
             <ul className="space-y-3">
               {securityItems.map((item, i) => (
                 <li key={i} className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
-                    <item.icon className="h-4 w-4 text-indigo-600" />
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-50">
+                    <item.icon className="h-4 w-4 text-teal-600" />
                   </div>
                   <span className="text-sm text-slate-700">{item.text}</span>
                 </li>

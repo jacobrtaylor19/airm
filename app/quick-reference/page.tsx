@@ -205,7 +205,7 @@ export default async function QuickReferencePage() {
       <div>
         <div className="flex items-center gap-2 mb-1">
           <h1 className="text-2xl font-bold text-slate-900">Quick Reference Guide</h1>
-          <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">{qrg.roleLabel}</Badge>
+          <Badge className="bg-teal-100 text-teal-700 border-teal-200">{qrg.roleLabel}</Badge>
         </div>
         <p className="text-sm text-slate-500">{qrg.description}</p>
       </div>

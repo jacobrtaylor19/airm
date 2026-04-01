@@ -5,7 +5,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   draft: { label: "Draft", className: "bg-slate-100 text-slate-600 hover:bg-slate-100" },
   unmapped: { label: "Unmapped", className: "bg-slate-100 text-slate-600 hover:bg-slate-100" },
   persona_assigned: { label: "Persona Assigned", className: "bg-blue-50 text-blue-700 hover:bg-blue-50" },
-  mapped: { label: "Mapped", className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-50" },
+  mapped: { label: "Mapped", className: "bg-teal-50 text-teal-700 hover:bg-teal-50" },
   sod_rejected: { label: "SOD Rejected", className: "bg-red-100 text-red-700 hover:bg-red-100" },
   sod_conflict: { label: "SOD Conflict", className: "bg-red-50 text-red-700 hover:bg-red-50" },
   compliance_approved: { label: "Compliance OK", className: "bg-green-100 text-green-700 hover:bg-green-100" },

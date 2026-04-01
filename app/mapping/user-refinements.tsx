@@ -29,7 +29,7 @@ function getUserStatus(u: UserRefinementDetail): string {
 function StatusBadgeInline({ status }: { status: string }) {
   switch (status) {
     case "draft": return <Badge variant="outline" className="text-xs bg-slate-50">Draft</Badge>;
-    case "pending_review": return <Badge className="text-xs bg-indigo-100 text-indigo-700 border-indigo-200">Pending Review</Badge>;
+    case "pending_review": return <Badge className="text-xs bg-teal-100 text-teal-700 border-teal-200">Pending Review</Badge>;
     case "sod_clean": return <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">SOD Clean</Badge>;
     case "sod_rejected": return <Badge className="text-xs bg-red-100 text-red-700 border-red-200">SOD Conflict</Badge>;
     case "approved": return <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">Approved</Badge>;
@@ -211,7 +211,7 @@ export function RefinementsTab({
         <Card className={statusFilter === "pending_review" ? "ring-1 ring-primary" : "cursor-pointer hover:bg-muted/30"} onClick={() => setStatusFilter("pending_review")}>
           <CardContent className="pt-3 pb-2">
             <p className="text-xs text-muted-foreground">Pending Review</p>
-            <p className="text-xl font-bold mt-0.5 text-indigo-600">{statusCounts["pending_review"] || 0}</p>
+            <p className="text-xl font-bold mt-0.5 text-teal-600">{statusCounts["pending_review"] || 0}</p>
           </CardContent>
         </Card>
         <Card className={statusFilter === "sod_rejected" ? "ring-1 ring-primary" : "cursor-pointer hover:bg-muted/30"} onClick={() => setStatusFilter("sod_rejected")}>
@@ -251,7 +251,7 @@ export function RefinementsTab({
           <Button
             size="sm"
             variant="outline"
-            className="h-8 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+            className="h-8 border-teal-300 text-teal-700 hover:bg-teal-50"
             onClick={bulkSubmitForReview}
             disabled={submittingBulk}
           >
@@ -337,7 +337,7 @@ export function RefinementsTab({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-6 px-2 text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                  className="h-6 px-2 text-xs text-teal-600 hover:text-teal-700 hover:bg-teal-50"
                                   onClick={(e) => { e.stopPropagation(); submitUserForReview(u.userId); }}
                                   disabled={submittingSingle}
                                 >
@@ -522,7 +522,7 @@ export function RefinementsTab({
                       variant="outline"
                       onClick={() => submitUserForReview(selectedUser.userId)}
                       disabled={submittingSingle}
-                      className="w-full border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                      className="w-full border-teal-300 text-teal-700 hover:bg-teal-50"
                       size="sm"
                     >
                       {submittingSingle ? (

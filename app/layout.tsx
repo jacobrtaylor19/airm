@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -11,9 +11,6 @@ import { cookies } from "next/headers";
 import { getReleasesForAppUser } from "@/lib/releases";
 import { getUnreadNotificationCount } from "@/lib/notifications";
 import { validateEnv } from "@/lib/validate-env";
-import { ShieldCheck } from "lucide-react";
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Provisum — Intelligent Role Mapping for Enterprise Migrations",
@@ -32,11 +29,11 @@ export default async function RootLayout({
   if (!user) {
     return (
       <html lang="en">
-        <body className={`${inter.variable} font-sans antialiased`}>
+        <body className={`${GeistSans.variable} font-sans antialiased`}>
           <nav className="flex items-center justify-between px-6 py-3 border-b bg-background">
-            <a href="/" className="flex items-center gap-2 text-sm font-semibold">
-              <ShieldCheck className="h-5 w-5 text-teal-500" />
+            <a href="/" className="flex items-center gap-2 text-sm font-bold tracking-tight text-brand-accent-dark">
               Provisum
+              <span className="text-[10px] font-mono font-normal text-brand-text-light border border-brand-border rounded px-1.5 py-0.5">beta</span>
             </a>
             <div className="flex items-center gap-4 text-sm">
               <a href="/methodology" className="text-muted-foreground hover:text-foreground">How It Works</a>
@@ -57,7 +54,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${GeistSans.variable} font-sans antialiased`}>
         <div className="flex h-screen overflow-hidden">
           <Sidebar userRole={user.role} userName={user.displayName} />
           <div className="flex flex-1 flex-col overflow-hidden">

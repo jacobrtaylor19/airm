@@ -37,7 +37,7 @@ export default async function DashboardPage() {
           </p>
           <a
             href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center gap-2 rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 transition-colors"
           >
             <RefreshCw className="h-4 w-4" />
             Retry
@@ -227,7 +227,7 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
         <>
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Risk Quantification</h3>
-            <Link href="/risk-analysis" className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">
+            <Link href="/risk-analysis" className="text-xs text-teal-600 hover:text-teal-700 font-medium">
               View full analysis &rarr;
             </Link>
           </div>

@@ -149,7 +149,7 @@ export function PersonaSelector({
               <div
                 key={p.personaId}
                 className={`flex items-center justify-between px-4 py-2.5 cursor-pointer border-b text-sm ${
-                  isSelected ? "bg-indigo-50 border-l-2 border-l-indigo-500" : "hover:bg-muted/50"
+                  isSelected ? "bg-teal-50 border-l-2 border-l-teal-500" : "hover:bg-muted/50"
                 }`}
                 onClick={() => onSelectPersona(p.personaId)}
               >

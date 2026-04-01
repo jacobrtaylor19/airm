@@ -143,7 +143,7 @@ export function WelcomeTour({ userRole, userName }: WelcomeTourProps) {
             <span
               key={i}
               className={`h-2 w-2 rounded-full transition-colors ${
-                i === step ? "bg-indigo-600" : "bg-slate-300"
+                i === step ? "bg-teal-600" : "bg-slate-300"
               }`}
             />
           ))}
@@ -169,14 +169,14 @@ export function WelcomeTour({ userRole, userName }: WelcomeTourProps) {
             {isLast ? (
               <button
                 onClick={close}
-                className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700"
               >
                 Get Started
               </button>
             ) : (
               <button
                 onClick={() => setStep((s) => s + 1)}
-                className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                className="rounded-lg bg-teal-600 px-5 py-2 text-sm font-medium text-white hover:bg-teal-700"
               >
                 Next
               </button>

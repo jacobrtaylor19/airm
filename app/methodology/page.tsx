@@ -94,8 +94,8 @@ export default function MethodologyPage() {
         {steps.map((step, i) => (
           <Card key={i} className="border-slate-200 bg-white">
             <CardHeader className="flex flex-row items-center gap-3 pb-2">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50">
-                <step.icon className="h-5 w-5 text-indigo-600" />
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50">
+                <step.icon className="h-5 w-5 text-teal-600" />
               </div>
               <CardTitle className="text-base font-semibold text-slate-900">
                 {step.title}
@@ -117,7 +117,7 @@ export default function MethodologyPage() {
           <ul className="space-y-3">
             {principles.map((p, i) => (
               <li key={i} className="flex items-start gap-3">
-                <p.icon className="mt-0.5 h-5 w-5 shrink-0 text-indigo-600" />
+                <p.icon className="mt-0.5 h-5 w-5 shrink-0 text-teal-600" />
                 <div>
                   <span className="font-medium text-slate-900">{p.label}</span>
                   <span className="text-slate-600"> — {p.text}</span>

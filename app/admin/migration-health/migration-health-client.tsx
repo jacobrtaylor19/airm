@@ -179,7 +179,7 @@ export function MigrationHealthClient({ data }: { data: MigrationHealthData }) {
           total={data.totalUsers}
           percentage={data.personaCoverage}
           icon={UserCircle}
-          color="bg-indigo-500"
+          color="bg-teal-500"
         />
         <KpiCard
           label="Mapping Coverage"

@@ -57,7 +57,7 @@ export function CompareClient({ releases, metricsMap }: CompareClientProps) {
             <div className="flex-1">
               <label className="text-xs font-medium text-slate-500 mb-1 block">Release A</label>
               <select
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                 value={releaseA}
                 onChange={(e) => setReleaseA(e.target.value ? Number(e.target.value) : "")}
               >
@@ -75,7 +75,7 @@ export function CompareClient({ releases, metricsMap }: CompareClientProps) {
             <div className="flex-1">
               <label className="text-xs font-medium text-slate-500 mb-1 block">Release B</label>
               <select
-                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
                 value={releaseB}
                 onChange={(e) => setReleaseB(e.target.value ? Number(e.target.value) : "")}
               >

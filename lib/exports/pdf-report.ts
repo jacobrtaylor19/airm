@@ -52,8 +52,8 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     doc.fontSize(20).font("Helvetica-Bold").text("Role Mapping Audit Report", { align: "center" });
     doc.moveDown(1);
 
-    // Branded accent line (indigo)
-    doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#4F46E5").lineWidth(2).stroke();
+    // Branded accent line (teal)
+    doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#0d9488").lineWidth(2).stroke();
     doc.moveDown(0.3);
     doc.moveTo(50, doc.y).lineTo(doc.page.width - 50, doc.y).strokeColor("#14B8A6").lineWidth(1).stroke();
     doc.moveDown(1);
@@ -82,7 +82,7 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     // EXECUTIVE SUMMARY (new page)
     // ─────────────────────────────────────────────
     doc.addPage();
-    doc.fontSize(20).font("Helvetica-Bold").fillColor("#4F46E5").text("Executive Summary");
+    doc.fontSize(20).font("Helvetica-Bold").fillColor("#0d9488").text("Executive Summary");
     doc.fillColor("#000000");
     doc.moveDown(1);
 
@@ -154,7 +154,7 @@ export async function generatePdfReport(generatedByUsername?: string): Promise<B
     // DETAIL SECTIONS (existing content, on new pages)
     // ─────────────────────────────────────────────
     doc.addPage();
-    doc.fontSize(16).font("Helvetica-Bold").fillColor("#4F46E5").text("Persona Summary");
+    doc.fontSize(16).font("Helvetica-Bold").fillColor("#0d9488").text("Persona Summary");
     doc.fillColor("#000000");
     doc.moveDown(0.5);
 

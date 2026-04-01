@@ -59,8 +59,8 @@ export function ActivityPulse() {
       {/* Stats Row */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex items-center gap-3">
-          <div className="rounded-md bg-indigo-500/10 p-2">
-            <Zap className="h-4 w-4 text-indigo-500" />
+          <div className="rounded-md bg-teal-500/10 p-2">
+            <Zap className="h-4 w-4 text-teal-500" />
           </div>
           <div>
             <div className="text-2xl font-bold">{data.last24h}</div>
@@ -90,7 +90,7 @@ export function ActivityPulse() {
                 <div key={a.action} className="flex items-center gap-2 text-xs">
                   <span className="w-28 truncate text-muted-foreground" title={a.action}>{a.action}</span>
                   <div className="flex-1 bg-muted rounded-full h-1.5">
-                    <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: `${width}%` }} />
+                    <div className="bg-teal-500 h-1.5 rounded-full" style={{ width: `${width}%` }} />
                   </div>
                   <span className="font-mono w-6 text-right">{a.count}</span>
                 </div>

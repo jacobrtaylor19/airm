@@ -15,7 +15,7 @@ const exports = [
     icon: FileSpreadsheet,
     href: "/api/exports/excel",
     format: ".xlsx",
-    accent: "border-l-4 border-l-indigo-500",
+    accent: "border-l-4 border-l-teal-500",
   },
   {
     title: "PDF Audit Report",

@@ -174,7 +174,7 @@ function StatCard({ label, value, sub, icon: Icon, color }: { label: string; val
 function PipelineFlow({ summary }: { summary: ValidationData["summary"] }) {
   const steps = [
     { label: "Source Users", count: summary.totalUsers, icon: Users, color: "bg-slate-600" },
-    { label: "Persona Assignment", count: summary.usersWithPersona, icon: UserCircle, color: "bg-indigo-600" },
+    { label: "Persona Assignment", count: summary.usersWithPersona, icon: UserCircle, color: "bg-teal-600" },
     { label: "Role Mapping", count: summary.totalAssignments, icon: Target, color: "bg-teal-600" },
     { label: "SOD Analysis", count: summary.totalSodConflicts, icon: ShieldAlert, color: summary.totalSodConflicts > 0 ? "bg-amber-600" : "bg-green-600" },
   ];
@@ -424,8 +424,8 @@ function UserDetailModal({ user, personaRoleMappings, onClose }: { user: Enriche
             <span className="text-xs font-medium">Source User</span>
           </div>
           <ArrowRight className="h-4 w-4 text-slate-300" />
-          <div className={`flex items-center gap-1 rounded-lg px-3 py-2 ${user.hasPersona ? "bg-indigo-100" : "bg-red-100"}`}>
-            <UserCircle className={`h-4 w-4 ${user.hasPersona ? "text-indigo-500" : "text-red-500"}`} />
+          <div className={`flex items-center gap-1 rounded-lg px-3 py-2 ${user.hasPersona ? "bg-teal-100" : "bg-red-100"}`}>
+            <UserCircle className={`h-4 w-4 ${user.hasPersona ? "text-teal-500" : "text-red-500"}`} />
             <span className="text-xs font-medium">{user.hasPersona ? "Persona Assigned" : "No Persona"}</span>
           </div>
           <ArrowRight className="h-4 w-4 text-slate-300" />
@@ -453,7 +453,7 @@ function UserDetailModal({ user, personaRoleMappings, onClose }: { user: Enriche
         </div>
 
         {/* Persona assignment */}
-        <div className={`rounded-lg border p-3 ${user.hasPersona ? "border-indigo-200 bg-indigo-50/50" : "border-red-200 bg-red-50/50"}`}>
+        <div className={`rounded-lg border p-3 ${user.hasPersona ? "border-teal-200 bg-teal-50/50" : "border-red-200 bg-red-50/50"}`}>
           <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Persona Assignment</h4>
           {user.hasPersona ? (
             <div className="space-y-2">
@@ -777,7 +777,7 @@ export function ValidationDashboard() {
           {/* Summary stats */}
           <div className="grid grid-cols-5 gap-3">
             <StatCard label="Source Users" value={data.summary.totalUsers} icon={Users} color="bg-slate-600" />
-            <StatCard label="Personas" value={data.summary.totalPersonas} icon={UserCircle} color="bg-indigo-600" />
+            <StatCard label="Personas" value={data.summary.totalPersonas} icon={UserCircle} color="bg-teal-600" />
             <StatCard label="Target Roles" value={data.summary.totalTargetRoles} icon={Target} color="bg-teal-600" />
             <StatCard label="Assignments" value={data.summary.totalAssignments} icon={CheckCircle2} color="bg-green-600" />
             <StatCard label="SOD Conflicts" value={data.summary.totalSodConflicts} icon={ShieldAlert} color={data.summary.totalSodConflicts > 0 ? "bg-amber-600" : "bg-green-600"} />

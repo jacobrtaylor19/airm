@@ -451,7 +451,7 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
         style={{ height: "calc(100vh - 64px)", top: "64px" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between bg-slate-900 px-4 py-3 shrink-0">
+        <div className="flex items-center justify-between bg-brand-accent-dark px-4 py-3 shrink-0">
           <div className="flex items-center gap-2">
             {showHistory ? (
               <button
@@ -567,8 +567,8 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
                     className={cn(
                       "max-w-[85%] rounded-lg px-3 py-2 text-sm leading-relaxed",
                       msg.role === "user"
-                        ? "bg-indigo-50 text-slate-700"
-                        : "bg-teal-50 text-slate-700"
+                        ? "bg-teal-50 text-brand-text"
+                        : "glass-card text-brand-text"
                     )}
                   >
                     {msg.toolStatus && !msg.content ? (

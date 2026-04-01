@@ -8,7 +8,7 @@ import { ConfidenceBadge } from "@/components/shared/confidence-badge";
 
 const userStatusConfig: Record<string, { label: string; className: string }> = {
   persona_assigned: { label: "Persona Assigned", className: "bg-blue-50 text-blue-700 hover:bg-blue-50" },
-  mapped: { label: "Mapped", className: "bg-indigo-50 text-indigo-700 hover:bg-indigo-50" },
+  mapped: { label: "Mapped", className: "bg-teal-50 text-teal-700 hover:bg-teal-50" },
   approved: { label: "Approved", className: "bg-emerald-50 text-emerald-700 hover:bg-emerald-50" },
   sod_conflict: { label: "SOD Conflict", className: "bg-red-50 text-red-700 hover:bg-red-50" },
   ready_for_approval: { label: "Ready for Approval", className: "bg-blue-50 text-blue-700 hover:bg-blue-50" },

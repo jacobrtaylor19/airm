@@ -26,7 +26,7 @@ import {
   Layers,
   Bell,
   Inbox,
-  ShieldCheck,
+
   GitCompare,
   Calendar,
   FlaskConical,
@@ -152,17 +152,16 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       : userRole.charAt(0).toUpperCase() + userRole.slice(1);
 
   return (
-    <aside className="flex h-screen w-64 flex-col bg-slate-900">
+    <aside className="flex h-screen w-64 flex-col bg-brand-accent-dark">
       {/* Brand header */}
-      <div className="flex h-14 items-center border-b border-slate-700 px-4">
+      <div className="flex h-14 items-center border-b border-white/10 px-4">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-teal-400 flex-shrink-0" strokeWidth={2} />
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold tracking-tight leading-none text-white">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-sm font-bold tracking-tight text-white">
               Provisum
             </span>
-            <span className="text-[10px] text-slate-400 leading-tight">
-              Intelligent Role Mapping
+            <span className="text-[10px] font-mono font-normal text-white/50 border border-white/20 rounded px-1.5 py-0.5">
+              beta
             </span>
           </div>
         </Link>
@@ -180,8 +179,8 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
             <div key={si} className="mb-3">
               {section.label && (
                 <>
-                  {si > 0 && <div className="border-t border-slate-700/50 my-2" />}
-                  <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  {si > 0 && <div className="border-t border-white/10 my-2" />}
+                  <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-white/30">
                     {section.label}
                   </p>
                 </>
@@ -210,12 +209,12 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
                     className={cn(
                       "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
                       showActive
-                        ? "bg-slate-800 text-white border-l-2 border-indigo-500"
-                        : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                        ? "bg-white/10 text-white border-l-2 border-teal-300"
+                        : "text-white/50 hover:bg-white/5 hover:text-white/80",
                       isPendingThis && "opacity-80"
                     )}
                   >
-                    <item.icon className={cn("h-4 w-4", showActive ? "text-white" : "text-slate-400", isPendingThis && "animate-pulse")} />
+                    <item.icon className={cn("h-4 w-4", showActive ? "text-white" : "text-white/50", isPendingThis && "animate-pulse")} />
                     {item.label}
                   </Link>
                 );
@@ -225,20 +224,20 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
       </nav>
 
       {/* User section */}
-      <div className="border-t border-slate-700 px-4 py-3">
+      <div className="border-t border-white/10 px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-medium text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-accent text-xs font-medium text-white">
             {initials}
           </div>
           <div className="flex flex-col min-w-0">
             <span className="text-sm font-medium text-white truncate">
               {userName || "User"}
             </span>
-            <span className="text-xs text-slate-400">{roleLabel}</span>
+            <span className="text-xs text-white/40">{roleLabel}</span>
           </div>
         </div>
-        <p className="mt-2 text-[10px] text-slate-600 text-center">
-          Provisum v0.7.0
+        <p className="mt-2 text-[10px] text-white/20 text-center">
+          Provisum v1.0.0
         </p>
       </div>
     </aside>

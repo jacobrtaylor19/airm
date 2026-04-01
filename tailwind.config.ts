@@ -11,9 +11,19 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)", ...fontFamily.sans],
+        sans: ["var(--font-geist-sans)", ...fontFamily.sans],
       },
       colors: {
+        brand: {
+          cream: "#faf8f5",
+          "cream-warm": "#f5f0ea",
+          text: "#1a1a1a",
+          "text-muted": "#6b6560",
+          "text-light": "#9a928a",
+          accent: "#0d9488",
+          "accent-dark": "#0f766e",
+          border: "#e8e2da",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

@@ -86,12 +86,12 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
   }
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-slate-200 px-6">
+    <header className="flex h-14 items-center justify-between border-b border-brand-border bg-brand-cream/80 backdrop-blur-sm px-6">
       <div className="flex items-center gap-3">
         <div>
-          <h1 className="text-lg font-semibold text-slate-900">{page.title}</h1>
+          <h1 className="text-lg font-semibold text-brand-text">{page.title}</h1>
           {page.description && (
-            <p className="text-xs text-slate-500 -mt-0.5">{page.description}</p>
+            <p className="text-xs text-brand-text-muted -mt-0.5">{page.description}</p>
           )}
         </div>
         {releases && releases.length > 0 && (
@@ -104,13 +104,13 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
           <Button
             variant="ghost"
             size="sm"
-            className="relative h-8 w-8 p-0 text-slate-400 hover:text-slate-600"
+            className="relative h-8 w-8 p-0 text-brand-text-muted hover:text-brand-text"
             onClick={() => router.push("/inbox")}
             title="Inbox"
           >
             <Bell className="h-4 w-4" />
             {unreadNotificationCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-bold text-white">
+              <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-accent px-1 text-[9px] font-bold text-white">
                 {unreadNotificationCount > 99 ? "99+" : unreadNotificationCount}
               </span>
             )}
@@ -119,13 +119,13 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
           {/* User dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-slate-100 transition-colors">
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-medium text-white">
+              <button className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/60 transition-colors">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-accent text-[10px] font-medium text-white">
                   {initials}
                 </div>
                 <div className="text-left hidden sm:block">
-                  <p className="text-sm font-medium text-slate-700 leading-tight">{user.displayName}</p>
-                  <p className="text-[10px] text-slate-400 leading-tight">{roleLabel}</p>
+                  <p className="text-sm font-medium text-brand-text leading-tight">{user.displayName}</p>
+                  <p className="text-[10px] text-brand-text-light leading-tight">{roleLabel}</p>
                 </div>
               </button>
             </DropdownMenuTrigger>
