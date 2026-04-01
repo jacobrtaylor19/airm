@@ -36,7 +36,7 @@ Provisum runs on **Vercel** (hosting) with **Supabase Postgres** (database). Thi
 # In the airm/ directory
 echo 'DATABASE_URL=postgresql://postgres.xxxxx:password@aws-1-us-east-1.pooler.supabase.com:6543/postgres' >> .env.local
 
-pnpm db:push    # Creates all 47 tables in Supabase
+pnpm db:push    # Creates all 51 tables in Supabase
 pnpm db:seed    # Loads demo data (1K users, app users, SOD rules, etc.)
 ```
 
@@ -83,6 +83,8 @@ Or connect via Vercel dashboard:
 | `NEXT_PUBLIC_APP_URL` | Prod | Application URL for email links (e.g., `https://demo.provisum.io`) |
 | `NEXT_PUBLIC_SENTRY_DSN` | Prod | Sentry error tracking DSN |
 | `SENTRY_AUTH_TOKEN` | Prod | Sentry source map upload token |
+| `SENTRY_ORG` | Prod | Sentry organization slug (for source map uploads) |
+| `SENTRY_PROJECT` | Prod | Sentry project slug (for source map uploads) |
 | `NODE_ENV` | Auto | Set automatically by Vercel (`production` on deploy) |
 
 **Generating encryption key:**

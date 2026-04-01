@@ -70,7 +70,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ## Step 3: Initialize Database
 
 ```bash
-# Push Drizzle schema to Supabase Postgres (creates all 47 tables)
+# Push Drizzle schema to Supabase Postgres (creates all 51 tables)
 pnpm db:push
 
 # Load demo data (1K users, 17 auth users, SOD rules, roles, etc.)

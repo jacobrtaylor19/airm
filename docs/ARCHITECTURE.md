@@ -6,7 +6,7 @@ This document describes the system design, technical decisions, and component ar
 
 ## System Overview
 
-Provisum is a Next.js 14 web application that automates enterprise role migration workflows. The system ingests source user data and role hierarchies, uses Claude AI to cluster users into security personas, maps those personas to target roles, performs SOD conflict analysis, and routes the results through a structured approval workflow. It also includes an AI chatbot (Lumen), risk quantification, feature flags, webhooks, scheduled exports, and multi-tenant organization support.
+Provisum is a Next.js 14 web application that automates enterprise role migration workflows. The system ingests source user data and role hierarchies, uses Claude AI to cluster users into security personas, maps those personas to target roles, performs SOD conflict analysis, and routes the results through a structured approval workflow. It also includes an AI chatbot (Lumen), risk quantification, feature flags, webhooks, scheduled exports, multi-tenant organization support, migration health dashboard, incident detection with AI triage, and AI-assisted mapping suggestions. **Current version: v1.0.0** (51 tables, 40+ pages).
 
 ```
 ┌─────────────┐      ┌──────────────┐      ┌──────────┐      ┌────────────┐      ┌──────────┐
@@ -242,7 +242,7 @@ export async function getDashboardStats(userId?: number) {
 
 ### 4. Data Access Layer (Drizzle + Supabase Postgres)
 
-**Schema** (`db/schema.ts`): Single source of truth for all 47 tables. Drizzle ORM maps TypeScript types to SQL using `pgTable` from `drizzle-orm/pg-core`.
+**Schema** (`db/schema.ts`): Single source of truth for all 51 tables. Drizzle ORM maps TypeScript types to SQL using `pgTable` from `drizzle-orm/pg-core`.
 
 ```typescript
 export const users = pgTable("users", {

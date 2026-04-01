@@ -1,6 +1,6 @@
 # Provisum — Technical Debt Register
 
-**Generated:** 2026-03-28 | **Version:** v0.7.0 | **Codebase:** 37+ pages, ~100 files, Supabase Postgres + Vercel
+**Generated:** 2026-03-28 | **Updated:** 2026-03-31 | **Version:** v1.0.0 | **Codebase:** 40+ pages, ~143 files, Supabase Postgres + Vercel
 
 ---
 
@@ -113,18 +113,18 @@ Higher score = fix first.
 
 ---
 
-## Current Health Summary (updated 2026-03-30)
+## Current Health Summary (updated 2026-03-31)
 
 | Category | Grade | Key Issue |
 |----------|:-----:|-----------|
 | **Code** | A | All large components split; upload route fully typed; eslint-disable reduced to 6 justified |
 | **Architecture** | A | Default-secure middleware; 56 DB indexes; DB-backed rate limiter; job retry with dead-letter; feature flags |
-| **Testing** | D+ | 41 smoke tests (auth, settings, strapline, middleware); no integration or E2E |
+| **Testing** | B | 41 Vitest unit tests + 46 Playwright E2E tests (9 spec files) |
 | **Dependencies** | A- | Current versions; Sentry + Resend installed |
 | **Documentation** | A | OpenAPI spec, ER diagram, strong dev docs |
 | **Infrastructure** | A- | Sentry installed (needs DSN); staging branch configured; structured JSON logging; encryption key rotation |
 
-**Overall: A** — All 20 of 20 debt items resolved. Sentry activation (env var) is the remaining operational blocker.
+**Overall: A** — All 20 of 20 debt items resolved. Sentry source map uploads are the remaining operational blocker (`SENTRY_ORG` + `SENTRY_PROJECT` env vars).
 
 ### Resolved This Sprint
 - ✅ #1 — Test coverage started (41 smoke tests via Vitest)

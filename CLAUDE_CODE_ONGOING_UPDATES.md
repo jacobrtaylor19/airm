@@ -1,6 +1,6 @@
 # Provisum — Ongoing Updates (Session State)
 
-**Last updated:** 2026-03-30 | **Version:** v0.9.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 41 unit + 46 E2E (Playwright) | **Tech Debt:** 20/20 resolved (A)
+**Last updated:** 2026-03-31 | **Version:** v1.0.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 41 unit + 46 E2E (Playwright) | **Tech Debt:** 20/20 resolved (A)
 
 ---
 
@@ -19,6 +19,44 @@
 ---
 
 ## Recent Changes (This Session)
+
+### v1.0.0 Release (2026-03-31)
+
+**Migration Health Dashboard (`/admin/migration-health`):**
+- 6 KPI cards: persona coverage, mapping coverage, SOD resolution rate, approval rate
+- Pipeline visualization with connected stages (users → personas → mappings → SOD → approvals)
+- Confidence distribution chart (10 buckets)
+- Overall health score = weighted average of 4 KPI percentages
+- Color-coded progress bars (emerald ≥80%, yellow ≥50%, red <50%)
+- `lib/queries/migration-health.ts` — 10 parallel DB queries via `Promise.all()`
+
+**Release Readiness Checklist:**
+- Collapsible 8-check panel on each release card in `/releases`
+- Automated checks: scope defined, assignments created, SOD resolved, all approved, no drafts pending, target date set, mapping deadline met, approval deadline met
+- Pass/fail icons with severity coloring (green/yellow/red)
+
+**Confidence Distribution Chart:**
+- Server-rendered histogram on `/calibration` (no client JS)
+- 10 buckets (0-9 through 90-100), average confidence score, total assignment count
+- Uses PostgreSQL `FILTER` clauses for bucket counts
+
+**SOD Conflict Heatmap:**
+- Department × severity matrix on `/sod` page
+- Color-coded intensity scaling relative to max cell count
+- Sorted by total conflicts descending
+- 4-level color legend
+
+**Admin Activity Pulse:**
+- Widget on `/admin` page showing last 24h/7d action counts
+- Top action types breakdown with bar chart
+- Latest 5 actions with relative timestamps
+- Client component fetching from `/api/admin/activity-pulse`
+
+**DB Migration:**
+- `mapping_feedback` + `incidents` tables created via Supabase MCP SQL
+- `organization_id` backfill verified, NOT NULL constraints applied
+
+**Deployed:** Pushed to main → Vercel auto-deploy triggered (2026-03-31)
 
 ### Mega Sprint 2 (2026-03-30, v0.9.0)
 
@@ -211,11 +249,9 @@
 
 ## Known Issues
 
-- **Sentry not active** — Code deployed, DSN env var not set yet (Owner Action #1-3)
-- **Invite emails don't send** — Code deployed, `RESEND_API_KEY` not set on `airm` project (Owner Action #4)
-- **CRON_SECRET not set** — scheduled export cron endpoint unsecured (Owner Action #6)
-- **DB migration required** — Run `db/migrations/backfill-org-id.sql` then `pnpm db:push` to apply NOT NULL constraints
-- **New tables** — Run `pnpm db:push` to create `mapping_feedback` and `incidents` tables
+- **Sentry source maps not uploading** — DSN + auth token set, but `SENTRY_ORG` and `SENTRY_PROJECT` env vars not yet set on Vercel (Owner Action #7). Error tracking works; source maps don't.
+- **All other Owner Actions resolved** — RESEND_API_KEY, CRON_SECRET, SENTRY_DSN, SENTRY_AUTH_TOKEN, NEXT_PUBLIC_APP_URL all set (2026-03-30)
+- **DB tables created** — `mapping_feedback` + `incidents` tables created via Supabase MCP SQL (2026-03-31). `organization_id` NOT NULL applied on all entity tables.
 
 ---
 
@@ -243,7 +279,8 @@ lib/queries/
 ├── risk.ts           # getLeastAccessAnalysis, getAggregateRiskAnalysis (parallelized)
 ├── common.ts         # getUsersScoped (DB-level filter), release scoping helpers
 ├── jobs.ts           # getJobs
-└── audit.ts          # getAuditLog
+├── audit.ts          # getAuditLog
+└── migration-health.ts # getMigrationHealthData (10 parallel queries)
 ```
 
 ### Email / Invite Architecture
@@ -257,7 +294,7 @@ app/setup/invite-accept-form.tsx      # Password form (client component)
 db/schema.ts → userInvites            # Token storage with 24h expiry
 ```
 
-### New Tables (Mega Sprint + Sprint 2)
+### New Tables (v0.8.0 → v1.0.0)
 ```
 organizations              # Multi-tenant org isolation
 feature_flags              # DB-backed feature flags
@@ -265,16 +302,17 @@ webhook_endpoints          # Webhook subscription config
 webhook_deliveries         # Webhook delivery log
 scheduled_exports          # Export schedule config
 chat_conversations         # Lumen chat history
-mapping_feedback           # AI mapping suggestion accept/reject learning loop
-incidents                  # Automated support incident detection + AI triage
+mapping_feedback           # AI mapping suggestion accept/reject learning loop (v1.0.0)
+incidents                  # Automated support incident detection + AI triage (v1.0.0)
 ```
+Total: 51 tables in Supabase Postgres.
 
-### Org Isolation Architecture
+### Org Isolation Architecture (Phase 3 complete — NOT NULL enforced)
 ```
 lib/org-context.ts
-├── getOrgId(user)           # user.organizationId ?? 1
-├── orgScope(column, orgId)  # SQL: column = orgId OR column IS NULL
-├── withOrgFilter(orgId)     # SQL: organization_id = orgId OR IS NULL
+├── getOrgId(user)           # user.organizationId (NOT NULL)
+├── orgScope(column, orgId)  # SQL: column = orgId (no NULL fallback)
+├── withOrgFilter(orgId)     # SQL: organization_id = orgId
 └── getOrgIdForInsert(user)  # Always returns concrete number
 ```
 

@@ -9,7 +9,7 @@ This file gives Claude Code the context needed to work effectively in this codeb
 
 ## What this project is
 
-Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It uses Supabase Auth with JWT sessions, 7 roles (including `project_manager`), and org-unit-based scoping. Multi-tenant org isolation is Phase 3 complete (`organization_id` NOT NULL on all entity tables). The `airm/` directory name is retained for now — display strings use "Provisum" everywhere. Schema has **49 tables** in Supabase Postgres.
+Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It uses Supabase Auth with JWT sessions, 7 roles (including `project_manager`), and org-unit-based scoping. Multi-tenant org isolation is Phase 3 complete (`organization_id` NOT NULL on all entity tables). The `airm/` directory name is retained for now — display strings use "Provisum" everywhere. Schema has **51 tables** in Supabase Postgres. **Current version: v1.0.0** — deployed at https://demo.provisum.io.
 
 ---
 
@@ -170,6 +170,7 @@ Split into domain modules with a barrel re-export from `lib/queries/index.ts`. A
 | `common.ts` | `getUsersScoped()` (DB-level filter), release scoping, work assignment helpers |
 | `jobs.ts` | `getJobs()` |
 | `audit.ts` | `getAuditLog()` |
+| `migration-health.ts` | `getMigrationHealthData()` (10 parallel queries for migration health dashboard) |
 
 When adding new queries, add them to the appropriate domain module (not inline in page files).
 
