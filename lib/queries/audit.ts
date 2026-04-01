@@ -21,3 +21,26 @@ export async function getAuditLog(orgId: number): Promise<AuditLogRow[]> {
     .where(orgScope(schema.auditLog.organizationId, orgId))
     .orderBy(desc(schema.auditLog.createdAt));
 }
+
+export interface RecentActivityItem {
+  id: number;
+  action: string;
+  entityType: string;
+  actorEmail: string | null;
+  createdAt: string;
+}
+
+export async function getRecentActivity(orgId: number, limit = 8): Promise<RecentActivityItem[]> {
+  return await db
+    .select({
+      id: schema.auditLog.id,
+      action: schema.auditLog.action,
+      entityType: schema.auditLog.entityType,
+      actorEmail: schema.auditLog.actorEmail,
+      createdAt: schema.auditLog.createdAt,
+    })
+    .from(schema.auditLog)
+    .where(orgScope(schema.auditLog.organizationId, orgId))
+    .orderBy(desc(schema.auditLog.createdAt))
+    .limit(limit);
+}

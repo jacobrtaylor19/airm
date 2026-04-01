@@ -1,15 +1,16 @@
-import { getDashboardStats, getDepartmentMappingStatus, getSourceSystemStats, getLeastAccessAnalysis, getPersonaIdsForUsers, getAggregateRiskAnalysis } from "@/lib/queries";
+import { getDashboardStats, getDepartmentMappingStatus, getSourceSystemStats, getLeastAccessAnalysis, getPersonaIdsForUsers, getAggregateRiskAnalysis, getRecentActivity } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 import { getUserScopeDepartments, getUserScope } from "@/lib/scope";
 import { getSetting } from "@/lib/settings";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
-import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Database, Info, AlertTriangle, CheckCircle2, Zap, TrendingUp, RefreshCw } from "lucide-react";
+import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Info, AlertTriangle, CheckCircle2, Zap, RefreshCw, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DashboardFiltered } from "./dashboard-filtered";
+import { DashboardChat } from "@/components/chat/dashboard-chat";
 import { generateStrapline } from "@/lib/strapline";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
@@ -18,9 +19,41 @@ import { inArray, count, sql } from "drizzle-orm";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+function formatRelativeTime(isoString: string): string {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function formatAction(action: string, entityType: string): string {
+  const clean = action.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+  if (entityType === "persona" && action.includes("generate")) return "Generated personas";
+  if (entityType === "mapping" && action.includes("create")) return "Created role mapping";
+  if (entityType === "mapping" && action.includes("approve")) return "Approved mappings";
+  if (entityType === "sod" && action.includes("resolve")) return "Resolved SOD conflict";
+  if (entityType === "assignment" && action.includes("submit")) return "Submitted for review";
+  if (action.includes("upload")) return `Uploaded ${entityType}`;
+  return clean;
+}
+
+function getInitials(email: string | null): string {
+  if (!email) return "SY";
+  const name = email.split("@")[0].replace(/[._-]/g, " ");
+  return name.split(" ").map(n => n[0]?.toUpperCase() ?? "").join("").slice(0, 2) || "??";
+}
+
+function getRiskSeverity(value: number, thresholds: [number, number]): { label: string; classes: string } {
+  if (value > thresholds[1]) return { label: "High", classes: "text-red-600 bg-red-50 border-red-200" };
+  if (value > thresholds[0]) return { label: "Medium", classes: "text-amber-600 bg-amber-50 border-amber-200" };
+  return { label: "Low", classes: "text-emerald-600 bg-emerald-50 border-emerald-200" };
+}
+
 export default async function DashboardPage() {
-  // Auth check outside try/catch — requireAuth() throws a redirect (not an error)
-  // and must not be caught by the dashboard error boundary
   const user = await requireAuth();
 
   try {
@@ -51,31 +84,29 @@ export default async function DashboardPage() {
 async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
   const orgId = getOrgId(user);
 
-  // Run all independent data fetches in parallel
-  const [stats, allDeptStatus, sourceSystemStats, scopeDepts] = await Promise.all([
+  const [stats, allDeptStatus, sourceSystemStats, scopeDepts, recentActivity] = await Promise.all([
     getDashboardStats(orgId),
     getDepartmentMappingStatus(orgId),
     getSourceSystemStats(orgId),
     getUserScopeDepartments(user),
+    getRecentActivity(orgId, 8),
   ]);
 
   const mappedPercent = stats.totalPersonas > 0
     ? Math.round((stats.personasWithMapping / stats.totalPersonas) * 100) : 0;
   const approvedPercent = stats.totalAssignments > 0
     ? Math.round((stats.approvedAssignments / stats.totalAssignments) * 100) : 0;
+  const personaCoverage = stats.totalUsers > 0
+    ? Math.round((stats.usersWithPersona / stats.totalUsers) * 100) : 0;
 
   const assignedDepartments = scopeDepts && scopeDepts.length > 0 ? scopeDepts : null;
-
-  // Single getUserScope call for all scoped features
   const needsScopeStats = ["mapper", "approver", "coordinator"].includes(user.role);
-  const scopedUserIds = await getUserScope(user); // null for admins (unrestricted)
+  const scopedUserIds = await getUserScope(user);
 
-  // Fetch threshold first (single-row lookup, fast), then run all heavy queries in parallel
   const overprovisioningThreshold = parseInt(await getSetting("least_access_threshold") ?? "30", 10);
 
   const [riskAnalysis, scopedStatsData, overprovisioningAlertsRaw] = await Promise.all([
     getAggregateRiskAnalysis(orgId, scopedUserIds),
-    // Scoped stats for strapline
     (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0)
       ? (async () => {
           const depts = scopeDepts ?? [];
@@ -103,15 +134,12 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
           };
         })()
       : Promise.resolve(null),
-    // Overprovisioning alerts
     getLeastAccessAnalysis(orgId, overprovisioningThreshold),
   ]);
 
   const scopedStats = scopedStatsData;
-
   const strapline = generateStrapline(stats, user.role, scopedStats, user.displayName);
 
-  // Filter provisioning alerts by threshold and scope
   let overprovisioningAlerts = overprovisioningAlertsRaw;
   if (needsScopeStats && scopedUserIds !== null && scopedUserIds.length > 0) {
     const scopedPersonaIds = new Set(await getPersonaIdsForUsers(orgId, scopedUserIds));
@@ -172,6 +200,20 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
     ? "border-yellow-200 bg-yellow-50/50"
     : "border-blue-200 bg-blue-50/30";
 
+  // Department progress — simplified single-bar view
+  const deptProgress = allDeptStatus
+    .sort((a, b) => {
+      const pctA = a.totalUsers > 0 ? a.approved / a.totalUsers : 0;
+      const pctB = b.totalUsers > 0 ? b.approved / b.totalUsers : 0;
+      return pctB - pctA;
+    })
+    .slice(0, 8);
+
+  // Risk severity
+  const businessContinuity = getRiskSeverity(riskAnalysis.businessContinuity.usersAtRisk, [5, 20]);
+  const adoptionRisk = getRiskSeverity(riskAnalysis.adoption.usersWithNewAccess, [10, 30]);
+  const incorrectAccess = getRiskSeverity(riskAnalysis.incorrectAccess.flaggedUsers, [3, 10]);
+
   return (
     <div className="space-y-6">
       <WorkflowStepper stages={stages} />
@@ -184,7 +226,7 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
             <span className="text-foreground">{strapline.project}</span>
             {strapline.area && (
               <>
-                <span className="mx-2 text-muted-foreground/40">·</span>
+                <span className="mx-2 text-muted-foreground/40">&middot;</span>
                 <span className="text-muted-foreground italic">{strapline.area}</span>
               </>
             )}
@@ -192,23 +234,169 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
         </div>
       </div>
 
-      {/* Global KPI Cards */}
-      <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Project Role Mapping Progress</h3>
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <KpiCard title="Total Users" value={stats.totalUsers} subtitle={needsScopeStats ? `${stats.totalSourceRoles} source roles (project-wide)` : `${stats.totalSourceRoles} source roles`} />
-        <KpiCard title="Personas Generated" value={stats.totalPersonas} subtitle={`${stats.totalGroups} consolidated groups`} />
         <KpiCard
-          title="Persona Coverage"
-          value={`${stats.usersWithPersona > 0 ? Math.round((stats.usersWithPersona / stats.totalUsers) * 100) : 0}%`}
-          subtitle={`${stats.usersWithPersona}/${stats.totalUsers} users assigned`}
+          title="Total Users"
+          value={stats.totalUsers.toLocaleString()}
+          subtitle={`Across ${allDeptStatus.length} departments`}
+          trend={`${stats.totalSourceRoles} roles`}
         />
-        <KpiCard title="Mapped to Roles" value={`${mappedPercent}%`} subtitle={`${stats.personasWithMapping}/${stats.totalPersonas} personas`} />
+        <KpiCard
+          title="Personas"
+          value={stats.totalPersonas}
+          subtitle="AI-generated clusters"
+          trend={`${personaCoverage}% coverage`}
+        />
+        <KpiCard
+          title="Mapped"
+          value={`${stats.personasWithMapping} / ${stats.totalPersonas}`}
+          subtitle="Target roles assigned"
+          trend={`${mappedPercent}%`}
+        />
+        <KpiCard
+          title="SOD Conflicts"
+          value={stats.sodConflictsBySeverity.reduce((s, c) => s + c.count, 0)}
+          subtitle={stats.sodConflictsBySeverity.map(s => `${s.count} ${s.severity}`).join(", ") || "None detected"}
+          trend={stats.complianceApproved > 0 ? `${Math.round((stats.complianceApproved / Math.max(stats.totalAssignments, 1)) * 100)}% resolved` : undefined}
+        />
         <KpiCard
           title="Approved"
           value={`${approvedPercent}%`}
-          subtitle={stats.totalAssignments > 0 ? `${stats.approvedAssignments}/${stats.totalAssignments} assignments` : "No assignments yet"}
+          subtitle={stats.totalAssignments > 0 ? `${stats.approvedAssignments.toLocaleString()} of ${stats.totalAssignments.toLocaleString()} users` : "No assignments yet"}
+          trend={approvedPercent >= 80 ? "On target" : undefined}
         />
       </div>
+
+      {/* Risk Quantification */}
+      {riskAnalysis.totalUsersAnalyzed > 0 && (
+        <>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Risk Quantification</h3>
+            <Link href="/risk-analysis" className="text-xs text-teal-600 hover:text-teal-700 font-medium">
+              View full analysis &rarr;
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="glass-card rounded-2xl p-6 transition-all duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-brand-text">Business Continuity</h3>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${businessContinuity.classes}`}>
+                  {businessContinuity.label}
+                </span>
+              </div>
+              <p className="text-xs text-brand-text-muted leading-relaxed">
+                {riskAnalysis.businessContinuity.avgCoverage}% average coverage preserved. {riskAnalysis.businessContinuity.usersAtRisk} users below 90% threshold.
+              </p>
+            </div>
+            <div className="glass-card rounded-2xl p-6 transition-all duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-brand-text">Adoption Risk</h3>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${adoptionRisk.classes}`}>
+                  {adoptionRisk.label}
+                </span>
+              </div>
+              <p className="text-xs text-brand-text-muted leading-relaxed">
+                {riskAnalysis.adoption.usersWithNewAccess} users with significant role changes. {riskAnalysis.adoption.totalNewPerms} total new permissions.
+              </p>
+            </div>
+            <div className="glass-card rounded-2xl p-6 transition-all duration-300">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-brand-text">Incorrect Access</h3>
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${incorrectAccess.classes}`}>
+                  {incorrectAccess.label}
+                </span>
+              </div>
+              <p className="text-xs text-brand-text-muted leading-relaxed">
+                {riskAnalysis.incorrectAccess.flaggedUsers} flagged users (access gaps + SOD conflicts).
+              </p>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Two-column: Department Progress + Recent Activity */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {/* Department Progress */}
+        <div className="lg:col-span-2 glass-card rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-lg font-semibold text-brand-text">Department Progress</h2>
+            <span className="text-[11px] text-brand-text-light font-medium uppercase tracking-wider">
+              {allDeptStatus.length} departments
+            </span>
+          </div>
+          <div className="space-y-3">
+            {deptProgress.map((dept) => {
+              const progress = dept.totalUsers > 0 ? Math.round((dept.approved / dept.totalUsers) * 100) : 0;
+              return (
+                <div key={dept.department} className="flex items-center gap-4">
+                  <span className="text-sm font-medium text-brand-text w-24 shrink-0 truncate">
+                    {dept.department}
+                  </span>
+                  <div className="flex-1 h-2 rounded-full bg-brand-cream-warm overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-brand-accent to-teal-400 transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <span className="text-xs tabular-nums text-brand-text-muted w-10 text-right">
+                    {progress}%
+                  </span>
+                  <span className="text-xs text-brand-text-muted w-24 text-right">
+                    {dept.approved}/{dept.totalUsers} users
+                  </span>
+                  {dept.sodRejected > 0 && (
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                      {dept.sodRejected} SOD
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="glass-card rounded-2xl p-6">
+          <h2 className="text-lg font-semibold text-brand-text mb-5">Recent Activity</h2>
+          {recentActivity.length > 0 ? (
+            <div className="space-y-4">
+              {recentActivity.map((item) => {
+                const isAI = item.actorEmail?.includes("lumen") || item.actorEmail?.includes("system") || item.actorEmail === null;
+                return (
+                  <div key={item.id} className="flex items-start gap-3">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                      isAI
+                        ? "bg-brand-accent/15 text-brand-accent-dark"
+                        : "bg-brand-cream-warm text-brand-text-muted"
+                    }`}>
+                      {isAI ? (
+                        <Sparkles className="w-3.5 h-3.5" />
+                      ) : (
+                        getInitials(item.actorEmail)
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-brand-text">
+                        <span className="font-medium">{isAI ? "Lumen AI" : (item.actorEmail?.split("@")[0] ?? "System")}</span>
+                      </div>
+                      <div className="text-xs text-brand-text-muted">{formatAction(item.action, item.entityType)}</div>
+                      <div className="text-[10px] text-brand-text-light mt-0.5">
+                        {item.entityType} &middot; {formatRelativeTime(item.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-brand-text-muted">No recent activity</p>
+          )}
+        </div>
+      </div>
+
+      {/* Inline Lumen AI Chat */}
+      <DashboardChat userRole={user.role} userName={user.displayName} />
 
       {/* Existing Production Access Summary */}
       {stats.existingAccessCount > 0 && (
@@ -222,54 +410,7 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
         </Card>
       )}
 
-      {/* Risk Quantification Summary */}
-      {riskAnalysis.totalUsersAnalyzed > 0 && (
-        <>
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Risk Quantification</h3>
-            <Link href="/risk-analysis" className="text-xs text-teal-600 hover:text-teal-700 font-medium">
-              View full analysis &rarr;
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Card className={riskAnalysis.businessContinuity.usersAtRisk > 20 ? "border-red-200 bg-red-50/30" : riskAnalysis.businessContinuity.usersAtRisk > 5 ? "border-yellow-200 bg-yellow-50/30" : ""}>
-              <CardContent className="flex items-center gap-3 py-3">
-                <AlertTriangle className="h-5 w-5 text-orange-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Business Continuity</p>
-                  <p className="text-xs text-muted-foreground">
-                    <strong className="text-foreground">{riskAnalysis.businessContinuity.usersAtRisk}</strong> users below 90% coverage &middot; {riskAnalysis.businessContinuity.avgCoverage}% avg
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className={riskAnalysis.adoption.usersWithNewAccess > 30 ? "border-red-200 bg-red-50/30" : riskAnalysis.adoption.usersWithNewAccess > 10 ? "border-yellow-200 bg-yellow-50/30" : ""}>
-              <CardContent className="flex items-center gap-3 py-3">
-                <TrendingUp className="h-5 w-5 text-blue-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Adoption Risk</p>
-                  <p className="text-xs text-muted-foreground">
-                    <strong className="text-foreground">{riskAnalysis.adoption.usersWithNewAccess}</strong> users with &gt;10 new perms &middot; {riskAnalysis.adoption.totalNewPerms} total
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className={riskAnalysis.incorrectAccess.flaggedUsers > 10 ? "border-red-200 bg-red-50/30" : riskAnalysis.incorrectAccess.flaggedUsers > 3 ? "border-yellow-200 bg-yellow-50/30" : ""}>
-              <CardContent className="flex items-center gap-3 py-3">
-                <Shield className="h-5 w-5 text-red-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Incorrect Access</p>
-                  <p className="text-xs text-muted-foreground">
-                    <strong className="text-foreground">{riskAnalysis.incorrectAccess.flaggedUsers}</strong> flagged users (gaps + SOD conflicts)
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
-
-      {/* Filtered Department View — interactive client component */}
+      {/* Detailed Department View + Attention Required — interactive client component */}
       <DashboardFiltered
         allDepts={allDeptStatus}
         assignedDepartments={assignedDepartments}
@@ -287,7 +428,6 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-              <Database className="h-4 w-4" />
               Source Systems
             </CardTitle>
           </CardHeader>
