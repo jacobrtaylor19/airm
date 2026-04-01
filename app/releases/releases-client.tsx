@@ -38,6 +38,8 @@ type ReleaseRow = {
   mappingDeadline: string | null;
   reviewDeadline: string | null;
   approvalDeadline: string | null;
+  cutoverDate: string | null;
+  goLiveDate: string | null;
   createdBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -74,6 +76,8 @@ const EMPTY_FORM = {
   mappingDeadline: "",
   reviewDeadline: "",
   approvalDeadline: "",
+  cutoverDate: "",
+  goLiveDate: "",
   isActive: false,
 };
 
@@ -131,10 +135,10 @@ function getReadinessChecks(r: ReleaseRow): ReadinessCheck[] {
     detail: r.stats.pending > 0 ? `${r.stats.pending} still pending` : "All submitted",
   });
 
-  // 6. Target date set
+  // 6. Go-live date set
   checks.push({
-    label: "Target go-live date set",
-    passed: !!r.targetDate,
+    label: "Go-live date set",
+    passed: !!r.goLiveDate || !!r.targetDate,
     severity: "info",
   });
 
@@ -238,6 +242,8 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
       mappingDeadline: r.mappingDeadline ?? "",
       reviewDeadline: r.reviewDeadline ?? "",
       approvalDeadline: r.approvalDeadline ?? "",
+      cutoverDate: r.cutoverDate ?? "",
+      goLiveDate: r.goLiveDate ?? "",
       isActive: r.isActive ?? false,
     });
     setShowDialog(true);
@@ -390,8 +396,8 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                       )}
 
                       {/* Phase deadlines */}
-                      {(r.mappingDeadline || r.reviewDeadline || r.approvalDeadline) && (
-                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
+                      {(r.mappingDeadline || r.reviewDeadline || r.approvalDeadline || r.cutoverDate || r.goLiveDate) && (
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
                           <CalendarClock className="h-3 w-3 shrink-0" />
                           {r.mappingDeadline && (
                             <span className={new Date(r.mappingDeadline) < new Date() ? "text-red-600 font-medium" : ""}>
@@ -406,6 +412,16 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                           {r.approvalDeadline && (
                             <span className={new Date(r.approvalDeadline) < new Date() ? "text-red-600 font-medium" : ""}>
                               Approval: {new Date(r.approvalDeadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                          )}
+                          {r.cutoverDate && (
+                            <span className={new Date(r.cutoverDate) < new Date() ? "text-red-600 font-medium" : "text-brand-accent font-medium"}>
+                              Cutover: {new Date(r.cutoverDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                            </span>
+                          )}
+                          {r.goLiveDate && (
+                            <span className={new Date(r.goLiveDate) < new Date() ? "text-red-600 font-medium" : "text-brand-accent font-medium"}>
+                              Go-Live: {new Date(r.goLiveDate).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                             </span>
                           )}
                         </div>
@@ -590,6 +606,24 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                     type="date"
                     value={form.approvalDeadline}
                     onChange={(e) => setForm((f) => ({ ...f, approvalDeadline: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Cutover Date</label>
+                  <Input
+                    type="date"
+                    value={form.cutoverDate}
+                    onChange={(e) => setForm((f) => ({ ...f, cutoverDate: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">Go-Live Date</label>
+                  <Input
+                    type="date"
+                    value={form.goLiveDate}
+                    onChange={(e) => setForm((f) => ({ ...f, goLiveDate: e.target.value }))}
                   />
                 </div>
               </div>

@@ -272,6 +272,8 @@ export const releases = pgTable("releases", {
   mappingDeadline: text("mapping_deadline"),                          // ISO date — when mapping must be complete
   reviewDeadline: text("review_deadline"),                            // ISO date — when SOD review must be complete
   approvalDeadline: text("approval_deadline"),                        // ISO date — when approvals must be complete
+  cutoverDate: text("cutover_date"),                                  // ISO date — system cutover / migration execution
+  goLiveDate: text("go_live_date"),                                   // ISO date — users go live on new system
   isActive: boolean("is_active").default(true), // the currently "open" wave new assignments belong to
   createdBy: text("created_by"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),

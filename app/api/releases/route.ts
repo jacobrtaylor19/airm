@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser();
     const body = await req.json();
-    const { name, description, status, releaseType, targetSystem, targetDate, mappingDeadline, reviewDeadline, approvalDeadline, isActive } = body;
+    const { name, description, status, releaseType, targetSystem, targetDate, mappingDeadline, reviewDeadline, approvalDeadline, cutoverDate, goLiveDate, isActive } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "Release name is required" }, { status: 400 });
@@ -64,6 +64,8 @@ export async function POST(req: NextRequest) {
         mappingDeadline: mappingDeadline || null,
         reviewDeadline: reviewDeadline || null,
         approvalDeadline: approvalDeadline || null,
+        cutoverDate: cutoverDate || null,
+        goLiveDate: goLiveDate || null,
         isActive: isActive ?? false,
         createdBy: user?.username ?? "admin",
       })
@@ -80,7 +82,7 @@ export async function PUT(req: NextRequest) {
   if (!(await isAdmin())) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
   try {
     const body = await req.json();
-    const { id, name, description, status, releaseType, targetSystem, targetDate, completedDate, mappingDeadline, reviewDeadline, approvalDeadline, isActive } = body;
+    const { id, name, description, status, releaseType, targetSystem, targetDate, completedDate, mappingDeadline, reviewDeadline, approvalDeadline, cutoverDate, goLiveDate, isActive } = body;
 
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
@@ -102,6 +104,8 @@ export async function PUT(req: NextRequest) {
         ...(mappingDeadline !== undefined && { mappingDeadline: mappingDeadline || null }),
         ...(reviewDeadline !== undefined && { reviewDeadline: reviewDeadline || null }),
         ...(approvalDeadline !== undefined && { approvalDeadline: approvalDeadline || null }),
+        ...(cutoverDate !== undefined && { cutoverDate: cutoverDate || null }),
+        ...(goLiveDate !== undefined && { goLiveDate: goLiveDate || null }),
         ...(isActive !== undefined && { isActive }),
         updatedAt: new Date().toISOString(),
       })

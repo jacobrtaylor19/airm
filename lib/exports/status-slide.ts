@@ -3,6 +3,9 @@ import { getDashboardStats, getDepartmentMappingStatus } from "@/lib/queries";
 import { getAggregateRiskAnalysis } from "@/lib/queries";
 import { getUserScope, getUserScopeDepartments } from "@/lib/scope";
 import { getOrgId } from "@/lib/org-context";
+import { db } from "@/db";
+import * as schema from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 import type { AppUser } from "@/lib/auth";
 
 // Brand colors (6-digit hex only — pptxgenjs doesn't support alpha hex)
@@ -28,11 +31,15 @@ export async function generateStatusSlide(user: AppUser): Promise<Buffer> {
   const scopedUserIds = await getUserScope(user);
   const scopeDepts = await getUserScopeDepartments(user);
 
-  const [stats, deptStatus, riskAnalysis] = await Promise.all([
+  const [stats, deptStatus, riskAnalysis, activeReleases] = await Promise.all([
     getDashboardStats(orgId),
     getDepartmentMappingStatus(orgId),
     getAggregateRiskAnalysis(orgId, scopedUserIds),
+    db.select().from(schema.releases).where(
+      and(eq(schema.releases.organizationId, orgId), eq(schema.releases.isActive, true))
+    ),
   ]);
+  const release = activeReleases[0] ?? null;
 
   const isScoped = scopeDepts && scopeDepts.length > 0;
   const scopeLabel = isScoped ? scopeDepts.join(", ") : "All Departments";
@@ -63,8 +70,30 @@ export async function generateStatusSlide(user: AppUser): Promise<Buffer> {
   const healthScore = Math.round(healthFactors.reduce((a, b) => a + b, 0) / healthFactors.length);
   const healthLabel = healthScore >= 70 ? "On Track" : healthScore >= 40 ? "Needs Attention" : "At Risk";
 
-  // Determine blockers for PM
+  // Determine blockers for PM (deadline-aware)
+  const now = new Date();
   const blockers: string[] = [];
+
+  // Deadline-driven blockers
+  if (release) {
+    const deadlines = [
+      { name: "Mapping", date: release.mappingDeadline, condition: mappedPercent < 100 },
+      { name: "Review", date: release.reviewDeadline, condition: totalConflicts > 0 },
+      { name: "Approval", date: release.approvalDeadline, condition: approvedPercent < 100 },
+      { name: "Cutover", date: release.cutoverDate, condition: approvedPercent < 100 },
+    ];
+    for (const dl of deadlines) {
+      if (!dl.date || !dl.condition) continue;
+      const d = new Date(dl.date);
+      const daysLeft = Math.ceil((d.getTime() - now.getTime()) / 86400000);
+      if (daysLeft < 0) {
+        blockers.push(`${dl.name} deadline overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) !== 1 ? "s" : ""}`);
+      } else if (daysLeft <= 7) {
+        blockers.push(`${dl.name} deadline in ${daysLeft} day${daysLeft !== 1 ? "s" : ""} — not yet complete`);
+      }
+    }
+  }
+
   if (mappedPercent === 0 && personaCoverage > 0) blockers.push("Role mapping has not started — personas are ready");
   if (criticalConflicts > 0) blockers.push(`${criticalConflicts} critical SOD conflicts need resolution`);
   if (highConflicts > 0) blockers.push(`${highConflicts} high-severity SOD conflicts pending`);
@@ -107,7 +136,7 @@ export async function generateStatusSlide(user: AppUser): Promise<Buffer> {
     fontFace: "Arial",
   });
 
-  slide.addText("Migration Status", {
+  slide.addText(release ? release.name : "Migration Status", {
     x: 0.4, y: 0.75, w: 3, h: 0.25,
     fontSize: 11, color: LIGHT_GRAY,
     fontFace: "Arial",
@@ -379,8 +408,80 @@ export async function generateStatusSlide(user: AppUser): Promise<Buffer> {
     fill: { color: E8E2DA },
   });
 
+  // ── Timeline Milestones (if release has dates) ──
+  let timelineEndY = divY3;
+
+  if (release) {
+    const milestones = [
+      { label: "Mapping", date: release.mappingDeadline },
+      { label: "Review", date: release.reviewDeadline },
+      { label: "Approval", date: release.approvalDeadline },
+      { label: "Cutover", date: release.cutoverDate },
+      { label: "Go-Live", date: release.goLiveDate },
+    ].filter((m): m is { label: string; date: string } => !!m.date);
+
+    if (milestones.length > 0) {
+      const tlY = divY3 + 0.15;
+      slide.addText("TIMELINE", {
+        x: rx, y: tlY, w: 4, h: 0.25,
+        fontSize: 8, bold: true, color: TEXT_LIGHT,
+        fontFace: "Arial",
+      });
+
+      const tlRowY = tlY + 0.28;
+      const mileW = (rw - 0.2) / Math.min(milestones.length, 5);
+
+      // Horizontal timeline line
+      slide.addShape(pptx.ShapeType.rect, {
+        x: rx + 0.15, y: tlRowY + 0.12, w: rw - 0.3, h: 0.02,
+        fill: { color: E8E2DA },
+      });
+
+      milestones.slice(0, 5).forEach((m, i) => {
+        const mx = rx + i * mileW + mileW / 2 - 0.06;
+        const d = new Date(m.date);
+        const daysLeft = Math.ceil((d.getTime() - now.getTime()) / 86400000);
+        const isPast = daysLeft < 0;
+        const isNear = daysLeft >= 0 && daysLeft <= 14;
+        const dotColor = isPast ? RED : isNear ? AMBER : GREEN;
+        const dateStr = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        const daysStr = isPast
+          ? `${Math.abs(daysLeft)}d overdue`
+          : daysLeft === 0 ? "Today" : `${daysLeft}d left`;
+
+        // Milestone dot
+        slide.addShape(pptx.ShapeType.ellipse, {
+          x: mx, y: tlRowY + 0.05, w: 0.16, h: 0.16,
+          fill: { color: dotColor },
+        });
+
+        // Label
+        slide.addText(m.label, {
+          x: rx + i * mileW, y: tlRowY + 0.24, w: mileW, h: 0.18,
+          fontSize: 7, bold: true, color: TEXT,
+          fontFace: "Arial", align: "center",
+        });
+
+        // Date + countdown
+        slide.addText(`${dateStr} · ${daysStr}`, {
+          x: rx + i * mileW, y: tlRowY + 0.4, w: mileW, h: 0.16,
+          fontSize: 6, color: dotColor,
+          fontFace: "Arial", align: "center",
+        });
+      });
+
+      timelineEndY = tlRowY + 0.65;
+
+      // Divider after timeline
+      slide.addShape(pptx.ShapeType.rect, {
+        x: rx, y: timelineEndY, w: rw, h: 0.01,
+        fill: { color: E8E2DA },
+      });
+    }
+  }
+
   // ── Blockers & Next Steps (two columns) ──
-  const bnY = divY3 + 0.15;
+  const bnY = timelineEndY + 0.15;
   const colW = (rw - 0.3) / 2;
 
   // Blockers column
