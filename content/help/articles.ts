@@ -36,7 +36,7 @@ export const ARTICLES: HelpArticle[] = [
     summary: "An overview of Provisum and how it streamlines enterprise security role migration.",
     category: "getting-started",
     roles: ALL_ROLES,
-    relatedSlugs: ["migration-workflow", "understanding-roles"],
+    relatedSlugs: ["migration-workflow", "user-management"],
     content: `## What is Provisum?
 
 Provisum is the system of record for enterprise security role migration. It automates the most labor-intensive workstream in any ERP migration: determining who gets what access in the new system.
@@ -390,7 +390,7 @@ Use the Compare view to see side-by-side metrics between two releases, useful fo
     summary: "How to invite users, manage roles, and configure access for your team.",
     category: "admin",
     roles: ADMIN_ROLES,
-    relatedSlugs: ["understanding-roles"],
+    relatedSlugs: ["user-management"],
     content: `## User Management and Invitations
 
 Provisum supports 9 roles with different access levels. Admins manage users through the admin console.
@@ -428,7 +428,7 @@ Non-admin users are scoped to their assigned org unit. A mapper assigned to "Fin
     summary: "Complete setup guide for administrators: initial configuration, data upload, pipeline stages, role assignment, and approval workflow.",
     category: "admin",
     roles: ADMIN_ROLES,
-    relatedSlugs: ["managing-users", "migration-workflow", "uploading-data"],
+    relatedSlugs: ["user-management", "migration-workflow", "uploading-data"],
     content: `## Admin Onboarding Guide
 
 This guide walks administrators through the complete Provisum setup process, from initial configuration to go-live.

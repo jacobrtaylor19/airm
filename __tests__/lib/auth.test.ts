@@ -72,8 +72,8 @@ describe("ROLE_HIERARCHY", () => {
     expect(ROLE_HIERARCHY.mapper).toBeGreaterThan(ROLE_HIERARCHY.viewer);
   });
 
-  it("contains all 7 roles", () => {
-    expect(Object.keys(ROLE_HIERARCHY)).toHaveLength(7);
+  it("contains all 9 roles", () => {
+    expect(Object.keys(ROLE_HIERARCHY)).toHaveLength(9);
   });
 });
 
