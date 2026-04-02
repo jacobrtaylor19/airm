@@ -102,10 +102,10 @@ export const MODULES: AppModule[] = [
       { href: "/risk-analysis", label: "Risk Analysis", iconName: "BarChart3" },
       { href: "/calibration", label: "Calibration", iconName: "Brain", visibleTo: MAPPER_PLUS },
       { href: "/exports", label: "Exports", iconName: "FileText" },
-      { href: "/admin/validation", label: "Validation", iconName: "FlaskConical", visibleTo: ["system_admin"] },
+      { href: "/admin/validation", label: "Validation", iconName: "FlaskConical" },
       { href: "/target-roles", label: "Target Roles", iconName: "Target" },
     ],
-    routePrefixes: ["/mapping", "/sod", "/approvals", "/risk-analysis", "/calibration", "/exports", "/admin/validation"],
+    routePrefixes: ["/mapping", "/sod", "/approvals", "/risk-analysis", "/calibration", "/exports", "/admin/validation", "/least-access"],
   },
 
   // 4. Program Management
@@ -142,7 +142,7 @@ export const MODULES: AppModule[] = [
       { href: "/target-roles", label: "Target Roles", iconName: "Target" },
       { href: "/admin/security-design", label: "Security Design Admin", iconName: "Shield", visibleTo: ["system_admin"] },
     ],
-    routePrefixes: ["/workspace/security"],
+    routePrefixes: ["/workspace/security", "/admin/security-design"],
   },
 
   // 6. Compliance Workspace
@@ -174,7 +174,7 @@ export const MODULES: AppModule[] = [
       { href: "/sod-rules", label: "SOD Rules", iconName: "BookOpen" },
       { href: "/data/existing-access", label: "Existing Prod Access", iconName: "Database" },
     ],
-    routePrefixes: ["/users", "/source-roles", "/target-roles", "/sod-rules", "/data/existing-access"],
+    routePrefixes: ["/users", "/source-roles", "/target-roles", "/sod-rules", "/data"],
   },
 
   // 8. Learn
