@@ -209,3 +209,10 @@ These are valuable features that are not prioritised for the current sprint. The
 | **Confidence Distribution Chart — histogram on `/calibration` with 10 buckets, avg score, server-rendered** | v1.0.0 |
 | **SOD Conflict Heatmap — department × severity matrix on `/sod` with color-coded intensity** | v1.0.0 |
 | **Admin Activity Pulse — last 24h/7d action counts, top actions breakdown, recent activity feed on `/admin`** | v1.0.0 |
+| **Within-Role SOD Intelligence — structural violation queries, Role Integrity tab, differentiated remediation paths, SOD badges on target roles, Risk Analysis 4th card** | v1.0.0 |
+| **Remapping Workflow — `remap_required` status, 3-option mapper UI, Re-mapping Queue on `/mapping`, admin post-redesign config** | v1.0.0 |
+| **SOD Triage Workspaces — `compliance_officer` + `security_architect` roles, `security_work_items` table, Compliance Workspace, Security Workspace, 5 API routes, notifications, audit events** | v1.0.0 |
+| **Source/Target System Typing — `system-context.ts` (10 source + 7 target types), release UI dropdowns, AI pipeline injection, system type badges** | v1.1.0 |
+| **Permission Changes drill-down — bidirectional tracking (gained + reduced), per-user detail modal with persona/perm counts** | v1.1.0 |
+| **In-App Knowledge Base — `/help` + `/help/[slug]`, 10 role-aware articles, search, category filtering, Lumen integration** | v1.1.0 |
+| **SOX/ITGC Audit Evidence Package — 5-section Excel (SOX 404 + SOC 2 CC6), `/admin/evidence-package`, generation history** | v1.1.0 |

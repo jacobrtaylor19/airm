@@ -65,7 +65,7 @@ export const MODULES: AppModule[] = [
     label: "Dashboard",
     description: "Project overview and workflow progress",
     iconName: "LayoutDashboard",
-    color: "bg-teal-500",
+    color: "bg-teal-600",
     visibleTo: ALL,
     nav: [
       { href: "/dashboard", label: "Dashboard", iconName: "LayoutDashboard", isDefault: true },
@@ -79,7 +79,7 @@ export const MODULES: AppModule[] = [
     label: "Personas",
     description: "View detailed persona information",
     iconName: "UserCircle",
-    color: "bg-violet-500",
+    color: "bg-teal-600",
     visibleTo: ALL,
     nav: [
       { href: "/personas", label: "Personas", iconName: "UserCircle", isDefault: true },
@@ -93,7 +93,7 @@ export const MODULES: AppModule[] = [
     label: "Role Mapping",
     description: "Map personas to target roles with SOD analysis and approvals",
     iconName: "Route",
-    color: "bg-blue-500",
+    color: "bg-teal-600",
     visibleTo: ALL,
     nav: [
       { href: "/mapping", label: "End User Mapping", iconName: "Route", isDefault: true },
@@ -114,7 +114,7 @@ export const MODULES: AppModule[] = [
     label: "Program Management",
     description: "Releases, timelines, workstreams, and project oversight",
     iconName: "Layers",
-    color: "bg-amber-500",
+    color: "bg-teal-600",
     visibleTo: PM_COORD_ROLES,
     nav: [
       { href: "/releases", label: "Releases", iconName: "Layers", isDefault: true },
@@ -135,7 +135,7 @@ export const MODULES: AppModule[] = [
     label: "Security Workspace",
     description: "Security design review and role redesign triage",
     iconName: "ShieldCheck",
-    color: "bg-rose-500",
+    color: "bg-teal-600",
     visibleTo: ALL, // view-only for non-security roles
     nav: [
       { href: "/workspace/security", label: "Security Triage", iconName: "ShieldCheck", isDefault: true },
@@ -151,7 +151,7 @@ export const MODULES: AppModule[] = [
     label: "Compliance Workspace",
     description: "Compliance triage and SOD conflict resolution",
     iconName: "Scale",
-    color: "bg-indigo-500",
+    color: "bg-teal-600",
     visibleTo: COMPLIANCE_ROLES,
     nav: [
       { href: "/workspace/compliance", label: "Compliance Triage", iconName: "Scale", isDefault: true },
@@ -165,7 +165,7 @@ export const MODULES: AppModule[] = [
     label: "Data",
     description: "Users, source roles, target roles, and SOD rules",
     iconName: "Database",
-    color: "bg-emerald-500",
+    color: "bg-teal-600",
     visibleTo: ALL,
     nav: [
       { href: "/users", label: "Users", iconName: "Users", isDefault: true },
@@ -183,7 +183,7 @@ export const MODULES: AppModule[] = [
     label: "Learn",
     description: "Knowledge base, methodology, and quick reference",
     iconName: "GraduationCap",
-    color: "bg-cyan-500",
+    color: "bg-teal-600",
     visibleTo: ALL,
     nav: [
       { href: "/help", label: "Knowledge Base", iconName: "HelpCircle", isDefault: true },
@@ -200,7 +200,7 @@ export const MODULES: AppModule[] = [
     label: "Admin",
     description: "System settings, user management, and monitoring",
     iconName: "Wrench",
-    color: "bg-slate-500",
+    color: "bg-teal-600",
     visibleTo: ADMIN_ROLES,
     nav: [
       { href: "/admin", label: "Config Console", iconName: "Wrench", isDefault: true, visibleTo: ["system_admin"] },

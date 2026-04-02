@@ -4,6 +4,40 @@ All notable feature additions and changes are documented here. Most recent first
 
 ---
 
+## [1.1.0] — 2026-04-01 — Source System Typing + Knowledge Base + SOX Evidence
+
+### Source and Target System Typing
+- **System context module** (`lib/ai/system-context.ts`): 10 source system types (SAP ECC, S/4HANA, BW, Oracle EBS, Oracle Cloud, Workday, Dynamics 365/AX, ServiceNow, Other) and 7 target system types with structured prompt context (permission units, role units, naming conventions)
+- **Release-level system config**: `defaultSourceSystemType` + `targetSystemType` columns on releases, `sourceSystemTypeOverride` on release org units
+- **Release UI**: Source/target system dropdowns replace freetext field; system type badges on release cards
+- **AI pipeline injection**: `buildSystemContextPrompt()` injected into persona generation and target role mapping prompts from the active release's system types
+
+### Permission Changes Drill-Down
+- **Bidirectional tracking**: Adoption Risk card renamed "Permission Changes" — now shows users gaining AND losing access
+- **Drill-down modal**: Click the card to see per-user detail with persona, source/target permission counts, gained/lost counts, net change direction
+- **Filter tabs**: All / Gaining / Reduced filters in the drill-down modal
+- **New query fields**: `usersWithReducedAccess`, `totalLostPerms`, `adoptionUserList` in `AggregateRiskAnalysis`
+
+### In-App Knowledge Base (v1.2.0)
+- **Help center**: `/help` index page with client-side search and category filtering (7 categories)
+- **Article pages**: `/help/[slug]` with markdown-to-HTML renderer, related articles, Lumen integration prompt
+- **10 role-aware articles**: What is Provisum, 5-Stage Workflow, Uploading Data, Security Personas, Mapping Roles, SOD Resolution, Compliance Workspace, AI Confidence Scores, Release Management, User Management
+- **Role filtering**: Articles scoped by role (e.g., admin-only articles hidden from viewers)
+- **Sidebar link**: "Knowledge Base" added under LEARN section
+
+### SOX/ITGC Audit Evidence Package
+- **Evidence generator** (`lib/exports/evidence-package.ts`): 5-section Excel workbook — Cover Sheet, Control Summary (SOX 404 or SOC 2 CC6), User Access Matrix, Persona Assignment Audit Trail, SOD Conflict Register, Approval Audit Trail
+- **Two frameworks**: SOX 404 (7 ITGC controls) and SOC 2 CC6 (4 controls) with framework-specific control mappings
+- **Generation history**: `evidence_package_runs` table tracking all generations with population stats
+- **Admin UI**: `/admin/evidence-package` with framework/scope selectors and generation history table
+- **API**: `GET/POST /api/admin/evidence-package` — list runs / generate & download
+
+### Infrastructure
+- **New table**: `evidence_package_runs` (53 tables total)
+- **Schema columns**: `default_source_system_type`, `target_system_type` on releases; `source_system_type_override` on release_org_units
+
+---
+
 ## [0.7.0] — 2026-03-28 — Supabase Auth + Risk Quantification + Due Dates
 
 ### Supabase Auth Migration
