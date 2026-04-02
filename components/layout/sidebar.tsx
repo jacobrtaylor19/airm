@@ -35,6 +35,8 @@ import {
   Shield,
   AlertTriangle as AlertTriangleIcon,
   HeartPulse,
+  Scale,
+  ShieldCheck,
 } from "lucide-react";
 
 interface NavItem {
@@ -65,6 +67,13 @@ const navSections: NavSection[] = [
       { href: "/approvals", label: "Approvals", icon: CheckCircle },
       { href: "/inbox", label: "Inbox", icon: Inbox },
       { href: "/notifications", label: "Send Reminders", icon: Bell, minRole: ["admin", "system_admin", "coordinator"] },
+    ],
+  },
+  {
+    label: "WORKSPACES",
+    items: [
+      { href: "/workspace/compliance", label: "Compliance", icon: Scale, minRole: ["compliance_officer", "admin", "system_admin"] },
+      { href: "/workspace/security", label: "Security Design", icon: ShieldCheck, minRole: ["security_architect", "admin", "system_admin"] },
     ],
   },
   {

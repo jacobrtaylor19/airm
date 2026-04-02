@@ -7,6 +7,7 @@ import {
   AlertTriangle,
   XCircle,
   Clock,
+  Layers,
 } from "lucide-react";
 
 export interface SodSummary {
@@ -17,10 +18,13 @@ export interface SodSummary {
   open: number;
   pendingRiskAcceptance: number;
   resolved: number;
+  withinRole: number;
+  betweenRole: number;
 }
 
 export function SodSummaryCards({ summary }: { summary: SodSummary }) {
   return (
+    <>
     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
       <Card className="border-red-200">
         <CardContent className="pt-4 pb-3">
@@ -68,5 +72,30 @@ export function SodSummaryCards({ summary }: { summary: SodSummary }) {
         </CardContent>
       </Card>
     </div>
+    {(summary.withinRole > 0 || summary.betweenRole > 0) && (
+      <Card className="border-slate-200 mt-3">
+        <CardContent className="pt-4 pb-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Layers className="h-4 w-4 text-slate-500" />
+            <p className="text-xs font-medium text-muted-foreground">Conflict Origin</p>
+          </div>
+          <div className="flex items-center gap-4">
+            {summary.withinRole > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-500" />
+                <span className="text-sm font-semibold text-amber-700">{summary.withinRole}</span>
+                <span className="text-xs text-muted-foreground">structural (within-role)</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-500" />
+              <span className="text-sm font-semibold text-blue-700">{summary.betweenRole}</span>
+              <span className="text-xs text-muted-foreground">cross-assignment (between-role)</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )}
+    </>
   );
 }

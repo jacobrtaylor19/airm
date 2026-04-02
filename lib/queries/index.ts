@@ -10,3 +10,5 @@ export * from "./common";
 export * from "./jobs";
 export * from "./audit";
 export * from "./migration-health";
+export * from "./assignments";
+export * from "./sod-triage";

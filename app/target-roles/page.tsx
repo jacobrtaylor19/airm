@@ -1,4 +1,4 @@
-import { getTargetRoles, getTargetRolePermissions } from "@/lib/queries";
+import { getTargetRoles, getTargetRolePermissions, getWithinRoleViolations } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 import { TargetRolesClient } from "./target-roles-client";
@@ -8,13 +8,26 @@ export const dynamic = "force-dynamic";
 export default async function TargetRolesPage() {
   const currentUser = await getSessionUser();
   const orgId = getOrgId(currentUser!);
-  const roles = await getTargetRoles(orgId);
+  const [roles, withinRoleViolations] = await Promise.all([
+    getTargetRoles(orgId),
+    getWithinRoleViolations(orgId),
+  ]);
   const isAdmin = currentUser ? ["admin", "system_admin"].includes(currentUser.role) : false;
 
   // Pre-fetch permission details for all roles (expandable rows need them)
   const rolePermissions: Record<number, { id: number; permissionId: string; permissionName: string | null; permissionType: string | null; riskLevel: string | null }[]> = {};
   for (const role of roles) {
     rolePermissions[role.id] = await getTargetRolePermissions(role.id);
+  }
+
+  // Build violation lookup map
+  const sodViolationMap: Record<number, { violationCount: number; affectedUserCount: number; worstSeverity: string }> = {};
+  for (const v of withinRoleViolations) {
+    sodViolationMap[v.roleId] = {
+      violationCount: v.violationCount,
+      affectedUserCount: v.affectedUserCount,
+      worstSeverity: v.worstSeverity,
+    };
   }
 
   return (
@@ -29,7 +42,7 @@ export default async function TargetRolesPage() {
           <a href="/upload" className="text-primary hover:underline">Data Upload</a> page.
         </div>
       ) : (
-        <TargetRolesClient roles={roles} rolePermissions={rolePermissions} isAdmin={isAdmin} />
+        <TargetRolesClient roles={roles} rolePermissions={rolePermissions} isAdmin={isAdmin} sodViolationMap={sodViolationMap} />
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import {
   getPersonaSourceSystems,
   getGapAnalysisSummary,
   getUserRefinementDetails,
+  getRemappingQueue,
 } from "@/lib/queries";
 import { getSetting } from "@/lib/settings";
 import type { PersonaSodConflict } from "@/lib/queries";
@@ -18,6 +19,7 @@ import { getUserScope } from "@/lib/scope";
 import { getReleasesForAppUser, getReleaseUserIds } from "@/lib/releases";
 import { cookies } from "next/headers";
 import { MappingClient } from "./mapping-client";
+import { RemappingQueue } from "./remapping-queue";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -98,6 +100,10 @@ export default async function MappingPage() {
     }
   });
 
+  // Get remapping queue items (scoped to mapper's org units)
+  const scopedIds = user.role === "mapper" ? await getUserScope(user) : null;
+  const remappingQueueItems = await getRemappingQueue(orgId, scopedIds);
+
   // Get open SOD conflicts grouped by persona for warning banners
   const sodConflictMap = await getOpenSodConflictsByPersona(orgId);
   const sodConflictsByPersona: Record<number, PersonaSodConflict[]> = {};
@@ -113,6 +119,7 @@ export default async function MappingPage() {
       <p className="text-sm text-muted-foreground">
         Map personas to target security roles using least-access principles.
       </p>
+      <RemappingQueue items={remappingQueueItems} />
       <MappingClient
         personas={personas}
         personaDetails={personaDetails}

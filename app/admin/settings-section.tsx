@@ -408,6 +408,33 @@ export function WorkflowSettingsSection({
               </p>
             </div>
 
+            {/* Re-mapping Queue Behavior */}
+            <div className="space-y-2">
+              <Label>Re-mapping Queue — Post-Redesign Behavior</Label>
+              <div className="space-y-2 ml-1">
+                {[
+                  { value: "remap_queue", label: "Re-mapping Queue", desc: "Assignments flagged remap_required; mappers manually confirm or reassign" },
+                  { value: "auto_transition", label: "Auto-transition", desc: "Assignments automatically re-submitted for SOD analysis using the updated role" },
+                  { value: "hold_state", label: "Hold State", desc: "Assignments frozen at current status pending explicit mapper action" },
+                ].map((opt) => (
+                  <div key={opt.value} className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      id={`redesign-${opt.value}`}
+                      name="postRedesignBehavior"
+                      checked={(settings["workflow.postRedesignBehavior"] || "remap_queue") === opt.value}
+                      onChange={() => onUpdateSetting("workflow.postRedesignBehavior", opt.value)}
+                      className="mt-0.5 h-4 w-4 accent-primary"
+                    />
+                    <Label htmlFor={`redesign-${opt.value}`} className="font-normal">
+                      <span className="font-medium">{opt.label}</span>
+                      <p className="text-xs text-muted-foreground">{opt.desc}</p>
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex items-center gap-2">
               <Button
                 onClick={() =>
@@ -419,6 +446,7 @@ export function WorkflowSettingsSection({
                     "workflow.sodMediumRiskAcceptable",
                     "workflow.sodLowRiskAcceptable",
                     "least_access_threshold",
+                    "workflow.postRedesignBehavior",
                   ])
                 }
                 disabled={settingsSaving}

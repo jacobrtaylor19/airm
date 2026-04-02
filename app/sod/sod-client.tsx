@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Sparkles, Filter, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import type { SodConflictDetailed } from "@/lib/queries";
+import type { SodConflictDetailed, WithinRoleViolation } from "@/lib/queries";
 
 import { SodSummaryCards } from "./sod-summary-cards";
 import type { SodSummary } from "./sod-summary-cards";
@@ -15,6 +15,7 @@ import { ConflictList } from "./conflict-list";
 import { ResolutionDialogs } from "./resolution-dialogs";
 import type { ConfirmDialogState } from "./resolution-dialogs";
 import { SodHeatmap } from "./sod-heatmap";
+import { RoleIntegrityTab } from "./role-integrity-tab";
 
 export { type SodSummary } from "./sod-summary-cards";
 
@@ -23,11 +24,13 @@ export function SodPageClient({
   summary,
   userRole,
   userName,
+  withinRoleViolations = [],
 }: {
   conflicts: SodConflictDetailed[];
   summary: SodSummary;
   userRole: string | null;
   userName?: string | null;
+  withinRoleViolations?: WithinRoleViolation[];
 }) {
   const [running, setRunning] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -39,6 +42,7 @@ export function SodPageClient({
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [conflictTypeFilter, setConflictTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"conflicts" | "integrity">("conflicts");
   const router = useRouter();
 
   const isMapper = userRole === "mapper";
@@ -170,6 +174,29 @@ export function SodPageClient({
     }
   }
 
+  async function remapConflict(conflictId: number) {
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/sod/remap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conflictId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to send to re-mapping queue");
+      } else {
+        toast.success("Assignment sent to re-mapping queue");
+      }
+    } catch (err) {
+      toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
+    } finally {
+      setSubmitting(false);
+      setExpandedId(null);
+      router.refresh();
+    }
+  }
+
   async function escalateToSecurity(conflictId: number, comment: string) {
     if (!comment.trim()) return;
     setSubmitting(true);
@@ -215,6 +242,45 @@ export function SodPageClient({
       {/* Department × Severity Heatmap */}
       <SodHeatmap conflicts={conflicts} />
 
+      {/* Tabs: Conflicts | Role Integrity */}
+      {canSeeWithinRole && (
+        <div className="flex border-b">
+          <button
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "conflicts"
+                ? "border-teal-500 text-teal-700"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={() => setActiveTab("conflicts")}
+          >
+            Conflicts
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+              activeTab === "integrity"
+                ? "border-teal-500 text-teal-700"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+            onClick={() => setActiveTab("integrity")}
+          >
+            Role Integrity
+            {withinRoleViolations.length > 0 && (
+              <span className="ml-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-100 text-amber-700 text-xs font-semibold px-1.5">
+                {withinRoleViolations.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* Role Integrity Tab */}
+      {activeTab === "integrity" && canSeeWithinRole && (
+        <RoleIntegrityTab violations={withinRoleViolations} />
+      )}
+
+      {/* Conflicts Tab */}
+      {activeTab === "conflicts" && (
+      <>
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
@@ -287,11 +353,14 @@ export function SodPageClient({
         onRequestRiskAcceptance={requestRiskAcceptance}
         onApproveOrRejectRisk={approveOrRejectRisk}
         onEscalateToSecurity={escalateToSecurity}
+        onRemap={remapConflict}
         onSetConfirmDialog={setConfirmDialog}
         userRole={userRole}
         running={running}
         onRunAnalysis={runAnalysis}
       />
+      </>
+      )}
 
       {/* Resolution Dialogs */}
       <ResolutionDialogs

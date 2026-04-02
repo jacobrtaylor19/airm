@@ -1000,3 +1000,19 @@ export const chatConversations = pgTable("chat_conversations", {
   createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
 });
+
+// ── SOD Triage Workspaces ─────────────────────────────────────────
+export const securityWorkItems = pgTable("security_work_items", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  sodConflictId: integer("sod_conflict_id").notNull(),
+  targetRoleId: integer("target_role_id").notNull(),
+  createdByUserId: integer("created_by_user_id").notNull(),
+  assignedToUserId: integer("assigned_to_user_id"),
+  status: text("status").notNull().default("open"), // open | in_progress | resolved | wont_fix
+  complianceNotes: text("compliance_notes"),
+  securityNotes: text("security_notes"),
+  completedAt: text("completed_at"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});

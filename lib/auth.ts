@@ -73,6 +73,8 @@ export const ROLE_HIERARCHY: Record<string, number> = {
   admin: 80,
   project_manager: 70,
   approver: 60,
+  security_architect: 58,
+  compliance_officer: 55,
   coordinator: 50,
   mapper: 40,
   viewer: 20,
@@ -84,6 +86,14 @@ export function isSystemAdmin(user: AppUser): boolean {
 
 export function isAdminOrAbove(user: AppUser): boolean {
   return user.role === "admin" || user.role === "system_admin";
+}
+
+export function canAccessComplianceWorkspace(role: string): boolean {
+  return (ROLE_HIERARCHY[role] ?? 0) >= ROLE_HIERARCHY["compliance_officer"];
+}
+
+export function canAccessSecurityWorkspace(role: string): boolean {
+  return (ROLE_HIERARCHY[role] ?? 0) >= ROLE_HIERARCHY["security_architect"];
 }
 
 export async function hasAppUsers(): Promise<boolean> {

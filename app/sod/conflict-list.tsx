@@ -17,6 +17,8 @@ import {
   XCircle,
   Clock,
   Send,
+  Settings2,
+  RefreshCw,
 } from "lucide-react";
 import type { SodConflictDetailed } from "@/lib/queries";
 
@@ -34,6 +36,7 @@ const statusConfig: Record<string, { color: string; label: string }> = {
   mapping_fixed: { color: "bg-green-50 text-green-700 border-green-200", label: "Resolved - Mapping Fixed" },
   escalated: { color: "bg-purple-50 text-purple-700 border-purple-200", label: "Escalated" },
   sod_escalated: { color: "bg-purple-50 text-purple-700 border-purple-200", label: "Escalated to S/C" },
+  remapping_in_progress: { color: "bg-indigo-50 text-indigo-700 border-indigo-200", label: "Remapping" },
 };
 
 export interface ConflictListProps {
@@ -52,6 +55,7 @@ export interface ConflictListProps {
   onRequestRiskAcceptance: (conflictId: number) => void;
   onApproveOrRejectRisk: (conflictId: number, action: "approve" | "reject") => void;
   onEscalateToSecurity: (conflictId: number, comment: string) => void;
+  onRemap?: (conflictId: number) => void;
   onSetConfirmDialog: (dialog: {
     type: "remove_role" | "approve_risk" | "reject_risk";
     conflict: SodConflictDetailed;
@@ -78,6 +82,7 @@ export function ConflictList({
   setRiskJustification,
   onRequestRiskAcceptance,
   onEscalateToSecurity,
+  onRemap,
   onSetConfirmDialog,
   userRole,
   running,
@@ -189,17 +194,43 @@ export function ConflictList({
                 {/* Resolution Options — only for open conflicts */}
                 {c.resolutionStatus === "open" && c.conflictType === "within_role" && (
                   <div>
-                    <h4 className="text-sm font-semibold mb-3">Within-Role Conflict</h4>
-                    <div className="rounded-lg border border-purple-200 bg-purple-50/50 p-4 mb-3">
-                      <p className="text-sm text-purple-900/80">
-                        This role contains conflicting permissions and needs to be reviewed by the Security/GRC team.
-                        The role <strong>{c.roleNameA ?? "this role"}</strong> includes both{" "}
-                        <strong>{c.permissionNameA ?? c.permissionIdA}</strong> and{" "}
-                        <strong>{c.permissionNameB ?? c.permissionIdB}</strong>, which violate segregation of duties.
-                        The role itself must be redesigned or split — removing the role from one user does not fix the underlying issue.
+                    {/* Structural violation notice */}
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-3">
+                      <p className="text-xs text-amber-700">
+                        <span className="font-semibold">This conflict is structural</span> — both permissions exist within a single role definition.
+                        All users assigned this role are affected. Editing the role definition is required for a permanent fix.
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+
+                    <h4 className="text-sm font-semibold mb-3">Within-Role Conflict</h4>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                      {/* Edit Role Definition */}
+                      <Card className="border-slate-200">
+                        <CardHeader className="py-3 px-4">
+                          <CardTitle className="text-xs font-semibold text-slate-800">
+                            Edit Role Definition
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="px-4 pb-3 space-y-2">
+                          <p className="text-xs text-muted-foreground">
+                            The role <span className="font-medium">{c.roleNameA ?? "this role"}</span> must be
+                            corrected to remove the conflicting permissions.
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full text-xs h-7 mt-1"
+                            asChild
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <a href="/target-roles">
+                              <Settings2 className="h-3 w-3 mr-1" />
+                              Edit Role
+                            </a>
+                          </Button>
+                        </CardContent>
+                      </Card>
+
                       {/* Escalate to Security Team */}
                       <Card className="border-purple-200">
                         <CardHeader className="py-3 px-4">
@@ -209,8 +240,7 @@ export function ConflictList({
                         </CardHeader>
                         <CardContent className="px-4 pb-3 space-y-2">
                           <p className="text-xs text-muted-foreground">
-                            Send this conflict to the Security/GRC team for role redesign. They will review
-                            and split the role to eliminate the inherent conflict.
+                            Send this conflict to the Security/GRC team for role redesign.
                           </p>
                           <Input
                             placeholder="Explain why you are escalating (required)..."
@@ -230,7 +260,7 @@ export function ConflictList({
                             }}
                           >
                             {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : (
-                              <><Send className="h-3 w-3 mr-1" /> Escalate to Security Team</>
+                              <><Send className="h-3 w-3 mr-1" /> Escalate</>
                             )}
                           </Button>
                         </CardContent>
@@ -418,6 +448,36 @@ export function ConflictList({
                           )}
                         </CardContent>
                       </Card>
+
+                      {/* Option D: Remap */}
+                      {onRemap && canFixMapping && (
+                        <Card className="border-indigo-200">
+                          <CardHeader className="py-3 px-4">
+                            <CardTitle className="text-xs font-semibold text-indigo-800">
+                              Option D: Remap
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="px-4 pb-3 space-y-2">
+                            <p className="text-xs text-muted-foreground">
+                              Send to Re-mapping Queue to assign a different target role.
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="w-full text-xs h-7 mt-1 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
+                              disabled={submitting}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onRemap(c.id);
+                              }}
+                            >
+                              {submitting ? <Loader2 className="h-3 w-3 animate-spin" /> : (
+                                <><RefreshCw className="h-3 w-3 mr-1" /> Remap</>
+                              )}
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
                   </div>
                 )}

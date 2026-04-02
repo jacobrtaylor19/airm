@@ -1,4 +1,4 @@
-import { getSodConflictsDetailed } from "@/lib/queries";
+import { getSodConflictsDetailed, getWithinRoleViolations } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 import { getUserScope } from "@/lib/scope";
@@ -10,6 +10,7 @@ export default async function SodConflictAnalysisPage() {
   const currentUser = await getSessionUser();
   const orgId = getOrgId(currentUser!);
   let conflicts = await getSodConflictsDetailed(orgId);
+  const withinRoleViolations = await getWithinRoleViolations(orgId);
 
   // Filter by org scope for mappers/approvers/coordinators
   if (currentUser && ["mapper", "approver", "coordinator"].includes(currentUser.role)) {
@@ -28,6 +29,8 @@ export default async function SodConflictAnalysisPage() {
     open: conflicts.filter(c => c.resolutionStatus === "open").length,
     pendingRiskAcceptance: conflicts.filter(c => c.resolutionStatus === "pending_risk_acceptance").length,
     resolved: conflicts.filter(c => !["open", "pending_risk_acceptance"].includes(c.resolutionStatus)).length,
+    withinRole: conflicts.filter(c => c.conflictType === "within_role").length,
+    betweenRole: conflicts.filter(c => c.conflictType === "between_role").length,
   };
 
   return (
@@ -40,6 +43,7 @@ export default async function SodConflictAnalysisPage() {
         summary={summary}
         userRole={currentUser?.role ?? null}
         userName={currentUser?.username ?? null}
+        withinRoleViolations={withinRoleViolations}
       />
     </div>
   );

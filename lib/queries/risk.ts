@@ -95,6 +95,11 @@ export interface AggregateRiskAnalysis {
     flaggedUsers: number;
     flaggedUserList: FlaggedUser[];
   };
+  roleIntegrity: {
+    rolesWithViolations: number;
+    affectedUsers: number;
+    criticalOrHighRoles: number;
+  };
   totalUsersAnalyzed: number;
 }
 
@@ -135,12 +140,13 @@ export async function getAggregateRiskAnalysis(
       businessContinuity: { usersAtRisk: 0, totalUncoveredPerms: 0, avgCoverage: 100 },
       adoption: { usersWithNewAccess: 0, totalNewPerms: 0 },
       incorrectAccess: { flaggedUsers: 0, flaggedUserList: [] },
+      roleIntegrity: { rolesWithViolations: 0, affectedUsers: 0, criticalOrHighRoles: 0 },
       totalUsersAnalyzed: 0,
     };
   }
 
-  // 2-4. Bulk load source assignments, target assignments, and SOD conflicts in PARALLEL
-  const [sourceRoleAssignments, targetRoleAssignments, sodConflictRows] = await Promise.all([
+  // 2-4. Bulk load source assignments, target assignments, SOD conflicts, and within-role data in PARALLEL
+  const [sourceRoleAssignments, targetRoleAssignments, sodConflictRows, withinRoleRows] = await Promise.all([
     db.select({
       userId: schema.userSourceRoleAssignments.userId,
       sourceRoleId: schema.userSourceRoleAssignments.sourceRoleId,
@@ -162,6 +168,20 @@ export async function getAggregateRiskAnalysis(
     .from(schema.sodConflicts)
     .where(inArray(schema.sodConflicts.userId, userIds))
     .groupBy(schema.sodConflicts.userId),
+
+    // Within-role conflicts for role integrity metrics
+    db.select({
+      roleId: schema.sodConflicts.roleIdA,
+      userId: schema.sodConflicts.userId,
+      severity: schema.sodConflicts.severity,
+    })
+    .from(schema.sodConflicts)
+    .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
+    .where(and(
+      eq(schema.sodConflicts.conflictType, "within_role"),
+      orgScope(schema.users.organizationId, orgId),
+      scopedUserIds ? inArray(schema.sodConflicts.userId, scopedUserIds) : undefined,
+    )),
   ]);
 
   // Load source and target permission mappings in parallel
@@ -285,6 +305,19 @@ export async function getAggregateRiskAnalysis(
   // Sort flagged users by SOD conflict count descending
   flaggedUserList.sort((a, b) => b.sodConflictCount - a.sodConflictCount);
 
+  // Compute role integrity metrics
+  const withinRoleRoles = new Set<number>();
+  const withinRoleUsers = new Set<number>();
+  const criticalOrHighRoleIds = new Set<number>();
+  for (const r of withinRoleRows) {
+    if (r.roleId == null) continue;
+    withinRoleRoles.add(r.roleId);
+    withinRoleUsers.add(r.userId);
+    if (r.severity === "critical" || r.severity === "high") {
+      criticalOrHighRoleIds.add(r.roleId);
+    }
+  }
+
   return {
     businessContinuity: {
       usersAtRisk,
@@ -298,6 +331,11 @@ export async function getAggregateRiskAnalysis(
     incorrectAccess: {
       flaggedUsers: flaggedUserList.length,
       flaggedUserList,
+    },
+    roleIntegrity: {
+      rolesWithViolations: withinRoleRoles.size,
+      affectedUsers: withinRoleUsers.size,
+      criticalOrHighRoles: criticalOrHighRoleIds.size,
     },
     totalUsersAnalyzed: analyzedCount,
   };

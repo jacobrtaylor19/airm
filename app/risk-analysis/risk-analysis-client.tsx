@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Shield, TrendingUp, Users } from "lucide-react";
+import { AlertTriangle, Shield, TrendingUp, Users, ShieldCheck } from "lucide-react";
 import type { AggregateRiskAnalysis } from "@/lib/queries";
 
 interface Props {
@@ -32,11 +32,12 @@ export function RiskAnalysisClient({ risk }: Props) {
   const bcLevel = riskLevel(risk.businessContinuity.usersAtRisk, [5, 20]);
   const adoptionLevel = riskLevel(risk.adoption.usersWithNewAccess, [10, 30]);
   const accessLevel = riskLevel(risk.incorrectAccess.flaggedUsers, [3, 10]);
+  const integrityLevel = riskLevel(risk.roleIntegrity.rolesWithViolations, [0, 3]);
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {/* Business Continuity */}
         <Card className={bcLevel === "high" ? "border-red-200" : bcLevel === "medium" ? "border-yellow-200" : ""}>
           <CardHeader className="pb-2">
@@ -115,6 +116,43 @@ export function RiskAnalysisClient({ risk }: Props) {
               <p className="text-2xl font-bold tabular-nums">{risk.incorrectAccess.flaggedUsers}</p>
               <p className="text-xs text-muted-foreground">Flagged users requiring review</p>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Role Integrity */}
+        <Card className={integrityLevel === "high" ? "border-violet-300" : integrityLevel === "medium" ? "border-violet-200" : ""}>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-violet-500" />
+                Role Integrity
+              </CardTitle>
+              <RiskBadge level={integrityLevel} />
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {risk.roleIntegrity.rolesWithViolations === 0 ? (
+              <p className="text-xs text-emerald-600 font-medium">No structural role violations detected.</p>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  Roles with structural SOD violations embedded in their definition.
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-2xl font-bold tabular-nums text-violet-600">{risk.roleIntegrity.rolesWithViolations}</p>
+                    <p className="text-xs text-muted-foreground">Compromised Roles</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold tabular-nums">{risk.roleIntegrity.affectedUsers}</p>
+                    <p className="text-xs text-muted-foreground">Affected Users</p>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  {risk.roleIntegrity.criticalOrHighRoles} critical or high severity
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
