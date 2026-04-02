@@ -138,10 +138,7 @@ export default function CalibrationClient({ userRole }: { userRole: string }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Confidence Calibration
-          </h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Review low-confidence AI persona assignments. Accept, reassign, or
             remove.
           </p>

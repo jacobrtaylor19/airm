@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Sparkles, Filter, Search } from "lucide-react";
+import { Loader2, Sparkles, Filter, Search, ShieldCheck } from "lucide-react";
+import { EmptyState } from "@/components/shared/empty-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import type { SodConflictDetailed, WithinRoleViolation } from "@/lib/queries";
@@ -219,6 +220,32 @@ export function SodPageClient({
       setExpandedId(null);
       router.refresh();
     }
+  }
+
+  if (conflicts.length === 0 && withinRoleViolations.length === 0) {
+    return (
+      <div className="space-y-6">
+        {userRole && ["system_admin", "admin", "mapper"].includes(userRole) && (
+          <div className="flex items-center gap-3">
+            <Button onClick={runAnalysis} disabled={running} size="sm" className="bg-teal-500 hover:bg-teal-600 text-white">
+              {running ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
+              ) : (
+                <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
+              )}
+            </Button>
+          </div>
+        )}
+        <EmptyState
+          icon={ShieldCheck}
+          title="No SOD conflicts detected"
+          description="Run the SOD analysis to check for segregation of duties conflicts across your role mappings. Conflicts will appear here for review and resolution."
+          actionLabel="View Mapping"
+          actionHref="/mapping"
+          actionVariant="teal"
+        />
+      </div>
+    );
   }
 
   return (

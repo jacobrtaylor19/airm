@@ -10,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { CheckCircle, CheckCircle2, XCircle, Loader2, Filter, ChevronDown, Building2, AlertTriangle } from "lucide-react";
+import { CheckCircle, CheckCircle2, XCircle, Loader2, Filter, ChevronDown, Building2, AlertTriangle, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import type { ApprovalRow } from "@/lib/queries";
+import { EmptyState } from "@/components/shared/empty-state";
 
 interface DepartmentStat {
   name: string;
@@ -194,6 +195,19 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
     a.status === "approved") &&
     (deptFilter === "all" || a.department === deptFilter)
   );
+
+  if (queue.length === 0) {
+    return (
+      <EmptyState
+        icon={ClipboardCheck}
+        title="No assignments in the approval queue"
+        description="Assignments will appear here once personas have been mapped to target roles and submitted for review. Complete the mapping workflow first."
+        actionLabel="View Mapping"
+        actionHref="/mapping"
+        actionVariant="teal"
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">

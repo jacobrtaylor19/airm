@@ -26,13 +26,13 @@ interface Props {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  "getting-started": "bg-emerald-100 text-emerald-700 border-emerald-200",
-  workflow: "bg-blue-100 text-blue-700 border-blue-200",
-  admin: "bg-zinc-100 text-zinc-700 border-zinc-200",
-  roles: "bg-purple-100 text-purple-700 border-purple-200",
-  sod: "bg-red-100 text-red-700 border-red-200",
-  ai: "bg-teal-100 text-teal-700 border-teal-200",
-  troubleshooting: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  "getting-started": "border-blue-300 text-blue-700 bg-blue-50",
+  workflow: "border-teal-300 text-teal-700 bg-teal-50",
+  admin: "border-slate-300 text-slate-600 bg-slate-50",
+  roles: "border-purple-300 text-purple-700 bg-purple-50",
+  sod: "border-amber-300 text-amber-700 bg-amber-50",
+  ai: "border-violet-300 text-violet-700 bg-violet-50",
+  troubleshooting: "border-orange-300 text-orange-700 bg-orange-50",
 };
 
 /**

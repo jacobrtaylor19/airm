@@ -15,6 +15,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -424,19 +425,28 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
   return (
     <>
       {/* Floating toggle button */}
-      <button
-        onClick={() => setIsOpen((prev) => !prev)}
-        className={cn(
-          "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center",
-          "rounded-full bg-teal-500 text-white shadow-lg",
-          "transition-all duration-200 hover:bg-teal-600 hover:shadow-xl hover:scale-105",
-          "focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2",
-          isOpen && "scale-0 opacity-0 pointer-events-none"
-        )}
-        aria-label="Open Lumen assistant"
-      >
-        <Sparkles className="h-6 w-6" />
-      </button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => setIsOpen((prev) => !prev)}
+              className={cn(
+                "fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center",
+                "rounded-full bg-teal-500 text-white shadow-lg",
+                "transition-all duration-200 hover:bg-teal-600 hover:shadow-xl hover:scale-105",
+                "focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2",
+                isOpen && "scale-0 opacity-0 pointer-events-none"
+              )}
+              aria-label="Open Lumen assistant"
+            >
+              <Sparkles className="h-6 w-6" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            Ask Lumen AI
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* Chat panel */}
       <div

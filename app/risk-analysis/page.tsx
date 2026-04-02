@@ -15,15 +15,5 @@ export default async function RiskAnalysisPage() {
   const scopedUserIds = await getUserScope(user);
   const risk = await getAggregateRiskAnalysis(orgId, scopedUserIds);
 
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Risk Analysis</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Aggregated risk metrics across {risk.totalUsersAnalyzed} analyzed users
-        </p>
-      </div>
-      <RiskAnalysisClient risk={risk} />
-    </div>
-  );
+  return <RiskAnalysisClient risk={risk} />;
 }

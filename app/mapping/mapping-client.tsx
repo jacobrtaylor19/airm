@@ -11,6 +11,8 @@ import { RoleAssignmentPanel } from "./role-assignment-panel";
 import { AutoMapProgress } from "./auto-map-progress";
 import { RefinementsTab, GapAnalysisTab } from "./user-refinements";
 import { AISuggestionsModal } from "./ai-suggestions-modal";
+import { EmptyState } from "@/components/shared/empty-state";
+import { Route } from "lucide-react";
 
 export interface PersonaDetailInfo {
   sourcePermissionCount: number;
@@ -200,6 +202,19 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
   // Count refinements vs defaults
   const refinementCount = refinementDetails.filter(r => r.individualOverrides.length > 0).length;
   const totalUsersWithAssignments = refinementDetails.length;
+
+  if (personas.length === 0) {
+    return (
+      <EmptyState
+        icon={Route}
+        title="No personas available for mapping"
+        description="Personas need to be generated before you can map them to target roles. Upload source data and run the AI persona generation pipeline to get started."
+        actionLabel="Upload Source Data"
+        actionHref="/upload"
+        actionVariant="teal"
+      />
+    );
+  }
 
   return (
     <Tabs defaultValue="persona-mapping">

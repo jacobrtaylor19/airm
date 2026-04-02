@@ -20,8 +20,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, CheckCircle, Clock, Archive, Zap, Trash2, Pencil, Star, CalendarClock, ChevronDown, ChevronRight, Circle, AlertCircle } from "lucide-react";
+import { Plus, CheckCircle, Clock, Archive, Zap, Trash2, Pencil, Star, CalendarClock, ChevronDown, ChevronRight, Circle, AlertCircle, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SOURCE_SYSTEM_TYPES, TARGET_SYSTEM_TYPES, getSourceSystemLabel, getTargetSystemLabel } from "@/lib/ai/system-context";
 
 type ReleaseStats = { total: number; approved: number; sodFlagged: number; pending: number; pct: number; userCount: number; orgUnitCount: number };
@@ -228,6 +244,7 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ReleaseRow | null>(null);
 
   function openCreate() {
     setEditRelease(null);
@@ -300,7 +317,6 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
   }
 
   async function deleteRelease(r: ReleaseRow) {
-    if (!confirm(`Delete "${r.name}"? Assignments will be unlinked (not deleted).`)) return;
     setDeletingId(r.id);
     try {
       const res = await fetch(`/api/releases?id=${r.id}`, { method: "DELETE" });
@@ -321,8 +337,7 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Releases</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <p className="text-sm text-muted-foreground">
             Migration waves — each release tracks a set of user role assignments through the approval workflow.
           </p>
         </div>
@@ -499,15 +514,22 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                       <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openEdit(r)}>
                         <Pencil className="h-3 w-3" /> Edit
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs gap-1 text-destructive hover:text-destructive ml-auto"
-                        onClick={() => deleteRelease(r)}
-                        disabled={deletingId === r.id}
-                      >
-                        <Trash2 className="h-3 w-3" /> Delete
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 ml-auto">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setDeleteTarget(r)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5 mr-2" />
+                            Delete Release
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   )}
                 </CardContent>
@@ -516,6 +538,33 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
           })}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Release</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &ldquo;{deleteTarget?.name}&rdquo;? Assignments will be unlinked but not deleted. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={deletingId === deleteTarget?.id}
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteRelease(deleteTarget);
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Create / Edit Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>

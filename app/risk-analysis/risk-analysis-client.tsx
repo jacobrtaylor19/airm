@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { AlertTriangle, Shield, TrendingUp, TrendingDown, Users, ShieldCheck, ArrowUpDown } from "lucide-react";
 import type { AggregateRiskAnalysis } from "@/lib/queries";
+import { cn } from "@/lib/utils";
 
 interface Props {
   risk: AggregateRiskAnalysis;
@@ -181,7 +182,7 @@ export function RiskAnalysisClient({ risk }: Props) {
       {/* Analysis Overview */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+          <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
             <Users className="h-4 w-4" />
             Analysis Summary
           </CardTitle>
@@ -309,7 +310,7 @@ export function RiskAnalysisClient({ risk }: Props) {
       {risk.incorrectAccess.flaggedUserList.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+            <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-red-500" />
               Flagged Users ({risk.incorrectAccess.flaggedUserList.length})
             </CardTitle>
@@ -336,14 +337,21 @@ export function RiskAnalysisClient({ risk }: Props) {
                       <td className="py-2 pr-4 font-medium">{u.userName}</td>
                       <td className="py-2 pr-4 text-muted-foreground">{u.department ?? "—"}</td>
                       <td className="py-2 pr-4 text-right tabular-nums">
-                        <span className={u.coveragePercent < 80 ? "text-red-600 font-medium" : u.coveragePercent < 90 ? "text-orange-600" : ""}>
+                        <span className={cn("inline-flex items-center gap-1", u.coveragePercent < 80 ? "text-red-600 font-medium" : u.coveragePercent < 90 ? "text-orange-600" : "")}>
+                          {u.coveragePercent < 80 && <AlertTriangle className="h-3 w-3" />}
                           {u.coveragePercent}%
                         </span>
                       </td>
-                      <td className="py-2 pr-4 text-right tabular-nums text-orange-600">{u.uncoveredPermCount}</td>
+                      <td className="py-2 pr-4 text-right tabular-nums">
+                        <span className={cn("inline-flex items-center gap-1", u.uncoveredPermCount > 0 ? "text-orange-600" : "")}>
+                          {u.uncoveredPermCount > 0 && <Shield className="h-3 w-3" />}
+                          {u.uncoveredPermCount}
+                        </span>
+                      </td>
                       <td className="py-2 pr-4 text-right tabular-nums">{u.newPermCount}</td>
                       <td className="py-2 text-right">
-                        <Badge variant="destructive" className="text-xs tabular-nums">
+                        <Badge variant="destructive" className="text-xs tabular-nums inline-flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
                           {u.sodConflictCount}
                         </Badge>
                       </td>

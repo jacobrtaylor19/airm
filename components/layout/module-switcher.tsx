@@ -37,12 +37,12 @@ export function ModuleSwitcher({ activeModule, allModules }: ModuleSwitcherProps
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="flex items-center gap-1.5 rounded-md px-2 py-1 hover:bg-black/5 transition-colors text-brand-text">
-          <div className={cn("flex h-5 w-5 items-center justify-center rounded text-white", activeModule.color)}>
-            <ActiveIcon className="h-3 w-3" />
+        <button className="flex items-center gap-2 rounded-md px-2.5 py-1.5 hover:bg-black/5 transition-colors text-brand-text border border-transparent hover:border-brand-border">
+          <div className={cn("flex h-6 w-6 items-center justify-center rounded text-white", activeModule.color)}>
+            <ActiveIcon className="h-3.5 w-3.5" />
           </div>
-          <span className="text-sm font-medium hidden sm:inline">{activeModule.label}</span>
-          <ChevronDown className="h-3 w-3 text-brand-text-muted" />
+          <span className="text-sm font-semibold hidden sm:inline">{activeModule.label}</span>
+          <ChevronDown className="h-3.5 w-3.5 text-brand-text-muted" />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">

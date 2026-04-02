@@ -175,7 +175,7 @@ export function LoginForm() {
               value={selectedDemo}
               onChange={(e) => handleDemoSwitch(e.target.value)}
               disabled={switching}
-              className="w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full min-w-[320px] appearance-none rounded-md border border-input bg-background px-3 py-2 pr-8 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {DEMO_ENVIRONMENTS.map((env) => (
                 <option

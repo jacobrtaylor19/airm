@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable, type Column } from "@/components/shared/data-table";
@@ -324,21 +324,31 @@ export function PersonasPageClient({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredPersonas.map((persona) => {
+                  filteredPersonas.map((persona, idx) => {
                     const isExpanded = expanded.has(persona.id);
                     const isSelected = selectedIds.has(persona.id);
+                    const prevFunction = idx > 0 ? filteredPersonas[idx - 1].businessFunction : null;
+                    const showDivider = idx > 0 && persona.businessFunction !== prevFunction;
 
                     return (
-                      <PersonaExpandableRow
-                        key={persona.id}
-                        persona={persona}
-                        isExpanded={isExpanded}
-                        isSelected={isSelected}
-                        isAdminRole={isAdminRole}
-                        onToggleExpand={() => toggleRow(persona.id)}
-                        onToggleSelect={() => toggleSelect(persona.id)}
-                        onNavigate={() => router.push(`/personas/${persona.id}`)}
-                      />
+                      <React.Fragment key={persona.id}>
+                        {showDivider && (
+                          <TableRow className="pointer-events-none">
+                            <TableCell colSpan={isAdminRole ? 8 : 7} className="py-1 px-0">
+                              <div className="border-t-2 border-slate-200" />
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        <PersonaExpandableRow
+                          persona={persona}
+                          isExpanded={isExpanded}
+                          isSelected={isSelected}
+                          isAdminRole={isAdminRole}
+                          onToggleExpand={() => toggleRow(persona.id)}
+                          onToggleSelect={() => toggleSelect(persona.id)}
+                          onNavigate={() => router.push(`/personas/${persona.id}`)}
+                        />
+                      </React.Fragment>
                     );
                   })
                 )}
@@ -428,7 +438,7 @@ function PersonaExpandableRow({
         <TableCell className="text-sm text-muted-foreground">{persona.businessFunction ?? "\u2014"}</TableCell>
         <TableCell>
           {persona.groupName ? (
-            <Badge variant="outline" className="text-xs">{persona.groupName}</Badge>
+            <Badge variant="outline" className="text-xs">{persona.groupName.replace(/_/g, " ")}</Badge>
           ) : (
             <span className="text-muted-foreground">\u2014</span>
           )}
