@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage() {
   // If already logged in, redirect to dashboard
   const user = await getSessionUser();
-  if (user) redirect("/dashboard");
+  if (user) redirect("/home");
 
   // If no app users exist, redirect to setup
   const rows = await db.select().from(schema.appUsers).limit(1);

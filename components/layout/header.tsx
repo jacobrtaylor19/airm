@@ -10,8 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Bell } from "lucide-react";
+import { LogOut, Bell, LayoutGrid } from "lucide-react";
 import { ReleaseSelector } from "@/components/layout/release-selector";
+import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import type { ReleaseInfo } from "@/lib/releases";
 
 const pageInfo: Record<string, { title: string; description?: string }> = {
@@ -42,6 +43,18 @@ const pageInfo: Record<string, { title: string; description?: string }> = {
   "/releases/compare": { title: "Release Comparison", description: "Side-by-side release metrics" },
   "/releases/timeline": { title: "Project Timeline", description: "Multi-release timeline overview" },
   "/review": { title: "External Review", description: "Read-only project snapshot" },
+  "/home": { title: "Provisum" },
+  "/help": { title: "Knowledge Base", description: "Help articles and guides" },
+  "/risk-analysis": { title: "Risk Analysis", description: "Permission changes and adoption risk" },
+  "/calibration": { title: "Calibration", description: "Confidence threshold tuning" },
+  "/workspace/security": { title: "Security Workspace", description: "Security design triage and redesign" },
+  "/workspace/compliance": { title: "Compliance Workspace", description: "SOD conflict resolution" },
+  "/workstream": { title: "Workstream Tracker", description: "Track workstream progress" },
+  "/admin/validation": { title: "Validation", description: "Pipeline attribution chain audit" },
+  "/admin/evidence-package": { title: "Audit Evidence", description: "SOX/ITGC evidence package" },
+  "/admin/security-design": { title: "Security Design", description: "Target system role management" },
+  "/admin/incidents": { title: "Incidents", description: "Incident detection and triage" },
+  "/admin/migration-health": { title: "Migration Health", description: "Migration readiness dashboard" },
 };
 
 interface HeaderUser {
@@ -50,14 +63,24 @@ interface HeaderUser {
   role: string;
 }
 
+interface SwitcherModule {
+  id: string;
+  label: string;
+  iconName: string;
+  color: string;
+  defaultRoute: string;
+}
+
 interface HeaderProps {
   user?: HeaderUser;
   releases?: ReleaseInfo[];
   selectedReleaseId?: number | null;
   unreadNotificationCount?: number;
+  activeModule?: SwitcherModule;
+  allModules?: SwitcherModule[];
 }
 
-export function Header({ user, releases, selectedReleaseId, unreadNotificationCount = 0 }: HeaderProps) {
+export function Header({ user, releases, selectedReleaseId, unreadNotificationCount = 0, activeModule, allModules }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const basePath = "/" + (pathname.split("/").slice(1, pathname.startsWith("/admin") ? 3 : 2).join("/") || "dashboard");
@@ -88,12 +111,41 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
   return (
     <header className="flex h-14 items-center justify-between border-b border-brand-border bg-brand-cream/80 backdrop-blur-sm px-6">
       <div className="flex items-center gap-3">
-        <div>
-          <h1 className="text-lg font-semibold text-brand-text">{page.title}</h1>
-          {page.description && (
-            <p className="text-xs text-brand-text-muted -mt-0.5">{page.description}</p>
-          )}
-        </div>
+        {/* Module navigation */}
+        {basePath === "/home" ? (
+          /* Tile launcher: Provisum wordmark — Geist Sans Bold, no icon (per branding spec §5) */
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold tracking-tight text-brand-accent-dark">Provisum</span>
+            <span className="text-[10px] font-mono font-normal text-brand-text-light border border-brand-border rounded px-1.5 py-0.5">beta</span>
+          </div>
+        ) : (
+          <>
+            {activeModule && allModules && (
+              <div className="flex items-center gap-1 mr-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 text-brand-text-muted hover:text-brand-text"
+                  onClick={() => router.push("/home")}
+                  title="All Modules"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <div className="h-4 w-px bg-brand-border mx-1" />
+                <ModuleSwitcher activeModule={activeModule} allModules={allModules} />
+              </div>
+            )}
+
+            <div className="h-4 w-px bg-brand-border" />
+
+            <div>
+              <h1 className="text-lg font-semibold text-brand-text">{page.title}</h1>
+              {page.description && (
+                <p className="text-xs text-brand-text-muted -mt-0.5">{page.description}</p>
+              )}
+            </div>
+          </>
+        )}
         {releases && releases.length > 0 && (
           <ReleaseSelector releases={releases} selectedId={selectedReleaseId ?? null} isAdmin={["admin", "system_admin"].includes(user?.role ?? "")} />
         )}

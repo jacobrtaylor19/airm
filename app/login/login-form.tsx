@@ -91,7 +91,7 @@ export function LoginForm() {
       // Hard navigation ensures browser has processed Set-Cookie headers
       // before the next request. router.push races the cookie write and
       // middleware redirects back to /login before cookies are stored.
-      window.location.href = "/dashboard";
+      window.location.href = "/home";
     } catch {
       setError("An error occurred");
     } finally {

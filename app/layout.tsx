@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
+import { AppShell } from "@/components/layout/app-shell";
 import { getSessionUser } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { ChatWidget } from "@/components/chat/chat-widget";
@@ -11,6 +10,7 @@ import { cookies } from "next/headers";
 import { getReleasesForAppUser } from "@/lib/releases";
 import { getUnreadNotificationCount } from "@/lib/notifications";
 import { validateEnv } from "@/lib/validate-env";
+import { MODULES, getVisibleModules, getModuleNav, getModuleDefaultRoute } from "@/lib/modules";
 
 export const metadata: Metadata = {
   title: "Provisum — Intelligent Role Mapping for Enterprise Migrations",
@@ -52,16 +52,35 @@ export default async function RootLayout({
   const selectedReleaseId = releases.some((r) => r.id === cookieReleaseId) ? cookieReleaseId : null;
   const unreadNotificationCount = await getUnreadNotificationCount(user.id);
 
+  // Build serializable module data for the client shell
+  const visibleModules = getVisibleModules(user.role);
+  const switcherModules = visibleModules.map((m) => ({
+    id: m.id,
+    label: m.label,
+    iconName: m.iconName,
+    color: m.color,
+    defaultRoute: getModuleDefaultRoute(m.id, user.role),
+  }));
+
+  // Pre-compute nav for every module so the client shell can switch instantly
+  const moduleNavMap: Record<string, ReturnType<typeof getModuleNav>> = {};
+  for (const mod of MODULES) {
+    moduleNavMap[mod.id] = getModuleNav(mod.id, user.role);
+  }
+
   return (
     <html lang="en">
       <body className={`${GeistSans.variable} font-sans antialiased`}>
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar userRole={user.role} userName={user.displayName} />
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <Header user={user} releases={releases} selectedReleaseId={selectedReleaseId} unreadNotificationCount={unreadNotificationCount} />
-            <main className="flex-1 overflow-y-auto p-6">{children}</main>
-          </div>
-        </div>
+        <AppShell
+          user={user}
+          releases={releases}
+          selectedReleaseId={selectedReleaseId}
+          unreadNotificationCount={unreadNotificationCount}
+          allModules={switcherModules}
+          moduleNavMap={moduleNavMap}
+        >
+          {children}
+        </AppShell>
         <ChatWidget userRole={user.role} userName={user.displayName} />
         <WelcomeTour userRole={user.role} userName={user.displayName} />
         <Toaster />
