@@ -145,7 +145,7 @@ export function SodPageClient({
     }
   }
 
-  async function approveOrRejectRisk(conflictId: number, action: "approve" | "reject") {
+  async function approveOrRejectRisk(conflictId: number, action: "approve" | "reject", extra?: { mitigatingControl?: string; controlOwner?: string; controlFrequency?: string }) {
     setSubmitting(true);
     try {
       const res = await fetch("/api/sod/accept-risk", {
@@ -155,6 +155,7 @@ export function SodPageClient({
           conflictId,
           action: action === "reject" ? "reject" : undefined,
           justification: riskJustification.trim() || undefined,
+          ...(extra ?? {}),
         }),
       });
       if (!res.ok) {

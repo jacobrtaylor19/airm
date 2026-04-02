@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Only approvers can accept SOD risk." }, { status: 403 });
     }
 
-    const { conflictId, justification, action } = await req.json();
+    const { conflictId, justification, action, mitigatingControl, controlOwner, controlFrequency } = await req.json();
     if (!conflictId) {
       return NextResponse.json({ error: "conflictId required" }, { status: 400 });
     }
@@ -71,12 +71,19 @@ export async function POST(req: NextRequest) {
     // Default: approve risk acceptance
     const finalJustification = justification ?? conflict.resolutionNotes ?? "";
 
-    await db.update(schema.sodConflicts).set({
+    const updatePayload: Record<string, unknown> = {
       resolutionStatus: "risk_accepted",
       resolvedBy: user.username,
       resolvedAt: new Date().toISOString(),
       resolutionNotes: finalJustification,
-    }).where(eq(schema.sodConflicts.id, conflictId));
+    };
+
+    // Save mitigating control fields if provided
+    if (mitigatingControl) updatePayload.mitigatingControl = mitigatingControl;
+    if (controlOwner) updatePayload.controlOwner = controlOwner;
+    if (controlFrequency) updatePayload.controlFrequency = controlFrequency;
+
+    await db.update(schema.sodConflicts).set(updatePayload).where(eq(schema.sodConflicts.id, conflictId));
 
     // Check if all conflicts for this user are resolved (not open or pending)
     const remainingUnresolved = await db.select().from(schema.sodConflicts)

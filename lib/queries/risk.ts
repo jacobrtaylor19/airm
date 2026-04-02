@@ -115,6 +115,11 @@ export interface AggregateRiskAnalysis {
     affectedUsers: number;
     criticalOrHighRoles: number;
   };
+  controlsCoverage: {
+    acceptedRisks: number;
+    withControls: number;
+    withoutControls: number;
+  };
   totalUsersAnalyzed: number;
 }
 
@@ -156,6 +161,7 @@ export async function getAggregateRiskAnalysis(
       adoption: { usersWithNewAccess: 0, totalNewPerms: 0, usersWithReducedAccess: 0, totalLostPerms: 0, adoptionUserList: [] },
       incorrectAccess: { flaggedUsers: 0, flaggedUserList: [] },
       roleIntegrity: { rolesWithViolations: 0, affectedUsers: 0, criticalOrHighRoles: 0 },
+      controlsCoverage: { acceptedRisks: 0, withControls: 0, withoutControls: 0 },
       totalUsersAnalyzed: 0,
     };
   }
@@ -395,6 +401,28 @@ export async function getAggregateRiskAnalysis(
       affectedUsers: withinRoleUsers.size,
       criticalOrHighRoles: criticalOrHighRoleIds.size,
     },
+    controlsCoverage: await getControlsCoverage(orgId),
     totalUsersAnalyzed: analyzedCount,
+  };
+}
+
+async function getControlsCoverage(orgId: number) {
+  const accepted = await db
+    .select({
+      id: schema.sodConflicts.id,
+      mitigatingControl: schema.sodConflicts.mitigatingControl,
+    })
+    .from(schema.sodConflicts)
+    .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
+    .where(and(
+      eq(schema.sodConflicts.resolutionStatus, "risk_accepted"),
+      orgScope(schema.users.organizationId, orgId),
+    ));
+
+  const withControls = accepted.filter((a) => !!a.mitigatingControl).length;
+  return {
+    acceptedRisks: accepted.length,
+    withControls,
+    withoutControls: accepted.length - withControls,
   };
 }

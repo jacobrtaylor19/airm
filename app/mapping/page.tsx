@@ -31,7 +31,9 @@ export default async function MappingPage() {
   let personas = await getPersonaMappingWorkspace(orgId);
   let refinements = await getUserRefinements(orgId);
   let gaps = await getGapAnalysis(orgId);
-  const targetRoles = await getTargetRoles(orgId);
+  const allTargetRoles = await getTargetRoles(orgId);
+  // Only show active roles in the mapping selector (exclude draft and archived)
+  const targetRoles = allTargetRoles.filter((r) => r.status === "active");
   const gapSummary = await getGapAnalysisSummary(orgId);
   let refinementDetails = await getUserRefinementDetails(orgId);
 

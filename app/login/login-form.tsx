@@ -28,6 +28,10 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState("default");
+  const [showSso, setShowSso] = useState(false);
+  const [ssoEmail, setSsoEmail] = useState("");
+  const [ssoLoading, setSsoLoading] = useState(false);
+  const [ssoMessage, setSsoMessage] = useState("");
   const router = useRouter();
 
   useEffect(() => {
@@ -134,6 +138,61 @@ export function LoginForm() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Sign In"}
             </Button>
           </form>
+          {/* SSO option */}
+          <div className="mt-3 pt-3 border-t">
+            {!showSso ? (
+              <button
+                type="button"
+                onClick={() => setShowSso(true)}
+                className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <span className="flex-1 h-px bg-border w-8" />
+                  or
+                  <span className="flex-1 h-px bg-border w-8" />
+                </span>
+                <br />
+                <span className="font-medium text-teal-600 hover:text-teal-700 mt-1 inline-block">Sign in with SSO</span>
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Enter your work email to find your organization&apos;s SSO provider.</p>
+                <Input
+                  type="email"
+                  value={ssoEmail}
+                  onChange={(e) => { setSsoEmail(e.target.value); setSsoMessage(""); }}
+                  placeholder="work@company.com"
+                />
+                {ssoMessage && <p className="text-xs text-muted-foreground">{ssoMessage}</p>}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={ssoLoading || !ssoEmail.includes("@")}
+                  onClick={async () => {
+                    setSsoLoading(true);
+                    setSsoMessage("");
+                    try {
+                      const res = await fetch(`/api/auth/sso?email=${encodeURIComponent(ssoEmail)}`);
+                      const data = await res.json();
+                      if (data.found) {
+                        setSsoMessage(data.message);
+                      } else {
+                        setSsoMessage(data.message || "No SSO provider found for this domain.");
+                      }
+                    } catch {
+                      setSsoMessage("Failed to look up SSO provider.");
+                    } finally {
+                      setSsoLoading(false);
+                    }
+                  }}
+                >
+                  {ssoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Continue with SSO"}
+                </Button>
+              </div>
+            )}
+          </div>
+
           {/* Demo credentials hint */}
           <div className="mt-3 pt-3 border-t">
             <p className="text-xs text-muted-foreground mb-2">Demo credentials:</p>

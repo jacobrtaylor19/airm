@@ -80,6 +80,10 @@ export interface TargetRoleRow {
   domain: string | null;
   system: string | null;
   roleOwner: string | null;
+  status: string;
+  source: string;
+  approvedBy: number | null;
+  approvedAt: string | null;
   permissionCount: number;
 }
 
@@ -93,6 +97,10 @@ export async function getTargetRoles(orgId: number): Promise<TargetRoleRow[]> {
       domain: schema.targetRoles.domain,
       system: schema.targetRoles.system,
       roleOwner: schema.targetRoles.roleOwner,
+      status: schema.targetRoles.status,
+      source: schema.targetRoles.source,
+      approvedBy: schema.targetRoles.approvedBy,
+      approvedAt: schema.targetRoles.approvedAt,
       permissionCount: sql<number>`(
         SELECT count(*) FROM target_role_permissions trp
         WHERE trp.target_role_id = target_roles.id

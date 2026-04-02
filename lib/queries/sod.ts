@@ -40,6 +40,9 @@ export interface SodConflictRow {
   resolvedBy: string | null;
   resolutionNotes: string | null;
   riskExplanation: string | null;
+  mitigatingControl: string | null;
+  controlOwner: string | null;
+  controlFrequency: string | null;
 }
 
 export async function getSodConflicts(orgId: number): Promise<SodConflictRow[]> {
@@ -61,6 +64,9 @@ export async function getSodConflicts(orgId: number): Promise<SodConflictRow[]> 
       resolvedBy: schema.sodConflicts.resolvedBy,
       resolutionNotes: schema.sodConflicts.resolutionNotes,
       riskExplanation: schema.sodConflicts.riskExplanation,
+      mitigatingControl: schema.sodConflicts.mitigatingControl,
+      controlOwner: schema.sodConflicts.controlOwner,
+      controlFrequency: schema.sodConflicts.controlFrequency,
     })
     .from(schema.sodConflicts)
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
@@ -102,6 +108,9 @@ export async function getSodConflicts(orgId: number): Promise<SodConflictRow[]> 
       resolvedBy: c.resolvedBy,
       resolutionNotes: c.resolutionNotes,
       riskExplanation: c.riskExplanation,
+      mitigatingControl: c.mitigatingControl,
+      controlOwner: c.controlOwner,
+      controlFrequency: c.controlFrequency,
     };
   }));
 }

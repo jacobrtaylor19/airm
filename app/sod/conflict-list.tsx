@@ -168,6 +168,11 @@ export function ConflictList({
               <Badge variant="outline" className={`text-xs ${stat.color}`}>
                 {stat.label}
               </Badge>
+              {c.resolutionStatus === "risk_accepted" && c.mitigatingControl && (
+                <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200" title={`${c.mitigatingControl}${c.controlOwner ? ` — Owner: ${c.controlOwner}` : ""}${c.controlFrequency ? ` — ${c.controlFrequency}` : ""}`}>
+                  Controlled
+                </Badge>
+              )}
             </div>
 
             {/* Expanded Detail Panel */}

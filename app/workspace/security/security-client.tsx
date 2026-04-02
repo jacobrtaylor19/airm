@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Shield,
   Inbox,
+  Download,
 } from "lucide-react";
 import type { SecurityWorkItemDetail } from "@/lib/queries/sod-triage";
 import type { WithinRoleViolation } from "@/lib/queries/sod";
@@ -166,6 +167,20 @@ export function SecurityClient({ workItems, roleViolations }: Props) {
 
   return (
     <>
+      <div className="flex items-center justify-between mb-3">
+        <div />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            window.location.href = "/api/exports/security-design";
+          }}
+        >
+          <Download className="h-4 w-4 mr-1.5" />
+          Export Role Design
+        </Button>
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="queue">

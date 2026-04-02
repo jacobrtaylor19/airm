@@ -4,10 +4,11 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, AlertTriangle, CheckCircle, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { BulkDeleteBar } from "@/components/shared/bulk-delete-bar";
+import { RoleEditDialog } from "./role-edit-dialog";
 import type { TargetRoleRow, TargetPermissionInfo } from "@/lib/queries";
 
 interface SodViolationInfo {
@@ -16,16 +17,20 @@ interface SodViolationInfo {
   worstSeverity: string;
 }
 
+type StatusFilter = "all" | "active" | "draft" | "archived";
+
 export function TargetRolesClient({
   roles,
   rolePermissions,
   isAdmin = false,
   sodViolationMap = {},
+  userRole = "viewer",
 }: {
   roles: TargetRoleRow[];
   rolePermissions: Record<number, TargetPermissionInfo[]>;
   isAdmin?: boolean;
   sodViolationMap?: Record<number, SodViolationInfo>;
+  userRole?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -37,8 +42,13 @@ export function TargetRolesClient({
   const [completeNotes, setCompleteNotes] = useState("");
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [submittingComplete, setSubmittingComplete] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [editingRole, setEditingRole] = useState<TargetRoleRow | null>(null);
 
-  // Auto-expand the highlighted role when opened from a work item
+  const canEdit = ["admin", "system_admin", "security_architect"].includes(userRole);
+  const draftCount = roles.filter((r) => r.status === "draft").length;
+  const archivedCount = roles.filter((r) => r.status === "archived").length;
+
   useEffect(() => {
     if (highlightRoleId) {
       setExpanded((prev) => new Set(prev).add(highlightRoleId));
@@ -86,14 +96,22 @@ export function TargetRolesClient({
   }
 
   const hasViolations = Object.keys(sodViolationMap).length > 0;
-  const displayedRoles = showOnlyViolations ? roles.filter(r => sodViolationMap[r.id]) : roles;
+
+  let displayedRoles = roles;
+  if (statusFilter !== "all") {
+    displayedRoles = displayedRoles.filter((r) => r.status === statusFilter);
+  }
+  if (showOnlyViolations) {
+    displayedRoles = displayedRoles.filter((r) => sodViolationMap[r.id]);
+  }
+
   const allSelected = displayedRoles.length > 0 && displayedRoles.every((r) => selectedIds.has(r.id));
 
   function toggleSelectAll() {
     if (allSelected) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(roles.map((r) => r.id)));
+      setSelectedIds(new Set(displayedRoles.map((r) => r.id)));
     }
   }
 
@@ -113,55 +131,79 @@ export function TargetRolesClient({
 
   return (
     <>
-      {hasViolations && (
-        <div className="flex items-center gap-2 mb-3">
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
+      {/* Status filter tabs */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        {(["all", "active", "draft", "archived"] as StatusFilter[]).map((f) => (
+          <button
+            key={f}
+            onClick={() => setStatusFilter(f)}
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+              statusFilter === f
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"
+            }`}
+          >
+            {f === "all" ? `All (${roles.length})` :
+             f === "active" ? `Active (${roles.filter((r) => r.status === "active").length})` :
+             f === "draft" ? `Draft — Pending Approval (${draftCount})` :
+             `Archived (${archivedCount})`}
+          </button>
+        ))}
+
+        {hasViolations && (
+          <label className="flex items-center gap-2 text-xs cursor-pointer ml-auto">
             <input
               type="checkbox"
               checked={showOnlyViolations}
               onChange={(e) => setShowOnlyViolations(e.target.checked)}
-              className="h-4 w-4 accent-amber-600"
+              className="h-3.5 w-3.5 accent-amber-600"
             />
             <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
-            Show only roles with SOD violations
+            SOD violations only
           </label>
+        )}
+      </div>
+
+      {/* Draft role banner */}
+      {statusFilter === "draft" && draftCount > 0 && (
+        <div className="rounded-md bg-amber-50 border border-amber-200 p-3 mb-3">
+          <p className="text-sm text-amber-800">
+            These roles were AI-generated and are pending security architect review. They cannot be used in mapping until approved.
+          </p>
         </div>
       )}
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
               {isAdmin && (
                 <TableHead className="w-10">
-                  <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleSelectAll}
-                    className="rounded"
-                  />
+                  <input type="checkbox" checked={allSelected} onChange={toggleSelectAll} className="rounded" />
                 </TableHead>
               )}
               <TableHead className="w-8"></TableHead>
               <TableHead>Role ID</TableHead>
               <TableHead>Name</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Domain</TableHead>
               <TableHead>System</TableHead>
               <TableHead>Owner</TableHead>
-              <TableHead>Description</TableHead>
               <TableHead className="text-right">Permissions</TableHead>
+              {canEdit && <TableHead className="w-10"></TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
             {displayedRoles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdmin ? 10 : 9} className="h-24 text-center text-muted-foreground">
-                  {showOnlyViolations ? "No roles with SOD violations." : "No target roles found."}
+                <TableCell colSpan={canEdit ? 10 : 9} className="h-24 text-center text-muted-foreground">
+                  {showOnlyViolations ? "No roles with SOD violations." : statusFilter === "draft" ? "No draft roles pending approval." : "No target roles found."}
                 </TableCell>
               </TableRow>
             ) : (
               displayedRoles.map((role) => (
                 <React.Fragment key={role.id}>
-                  <TableRow className={`cursor-pointer ${highlightRoleId === role.id ? "bg-amber-50" : ""}`}>
+                  <TableRow className={`cursor-pointer ${highlightRoleId === role.id ? "bg-amber-50" : ""} ${role.status === "draft" ? "border-l-2 border-l-amber-400" : ""} ${role.status === "archived" ? "opacity-60" : ""}`}>
                     {isAdmin && (
                       <TableCell>
                         <input
@@ -174,30 +216,35 @@ export function TargetRolesClient({
                       </TableCell>
                     )}
                     <TableCell onClick={() => toggleRow(role.id)}>
-                      {expanded.has(role.id) ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
+                      {expanded.has(role.id) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     </TableCell>
                     <TableCell onClick={() => toggleRow(role.id)} className="font-mono text-xs">{role.roleId}</TableCell>
                     <TableCell onClick={() => toggleRow(role.id)} className="font-medium text-sm">
                       <span className="flex items-center gap-2">
                         {role.roleName}
                         {sodViolationMap[role.id] && (
-                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200" title={`${sodViolationMap[role.id].violationCount} violation(s) · ${sodViolationMap[role.id].affectedUserCount} affected user(s)`}>
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200" title={`${sodViolationMap[role.id].violationCount} violation(s)`}>
                             <AlertTriangle className="h-3 w-3 mr-1" />
                             Structural SOD
                           </Badge>
                         )}
                       </span>
                     </TableCell>
+                    <TableCell onClick={() => toggleRow(role.id)}>
+                      <Badge variant="outline" className={`text-xs ${
+                        role.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                        role.status === "draft" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                        "bg-gray-50 text-gray-500 border-gray-200"
+                      }`}>
+                        {role.status === "draft" ? "Pending Approval" : role.status}
+                      </Badge>
+                      {role.source === "ai_generated" && (
+                        <Badge variant="outline" className="text-xs ml-1">AI</Badge>
+                      )}
+                    </TableCell>
                     <TableCell onClick={() => toggleRow(role.id)} className="text-sm">{role.domain ?? "\u2014"}</TableCell>
                     <TableCell onClick={() => toggleRow(role.id)} className="text-sm">{role.system ?? "\u2014"}</TableCell>
                     <TableCell onClick={() => toggleRow(role.id)} className="text-sm text-muted-foreground">{role.roleOwner ?? "\u2014"}</TableCell>
-                    <TableCell onClick={() => toggleRow(role.id)} className="text-sm text-muted-foreground max-w-[300px] truncate">
-                      {role.description ?? "\u2014"}
-                    </TableCell>
                     <TableCell onClick={() => toggleRow(role.id)} className="text-right text-sm">
                       {role.permissionCount > 0 ? (
                         <Badge variant="outline" className="text-xs">{role.permissionCount}</Badge>
@@ -205,10 +252,17 @@ export function TargetRolesClient({
                         <span className="text-muted-foreground">0</span>
                       )}
                     </TableCell>
+                    {canEdit && (
+                      <TableCell>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); setEditingRole(role); }}>
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </TableCell>
+                    )}
                   </TableRow>
                   {expanded.has(role.id) && (
                     <TableRow>
-                      <TableCell colSpan={isAdmin ? 10 : 9} className="bg-muted/30 p-0">
+                      <TableCell colSpan={canEdit ? 10 : 9} className="bg-muted/30 p-0">
                         <div className="p-4">
                           <p className="text-xs font-medium text-muted-foreground mb-2">
                             Permissions ({rolePermissions[role.id]?.length ?? 0})
@@ -216,24 +270,11 @@ export function TargetRolesClient({
                           {(rolePermissions[role.id]?.length ?? 0) > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
                               {rolePermissions[role.id].map((p) => (
-                                <Badge
-                                  key={p.id}
-                                  variant="outline"
-                                  className="text-xs font-mono"
-                                  title={p.permissionName ?? undefined}
-                                >
+                                <Badge key={p.id} variant="outline" className="text-xs font-mono" title={p.permissionName ?? undefined}>
                                   {p.permissionId}
-                                  {p.permissionType && (
-                                    <span className="ml-1 text-muted-foreground">
-                                      [{p.permissionType}]
-                                    </span>
-                                  )}
+                                  {p.permissionType && <span className="ml-1 text-muted-foreground">[{p.permissionType}]</span>}
                                   {p.riskLevel && (
-                                    <span className={`ml-1 ${
-                                      p.riskLevel === "high" ? "text-red-600" :
-                                      p.riskLevel === "medium" ? "text-yellow-600" :
-                                      "text-green-600"
-                                    }`}>
+                                    <span className={`ml-1 ${p.riskLevel === "high" ? "text-red-600" : p.riskLevel === "medium" ? "text-yellow-600" : "text-green-600"}`}>
                                       ({p.riskLevel})
                                     </span>
                                   )}
@@ -280,9 +321,7 @@ export function TargetRolesClient({
               assignments to the re-mapping queue for mapper review.
             </p>
             <div>
-              <label className="text-sm font-medium block mb-1">
-                Security Notes (what was changed)
-              </label>
+              <label className="text-sm font-medium block mb-1">Security Notes (what was changed)</label>
               <textarea
                 className="w-full rounded-md border px-3 py-2 text-sm min-h-[80px]"
                 value={completeNotes}
@@ -291,24 +330,26 @@ export function TargetRolesClient({
               />
             </div>
             <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => { setShowCompleteDialog(false); setCompleteNotes(""); }}
-                disabled={submittingComplete}
-              >
+              <Button variant="outline" size="sm" onClick={() => { setShowCompleteDialog(false); setCompleteNotes(""); }} disabled={submittingComplete}>
                 Cancel
               </Button>
-              <Button
-                size="sm"
-                onClick={handleCompleteRedesign}
-                disabled={submittingComplete || !completeNotes.trim()}
-              >
+              <Button size="sm" onClick={handleCompleteRedesign} disabled={submittingComplete || !completeNotes.trim()}>
                 {submittingComplete ? "Saving..." : "Complete Redesign"}
               </Button>
             </div>
           </div>
         </div>
+      )}
+
+      {editingRole && (
+        <RoleEditDialog
+          role={editingRole}
+          permissions={rolePermissions[editingRole.id] ?? []}
+          open={!!editingRole}
+          onOpenChange={(open) => { if (!open) setEditingRole(null); }}
+          onSaved={() => router.refresh()}
+          userRole={userRole}
+        />
       )}
     </>
   );

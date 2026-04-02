@@ -42,7 +42,13 @@ export default async function TargetRolesPage() {
           <a href="/upload" className="text-primary hover:underline">Data Upload</a> page.
         </div>
       ) : (
-        <TargetRolesClient roles={roles} rolePermissions={rolePermissions} isAdmin={isAdmin} sodViolationMap={sodViolationMap} />
+        <TargetRolesClient
+          roles={roles}
+          rolePermissions={rolePermissions}
+          isAdmin={isAdmin}
+          sodViolationMap={sodViolationMap}
+          userRole={currentUser?.role ?? "viewer"}
+        />
       )}
     </div>
   );

@@ -209,6 +209,22 @@ export function RiskAnalysisClient({ risk }: Props) {
         </CardContent>
       </Card>
 
+      {/* Controls Coverage */}
+      {risk.controlsCoverage.acceptedRisks > 0 && (
+        <div className="flex items-center gap-2 rounded-md border px-4 py-2.5 text-sm">
+          <ShieldCheck className="h-4 w-4 text-teal-600 flex-shrink-0" />
+          <span className="text-muted-foreground">
+            <strong className="text-foreground">Controls Coverage:</strong>{" "}
+            {risk.controlsCoverage.withControls} of {risk.controlsCoverage.acceptedRisks} accepted risks have documented compensating controls
+          </span>
+          {risk.controlsCoverage.withoutControls > 0 && (
+            <a href="/sod?status=risk_accepted" className="ml-auto text-xs text-teal-600 font-medium hover:underline whitespace-nowrap">
+              View gaps &rarr;
+            </a>
+          )}
+        </div>
+      )}
+
       {/* Permission Changes Drill-Down Dialog */}
       <Dialog open={showAdoptionDrill} onOpenChange={setShowAdoptionDrill}>
         <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">

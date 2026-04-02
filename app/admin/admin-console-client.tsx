@@ -32,7 +32,9 @@ import {
   Webhook,
   CalendarClock,
   Mail,
+  Shield,
 } from "lucide-react";
+import { SsoTab } from "./sso-tab";
 
 import { OrgTreeSection } from "./org-tree-section";
 import type { OrgTreeNode, AppUserOption } from "./org-tree-section";
@@ -336,6 +338,10 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
             <Mail className="h-4 w-4" />
             Email
           </TabsTrigger>
+          <TabsTrigger value="sso" className="flex items-center gap-1.5">
+            <Shield className="h-4 w-4" />
+            SSO
+          </TabsTrigger>
         </TabsList>
 
         {/* -- ORG HIERARCHY TAB -- */}
@@ -419,6 +425,10 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
             onUpdateSetting={updateSetting}
             onSaveSettings={saveSettings}
           />
+        </TabsContent>
+
+        <TabsContent value="sso" className="mt-4">
+          <SsoTab />
         </TabsContent>
       </Tabs>
 

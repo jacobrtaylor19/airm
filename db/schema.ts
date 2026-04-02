@@ -178,6 +178,12 @@ export const targetRoles = pgTable("target_roles", {
   domain: text("domain"),
   capabilities: text("capabilities"),
   roleOwner: text("role_owner"),
+  status: text("status").notNull().default("active"), // draft | active | archived
+  source: text("source").notNull().default("uploaded"), // uploaded | ai_generated | manual
+  approvedBy: integer("approved_by"),
+  approvedAt: text("approved_at"),
+  updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
+  updatedBy: integer("updated_by"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
 
@@ -446,6 +452,10 @@ export const sodConflicts = pgTable("sod_conflicts", {
   resolvedAt: text("resolved_at"),
   resolutionNotes: text("resolution_notes"),
   riskExplanation: text("risk_explanation"),
+  mitigatingControl: text("mitigating_control"),
+  controlOwner: text("control_owner"),
+  controlFrequency: text("control_frequency"), // daily | weekly | monthly | quarterly | annual | ad_hoc
+  controlLastReviewedAt: text("control_last_reviewed_at"),
   analysisJobId: integer("analysis_job_id").references(() => processingJobs.id),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
@@ -1037,4 +1047,22 @@ export const evidencePackageRuns = pgTable("evidence_package_runs", {
   assignmentCount: integer("assignment_count").notNull().default(0),
   sodConflictCount: integer("sod_conflict_count").notNull().default(0),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// SSO CONFIGURATIONS (enterprise SSO/SAML)
+// ─────────────────────────────────────────────
+
+export const ssoConfigurations = pgTable("sso_configurations", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id),
+  provider: text("provider").notNull(), // azure_ad | okta | generic_saml
+  providerName: text("provider_name"),
+  domain: text("domain"), // email domain for auto-discovery
+  metadataUrl: text("metadata_url"),
+  metadataXml: text("metadata_xml"),
+  supabaseSsoId: text("supabase_sso_id"),
+  enabled: boolean("enabled").notNull().default(false),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
