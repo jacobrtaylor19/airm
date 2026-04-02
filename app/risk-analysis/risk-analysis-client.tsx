@@ -1,8 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, Shield, TrendingUp, Users, ShieldCheck } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AlertTriangle, Shield, TrendingUp, TrendingDown, Users, ShieldCheck, ArrowUpDown } from "lucide-react";
 import type { AggregateRiskAnalysis } from "@/lib/queries";
 
 interface Props {
@@ -29,8 +36,11 @@ function RiskBadge({ level }: { level: "low" | "medium" | "high" }) {
 }
 
 export function RiskAnalysisClient({ risk }: Props) {
+  const [showAdoptionDrill, setShowAdoptionDrill] = useState(false);
+  const [adoptionFilter, setAdoptionFilter] = useState<"all" | "gained" | "reduced">("all");
+
   const bcLevel = riskLevel(risk.businessContinuity.usersAtRisk, [5, 20]);
-  const adoptionLevel = riskLevel(risk.adoption.usersWithNewAccess, [10, 30]);
+  const adoptionLevel = riskLevel(risk.adoption.usersWithNewAccess + risk.adoption.usersWithReducedAccess, [10, 30]);
   const accessLevel = riskLevel(risk.incorrectAccess.flaggedUsers, [3, 10]);
   const integrityLevel = riskLevel(risk.roleIntegrity.rolesWithViolations, [0, 3]);
 
@@ -70,30 +80,41 @@ export function RiskAnalysisClient({ risk }: Props) {
         </Card>
 
         {/* Adoption Risk */}
-        <Card className={adoptionLevel === "high" ? "border-red-200" : adoptionLevel === "medium" ? "border-yellow-200" : ""}>
+        <Card className={`${adoptionLevel === "high" ? "border-red-200" : adoptionLevel === "medium" ? "border-yellow-200" : ""} cursor-pointer hover:shadow-md transition-shadow`}
+          onClick={() => setShowAdoptionDrill(true)}
+        >
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-blue-500" />
-                Adoption Risk
+                <ArrowUpDown className="h-4 w-4 text-blue-500" />
+                Permission Changes
               </CardTitle>
               <RiskBadge level={adoptionLevel} />
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Users receiving significant new permissions they did not previously have.
+              Users with significant permission changes between source and target systems.
             </p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-2xl font-bold tabular-nums">{risk.adoption.usersWithNewAccess}</p>
-                <p className="text-xs text-muted-foreground">Users with excess new perms (&gt;10)</p>
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-blue-500" />
+                  <p className="text-2xl font-bold tabular-nums">{risk.adoption.usersWithNewAccess}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Gaining access (&gt;10 new)</p>
               </div>
               <div>
-                <p className="text-2xl font-bold tabular-nums">{risk.adoption.totalNewPerms}</p>
-                <p className="text-xs text-muted-foreground">Total new permissions</p>
+                <div className="flex items-center gap-1">
+                  <TrendingDown className="h-3 w-3 text-orange-500" />
+                  <p className="text-2xl font-bold tabular-nums">{risk.adoption.usersWithReducedAccess}</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Losing access (&gt;10 lost)</p>
               </div>
             </div>
+            {risk.adoption.adoptionUserList.length > 0 && (
+              <p className="text-xs text-blue-600 font-medium">Click to drill down →</p>
+            )}
           </CardContent>
         </Card>
 
@@ -186,6 +207,103 @@ export function RiskAnalysisClient({ risk }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Permission Changes Drill-Down Dialog */}
+      <Dialog open={showAdoptionDrill} onOpenChange={setShowAdoptionDrill}>
+        <DialogContent className="sm:max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Permission Changes — Source vs Target</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Users with significant permission differences between source and target systems. Gains may indicate over-provisioning in the target; reductions may indicate the user was over-provisioned in the source system and is now correctly scoped to their persona.
+          </p>
+
+          {/* Filter tabs */}
+          <div className="flex gap-2 mt-2">
+            {(["all", "gained", "reduced"] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setAdoptionFilter(f)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                  adoptionFilter === f
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {f === "all" ? `All (${risk.adoption.adoptionUserList.length})` :
+                 f === "gained" ? `Gaining (${risk.adoption.adoptionUserList.filter(u => u.direction === "gained" || u.direction === "both").length})` :
+                 `Reduced (${risk.adoption.adoptionUserList.filter(u => u.direction === "reduced" || u.direction === "both").length})`}
+              </button>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto mt-2">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="pb-2 pr-3 font-medium">User</th>
+                  <th className="pb-2 pr-3 font-medium">Department</th>
+                  <th className="pb-2 pr-3 font-medium">Persona</th>
+                  <th className="pb-2 pr-3 font-medium text-right">Source Perms</th>
+                  <th className="pb-2 pr-3 font-medium text-right">Target Perms</th>
+                  <th className="pb-2 pr-3 font-medium text-right">Gained</th>
+                  <th className="pb-2 pr-3 font-medium text-right">Lost</th>
+                  <th className="pb-2 font-medium">Change</th>
+                </tr>
+              </thead>
+              <tbody>
+                {risk.adoption.adoptionUserList
+                  .filter((u) =>
+                    adoptionFilter === "all" ? true :
+                    adoptionFilter === "gained" ? (u.direction === "gained" || u.direction === "both") :
+                    (u.direction === "reduced" || u.direction === "both")
+                  )
+                  .slice(0, 100)
+                  .map((u) => {
+                    const net = u.targetPermCount - u.sourcePermCount;
+                    return (
+                      <tr key={u.userId} className="border-b last:border-0 hover:bg-muted/50">
+                        <td className="py-2 pr-3 font-medium">{u.userName}</td>
+                        <td className="py-2 pr-3 text-muted-foreground">{u.department ?? "—"}</td>
+                        <td className="py-2 pr-3">
+                          {u.personaName ? (
+                            <Badge variant="outline" className="text-[10px] font-normal">{u.personaName}</Badge>
+                          ) : "—"}
+                        </td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{u.sourcePermCount}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">{u.targetPermCount}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">
+                          {u.newPermCount > 0 ? (
+                            <span className="text-blue-600 font-medium">+{u.newPermCount}</span>
+                          ) : "0"}
+                        </td>
+                        <td className="py-2 pr-3 text-right tabular-nums">
+                          {u.lostPermCount > 0 ? (
+                            <span className="text-orange-600 font-medium">-{u.lostPermCount}</span>
+                          ) : "0"}
+                        </td>
+                        <td className="py-2">
+                          <Badge variant="outline" className={`text-[10px] ${
+                            net > 0 ? "border-blue-200 text-blue-700"
+                            : net < 0 ? "border-orange-200 text-orange-700"
+                            : "border-zinc-200 text-zinc-500"
+                          }`}>
+                            {net > 0 ? `↑ +${net} net` : net < 0 ? `↓ ${net} net` : "No net change"}
+                          </Badge>
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+            {risk.adoption.adoptionUserList.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                No users with significant permission changes detected.
+              </p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Flagged Users Table */}
       {risk.incorrectAccess.flaggedUserList.length > 0 && (

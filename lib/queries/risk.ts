@@ -81,6 +81,18 @@ export interface FlaggedUser {
   sodConflictCount: number;
 }
 
+export interface AdoptionUser {
+  userId: number;
+  userName: string;
+  department: string | null;
+  personaName: string | null;
+  sourcePermCount: number;
+  targetPermCount: number;
+  newPermCount: number;
+  lostPermCount: number;
+  direction: "gained" | "reduced" | "both";
+}
+
 export interface AggregateRiskAnalysis {
   businessContinuity: {
     usersAtRisk: number;
@@ -90,6 +102,9 @@ export interface AggregateRiskAnalysis {
   adoption: {
     usersWithNewAccess: number;
     totalNewPerms: number;
+    usersWithReducedAccess: number;
+    totalLostPerms: number;
+    adoptionUserList: AdoptionUser[];
   };
   incorrectAccess: {
     flaggedUsers: number;
@@ -138,15 +153,15 @@ export async function getAggregateRiskAnalysis(
   if (userIds.length === 0) {
     return {
       businessContinuity: { usersAtRisk: 0, totalUncoveredPerms: 0, avgCoverage: 100 },
-      adoption: { usersWithNewAccess: 0, totalNewPerms: 0 },
+      adoption: { usersWithNewAccess: 0, totalNewPerms: 0, usersWithReducedAccess: 0, totalLostPerms: 0, adoptionUserList: [] },
       incorrectAccess: { flaggedUsers: 0, flaggedUserList: [] },
       roleIntegrity: { rolesWithViolations: 0, affectedUsers: 0, criticalOrHighRoles: 0 },
       totalUsersAnalyzed: 0,
     };
   }
 
-  // 2-4. Bulk load source assignments, target assignments, SOD conflicts, and within-role data in PARALLEL
-  const [sourceRoleAssignments, targetRoleAssignments, sodConflictRows, withinRoleRows] = await Promise.all([
+  // 2-4. Bulk load source assignments, target assignments, SOD conflicts, persona assignments, and within-role data in PARALLEL
+  const [sourceRoleAssignments, targetRoleAssignments, sodConflictRows, personaAssignments, withinRoleRows] = await Promise.all([
     db.select({
       userId: schema.userSourceRoleAssignments.userId,
       sourceRoleId: schema.userSourceRoleAssignments.sourceRoleId,
@@ -168,6 +183,15 @@ export async function getAggregateRiskAnalysis(
     .from(schema.sodConflicts)
     .where(inArray(schema.sodConflicts.userId, userIds))
     .groupBy(schema.sodConflicts.userId),
+
+    // Persona assignments for adoption drill-down
+    db.select({
+      userId: schema.userPersonaAssignments.userId,
+      personaName: schema.personas.name,
+    })
+    .from(schema.userPersonaAssignments)
+    .innerJoin(schema.personas, eq(schema.personas.id, schema.userPersonaAssignments.personaId))
+    .where(inArray(schema.userPersonaAssignments.userId, userIds)),
 
     // Within-role conflicts for role integrity metrics
     db.select({
@@ -246,14 +270,22 @@ export async function getAggregateRiskAnalysis(
     userSodCounts.set(r.userId, r.count);
   }
 
+  const userPersonaMap = new Map<number, string>();
+  for (const pa of personaAssignments) {
+    userPersonaMap.set(pa.userId, pa.personaName);
+  }
+
   // 5. Compute risk metrics per user
   let totalUncoveredPerms = 0;
   let totalNewPerms = 0;
+  let totalLostPerms = 0;
   let usersAtRisk = 0;
   let usersWithNewAccess = 0;
+  let usersWithReducedAccess = 0;
   let totalCoverage = 0;
   let analyzedCount = 0;
   const flaggedUserList: FlaggedUser[] = [];
+  const adoptionUserList: AdoptionUser[] = [];
 
   for (const user of usersWithAssignments) {
     const source = userSourcePerms.get(user.id) ?? new Set<string>();
@@ -283,9 +315,29 @@ export async function getAggregateRiskAnalysis(
     totalCoverage += coveragePercent;
     totalUncoveredPerms += uncoveredCount;
     totalNewPerms += newCount;
+    totalLostPerms += uncoveredCount;
 
     if (coveragePercent < 90) usersAtRisk++;
     if (newCount > 10) usersWithNewAccess++;
+    if (uncoveredCount > 10) usersWithReducedAccess++;
+
+    // Build adoption drill-down for users with significant permission changes
+    if (newCount > 10 || uncoveredCount > 10) {
+      const direction: "gained" | "reduced" | "both" =
+        newCount > 10 && uncoveredCount > 10 ? "both"
+        : newCount > 10 ? "gained" : "reduced";
+      adoptionUserList.push({
+        userId: user.id,
+        userName: user.displayName,
+        department: user.department,
+        personaName: userPersonaMap.get(user.id) ?? null,
+        sourcePermCount: source.size,
+        targetPermCount: target.size,
+        newPermCount: newCount,
+        lostPermCount: uncoveredCount,
+        direction,
+      });
+    }
 
     // Flagged: both uncovered perms AND SOD conflicts
     const sodCount = userSodCounts.get(user.id) ?? 0;
@@ -304,6 +356,9 @@ export async function getAggregateRiskAnalysis(
 
   // Sort flagged users by SOD conflict count descending
   flaggedUserList.sort((a, b) => b.sodConflictCount - a.sodConflictCount);
+
+  // Sort adoption list by total change magnitude
+  adoptionUserList.sort((a, b) => (b.newPermCount + b.lostPermCount) - (a.newPermCount + a.lostPermCount));
 
   // Compute role integrity metrics
   const withinRoleRoles = new Set<number>();
@@ -327,6 +382,9 @@ export async function getAggregateRiskAnalysis(
     adoption: {
       usersWithNewAccess,
       totalNewPerms,
+      usersWithReducedAccess,
+      totalLostPerms,
+      adoptionUserList,
     },
     incorrectAccess: {
       flaggedUsers: flaggedUserList.length,

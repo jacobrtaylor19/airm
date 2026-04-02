@@ -266,7 +266,9 @@ export const releases = pgTable("releases", {
   description: text("description"),
   status: text("status").notNull().default("planning"),              // planning | in_progress | approved | completed | archived
   releaseType: text("release_type").notNull().default("initial"),    // initial | incremental | remediation
-  targetSystem: text("target_system"),                               // SAP S/4HANA | Oracle Cloud | Workday | etc.
+  defaultSourceSystemType: text("default_source_system_type").default("SAP_ECC"), // SAP_ECC | ORACLE_EBS | WORKDAY | etc.
+  targetSystemType: text("target_system_type").default("SAP_S4HANA"),              // SAP_S4HANA | ORACLE_CLOUD | WORKDAY | etc.
+  targetSystem: text("target_system"),                               // Legacy freetext — kept for backward compat
   targetDate: text("target_date"),                                   // ISO date string
   completedDate: text("completed_date"),
   mappingDeadline: text("mapping_deadline"),                          // ISO date — when mapping must be complete
@@ -328,6 +330,7 @@ export const releaseOrgUnits = pgTable("release_org_units", {
   id: serial("id").primaryKey(),
   releaseId: integer("release_id").notNull().references(() => releases.id, { onDelete: "cascade" }),
   orgUnitId: integer("org_unit_id").notNull().references(() => orgUnits.id, { onDelete: "cascade" }),
+  sourceSystemTypeOverride: text("source_system_type_override"), // null = inherit from release default
   addedAt: text("added_at").notNull().$defaultFn(() => new Date().toISOString()),
   addedBy: text("added_by"),
 });
@@ -1015,4 +1018,23 @@ export const securityWorkItems = pgTable("security_work_items", {
   completedAt: text("completed_at"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// EVIDENCE PACKAGE RUNS (SOX/ITGC audit evidence generation history)
+// ─────────────────────────────────────────────
+
+export const evidencePackageRuns = pgTable("evidence_package_runs", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  releaseId: integer("release_id"),
+  generatedByUserId: integer("generated_by_user_id").notNull(),
+  generatedByUsername: text("generated_by_username").notNull(),
+  framework: text("framework").notNull().default("sox_404"),
+  status: text("status").notNull().default("completed"),
+  userCount: integer("user_count").notNull().default(0),
+  personaCount: integer("persona_count").notNull().default(0),
+  assignmentCount: integer("assignment_count").notNull().default(0),
+  sodConflictCount: integer("sod_conflict_count").notNull().default(0),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });

@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { getAIProvider } from "@/lib/ai/provider";
 import type { UserAccessProfile } from "./types";
 import { loadUserProfiles } from "./load-user-profiles";
+import { buildSystemContextPrompt } from "@/lib/ai/system-context";
 
 function summarizeByDepartment(profiles: UserAccessProfile[]): string {
   const depts = new Map<string, { count: number; titles: Set<string> }>();
@@ -36,13 +37,13 @@ function summarizeRolePatterns(profiles: UserAccessProfile[]): string {
     .join("\n");
 }
 
-function buildPrompt(profiles: UserAccessProfile[]): string {
+function buildPrompt(profiles: UserAccessProfile[], systemContext?: string): string {
   const deptSummary = summarizeByDepartment(profiles);
   const rolePatterns = summarizeRolePatterns(profiles);
 
   return `You are an enterprise security architect designing a persona-based security model for a system migration.
 
-## Context
+${systemContext ? systemContext + "\n" : ""}## Context
 You are analyzing ${profiles.length} users from a legacy system to identify distinct security personas. A "persona" represents a group of users who perform similar business functions and need similar system access.
 
 ## User Population Summary
@@ -109,7 +110,18 @@ export async function runPersonaGeneration(jobId: number): Promise<{ personasCre
   const provider = await getAIProvider();
   const allUsers = await db.select().from(schema.users);
   const profiles = await loadUserProfiles(allUsers);
-  const prompt = buildPrompt(profiles);
+
+  // Fetch active release's system types for context injection
+  const [activeRelease] = await db.select({
+    sourceType: schema.releases.defaultSourceSystemType,
+    targetType: schema.releases.targetSystemType,
+  }).from(schema.releases).where(eq(schema.releases.isActive, true));
+
+  const systemContext = activeRelease
+    ? buildSystemContextPrompt(activeRelease.sourceType ?? "SAP_ECC", activeRelease.targetType ?? "SAP_S4HANA")
+    : undefined;
+
+  const prompt = buildPrompt(profiles, systemContext);
 
   const text = await provider.generateText(prompt);
   // Extract JSON from response (may be wrapped in markdown code block)

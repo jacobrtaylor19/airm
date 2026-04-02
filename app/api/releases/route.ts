@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   try {
     const user = await getSessionUser();
     const body = await req.json();
-    const { name, description, status, releaseType, targetSystem, targetDate, mappingDeadline, reviewDeadline, approvalDeadline, cutoverDate, goLiveDate, isActive } = body;
+    const { name, description, status, releaseType, targetSystem, defaultSourceSystemType, targetSystemType, targetDate, mappingDeadline, reviewDeadline, approvalDeadline, cutoverDate, goLiveDate, isActive } = body;
 
     if (!name?.trim()) {
       return NextResponse.json({ error: "Release name is required" }, { status: 400 });
@@ -60,6 +60,8 @@ export async function POST(req: NextRequest) {
         status: status ?? "planning",
         releaseType: releaseType ?? "initial",
         targetSystem: targetSystem ?? null,
+        defaultSourceSystemType: defaultSourceSystemType ?? "SAP_ECC",
+        targetSystemType: targetSystemType ?? "SAP_S4HANA",
         targetDate: targetDate || null,
         mappingDeadline: mappingDeadline || null,
         reviewDeadline: reviewDeadline || null,
@@ -82,7 +84,7 @@ export async function PUT(req: NextRequest) {
   if (!(await isAdmin())) return NextResponse.json({ error: "Admin role required" }, { status: 403 });
   try {
     const body = await req.json();
-    const { id, name, description, status, releaseType, targetSystem, targetDate, completedDate, mappingDeadline, reviewDeadline, approvalDeadline, cutoverDate, goLiveDate, isActive } = body;
+    const { id, name, description, status, releaseType, targetSystem, defaultSourceSystemType, targetSystemType, targetDate, completedDate, mappingDeadline, reviewDeadline, approvalDeadline, cutoverDate, goLiveDate, isActive } = body;
 
     if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
 
@@ -99,6 +101,8 @@ export async function PUT(req: NextRequest) {
         ...(status !== undefined && { status }),
         ...(releaseType !== undefined && { releaseType }),
         ...(targetSystem !== undefined && { targetSystem }),
+        ...(defaultSourceSystemType !== undefined && { defaultSourceSystemType }),
+        ...(targetSystemType !== undefined && { targetSystemType }),
         ...(targetDate !== undefined && { targetDate }),
         ...(completedDate !== undefined && { completedDate }),
         ...(mappingDeadline !== undefined && { mappingDeadline: mappingDeadline || null }),

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, CheckCircle, Clock, Archive, Zap, Trash2, Pencil, Star, CalendarClock, ChevronDown, ChevronRight, Circle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { SOURCE_SYSTEM_TYPES, TARGET_SYSTEM_TYPES, getSourceSystemLabel, getTargetSystemLabel } from "@/lib/ai/system-context";
 
 type ReleaseStats = { total: number; approved: number; sodFlagged: number; pending: number; pct: number; userCount: number; orgUnitCount: number };
 
@@ -32,6 +33,8 @@ type ReleaseRow = {
   status: string;
   releaseType: string;
   targetSystem: string | null;
+  defaultSourceSystemType: string | null;
+  targetSystemType: string | null;
   targetDate: string | null;
   completedDate: string | null;
   isActive: boolean | null;
@@ -72,6 +75,8 @@ const EMPTY_FORM = {
   status: "planning",
   releaseType: "initial",
   targetSystem: "",
+  defaultSourceSystemType: "SAP_ECC",
+  targetSystemType: "SAP_S4HANA",
   targetDate: "",
   mappingDeadline: "",
   reviewDeadline: "",
@@ -238,6 +243,8 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
       status: r.status,
       releaseType: r.releaseType,
       targetSystem: r.targetSystem ?? "",
+      defaultSourceSystemType: r.defaultSourceSystemType ?? "SAP_ECC",
+      targetSystemType: r.targetSystemType ?? "SAP_S4HANA",
       targetDate: r.targetDate ?? "",
       mappingDeadline: r.mappingDeadline ?? "",
       reviewDeadline: r.reviewDeadline ?? "",
@@ -333,8 +340,8 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
           <div className="text-sm">
             <span className="font-medium text-blue-800">Active release:</span>{" "}
             <span className="text-blue-700">{activeRelease.name}</span>
-            {activeRelease.targetSystem && (
-              <span className="text-blue-500 ml-2">· {activeRelease.targetSystem}</span>
+            {activeRelease.defaultSourceSystemType && (
+              <span className="text-blue-500 ml-2">· {getSourceSystemLabel(activeRelease.defaultSourceSystemType)} → {getTargetSystemLabel(activeRelease.targetSystemType ?? "SAP_S4HANA")}</span>
             )}
           </div>
           <Badge variant="outline" className="ml-auto text-xs border-blue-300 text-blue-600">
@@ -380,8 +387,15 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
                         <span className="text-xs text-muted-foreground bg-muted rounded px-1.5 py-0.5">
                           {TYPE_LABELS[r.releaseType] ?? r.releaseType}
                         </span>
-                        {r.targetSystem && (
-                          <span className="text-xs text-muted-foreground">{r.targetSystem}</span>
+                        {r.defaultSourceSystemType && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 font-normal">
+                            {getSourceSystemLabel(r.defaultSourceSystemType)}
+                          </Badge>
+                        )}
+                        {r.targetSystemType && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 font-normal border-blue-200 text-blue-700">
+                            → {getTargetSystemLabel(r.targetSystemType)}
+                          </Badge>
                         )}
                       </div>
 
@@ -559,22 +573,37 @@ export function ReleasesClient({ releases, unlinkedCount, isAdmin }: Props) {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Target System</label>
-                <Input
-                  placeholder="SAP S/4HANA"
-                  value={form.targetSystem}
-                  onChange={(e) => setForm((f) => ({ ...f, targetSystem: e.target.value }))}
-                />
+                <label className="text-sm font-medium">Source System</label>
+                <Select value={form.defaultSourceSystemType} onValueChange={(v) => setForm((f) => ({ ...f, defaultSourceSystemType: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {SOURCE_SYSTEM_TYPES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Target Date</label>
-                <Input
-                  type="date"
-                  value={form.targetDate}
-                  onChange={(e) => setForm((f) => ({ ...f, targetDate: e.target.value }))}
-                />
+                <label className="text-sm font-medium">Target System</label>
+                <Select value={form.targetSystemType} onValueChange={(v) => setForm((f) => ({ ...f, targetSystemType: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TARGET_SYSTEM_TYPES.map((s) => (
+                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Target Date</label>
+              <Input
+                type="date"
+                value={form.targetDate}
+                onChange={(e) => setForm((f) => ({ ...f, targetDate: e.target.value }))}
+              />
             </div>
 
             {/* Phase Deadlines */}

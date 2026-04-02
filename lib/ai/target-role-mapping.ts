@@ -2,14 +2,16 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getAIProvider } from "@/lib/ai/provider";
+import { buildSystemContextPrompt } from "@/lib/ai/system-context";
 
 function buildMappingPrompt(
   persona: { name: string; description: string | null; businessFunction: string | null },
-  targetRoles: { roleId: string; roleName: string; description: string | null; domain: string | null }[]
+  targetRoles: { roleId: string; roleName: string; description: string | null; domain: string | null }[],
+  systemContext?: string
 ): string {
   return `You are an enterprise security architect applying least-access principles.
 
-## Persona
+${systemContext ? systemContext + "\n" : ""}## Persona
 Name: ${persona.name}
 Description: ${persona.description || "Not specified"}
 Business Function: ${persona.businessFunction || "Not specified"}
@@ -51,6 +53,16 @@ export async function runTargetRoleMapping(jobId: number): Promise<{ personasMap
     throw new Error("No target roles available. Upload target roles first.");
   }
 
+  // Fetch active release's system types for context injection
+  const [activeRelease] = await db.select({
+    sourceType: schema.releases.defaultSourceSystemType,
+    targetType: schema.releases.targetSystemType,
+  }).from(schema.releases).where(eq(schema.releases.isActive, true));
+
+  const systemContext = activeRelease
+    ? buildSystemContextPrompt(activeRelease.sourceType ?? "SAP_ECC", activeRelease.targetType ?? "SAP_S4HANA")
+    : undefined;
+
   // Find personas that already have manual mappings — skip them
   const existingMappings = await db.select({ personaId: schema.personaTargetRoleMappings.personaId })
     .from(schema.personaTargetRoleMappings);
@@ -71,7 +83,7 @@ export async function runTargetRoleMapping(jobId: number): Promise<{ personasMap
 
     const results = await Promise.allSettled(
       batch.map(async (persona) => {
-        const prompt = buildMappingPrompt(persona, targetRoles);
+        const prompt = buildMappingPrompt(persona, targetRoles, systemContext);
         const text = await provider.generateText(prompt);
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         if (!jsonMatch) throw new Error("no_json");

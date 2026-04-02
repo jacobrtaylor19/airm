@@ -37,6 +37,8 @@ import {
   HeartPulse,
   Scale,
   ShieldCheck,
+  HelpCircle,
+  FileSpreadsheet,
 } from "lucide-react";
 
 interface NavItem {
@@ -100,6 +102,7 @@ const navSections: NavSection[] = [
   {
     label: "LEARN",
     items: [
+      { href: "/help", label: "Knowledge Base", icon: HelpCircle },
       { href: "/methodology", label: "How It Works", icon: BookOpen },
       { href: "/overview", label: "Platform Overview", icon: Info },
       { href: "/quick-reference", label: "Quick Reference", icon: BookOpen },
@@ -111,6 +114,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/admin/users", label: "App Users", icon: UserCog },
       { href: "/admin/assignments", label: "Assignments", icon: GitBranch },
+      { href: "/admin/evidence-package", label: "Audit Evidence", icon: FileSpreadsheet },
     ],
   },
   {
