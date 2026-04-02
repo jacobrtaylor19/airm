@@ -6,6 +6,8 @@ export async function generateProvisioningCsv(): Promise<string> {
   const assignments = await db.select({
     sourceUserId: schema.users.sourceUserId,
     displayName: schema.users.displayName,
+    email: schema.users.email,
+    department: schema.users.department,
     targetRoleId: schema.targetRoles.roleId,
     targetRoleName: schema.targetRoles.roleName,
     status: schema.userTargetRoleAssignments.status,
@@ -15,12 +17,16 @@ export async function generateProvisioningCsv(): Promise<string> {
     .innerJoin(schema.targetRoles, eq(schema.targetRoles.id, schema.userTargetRoleAssignments.targetRoleId))
     .where(eq(schema.userTargetRoleAssignments.status, "approved"));
 
-  const header = "source_user_id,display_name,target_role_id,target_role_name,status";
+  const now = new Date().toISOString().split("T")[0];
+  const brandedHeader = `# Provisum Provisioning Export — Generated ${now}`;
+  const brandedSubheader = `# Approved role assignments ready for provisioning`;
+  const header = "employee_id,display_name,email,department,target_role_id,target_role_name,status";
   const rows = assignments.map(a =>
-    `${csvEscape(a.sourceUserId)},${csvEscape(a.displayName)},${csvEscape(a.targetRoleId)},${csvEscape(a.targetRoleName)},${csvEscape(a.status)}`
+    [a.sourceUserId, a.displayName, a.email ?? "", a.department ?? "", a.targetRoleId, a.targetRoleName, a.status]
+      .map(csvEscape).join(",")
   );
 
-  return [header, ...rows].join("\n");
+  return [brandedHeader, brandedSubheader, header, ...rows].join("\n");
 }
 
 function csvEscape(val: string): string {

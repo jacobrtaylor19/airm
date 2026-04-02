@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, count, sql, isNotNull } from "drizzle-orm";
+import { eq, count, sql, isNotNull, and } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -12,23 +13,32 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const orgId = getOrgId(user);
+
   // ─────────────────────────────────────────────
   // 1. Core counts
   // ─────────────────────────────────────────────
-  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users);
+  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users).where(eq(schema.users.organizationId, orgId));
   const totalUsers = totalUsersRow.count;
-  const [totalPersonasRow] = await db.select({ count: count() }).from(schema.personas);
+  const [totalPersonasRow] = await db.select({ count: count() }).from(schema.personas).where(eq(schema.personas.organizationId, orgId));
   const totalPersonas = totalPersonasRow.count;
-  const [totalTargetRolesRow] = await db.select({ count: count() }).from(schema.targetRoles);
+  const [totalTargetRolesRow] = await db.select({ count: count() }).from(schema.targetRoles).where(eq(schema.targetRoles.organizationId, orgId));
   const totalTargetRoles = totalTargetRolesRow.count;
-  const [totalAssignmentsRow] = await db.select({ count: count() }).from(schema.userTargetRoleAssignments);
+  const [totalAssignmentsRow] = await db.select({ count: count() })
+    .from(schema.userTargetRoleAssignments)
+    .innerJoin(schema.users, eq(schema.userTargetRoleAssignments.userId, schema.users.id))
+    .where(eq(schema.users.organizationId, orgId));
   const totalAssignments = totalAssignmentsRow.count;
-  const [totalSodConflictsRow] = await db.select({ count: count() }).from(schema.sodConflicts);
+  const [totalSodConflictsRow] = await db.select({ count: count() })
+    .from(schema.sodConflicts)
+    .innerJoin(schema.users, eq(schema.sodConflicts.userId, schema.users.id))
+    .where(eq(schema.users.organizationId, orgId));
   const totalSodConflicts = totalSodConflictsRow.count;
 
   const [usersWithPersonaRow] = await db.select({ count: count() })
     .from(schema.userPersonaAssignments)
-    .where(isNotNull(schema.userPersonaAssignments.personaId));
+    .innerJoin(schema.users, eq(schema.userPersonaAssignments.userId, schema.users.id))
+    .where(and(isNotNull(schema.userPersonaAssignments.personaId), eq(schema.users.organizationId, orgId)));
   const usersWithPersona = usersWithPersonaRow.count;
 
   const usersWithoutPersona = totalUsers - usersWithPersona;
@@ -48,6 +58,7 @@ export async function GET() {
     })
     .from(schema.userPersonaAssignments)
     .innerJoin(schema.personas, eq(schema.userPersonaAssignments.personaId, schema.personas.id))
+    .where(eq(schema.personas.organizationId, orgId))
     .groupBy(schema.userPersonaAssignments.personaId)
     .orderBy(sql`count(*) desc`);
 
@@ -60,6 +71,8 @@ export async function GET() {
       count: count(),
     })
     .from(schema.userTargetRoleAssignments)
+    .innerJoin(schema.users, eq(schema.userTargetRoleAssignments.userId, schema.users.id))
+    .where(eq(schema.users.organizationId, orgId))
     .groupBy(schema.userTargetRoleAssignments.status);
 
   // ─────────────────────────────────────────────
@@ -68,16 +81,18 @@ export async function GET() {
   const confidenceBuckets = await db.execute(sql`
     SELECT
       CASE
-        WHEN confidence_score >= 90 THEN '90-100'
-        WHEN confidence_score >= 80 THEN '80-89'
-        WHEN confidence_score >= 70 THEN '70-79'
-        WHEN confidence_score >= 60 THEN '60-69'
-        WHEN confidence_score >= 50 THEN '50-59'
+        WHEN upa.confidence_score >= 90 THEN '90-100'
+        WHEN upa.confidence_score >= 80 THEN '80-89'
+        WHEN upa.confidence_score >= 70 THEN '70-79'
+        WHEN upa.confidence_score >= 60 THEN '60-69'
+        WHEN upa.confidence_score >= 50 THEN '50-59'
         ELSE 'Below 50'
       END as bucket,
       count(*) as count
-    FROM user_persona_assignments
-    WHERE confidence_score IS NOT NULL
+    FROM user_persona_assignments upa
+    INNER JOIN users u ON upa.user_id = u.id
+    WHERE upa.confidence_score IS NOT NULL
+      AND u.organization_id = ${orgId}
     GROUP BY bucket
     ORDER BY bucket DESC
   `);
@@ -104,7 +119,8 @@ export async function GET() {
     .from(schema.users)
     .leftJoin(schema.userPersonaAssignments, eq(schema.users.id, schema.userPersonaAssignments.userId))
     .leftJoin(schema.personas, eq(schema.userPersonaAssignments.personaId, schema.personas.id))
-    .leftJoin(schema.consolidatedGroups, eq(schema.userPersonaAssignments.consolidatedGroupId, schema.consolidatedGroups.id));
+    .leftJoin(schema.consolidatedGroups, eq(schema.userPersonaAssignments.consolidatedGroupId, schema.consolidatedGroups.id))
+    .where(eq(schema.users.organizationId, orgId));
 
   // ─────────────────────────────────────────────
   // 6. Role assignments per user (for chain)
@@ -121,7 +137,9 @@ export async function GET() {
       sodConflictCount: schema.userTargetRoleAssignments.sodConflictCount,
     })
     .from(schema.userTargetRoleAssignments)
-    .innerJoin(schema.targetRoles, eq(schema.userTargetRoleAssignments.targetRoleId, schema.targetRoles.id));
+    .innerJoin(schema.targetRoles, eq(schema.userTargetRoleAssignments.targetRoleId, schema.targetRoles.id))
+    .innerJoin(schema.users, eq(schema.userTargetRoleAssignments.userId, schema.users.id))
+    .where(eq(schema.users.organizationId, orgId));
 
   // Group role assignments by userId
   const rolesByUser: Record<number, typeof roleAssignments> = {};
@@ -139,6 +157,8 @@ export async function GET() {
       conflictCount: count(),
     })
     .from(schema.sodConflicts)
+    .innerJoin(schema.users, eq(schema.sodConflicts.userId, schema.users.id))
+    .where(eq(schema.users.organizationId, orgId))
     .groupBy(schema.sodConflicts.userId);
 
   const sodMap: Record<number, number> = {};
@@ -155,6 +175,8 @@ export async function GET() {
       roleCount: count(),
     })
     .from(schema.userSourceRoleAssignments)
+    .innerJoin(schema.users, eq(schema.userSourceRoleAssignments.userId, schema.users.id))
+    .where(eq(schema.users.organizationId, orgId))
     .groupBy(schema.userSourceRoleAssignments.userId);
 
   const sourceRoleMap: Record<number, number> = {};
@@ -178,7 +200,8 @@ export async function GET() {
     })
     .from(schema.personaTargetRoleMappings)
     .innerJoin(schema.personas, eq(schema.personaTargetRoleMappings.personaId, schema.personas.id))
-    .innerJoin(schema.targetRoles, eq(schema.personaTargetRoleMappings.targetRoleId, schema.targetRoles.id));
+    .innerJoin(schema.targetRoles, eq(schema.personaTargetRoleMappings.targetRoleId, schema.targetRoles.id))
+    .where(eq(schema.personas.organizationId, orgId));
 
   // ─────────────────────────────────────────────
   // 10. Build enriched user chain

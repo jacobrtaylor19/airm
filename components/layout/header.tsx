@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Bell, LayoutGrid } from "lucide-react";
+import { LogOut, Bell, LayoutGrid, ArrowLeft } from "lucide-react";
 import { ReleaseSelector } from "@/components/layout/release-selector";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import type { ReleaseInfo } from "@/lib/releases";
@@ -109,8 +109,8 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
   }
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-brand-border bg-brand-cream/80 backdrop-blur-sm px-6">
-      <div className="flex items-center gap-3">
+    <header className="flex h-14 items-center justify-between border-b border-brand-border bg-brand-cream/80 backdrop-blur-sm px-3 sm:px-6">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         {/* Module navigation */}
         {basePath === "/home" ? (
           /* Tile launcher: Provisum wordmark — Geist Sans Bold, no icon (per branding spec §5) */
@@ -138,10 +138,21 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
 
             <div className="h-4 w-px bg-brand-border" />
 
-            <div>
-              <h1 className="text-lg font-semibold text-brand-text">{page.title}</h1>
+            {/* Back button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-brand-text-muted hover:text-brand-text shrink-0"
+              onClick={() => router.back()}
+              title="Go back"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg font-semibold text-brand-text truncate">{page.title}</h1>
               {page.description && (
-                <p className="text-xs text-brand-text-muted -mt-0.5">{page.description}</p>
+                <p className="text-xs text-brand-text-muted -mt-0.5 hidden md:block">{page.description}</p>
               )}
             </div>
           </>

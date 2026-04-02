@@ -110,48 +110,49 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
   async function autoMapAll() {
     setAutoMapping(true);
     setAutoMapProgress(null);
-    let jobId: number | null = null;
-    let pollTimer: ReturnType<typeof setInterval> | null = null;
 
     try {
-      // Start the job -- this returns immediately with jobId
+      // Start the job — returns immediately with jobId
       const res = await fetch("/api/ai/target-role-mapping", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
         toast.error(`Auto-map failed: ${data.error}`);
+        setAutoMapping(false);
         return;
       }
-      jobId = data.jobId;
+      const jobId = data.jobId;
+      toast.info("Auto-mapping started…");
 
-      // Poll for progress every 1.5s
-      if (jobId) {
-        pollTimer = setInterval(async () => {
-          try {
-            const statusRes = await fetch(`/api/jobs/${jobId}`);
-            if (statusRes.ok) {
-              const status = await statusRes.json();
-              setAutoMapProgress({
-                processed: status.processed || 0,
-                total: status.totalRecords || 0,
-              });
-              if (status.status === "completed" || status.status === "failed") {
-                if (pollTimer) clearInterval(pollTimer);
-              }
-            }
-          } catch { /* ignore polling errors */ }
-        }, 1500);
-      }
-
-      // Wait for the actual result (the POST blocks until done)
-      // Since we already have the response, just show success
-      toast.success(`Mapped ${data.personasMapped} personas with ${data.totalMappings} role assignments`);
+      // Poll for progress every 1.5s until completion
+      const pollTimer = setInterval(async () => {
+        try {
+          const statusRes = await fetch(`/api/jobs/${jobId}`);
+          if (!statusRes.ok) return;
+          const status = await statusRes.json();
+          setAutoMapProgress({
+            processed: status.processed || 0,
+            total: status.totalRecords || 0,
+          });
+          if (status.status === "completed") {
+            clearInterval(pollTimer);
+            const mapped = status.totalRecords || status.processed || 0;
+            toast.success(`Auto-mapping complete: ${mapped} personas mapped`);
+            setAutoMapping(false);
+            setAutoMapProgress(null);
+            router.refresh();
+          } else if (status.status === "failed") {
+            clearInterval(pollTimer);
+            toast.error("Auto-mapping failed. Check the job log for details.");
+            setAutoMapping(false);
+            setAutoMapProgress(null);
+            router.refresh();
+          }
+        } catch { /* ignore polling errors */ }
+      }, 1500);
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
-    } finally {
-      if (pollTimer) clearInterval(pollTimer);
       setAutoMapping(false);
       setAutoMapProgress(null);
-      router.refresh();
     }
   }
 

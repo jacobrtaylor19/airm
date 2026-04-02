@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle, ChevronRight, Loader2, Search, X, Save, Send, Plus } from "lucide-react";
+import { CheckCircle, ChevronRight, Loader2, Search, X, Save, Send, Plus, Undo2, RefreshCw } from "lucide-react";
 import type { TargetRoleRow, GapRow, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
 
 // -----------------------------------------------
@@ -19,6 +19,7 @@ function getUserStatus(u: UserRefinementDetail): string {
   const currentWave = u.allAssignments.filter(a => a.releasePhase !== "existing");
   if (currentWave.length === 0) return "none";
   const statuses = currentWave.map(a => a.status);
+  if (statuses.some(s => s === "remap_required")) return "remap_required";
   if (statuses.some(s => s === "sod_rejected")) return "sod_rejected";
   if (statuses.every(s => s === "approved")) return "approved";
   if (statuses.some(s => s === "compliance_approved" || s === "ready_for_approval")) return "sod_clean";
@@ -26,9 +27,19 @@ function getUserStatus(u: UserRefinementDetail): string {
   return "draft";
 }
 
-function StatusBadgeInline({ status }: { status: string }) {
+function isRemappedUser(u: UserRefinementDetail): boolean {
+  return u.allAssignments.some(a => a.status === "remap_required");
+}
+
+function StatusBadgeInline({ status, isRemap }: { status: string; isRemap?: boolean }) {
   switch (status) {
-    case "draft": return <Badge variant="outline" className="text-xs bg-slate-50">Draft</Badge>;
+    case "draft": return (
+      <span className="flex items-center gap-1">
+        <Badge variant="outline" className="text-xs bg-slate-50">Draft</Badge>
+        {isRemap && <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200"><RefreshCw className="h-2.5 w-2.5 mr-0.5" />Remapped</Badge>}
+      </span>
+    );
+    case "remap_required": return <Badge className="text-xs bg-amber-100 text-amber-700 border-amber-200"><RefreshCw className="h-2.5 w-2.5 mr-0.5" />Remap Required</Badge>;
     case "pending_review": return <Badge className="text-xs bg-teal-100 text-teal-700 border-teal-200">Pending Review</Badge>;
     case "sod_clean": return <Badge className="text-xs bg-emerald-100 text-emerald-700 border-emerald-200">SOD Clean</Badge>;
     case "sod_rejected": return <Badge className="text-xs bg-red-100 text-red-700 border-red-200">SOD Conflict</Badge>;
@@ -65,23 +76,26 @@ export function RefinementsTab({
   const [submittingBulk, setSubmittingBulk] = useState(false);
   const [submittingSingle, setSubmittingSingle] = useState(false);
   const [roleDomainFilter, setRoleDomainFilter] = useState<string>("all");
+  const [sendingBack, setSendingBack] = useState(false);
+  // Local state for optimistic updates — start from props, update locally on submit
+  const [localDetails, setLocalDetails] = useState(refinementDetails);
   const router = useRouter();
 
   const isExecutor = userRole && ["system_admin", "admin", "mapper"].includes(userRole);
-  const selectedUser = refinementDetails.find(u => u.userId === selectedUserId);
+  const selectedUser = localDetails.find(u => u.userId === selectedUserId);
 
   // Unique departments for filter
-  const departments = Array.from(new Set(refinementDetails.map(u => u.department).filter((d): d is string => d !== null))).sort();
+  const departments = Array.from(new Set(localDetails.map(u => u.department).filter((d): d is string => d !== null))).sort();
 
   // Status counts
-  const statusCounts = refinementDetails.reduce((acc, u) => {
+  const statusCounts = localDetails.reduce((acc, u) => {
     const s = getUserStatus(u);
     acc[s] = (acc[s] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
   // Filter users
-  const filteredDetails = refinementDetails.filter(u => {
+  const filteredDetails = localDetails.filter(u => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!u.userName.toLowerCase().includes(q) &&
@@ -96,7 +110,7 @@ export function RefinementsTab({
   const draftUsers = filteredDetails.filter(u => getUserStatus(u) === "draft");
 
   function openUserPanel(userId: number) {
-    const user = refinementDetails.find(u => u.userId === userId);
+    const user = localDetails.find(u => u.userId === userId);
     if (user) {
       setSelectedUserId(userId);
       setEditRoles(user.allAssignments.map(a => a.targetRoleId));
@@ -149,7 +163,7 @@ export function RefinementsTab({
   async function submitUserForReview(userId: number) {
     setSubmittingSingle(true);
     try {
-      const user = refinementDetails.find(u => u.userId === userId);
+      const user = localDetails.find(u => u.userId === userId);
       if (!user) return;
       const draftIds = user.allAssignments.filter(a => a.status === "draft").map(a => a.assignmentId);
       if (draftIds.length === 0) { toast.error("No draft assignments to submit"); return; }
@@ -159,8 +173,15 @@ export function RefinementsTab({
         body: JSON.stringify({ assignmentIds: draftIds }),
       });
       const data = await res.json();
-      if (!res.ok) toast.error(data.error || "Failed to submit");
-      else { toast.success(`${data.updated} assignment${data.updated === 1 ? "" : "s"} submitted for review`); router.refresh(); }
+      if (!res.ok) { toast.error(data.error || "Failed to submit"); return; }
+      // Optimistic update: immediately move user out of Draft status in local state
+      setLocalDetails(prev => prev.map(u =>
+        u.userId === userId
+          ? { ...u, allAssignments: u.allAssignments.map(a => a.status === "draft" ? { ...a, status: "pending_review" } : a) }
+          : u
+      ));
+      toast.success(`${data.updated} assignment${data.updated === 1 ? "" : "s"} submitted for review`);
+      router.refresh();
     } catch { toast.error("Failed to submit"); }
     finally { setSubmittingSingle(false); }
   }
@@ -171,7 +192,7 @@ export function RefinementsTab({
       const allDraftIds: number[] = [];
       const selectedArr = Array.from(selectedIds);
       for (const userId of selectedArr) {
-        const user = refinementDetails.find(u => u.userId === userId);
+        const user = localDetails.find(u => u.userId === userId);
         if (user) {
           allDraftIds.push(...user.allAssignments.filter(a => a.status === "draft").map(a => a.assignmentId));
         }
@@ -183,10 +204,46 @@ export function RefinementsTab({
         body: JSON.stringify({ assignmentIds: allDraftIds }),
       });
       const data = await res.json();
-      if (!res.ok) toast.error(data.error || "Failed to submit");
-      else { toast.success(`${data.updated} assignment${data.updated === 1 ? "" : "s"} submitted for review`); setSelectedIds(new Set()); router.refresh(); }
+      if (!res.ok) { toast.error(data.error || "Failed to submit"); return; }
+      // Optimistic update: move all selected users out of Draft
+      const submitted = new Set(selectedArr);
+      setLocalDetails(prev => prev.map(u =>
+        submitted.has(u.userId)
+          ? { ...u, allAssignments: u.allAssignments.map(a => a.status === "draft" ? { ...a, status: "pending_review" } : a) }
+          : u
+      ));
+      toast.success(`${data.updated} assignment${data.updated === 1 ? "" : "s"} submitted for review`);
+      setSelectedIds(new Set());
+      router.refresh();
     } catch { toast.error("Failed to submit"); }
     finally { setSubmittingBulk(false); }
+  }
+
+  async function sendBackToDraft(userId: number) {
+    setSendingBack(true);
+    try {
+      const user = localDetails.find(u => u.userId === userId);
+      if (!user) return;
+      const pendingIds = user.allAssignments
+        .filter(a => a.status === "pending_review" || a.status === "compliance_approved" || a.status === "ready_for_approval")
+        .map(a => a.assignmentId);
+      if (pendingIds.length === 0) { toast.error("No assignments to send back"); return; }
+      const res = await fetch("/api/approvals/send-back", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignmentIds: pendingIds, reason: "Sent back by mapper for re-editing" }),
+      });
+      if (!res.ok) { const data = await res.json(); toast.error(data.error || "Failed to send back"); return; }
+      // Optimistic update
+      setLocalDetails(prev => prev.map(u =>
+        u.userId === userId
+          ? { ...u, allAssignments: u.allAssignments.map(a => ["pending_review", "compliance_approved", "ready_for_approval"].includes(a.status) ? { ...a, status: "draft" } : a) }
+          : u
+      ));
+      toast.success("Assignments sent back to Draft for editing");
+      router.refresh();
+    } catch { toast.error("Failed to send back"); }
+    finally { setSendingBack(false); }
   }
 
   const selectedUserStatus = selectedUser ? getUserStatus(selectedUser) : "none";
@@ -286,7 +343,21 @@ export function RefinementsTab({
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      {isExecutor && <TableHead className="w-8"></TableHead>}
+                      {isExecutor && (
+                        <TableHead className="w-8">
+                          {draftUsers.length > 0 && (
+                            <input
+                              type="checkbox"
+                              className="h-3.5 w-3.5 accent-primary"
+                              checked={selectedIds.size > 0 && selectedIds.size === draftUsers.length}
+                              onChange={() => {
+                                if (selectedIds.size === draftUsers.length) setSelectedIds(new Set());
+                                else setSelectedIds(new Set(draftUsers.map(u => u.userId)));
+                              }}
+                            />
+                          )}
+                        </TableHead>
+                      )}
                       <TableHead>User</TableHead>
                       <TableHead>Department</TableHead>
                       <TableHead>Persona</TableHead>
@@ -330,7 +401,7 @@ export function RefinementsTab({
                           <TableCell className="text-sm">{u.department ?? "\u2014"}</TableCell>
                           <TableCell className="text-sm">{u.personaName ?? "\u2014"}</TableCell>
                           <TableCell className="text-sm">{u.allAssignments.length}</TableCell>
-                          <TableCell><StatusBadgeInline status={status} /></TableCell>
+                          <TableCell><StatusBadgeInline status={status} isRemap={isRemappedUser(u)} /></TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
                               {isExecutor && isDraft && (
@@ -383,8 +454,21 @@ export function RefinementsTab({
                 </div>
 
                 {!isEditable && (
-                  <div className="rounded-md bg-muted/50 border px-3 py-2 text-xs text-muted-foreground">
-                    Assignments are locked ({selectedUserStatus === "pending_review" ? "pending SOD review" : selectedUserStatus.replace("_", " ")}). Send back to Draft to edit.
+                  <div className="rounded-md bg-muted/50 border px-3 py-2 text-xs text-muted-foreground space-y-2">
+                    <p>Assignments are locked ({selectedUserStatus === "pending_review" ? "pending SOD review" : selectedUserStatus.replace("_", " ")}).</p>
+                    {isExecutor && (selectedUserStatus === "pending_review" || selectedUserStatus === "sod_clean") && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                        onClick={() => sendBackToDraft(selectedUser!.userId)}
+                        disabled={sendingBack}
+                      >
+                        {sendingBack
+                          ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Sending back…</>
+                          : <><Undo2 className="h-3 w-3 mr-1" />Send Back to Draft</>}
+                      </Button>
+                    )}
                   </div>
                 )}
 

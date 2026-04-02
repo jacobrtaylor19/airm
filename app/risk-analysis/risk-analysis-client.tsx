@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -39,6 +40,7 @@ function RiskBadge({ level }: { level: "low" | "medium" | "high" }) {
 export function RiskAnalysisClient({ risk }: Props) {
   const [showAdoptionDrill, setShowAdoptionDrill] = useState(false);
   const [adoptionFilter, setAdoptionFilter] = useState<"all" | "gained" | "reduced">("all");
+  const router = useRouter();
 
   const bcLevel = riskLevel(risk.businessContinuity.usersAtRisk, [5, 20]);
   const adoptionLevel = riskLevel(risk.adoption.usersWithNewAccess + risk.adoption.usersWithReducedAccess, [10, 30]);
@@ -279,7 +281,7 @@ export function RiskAnalysisClient({ risk }: Props) {
                   .map((u) => {
                     const net = u.targetPermCount - u.sourcePermCount;
                     return (
-                      <tr key={u.userId} className="border-b last:border-0 hover:bg-muted/50">
+                      <tr key={u.userId} className="border-b last:border-0 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/users/${u.userId}`)}>
                         <td className="py-2 pr-3 font-medium">{u.userName}</td>
                         <td className="py-2 pr-3 text-muted-foreground">{u.department ?? "—"}</td>
                         <td className="py-2 pr-3">

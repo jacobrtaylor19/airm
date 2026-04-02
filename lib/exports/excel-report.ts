@@ -332,6 +332,9 @@ export async function generateExcelReport(generatedByUsername?: string): Promise
     .innerJoin(schema.personas, eq(schema.personas.id, schema.permissionGaps.personaId))
     .innerJoin(schema.sourcePermissions, eq(schema.sourcePermissions.id, schema.permissionGaps.sourcePermissionId));
 
+  if (gapRows.length === 0) {
+    sheet5.addRow(["No permission gaps detected", "", "", "", ""]);
+  }
   for (const g of gapRows) {
     sheet5.addRow(g);
   }

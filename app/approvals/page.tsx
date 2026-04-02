@@ -39,6 +39,7 @@ export default async function ApprovalsPage() {
     }
   }
 
+  const pendingReview = queue.filter(a => a.status === "pending_review");
   const readyForApproval = queue.filter(a => a.status === "ready_for_approval");
   const approved = queue.filter(a => a.status === "approved");
   const complianceApproved = queue.filter(a => a.status === "compliance_approved");
@@ -66,6 +67,7 @@ export default async function ApprovalsPage() {
       <ApprovalsClient
         queue={queue}
         counts={{
+          pendingReview: pendingReview.length,
           readyForApproval: readyForApproval.length,
           approved: approved.length,
           complianceApproved: complianceApproved.length,

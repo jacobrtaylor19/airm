@@ -24,6 +24,7 @@ interface DepartmentStat {
 interface ApprovalsProps {
   queue: ApprovalRow[];
   counts: {
+    pendingReview?: number;
     readyForApproval: number;
     approved: number;
     complianceApproved: number;
@@ -51,6 +52,7 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
   const isViewer = userRole === "viewer";
   const isMapper = userRole === "mapper";
   const isCoordinator = userRole === "coordinator";
+  const isAdmin = userRole === "admin" || userRole === "system_admin";
   // Only approvers, admins, and system_admins can approve — mappers can only send back
   const canApprove = !isViewer && !isMapper && !isCoordinator;
   // Mappers can send back assignments to draft for re-editing
@@ -188,11 +190,12 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
   }
 
   // Filter to show actionable items, optionally by department
+  // Admins see all statuses (including pending_review) for visibility; approvers see approval-stage items
+  const visibleStatuses = isAdmin
+    ? ["pending_review", "ready_for_approval", "compliance_approved", "sod_risk_accepted", "approved"]
+    : ["ready_for_approval", "compliance_approved", "sod_risk_accepted", "approved"];
   const actionable = queue.filter(a =>
-    (a.status === "ready_for_approval" ||
-    a.status === "compliance_approved" ||
-    a.status === "sod_risk_accepted" ||
-    a.status === "approved") &&
+    visibleStatuses.includes(a.status) &&
     (deptFilter === "all" || a.department === deptFilter)
   );
 

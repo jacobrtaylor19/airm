@@ -44,6 +44,14 @@ export function SodPageClient({
   const [conflictTypeFilter, setConflictTypeFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"conflicts" | "integrity">("conflicts");
+  // Local state for optimistic updates
+  const [localConflicts, setLocalConflicts] = useState(conflicts);
+  // Keep local conflicts in sync when server data refreshes
+  const [prevConflicts, setPrevConflicts] = useState(conflicts);
+  if (conflicts !== prevConflicts) {
+    setLocalConflicts(conflicts);
+    setPrevConflicts(conflicts);
+  }
   const router = useRouter();
 
   const isMapper = userRole === "mapper";
@@ -55,8 +63,8 @@ export function SodPageClient({
   const securityRoles = ["security.lead", "compliance.officer"];
   const canSeeWithinRole = isAdmin || isApprover || (isMapper && securityRoles.includes(userName ?? ""));
 
-  // Filtering
-  const filtered = conflicts.filter((c) => {
+  // Filtering — use localConflicts for optimistic updates
+  const filtered = localConflicts.filter((c) => {
     if (!canSeeWithinRole && c.conflictType === "within_role") return false;
     if (severityFilter !== "all" && c.severity !== severityFilter) return false;
     if (statusFilter !== "all" && c.resolutionStatus !== statusFilter) return false;
@@ -74,7 +82,7 @@ export function SodPageClient({
     return true;
   });
 
-  const totalConflicts = conflicts.length;
+  const totalConflicts = localConflicts.length;
 
   async function runAnalysis() {
     setRunning(true);
@@ -83,15 +91,39 @@ export function SodPageClient({
       if (!res.ok) {
         const data = await res.json();
         toast.error(`SOD analysis failed: ${data.error}`);
-      } else {
-        const data = await res.json();
-        toast.success(`Analysis complete: ${data.conflictsFound} conflicts found across ${data.usersAnalyzed} users`);
+        setRunning(false);
+        return;
       }
+      const { jobId } = await res.json();
+      toast.info("SOD analysis started…");
+
+      // Poll job status until completion
+      let attempts = 0;
+      const poll = setInterval(async () => {
+        attempts++;
+        try {
+          const jobRes = await fetch(`/api/jobs/${jobId}`);
+          if (!jobRes.ok) return;
+          const job = await jobRes.json();
+          if (job.status === "completed") {
+            clearInterval(poll);
+            const users = job.totalRecords ?? job.processed ?? 0;
+            toast.success(`Analysis complete: ${users} users analyzed`);
+            setRunning(false);
+            router.refresh();
+          } else if (job.status === "failed" || attempts > 90) {
+            clearInterval(poll);
+            toast.error(job.status === "failed" ? "SOD analysis failed" : "SOD analysis timed out");
+            setRunning(false);
+            router.refresh();
+          }
+        } catch {
+          // Silently retry on network blip
+        }
+      }, 2000);
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);
-    } finally {
       setRunning(false);
-      router.refresh();
     }
   }
 
@@ -107,7 +139,9 @@ export function SodPageClient({
         const data = await res.json();
         toast.error(data.error || "Failed to fix mapping");
       } else {
-        toast.success("Role removed and conflict resolved");
+        // Optimistic: remove conflict from local state immediately
+        setLocalConflicts(prev => prev.filter(c => c.id !== conflictId));
+        toast.success("Role removed and conflict resolved. Affected users reverted to Draft for re-submission.");
       }
     } catch (err) {
       toast.error(`Error: ${err instanceof Error ? err.message : "Unknown"}`);

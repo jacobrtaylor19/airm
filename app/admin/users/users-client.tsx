@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Loader2, Mail, Upload, RotateCw } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Loader2, Mail, Upload, RotateCw, MoreHorizontal, UserX, Shield, Send } from "lucide-react";
 import { toast } from "sonner";
 
 interface AppUser {
@@ -46,15 +47,14 @@ export function AdminUsersClient() {
   const [users, setUsers] = useState<AppUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Create user dialog
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [username, setUsername] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState("mapper");
-  const [error, setError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  // Change role dialog
+  const [changeRoleOpen, setChangeRoleOpen] = useState(false);
+  const [changeRoleUser, setChangeRoleUser] = useState<AppUser | null>(null);
+  const [newRole, setNewRole] = useState("mapper");
+  const [changingRole, setChangingRole] = useState(false);
+
+  // Deactivating
+  const [deactivatingId, setDeactivatingId] = useState<number | null>(null);
 
   // Invite dialog
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -84,33 +84,72 @@ export function AdminUsersClient() {
     setLoading(false);
   }
 
-  async function createUser(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setSubmitting(true);
+  async function changeUserRole() {
+    if (!changeRoleUser) return;
+    setChangingRole(true);
     try {
-      const res = await fetch("/api/admin/app-users", {
-        method: "POST",
+      const res = await fetch(`/api/admin/app-users/${changeRoleUser.id}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, displayName, email, password, role }),
+        body: JSON.stringify({ role: newRole }),
       });
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || "Failed to create user");
+        toast.error(data.error || "Failed to change role");
         return;
       }
-      setDialogOpen(false);
-      setUsername("");
-      setDisplayName("");
-      setEmail("");
-      setPassword("");
-      setRole("mapper");
-      toast.success("User created successfully");
+      toast.success(`${changeRoleUser.displayName} role changed to ${newRole}`);
+      setChangeRoleOpen(false);
+      setChangeRoleUser(null);
       fetchUsers();
     } catch {
-      setError("An error occurred");
+      toast.error("An error occurred");
     } finally {
-      setSubmitting(false);
+      setChangingRole(false);
+    }
+  }
+
+  async function deactivateUser(userId: number) {
+    setDeactivatingId(userId);
+    try {
+      const res = await fetch(`/api/admin/app-users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: false }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to deactivate user");
+        return;
+      }
+      toast.success("User deactivated");
+      fetchUsers();
+    } catch {
+      toast.error("An error occurred");
+    } finally {
+      setDeactivatingId(null);
+    }
+  }
+
+  async function reactivateUser(userId: number) {
+    setDeactivatingId(userId);
+    try {
+      const res = await fetch(`/api/admin/app-users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: true }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error(data.error || "Failed to reactivate user");
+        return;
+      }
+      toast.success("User reactivated");
+      fetchUsers();
+    } catch {
+      toast.error("An error occurred");
+    } finally {
+      setDeactivatingId(null);
     }
   }
 
@@ -239,11 +278,8 @@ export function AdminUsersClient() {
         <Button variant="outline" onClick={() => setBulkOpen(true)}>
           <Upload className="h-4 w-4 mr-2" /> Bulk Upload
         </Button>
-        <Button variant="outline" onClick={() => setInviteOpen(true)}>
+        <Button onClick={() => setInviteOpen(true)}>
           <Mail className="h-4 w-4 mr-2" /> Invite User
-        </Button>
-        <Button onClick={() => setDialogOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" /> Add User
         </Button>
       </div>
 
@@ -288,21 +324,37 @@ export function AdminUsersClient() {
                       {new Date(u.createdAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      {canResendInvite(u) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => resendInvite(u.id)}
-                          disabled={resendingId === u.id}
-                          title="Resend invite"
-                        >
-                          {resendingId === u.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <RotateCw className="h-3.5 w-3.5" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={deactivatingId === u.id || resendingId === u.id}>
+                            {(deactivatingId === u.id || resendingId === u.id) ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <MoreHorizontal className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-44">
+                          <DropdownMenuItem onClick={() => { setChangeRoleUser(u); setNewRole(u.role); setChangeRoleOpen(true); }}>
+                            <Shield className="h-3.5 w-3.5 mr-2" /> Change Role
+                          </DropdownMenuItem>
+                          {canResendInvite(u) && (
+                            <DropdownMenuItem onClick={() => resendInvite(u.id)}>
+                              <Send className="h-3.5 w-3.5 mr-2" /> {u.inviteStatus === "no_invite" ? "Send Invite" : "Resend Invite"}
+                            </DropdownMenuItem>
                           )}
-                        </Button>
-                      )}
+                          <DropdownMenuSeparator />
+                          {u.isActive ? (
+                            <DropdownMenuItem onClick={() => deactivateUser(u.id)} className="text-red-600 focus:text-red-600">
+                              <UserX className="h-3.5 w-3.5 mr-2" /> Deactivate
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => reactivateUser(u.id)} className="text-emerald-600 focus:text-emerald-600">
+                              <RotateCw className="h-3.5 w-3.5 mr-2" /> Reactivate
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -312,32 +364,19 @@ export function AdminUsersClient() {
         </CardContent>
       </Card>
 
-      {/* Create User Dialog (existing flow with password) */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {/* Change Role Dialog */}
+      <Dialog open={changeRoleOpen} onOpenChange={setChangeRoleOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add App User</DialogTitle>
+            <DialogTitle>Change Role — {changeRoleUser?.displayName}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={createUser} className="space-y-4">
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Current role: <Badge variant="secondary" className={`text-xs ${roleColors[changeRoleUser?.role ?? ""] ?? ""}`}>{changeRoleUser?.role}</Badge>
+            </p>
             <div>
-              <label className="text-sm font-medium">Username</label>
-              <Input value={username} onChange={(e) => setUsername(e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Display Name</label>
-              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Email (optional)</label>
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Password</label>
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1" />
-            </div>
-            <div>
-              <label className="text-sm font-medium">Role</label>
-              <Select value={role} onValueChange={setRole}>
+              <label className="text-sm font-medium">New Role</label>
+              <Select value={newRole} onValueChange={setNewRole}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ROLES.map((r) => (
@@ -346,14 +385,13 @@ export function AdminUsersClient() {
                 </SelectContent>
               </Select>
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
             <DialogFooter>
-              <Button variant="outline" type="button" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={submitting || !username || !displayName || !password}>
-                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create User"}
+              <Button variant="outline" type="button" onClick={() => setChangeRoleOpen(false)}>Cancel</Button>
+              <Button onClick={changeUserRole} disabled={changingRole || newRole === changeRoleUser?.role}>
+                {changingRole ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Role"}
               </Button>
             </DialogFooter>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
 

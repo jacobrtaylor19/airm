@@ -422,6 +422,204 @@ Invited users receive an email with a link to set their password and activate th
 
 Non-admin users are scoped to their assigned org unit. A mapper assigned to "Finance" only sees users and assignments within the Finance org unit and its children. Admins see everything.`,
   },
+  {
+    slug: "admin-onboarding-guide",
+    title: "Admin Onboarding Guide",
+    summary: "Complete setup guide for administrators: initial configuration, data upload, pipeline stages, role assignment, and approval workflow.",
+    category: "admin",
+    roles: ADMIN_ROLES,
+    relatedSlugs: ["managing-users", "migration-workflow", "uploading-data"],
+    content: `## Admin Onboarding Guide
+
+This guide walks administrators through the complete Provisum setup process, from initial configuration to go-live.
+
+### Phase 1: Initial Setup
+
+1. **Log in** with your admin credentials at the login page
+2. **Navigate to Admin** — Open the Admin module from the home tile launcher
+3. **Configure Settings** — In the Config Console, review:
+   - Confidence threshold for auto-approval (default: 85%)
+   - Provisioning alert threshold (default: 30%)
+   - Email notification settings (requires RESEND_API_KEY)
+   - Feature flags for optional capabilities
+
+### Phase 2: Invite Your Team
+
+1. Go to **Admin → App Users**
+2. Click **Invite User** for each team member
+3. Assign appropriate roles:
+   - **Mapper** — Will edit role assignments and run the AI pipeline
+   - **Approver** — Will review and approve/reject assignments
+   - **Coordinator** — Will manage deadlines and send reminders
+   - **Project Manager** — Will oversee releases and timelines
+   - **Compliance Officer** — Will triage escalated SOD conflicts
+   - **Security Architect** — Will review target role designs
+   - **Viewer** — Read-only access for stakeholders
+4. Set **org unit** scoping if using departmental scoping
+
+### Phase 3: Upload Source Data
+
+Navigate to **Admin → Data Upload** and upload in this order:
+
+| Step | Upload Type | Template | Description |
+|------|-----------|----------|-------------|
+| 1 | Org Hierarchy | org-hierarchy-template.csv | Department structure |
+| 2 | Source Users | source-users-template.csv | User profiles with departments |
+| 3 | Source Roles | source-roles-template.csv | Legacy system roles |
+| 4 | User-Role Assignments | user-role-assignments-template.csv | Who has what access today |
+| 5 | Target Roles | target-roles-template.csv | New system role catalog |
+| 6 | SOD Rules | sod-rules-template.csv | Conflict rules matrix |
+| 7 | Existing Prod Access | existing-access-template.csv | Current production assignments (optional) |
+
+Download templates from the upload page. Each includes column headers and example rows.
+
+### Phase 4: Create a Release
+
+1. Go to the **Releases** module
+2. Click **Create Release** and set:
+   - Release name (e.g., "Wave 1 — Finance")
+   - Target go-live date
+   - Mapping and approval deadlines
+   - Source and target system types
+3. **Scope the release** to specific org units or user groups
+
+### Phase 5: Run the AI Pipeline
+
+This is where Provisum shines. The pipeline runs in three stages:
+
+**Stage 1 — Persona Generation:**
+- Go to **Mapping → Personas** tab
+- Click **Generate Personas** (or use Lumen: "Generate personas for this release")
+- AI analyzes all source users' permission patterns and creates security personas
+- Review and confirm generated personas
+
+**Stage 2 — Auto-Map Roles:**
+- Go to **Mapping → Auto-Map** tab
+- Click **Auto-Map All Personas**
+- AI maps each persona to target roles based on permission overlap, naming conventions, and business function
+- Review confidence scores — high-confidence mappings (85%+) can be auto-approved
+
+**Stage 3 — SOD Analysis:**
+- Go to **SOD Analysis** module
+- Click **Run Analysis**
+- System checks all assignments against SOD rules
+- Conflicts are flagged with severity levels
+
+### Phase 6: Mapper Refinement
+
+Mappers review their scoped assignments:
+1. Open individual users in the **Mapping** module
+2. Add, remove, or swap target role assignments
+3. Use **AI Suggest** for role recommendations
+4. Submit completed users **for review** (Submit for Review button)
+
+### Phase 7: Approval Workflow
+
+1. Approvers see submitted users in the **Approvals** module
+2. Review each user's target roles, SOD status, and confidence scores
+3. **Approve** clean assignments or **Reject** with notes
+4. Rejected users go back to the mapper's draft queue
+
+### Phase 8: Export & Go-Live
+
+1. **Provisioning CSV** — Download from Exports module for loading into the target system
+2. **SOD Exception Report** — Document all accepted risks with mitigating controls
+3. **Audit Evidence Package** — SOX/ITGC audit-ready Excel with 6 tabs
+4. **Security Design Export** — Role catalog, permission matrix, and SOD summary
+5. **Full Excel Report** — Complete mapping chain for management review
+
+### Quick-Start Checklists
+
+**For Mappers:**
+- [ ] Log in and navigate to the Mapping module
+- [ ] Review your assigned org unit scope
+- [ ] Open users in Draft status
+- [ ] Review AI-suggested roles (sparkle icon)
+- [ ] Adjust assignments as needed
+- [ ] Submit completed users for review
+
+**For Approvers:**
+- [ ] Log in and navigate to the Approvals module
+- [ ] Review pending assignments
+- [ ] Check SOD conflict status (red badges = unresolved)
+- [ ] Approve clean assignments
+- [ ] Reject with notes for any issues
+
+**For Coordinators:**
+- [ ] Log in and navigate to the Notifications module
+- [ ] Monitor mapping and approval progress on Dashboard
+- [ ] Send reminders to mappers approaching deadlines
+- [ ] Track release readiness in the Releases module`,
+  },
+  {
+    slug: "quick-start-mapper",
+    title: "Quick Start: Mapper Guide",
+    summary: "Get started as a mapper: review assignments, use AI suggestions, and submit for review.",
+    category: "getting-started",
+    roles: MAPPER_ROLES,
+    relatedSlugs: ["mapping-roles", "admin-onboarding-guide"],
+    content: `## Quick Start: Mapper Guide
+
+As a mapper, your job is to review and refine the AI-generated role assignments for users in your scope.
+
+### Your Workflow
+
+1. **Open the Mapping module** from the home tile launcher
+2. **Select a user** in Draft status from the user list
+3. **Review their current assignments** — these were auto-generated by the AI based on persona analysis
+4. **Adjust as needed:**
+   - Remove roles that don't apply
+   - Add roles using the role selector
+   - Click the **AI Suggest** (sparkle) button for intelligent recommendations
+5. **Submit for Review** when you're satisfied with the user's role set
+
+### Key Tips
+
+- **Confidence scores** show how certain the AI is about each mapping. Scores below 60% need extra attention.
+- **SOD badges** (red) indicate segregation of duties conflicts. Resolve these before submitting.
+- **Remap badge** (amber) shows users who were sent back for re-mapping after SOD issues.
+- Use **Select All** checkbox to bulk-submit multiple users at once.
+- The **Send Back to Draft** button lets you pull back a submitted user if you spot an issue.
+
+### Understanding the Status Flow
+
+\`Draft\` → \`Pending Review\` → \`SOD Analysis\` → \`Compliance Approved\` / \`SOD Rejected\` → \`Approved\`
+
+You can only edit users in **Draft** status. Once submitted, the user is locked until approved or sent back.`,
+  },
+  {
+    slug: "quick-start-approver",
+    title: "Quick Start: Approver Guide",
+    summary: "Get started as an approver: review submitted assignments and approve or reject.",
+    category: "getting-started",
+    roles: APPROVER_ROLES,
+    relatedSlugs: ["admin-onboarding-guide"],
+    content: `## Quick Start: Approver Guide
+
+As an approver, you review role assignments that mappers have submitted and either approve or send them back.
+
+### Your Workflow
+
+1. **Open the Approvals module** from the home tile launcher
+2. **Review the queue** — users pending your approval are listed with their status
+3. **Click a user** to see their complete role assignment details
+4. **Check for:**
+   - SOD conflicts (red badges) — these should be resolved before approval
+   - Confidence scores — low scores may need mapper justification
+   - Role count — unusually high or low role counts warrant investigation
+5. **Approve** clean assignments or **Reject** with a reason
+
+### Approval Criteria
+
+- All SOD conflicts should be resolved or have documented mitigating controls
+- Role assignments should align with the user's job function and department
+- Confidence scores below 50% should have mapper notes explaining the override
+- Users with 10+ target roles may need a second review
+
+### After Approval
+
+Approved users are locked and ready for provisioning export. You can view approved users in the Approvals module under the "Approved" filter tab.`,
+  },
 ];
 
 export function getArticleBySlug(slug: string): HelpArticle | undefined {

@@ -75,8 +75,12 @@ export async function runSodAnalysis(scopedUserIds?: number[] | null): Promise<S
     rolePerms.get(row.roleId)!.add(row.permissionId);
   }
 
-  // 5. Clear previous conflicts
-  await db.delete(schema.sodConflicts);
+  // 5. Clear previous conflicts ONLY for users being analyzed (not the whole table)
+  const analyzedUserIds = Array.from(userDraftRoles.keys());
+  if (analyzedUserIds.length > 0) {
+    await db.delete(schema.sodConflicts)
+      .where(inArray(schema.sodConflicts.userId, analyzedUserIds));
+  }
 
   // 6. For each user with draft assignments, check all SOD rules against their FULL role set
   let conflictsFound = 0;

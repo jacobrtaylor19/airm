@@ -46,7 +46,6 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
       ? "System Admin"
       : userRole.charAt(0).toUpperCase() + userRole.slice(1).replace("_", " ");
 
-  const isDashboard = module.id === "dashboard";
   const ModuleIcon = resolveIcon(module.iconName);
 
   return (
@@ -91,6 +90,8 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
               key={item.href}
               href={item.href}
               onClick={(e) => {
+                // Always set cookie so shared pages keep this module's sidebar
+                document.cookie = `airm_active_module=${module.id};path=/;max-age=${60 * 60 * 24 * 30};samesite=lax`;
                 if (isActive) return;
                 e.preventDefault();
                 setPendingHref(item.href);
@@ -118,15 +119,15 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
           );
         })}
 
-        {/* Dashboard module: show quick-nav links to other modules */}
-        {isDashboard && allModules && allModules.length > 0 && (
+        {/* Quick-nav links to other modules (visible in all sidebars) */}
+        {allModules && allModules.length > 0 && (
           <>
             <div className="border-t border-white/10 my-3" />
             <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-white/30">
               Quick Nav
             </p>
             {allModules
-              .filter((m) => m.id !== "dashboard")
+              .filter((m) => m.id !== module.id)
               .map((m) => {
                 const MIcon = resolveIcon(m.iconName);
                 return (
@@ -161,7 +162,7 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
           </div>
         </div>
         <p className="mt-2 text-[10px] text-white/20 text-center">
-          Provisum v1.1.0
+          Provisum v1.3.0
         </p>
       </div>
     </aside>
