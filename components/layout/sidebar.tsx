@@ -26,7 +26,7 @@ import {
   Layers,
   Bell,
   Inbox,
-
+  ClipboardList,
   GitCompare,
   Calendar,
   FlaskConical,
@@ -57,6 +57,7 @@ const navSections: NavSection[] = [
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/releases", label: "Releases", icon: Layers },
+      { href: "/workstream", label: "Workstream Tracker", icon: ClipboardList },
       { href: "/upload", label: "Data Upload", icon: Upload },
       { href: "/personas", label: "Personas", icon: UserCircle },
       { href: "/mapping", label: "Role Mapping", icon: Route },

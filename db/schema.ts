@@ -281,6 +281,32 @@ export const releases = pgTable("releases", {
 });
 
 // ─────────────────────────────────────────────
+// WORKSTREAM TRACKER
+// RAID-style items scoped to role mapping workstream
+// ─────────────────────────────────────────────
+
+export const workstreamItems = pgTable("workstream_items", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  releaseId: integer("release_id"),                                    // optional link to a release
+  category: text("category").notNull(),                                // risk | action | issue | decision
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").notNull().default("proposed"),                // proposed | approved | in_progress | resolved | rejected
+  priority: text("priority").notNull().default("medium"),              // low | medium | high | critical
+  owner: text("owner"),                                                // display name of responsible person
+  proposedBy: integer("proposed_by"),                                  // appUser id
+  proposedByName: text("proposed_by_name"),                            // denormalized display name
+  approvedBy: integer("approved_by"),                                  // appUser id (PM/admin who approved)
+  approvedByName: text("approved_by_name"),
+  resolvedAt: text("resolved_at"),
+  resolutionNotes: text("resolution_notes"),
+  dueDate: text("due_date"),                                           // ISO date — when item should be resolved
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
 // RELEASE ↔ USER SCOPE (many-to-many)
 // A user may be in-scope for multiple releases
 // ─────────────────────────────────────────────
