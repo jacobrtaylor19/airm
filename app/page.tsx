@@ -277,17 +277,29 @@ export default async function Home() {
           <h2 className="text-xl font-bold text-brand-text">
             How to Sign In
           </h2>
-          <p className="mt-2 text-sm text-brand-text-muted">
-            Choose any demo persona below and use the password{" "}
-            <code className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-mono font-semibold text-teal-700">
-              DemoGuide2026!
-            </code>{" "}
-            to log in. Each persona has a different role with specific
-            permissions and views. Quick-login buttons are also available on the{" "}
+          <p className="mt-2 text-sm text-brand-text-muted leading-relaxed">
+            On the{" "}
             <Link href="/login" className="text-teal-600 underline underline-offset-2 hover:text-teal-700">
               sign-in page
-            </Link>.
+            </Link>
+            , simply click any persona button and your credentials will be
+            filled in automatically — just hit Sign In. Each persona gives
+            you a different view of the platform based on their role in the
+            migration project.
           </p>
+
+          <div className="mt-6 rounded-lg border border-teal-100 bg-teal-50/50 p-5">
+            <h3 className="text-sm font-semibold text-teal-800">
+              Multiple Demo Environments
+            </h3>
+            <p className="mt-1.5 text-sm text-teal-700 leading-relaxed">
+              The sign-in page includes a demo environment selector with
+              pre-configured scenarios for different industries — including SAP
+              S/4HANA, Oracle Fusion, Workday, Salesforce, ServiceNow, and more.
+              Switch environments at any time to see how Provisum adapts to
+              different migration contexts.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -422,11 +434,9 @@ export default async function Home() {
       <section className="bg-brand-accent-dark px-6 py-16 text-center">
         <h2 className="text-2xl font-bold text-white">Ready to explore?</h2>
         <p className="mx-auto mt-3 max-w-xl text-sm text-slate-400">
-          Sign in with any demo persona above. Use password{" "}
-          <code className="rounded bg-slate-700 px-1.5 py-0.5 text-xs font-mono text-teal-300">
-            DemoGuide2026!
-          </code>{" "}
-          for all demo accounts.
+          Click any persona on the sign-in page and credentials are filled in
+          automatically. Switch between demo environments to explore different
+          migration scenarios.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link
