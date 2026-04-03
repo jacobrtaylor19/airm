@@ -3,7 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { AIRMLogo } from "@/components/layout/airm-logo";
+import { ShieldCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -18,36 +18,59 @@ export default async function LoginPage() {
   if (!hasUsers) redirect("/setup");
 
   return (
-    <div className="flex min-h-screen">
-      {/* Left panel — dark slate brand */}
-      <div className="hidden md:flex md:w-1/2 flex-col items-center justify-center bg-brand-accent-dark px-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <AIRMLogo size="lg" className="text-teal-400 !h-16 !w-16" />
-          <h1 className="text-2xl font-bold text-white">Provisum</h1>
-          <p className="text-sm text-slate-300 max-w-xs">
-            Intelligent Role Mapping for Enterprise Migrations
-          </p>
-        </div>
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0c1e1c]">
+      {/* Background gradient layers */}
+      <div className="pointer-events-none absolute inset-0">
+        {/* Radial glow behind card */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[800px] w-[800px] rounded-full bg-teal-900/30 blur-3xl" />
+        {/* Top accent */}
+        <div className="absolute -top-32 left-1/2 -translate-x-1/2 h-64 w-[600px] rounded-full bg-teal-700/20 blur-3xl" />
+        {/* Bottom accent */}
+        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 h-40 w-[500px] rounded-full bg-teal-800/15 blur-3xl" />
+        {/* Subtle grid texture */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
+            backgroundSize: "60px 60px",
+          }}
+        />
       </div>
 
-      {/* Right panel — white form */}
-      <div className="flex w-full md:w-1/2 items-center justify-center bg-white px-6">
-        <div className="w-full max-w-sm space-y-6">
-          {/* Mobile-only brand header */}
-          <div className="flex flex-col items-center gap-3 text-center md:hidden">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-accent-dark">
-              <AIRMLogo size="md" className="text-teal-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Provisum</h1>
-              <p className="text-sm font-medium text-slate-500">
-                Intelligent Role Mapping for Enterprise Migrations
-              </p>
-            </div>
-          </div>
+      {/* Brand watermark top-left */}
+      <div className="absolute left-6 top-6 z-10 flex items-center gap-2 text-white/40">
+        <ShieldCheck className="h-4 w-4" />
+        <span className="text-sm font-semibold tracking-tight">Provisum</span>
+      </div>
+
+      {/* Brand header */}
+      <div className="relative z-10 mb-8 text-center">
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <ShieldCheck className="h-8 w-8 text-teal-400" />
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Provisum
+          </h1>
+        </div>
+        <p className="text-base font-medium text-slate-300">
+          Intelligent Role Mapping for Enterprise Migrations.
+        </p>
+        <p className="mt-1 text-sm text-slate-500">
+          Sign in to your demo workspace.
+        </p>
+      </div>
+
+      {/* Glass card */}
+      <div className="relative z-10 w-full max-w-[420px] px-4">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-xl">
           <LoginForm />
         </div>
       </div>
+
+      {/* Footer */}
+      <p className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 text-xs text-slate-600">
+        Navigate change. Build resilience.
+      </p>
     </div>
   );
 }
