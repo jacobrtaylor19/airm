@@ -5,7 +5,7 @@ import { createServerClient } from "@supabase/ssr";
 const PUBLIC_EXACT = new Set(["/", "/login", "/setup", "/methodology", "/overview", "/quick-reference"]);
 
 // Prefix-match public API routes and paths with known sub-routes
-const PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/api/cron/", "/review/", "/api/admin/users/invite/accept"];
+const PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/api/cron/", "/review/", "/api/admin/users/invite/accept", "/api/demo/"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

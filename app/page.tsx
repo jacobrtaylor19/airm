@@ -19,6 +19,7 @@ import {
   LogIn,
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
+import { DemoGate } from "./demo-gate";
 
 export const dynamic = "force-dynamic";
 
@@ -219,6 +220,7 @@ export default async function Home() {
   if (user) redirect("/home");
 
   return (
+    <DemoGate>
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <header className="bg-brand-accent-dark">
@@ -467,5 +469,6 @@ export default async function Home() {
         </p>
       </footer>
     </div>
+    </DemoGate>
   );
 }

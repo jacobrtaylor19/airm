@@ -1054,6 +1054,24 @@ export const evidencePackageRuns = pgTable("evidence_package_runs", {
 // SSO CONFIGURATIONS (enterprise SSO/SAML)
 // ─────────────────────────────────────────────
 
+// ─────────────────────────────────────────────
+// DEMO LEADS (lead capture for demo access)
+// ─────────────────────────────────────────────
+
+export const demoLeads = pgTable("demo_leads", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  company: text("company"),
+  role: text("role"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  source: text("source").default("demo_overview"),
+});
+
+// ─────────────────────────────────────────────
+// SSO CONFIGURATIONS (enterprise SSO/SAML)
+// ─────────────────────────────────────────────
+
 export const ssoConfigurations = pgTable("sso_configurations", {
   id: serial("id").primaryKey(),
   organizationId: integer("organization_id").notNull().references(() => organizations.id),
