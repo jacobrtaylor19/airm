@@ -288,9 +288,18 @@ export function resolveModuleFromPath(
   return best ?? MODULES[0]; // fallback to Dashboard
 }
 
-/** Check if a module owns a path (exact match or starts-with any prefix). */
+/** Check if a module owns a path (route prefix match OR nav href match). */
 function moduleOwnsPath(mod: AppModule, pathname: string): boolean {
-  return mod.routePrefixes.some(
+  // Check route prefixes first
+  const prefixMatch = mod.routePrefixes.some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix + "/")
+  );
+  if (prefixMatch) return true;
+
+  // Also check nav hrefs — shared pages (e.g. /target-roles) may appear in
+  // multiple modules' navs without being in each module's routePrefixes.
+  // This lets the cookie preference stick when navigating to shared pages.
+  return mod.nav.some(
+    (item) => pathname === item.href || pathname.startsWith(item.href + "/")
   );
 }
