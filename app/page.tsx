@@ -19,6 +19,7 @@ import {
   LogIn,
 } from "lucide-react";
 import { getSessionUser } from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
 import { DemoGate } from "./demo-gate";
 
 export const dynamic = "force-dynamic";
@@ -218,6 +219,9 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 export default async function Home() {
   const user = await getSessionUser();
   if (user) redirect("/home");
+
+  // On production (app.provisum.io), skip the demo overview — go straight to login
+  if (!isDemoMode()) redirect("/login");
 
   return (
     <DemoGate>

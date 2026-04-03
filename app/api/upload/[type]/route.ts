@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { parse } from "csv-parse/sync";
 import { eq } from "drizzle-orm";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { type: string } }
 ) {
+  if (isDemoMode()) {
+    return NextResponse.json(
+      { error: "Uploads are disabled in the demo environment" },
+      { status: 403 }
+    );
+  }
+
   const uploadType = params.type as UploadType;
 
   if (!REQUIRED_COLUMNS[uploadType]) {

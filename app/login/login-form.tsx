@@ -29,7 +29,7 @@ const DEMO_PERSONAS = [
   { user: "demo.viewer", label: "Viewer" },
 ];
 
-export function LoginForm() {
+export function LoginForm({ isDemo = true }: { isDemo?: boolean }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -214,81 +214,86 @@ export function LoginForm() {
         </div>
       )}
 
-      {/* Divider */}
-      <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-white/10" />
-        <span className="text-xs text-slate-500">Select a demo persona</span>
-        <div className="h-px flex-1 bg-white/10" />
-      </div>
-
-      {/* Persona pills */}
-      <div className="flex flex-wrap gap-2">
-        {DEMO_PERSONAS.map((cred) => {
-          const isSelected = username === cred.user;
-          return (
-            <button
-              key={cred.user}
-              type="button"
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
-                isSelected
-                  ? "border-teal-400/50 bg-teal-400/15 text-teal-300"
-                  : "border-white/10 text-slate-400 hover:border-teal-400/30 hover:bg-white/[0.04] hover:text-slate-200"
-              }`}
-              onClick={() => {
-                setUsername(cred.user);
-                setPassword("DemoGuide2026!");
-                setError("");
-              }}
-            >
-              <span
-                className={`h-1.5 w-1.5 rounded-full ${
-                  isSelected ? "bg-teal-400" : "bg-slate-600"
-                }`}
-              />
-              {cred.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Demo Environment Selector */}
-      <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
-        <div className="mb-2.5 flex items-center gap-2">
-          <Database className="h-3.5 w-3.5 text-slate-500" />
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-            Demo Environment
-          </span>
-        </div>
-        <div className="relative">
-          <select
-            value={selectedDemo}
-            onChange={(e) => handleDemoSwitch(e.target.value)}
-            disabled={switching}
-            className="w-full appearance-none rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 pr-8 text-sm text-slate-300 outline-none transition-colors focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {DEMO_ENVIRONMENTS.map((env) => (
-              <option
-                key={env.value}
-                value={env.value}
-                disabled={!env.available}
-              >
-                {env.label}
-                {!env.available ? " (Coming Soon)" : ""}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-        </div>
-        {switching && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
-            <Loader2 className="h-3 w-3 animate-spin" />
-            Switching demo environment...
+      {/* Demo-only: persona pills + environment selector */}
+      {isDemo && (
+        <>
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="text-xs text-slate-500">Select a demo persona</span>
+            <div className="h-px flex-1 bg-white/10" />
           </div>
-        )}
-        <p className="mt-2 text-[11px] text-slate-600">
-          Switch industry scenarios to explore different migration contexts.
-        </p>
-      </div>
+
+          {/* Persona pills */}
+          <div className="flex flex-wrap gap-2">
+            {DEMO_PERSONAS.map((cred) => {
+              const isSelected = username === cred.user;
+              return (
+                <button
+                  key={cred.user}
+                  type="button"
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                    isSelected
+                      ? "border-teal-400/50 bg-teal-400/15 text-teal-300"
+                      : "border-white/10 text-slate-400 hover:border-teal-400/30 hover:bg-white/[0.04] hover:text-slate-200"
+                  }`}
+                  onClick={() => {
+                    setUsername(cred.user);
+                    setPassword("DemoGuide2026!");
+                    setError("");
+                  }}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      isSelected ? "bg-teal-400" : "bg-slate-600"
+                    }`}
+                  />
+                  {cred.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Demo Environment Selector */}
+          <div className="rounded-lg border border-white/10 bg-white/[0.04] p-4">
+            <div className="mb-2.5 flex items-center gap-2">
+              <Database className="h-3.5 w-3.5 text-slate-500" />
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                Demo Environment
+              </span>
+            </div>
+            <div className="relative">
+              <select
+                value={selectedDemo}
+                onChange={(e) => handleDemoSwitch(e.target.value)}
+                disabled={switching}
+                className="w-full appearance-none rounded-lg border border-white/10 bg-white/[0.06] px-3 py-2 pr-8 text-sm text-slate-300 outline-none transition-colors focus:border-teal-400/50 focus:ring-1 focus:ring-teal-400/30 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {DEMO_ENVIRONMENTS.map((env) => (
+                  <option
+                    key={env.value}
+                    value={env.value}
+                    disabled={!env.available}
+                  >
+                    {env.label}
+                    {!env.available ? " (Coming Soon)" : ""}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            </div>
+            {switching && (
+              <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Switching demo environment...
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-slate-600">
+              Switch industry scenarios to explore different migration contexts.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 }

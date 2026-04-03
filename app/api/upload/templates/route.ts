@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -289,6 +290,13 @@ function buildCsvString(
 }
 
 export async function GET(request: NextRequest) {
+  if (isDemoMode()) {
+    return NextResponse.json(
+      { error: "Template downloads are disabled in the demo environment" },
+      { status: 403 }
+    );
+  }
+
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

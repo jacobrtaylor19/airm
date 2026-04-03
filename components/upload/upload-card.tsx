@@ -33,6 +33,7 @@ export function UploadCard({
   templateUrl,
   systemTag,
   isAdmin = true,
+  isDemo = false,
 }: {
   type: string;
   label: string;
@@ -43,6 +44,7 @@ export function UploadCard({
   templateUrl?: string;
   systemTag?: string;
   isAdmin?: boolean;
+  isDemo?: boolean;
 }) {
   const [status, setStatus] = useState<UploadStatus>(existingCount > 0 ? "done" : "idle");
   const [preview, setPreview] = useState<PreviewData | null>(null);
@@ -161,19 +163,37 @@ export function UploadCard({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => fileRef.current?.click()}
-                disabled={status === "uploading" || status === "committing"}
+                onClick={() => {
+                  if (isDemo) return;
+                  fileRef.current?.click();
+                }}
+                disabled={status === "uploading" || status === "committing" || isDemo}
+                title={isDemo ? "Uploads are disabled in the demo environment" : undefined}
               >
                 <FileUp className="mr-1 h-3 w-3" />
                 {status === "done" ? "Replace" : "Upload CSV"}
               </Button>
             )}
-            <a href={`/api/upload/templates?type=${type}`} download={`template-${type}.csv`}>
-              <Button variant="ghost" size="sm" type="button" className="text-muted-foreground hover:text-foreground">
+            {isDemo ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                className="text-muted-foreground"
+                disabled
+                title="Template downloads are disabled in the demo environment"
+              >
                 <Download className="mr-1 h-3 w-3" />
                 Template
               </Button>
-            </a>
+            ) : (
+              <a href={`/api/upload/templates?type=${type}`} download={`template-${type}.csv`}>
+                <Button variant="ghost" size="sm" type="button" className="text-muted-foreground hover:text-foreground">
+                  <Download className="mr-1 h-3 w-3" />
+                  Template
+                </Button>
+              </a>
+            )}
           </div>
         </CardContent>
       </Card>

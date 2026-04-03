@@ -5,6 +5,7 @@ import { PgTable } from "drizzle-orm/pg-core";
 import { requireAuth } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 import { getSourceSystemStats } from "@/lib/queries";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 import { UploadCard } from "@/components/upload/upload-card";
@@ -25,6 +26,7 @@ export default async function DataUploadPage() {
   const user = await requireAuth();
   const orgId = getOrgId(user);
   const isAdmin = user.role === "admin" || user.role === "system_admin";
+  const isDemo = isDemoMode();
   const sourceSystemStats = await getSourceSystemStats(orgId);
   const appUserCount = (await db.select({ count: count() }).from(schema.appUsers)
     .where(ne(schema.appUsers.role, "system_admin")))[0]!.count;
@@ -70,7 +72,18 @@ export default async function DataUploadPage() {
     <div className="space-y-6">
       <WorkflowStepper stages={stages} />
 
-      {!isAdmin && (
+      {isDemo && (
+        <Card className="border-blue-200 bg-blue-50/50">
+          <CardContent className="flex items-center gap-3 py-3">
+            <Eye className="h-4 w-4 text-blue-600 shrink-0" />
+            <p className="text-sm text-blue-800">
+              Demo environment — uploads and template downloads are disabled. In a live environment, this is where you would upload your source data files.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isAdmin && !isDemo && (
         <Card className="border-yellow-200 bg-yellow-50/50">
           <CardContent className="flex items-center gap-3 py-3">
             <Eye className="h-4 w-4 text-yellow-600 shrink-0" />
@@ -97,9 +110,9 @@ export default async function DataUploadPage() {
         total={3}
         isAdmin={isAdmin}
       >
-        <UploadCard type="org-units" label="Org Units / Business Units" description="Organizational hierarchy (L1 division → L2 department → L3 team)." expectedColumns="name, level, parent_name, description" required={false} existingCount={counts.orgUnits} templateUrl="/templates/org-units-template.csv" isAdmin={isAdmin} />
-        <UploadCard type="releases" label="Releases / Waves" description="Migration releases or project waves." expectedColumns="name, description, status, release_type, target_system, target_date, is_active" required={false} existingCount={counts.releases} templateUrl="/templates/releases-template.csv" isAdmin={isAdmin} />
-        <UploadCard type="release-scope" label="Release Scope" description="Maps org units to releases." expectedColumns="release_name, org_unit_name" required={false} existingCount={counts.releaseScope} templateUrl="/templates/release-scope-template.csv" isAdmin={isAdmin} />
+        <UploadCard type="org-units" label="Org Units / Business Units" description="Organizational hierarchy (L1 division → L2 department → L3 team)." expectedColumns="name, level, parent_name, description" required={false} existingCount={counts.orgUnits} templateUrl="/templates/org-units-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
+        <UploadCard type="releases" label="Releases / Waves" description="Migration releases or project waves." expectedColumns="name, description, status, release_type, target_system, target_date, is_active" required={false} existingCount={counts.releases} templateUrl="/templates/releases-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
+        <UploadCard type="release-scope" label="Release Scope" description="Maps org units to releases." expectedColumns="release_name, org_unit_name" required={false} existingCount={counts.releaseScope} templateUrl="/templates/release-scope-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
       </UploadSection>
 
       <UploadSection
@@ -108,10 +121,10 @@ export default async function DataUploadPage() {
         total={4}
         isAdmin={isAdmin}
       >
-        <UploadCard type="users" label="User List" description="Source system users with titles and departments" expectedColumns="source_user_id, display_name, email, job_title, department" required={true} existingCount={counts.users} templateUrl="/templates/users-template.csv" isAdmin={isAdmin} />
-        <UploadCard type="source-roles" label="Legacy Role Definitions" description="Source system roles. Include a 'system' column." expectedColumns="role_id, role_name, description, system, domain" required={true} existingCount={counts.sourceRoles} templateUrl="/templates/source-roles-template.csv" systemTag="Multi-System" isAdmin={isAdmin} />
-        <UploadCard type="role-assignments" label="Legacy Role Assignments" description="Which users have which legacy roles" expectedColumns="user_id, role_id" required={false} existingCount={counts.roleAssignments} templateUrl="/templates/user-source-role-assignments-template.csv" systemTag="Multi-System" isAdmin={isAdmin} />
-        <UploadCard type="role-permissions" label="Role-Permission Mapping" description="Maps roles to permissions (T-codes, etc.)" expectedColumns="role_id, permission_id" required={false} existingCount={counts.rolePermissions} templateUrl="/templates/source-role-permissions-template.csv" systemTag="Multi-System" isAdmin={isAdmin} />
+        <UploadCard type="users" label="User List" description="Source system users with titles and departments" expectedColumns="source_user_id, display_name, email, job_title, department" required={true} existingCount={counts.users} templateUrl="/templates/users-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
+        <UploadCard type="source-roles" label="Legacy Role Definitions" description="Source system roles. Include a 'system' column." expectedColumns="role_id, role_name, description, system, domain" required={true} existingCount={counts.sourceRoles} templateUrl="/templates/source-roles-template.csv" systemTag="Multi-System" isAdmin={isAdmin} isDemo={isDemo} />
+        <UploadCard type="role-assignments" label="Legacy Role Assignments" description="Which users have which legacy roles" expectedColumns="user_id, role_id" required={false} existingCount={counts.roleAssignments} templateUrl="/templates/user-source-role-assignments-template.csv" systemTag="Multi-System" isAdmin={isAdmin} isDemo={isDemo} />
+        <UploadCard type="role-permissions" label="Role-Permission Mapping" description="Maps roles to permissions (T-codes, etc.)" expectedColumns="role_id, permission_id" required={false} existingCount={counts.rolePermissions} templateUrl="/templates/source-role-permissions-template.csv" systemTag="Multi-System" isAdmin={isAdmin} isDemo={isDemo} />
       </UploadSection>
 
       <UploadSection
@@ -120,8 +133,8 @@ export default async function DataUploadPage() {
         total={2}
         isAdmin={isAdmin}
       >
-        <UploadCard type="target-roles" label="Target Role Library" description="Your target system's available roles" expectedColumns="role_id, role_name, description, system, domain" required={true} existingCount={counts.targetRoles} templateUrl="/templates/target-roles-template.csv" isAdmin={isAdmin} />
-        <UploadCard type="target-permissions" label="Target Role Permissions" description="Permissions granted by each target role" expectedColumns="permission_id, permission_name, description, system, risk_level" required={false} existingCount={counts.targetPermissions} templateUrl="/templates/target-permissions-template.csv" isAdmin={isAdmin} />
+        <UploadCard type="target-roles" label="Target Role Library" description="Your target system's available roles" expectedColumns="role_id, role_name, description, system, domain" required={true} existingCount={counts.targetRoles} templateUrl="/templates/target-roles-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
+        <UploadCard type="target-permissions" label="Target Role Permissions" description="Permissions granted by each target role" expectedColumns="permission_id, permission_name, description, system, risk_level" required={false} existingCount={counts.targetPermissions} templateUrl="/templates/target-permissions-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
       </UploadSection>
 
       <UploadSection
@@ -130,7 +143,7 @@ export default async function DataUploadPage() {
         total={1}
         isAdmin={isAdmin}
       >
-        <UploadCard type="sod-rules" label="SOD/GRC Ruleset" description="Conflicting permission pairs with severity levels" expectedColumns="rule_id, rule_name, permission_a, permission_b, severity" required={false} existingCount={counts.sodRules} templateUrl="/templates/sod-rules-template.csv" isAdmin={isAdmin} />
+        <UploadCard type="sod-rules" label="SOD/GRC Ruleset" description="Conflicting permission pairs with severity levels" expectedColumns="rule_id, rule_name, permission_a, permission_b, severity" required={false} existingCount={counts.sodRules} templateUrl="/templates/sod-rules-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
       </UploadSection>
 
       <UploadSection
@@ -140,9 +153,9 @@ export default async function DataUploadPage() {
         isAdmin={isAdmin}
         defaultOpen={false}
       >
-        <UploadCard type="existing-access" label="Existing Production Access" description="Approved target role assignments from previous waves" expectedColumns="source_user_id, target_role_id, release_phase" required={false} existingCount={counts.existingAccess} templateUrl="/templates/existing-access-template.csv" isAdmin={isAdmin} />
-        <UploadCard type="personas" label="Pre-defined Personas" description="Skip AI generation — use your own persona definitions" expectedColumns="name, description, business_function" required={false} existingCount={counts.personas} isAdmin={isAdmin} />
-        <UploadCard type="app-users" label="Provisum Users" description="Upload platform users with org unit assignments" expectedColumns="username, password, display_name, role, email, org_unit_name" required={false} existingCount={counts.appUsers} templateUrl="/templates/app-users-template.csv" isAdmin={isAdmin} />
+        <UploadCard type="existing-access" label="Existing Production Access" description="Approved target role assignments from previous waves" expectedColumns="source_user_id, target_role_id, release_phase" required={false} existingCount={counts.existingAccess} templateUrl="/templates/existing-access-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
+        <UploadCard type="personas" label="Pre-defined Personas" description="Skip AI generation — use your own persona definitions" expectedColumns="name, description, business_function" required={false} existingCount={counts.personas} isAdmin={isAdmin} isDemo={isDemo} />
+        <UploadCard type="app-users" label="Provisum Users" description="Upload platform users with org unit assignments" expectedColumns="username, password, display_name, role, email, org_unit_name" required={false} existingCount={counts.appUsers} templateUrl="/templates/app-users-template.csv" isAdmin={isAdmin} isDemo={isDemo} />
       </UploadSection>
 
       {/* Source Systems Summary */}

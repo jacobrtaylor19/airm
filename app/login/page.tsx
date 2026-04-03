@@ -4,6 +4,7 @@ import { LoginForm } from "./login-form";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { ShieldCheck } from "lucide-react";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +17,8 @@ export default async function LoginPage() {
   const rows = await db.select().from(schema.appUsers).limit(1);
   const hasUsers = rows.length > 0;
   if (!hasUsers) redirect("/setup");
+
+  const isDemo = isDemoMode();
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0c1e1c]">
@@ -56,14 +59,14 @@ export default async function LoginPage() {
           Intelligent Role Mapping for Enterprise Migrations.
         </p>
         <p className="mt-1 text-sm text-slate-500">
-          Sign in to your demo workspace.
+          {isDemo ? "Sign in to your demo workspace." : "Sign in to your workspace."}
         </p>
       </div>
 
       {/* Glass card */}
       <div className="relative z-10 w-full max-w-[420px] px-4">
         <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-8 shadow-2xl backdrop-blur-xl">
-          <LoginForm />
+          <LoginForm isDemo={isDemo} />
         </div>
       </div>
 
