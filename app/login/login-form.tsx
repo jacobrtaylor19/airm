@@ -195,14 +195,16 @@ export function LoginForm() {
 
           {/* Demo credentials hint */}
           <div className="mt-3 pt-3 border-t">
-            <p className="text-xs text-muted-foreground mb-2">Demo credentials:</p>
+            <p className="text-xs text-muted-foreground mb-2">Select a persona to sign in:</p>
             <div className="flex flex-wrap gap-2">
               {[
                 { user: "demo.admin", label: "Admin" },
                 { user: "demo.mapper.finance", label: "Mapper" },
-                { user: "demo.pm", label: "PM" },
                 { user: "demo.approver", label: "Approver" },
+                { user: "demo.pm", label: "Project Manager" },
                 { user: "demo.coordinator", label: "Coordinator" },
+                { user: "demo.security", label: "Security Architect" },
+                { user: "demo.compliance", label: "Compliance Officer" },
                 { user: "demo.viewer", label: "Viewer" },
               ].map((cred) => (
                 <button
