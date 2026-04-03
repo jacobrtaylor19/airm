@@ -9,7 +9,7 @@ This file gives Claude Code the context needed to work effectively in this codeb
 
 ## What this project is
 
-Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It uses Supabase Auth with JWT sessions, 7 roles (including `project_manager`), and org-unit-based scoping. Multi-tenant org isolation is Phase 3 complete (`organization_id` NOT NULL on all entity tables). The `airm/` directory name is retained for now — display strings use "Provisum" everywhere. Schema has **51 tables** in Supabase Postgres. **Current version: v1.0.0** — deployed at https://demo.provisum.io.
+Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It uses Supabase Auth with JWT sessions, 7 roles (including `project_manager`), and org-unit-based scoping. Multi-tenant org isolation is Phase 3 complete (`organization_id` NOT NULL on all entity tables). The `airm/` directory name is retained for now — display strings use "Provisum" everywhere. Schema has **55 tables** in Supabase Postgres. **Current version: v1.2.0** — deployed at https://demo.provisum.io.
 
 ---
 
@@ -55,7 +55,7 @@ await requireRole(["admin", "mapper"]);    // throws redirect to /unauthorized i
 
 **Role hierarchy** (higher = more access):
 ```
-system_admin: 100 → admin: 80 → project_manager: 70 → approver: 60 → coordinator: 50 → mapper: 40 → viewer: 20
+system_admin: 100 → admin: 80 → security_architect: 75 → project_manager: 70 → approver: 60 → compliance_officer: 55 → coordinator: 50 → mapper: 40 → viewer: 20
 ```
 
 Session cookie: Supabase JWT (httpOnly, managed by `@supabase/ssr`). Middleware uses a **default-secure** model — all routes require authentication unless explicitly listed as public. Public paths are split into exact matches (`PUBLIC_EXACT` Set) and prefix matches (`PUBLIC_PREFIXES` array) to prevent accidental exposure. Public pages: `/`, `/login`, `/setup`, `/methodology`, `/overview`, `/quick-reference`. Public prefixes: `/api/auth/`, `/api/health`, `/review/`, `/api/cron/`, `/api/admin/users/invite/accept`.
@@ -335,6 +335,53 @@ Key files: `lib/incidents/detection.ts`, `lib/incidents/triage.ts`, `app/admin/i
 
 ---
 
+## Target Role Lifecycle (v1.2.0)
+
+Target roles have a `status` field: `draft` → `active` → `archived`.
+
+- **Draft**: Newly created or AI-generated roles. Cannot be used in mapping. Shown with amber banner.
+- **Active**: Approved roles available for mapping. Only active roles appear in the mapping role selector.
+- **Archived**: Soft-deleted roles. Can be restored to active.
+
+Approval flow: `security_architect` or `admin` can approve draft → active. Approval sets `approved_by` + `approved_at`.
+
+When a target role is updated (PUT), mappers with active assignments for that role are notified via `createWorkflowNotification()`. When a draft role is approved, mappers are notified that a new role is available.
+
+---
+
+## Mitigating Controls (v1.2.0)
+
+When accepting an SOD risk, users can document compensating controls:
+- `mitigating_control` — description of the control
+- `control_owner` — person responsible
+- `control_frequency` — review cadence (daily/weekly/monthly/quarterly/annual)
+
+Accepted risks with documented controls show a green "Controlled" badge. The risk analysis page shows a controls coverage metric.
+
+---
+
+## SSO/SAML Configuration (v1.2.0)
+
+`sso_configurations` table stores per-org SAML provider config (Azure AD, Okta, Generic SAML).
+
+- Admin tab for CRUD operations on SSO providers
+- Public endpoint `GET /api/auth/sso?email=user@company.com` for domain-based provider lookup
+- Login form has "Sign in with SSO" flow
+- **Note**: Actual IdP redirect requires Supabase Enterprise plan. MVP stores config and shows activation CTA.
+
+---
+
+## Security Design Export (v1.2.0)
+
+`GET /api/exports/security-design` — generates 3-sheet Excel workbook (ExcelJS):
+1. **Role Catalog** — all target roles with status, source, approval info, perm/user counts
+2. **Permission Matrix** — roles × top 50 permissions pivot table
+3. **SOD Summary** — all conflicts with type, severity, status, mitigating controls
+
+Access: `admin`, `system_admin`, `security_architect` only. Audit logged.
+
+---
+
 ## UI conventions
 
 - **shadcn/ui** components live in `components/ui/`. There is **no `Checkbox` component** — use `<input type="checkbox" className="h-4 w-4 accent-primary" />`.
@@ -544,3 +591,7 @@ npx playwright show-report
 | SOD heatmap | `app/sod/sod-heatmap.tsx` (imported by `sod-client.tsx`) |
 | Release readiness checklist | `app/releases/releases-client.tsx` (ReadinessChecklist component) |
 | Confidence distribution chart | `app/calibration/page.tsx` (ConfidenceChart server component) |
+| Target role editing/approval | `app/target-roles/role-edit-dialog.tsx`, `app/api/target-roles/[id]/route.ts`, `app/api/target-roles/[id]/approve/route.ts` |
+| Mitigating controls | `app/sod/resolution-dialogs.tsx` (control section), `app/api/sod/accept-risk/route.ts`, `lib/queries/risk.ts` (controlsCoverage) |
+| SSO configuration | `app/admin/sso-tab.tsx`, `app/api/admin/sso/`, `app/api/auth/sso/route.ts`, `app/login/login-form.tsx` |
+| Security design export | `app/api/exports/security-design/route.ts` (3-sheet Excel), `app/workspace/security/security-client.tsx` (export button) |

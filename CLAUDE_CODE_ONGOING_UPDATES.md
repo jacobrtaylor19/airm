@@ -1,6 +1,6 @@
 # Provisum — Ongoing Updates (Session State)
 
-**Last updated:** 2026-03-31 | **Version:** v1.0.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 41 unit + 46 E2E (Playwright) | **Tech Debt:** 20/20 resolved (A)
+**Last updated:** 2026-04-02 | **Version:** v1.3.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 92 unit + 46 E2E (Playwright) | **Tech Debt:** 20/20 resolved (A)
 
 ---
 
@@ -19,6 +19,162 @@
 ---
 
 ## Recent Changes (This Session)
+
+### v1.3.0 Clickthrough Fix Sprint + Demo UX (2026-04-02)
+
+**35-item clickthrough fix sprint** based on admin walkthrough findings document. All items resolved.
+
+**Block 0 — Critical Data Bugs:**
+- SOD scoped delete: `lib/sod/sod-analysis.ts` now deletes only analyzed users' conflicts (was wiping ALL)
+- SOD toast polling: `app/sod/sod-client.tsx` polls job status instead of reading undefined fields
+
+**Block 1 — Demo-Breaking UX (11 items):**
+- Auto-map page refresh on job completion (`app/mapping/auto-map-progress.tsx`)
+- Optimistic submit-for-review: users move out of Draft instantly (`app/mapping/user-refinements.tsx`)
+- "Send Back to Draft" button for pending_review users
+- Select All checkbox for bulk submit
+- SOD page optimistic updates on resolve/accept/escalate actions
+- Remap vs first-time badge (amber "Remapped" vs subtle "New")
+- PDF export error handling (was returning JSON on failure)
+- Provisioning CSV branded header + employee_id/department/email columns
+- SOD exception report with mitigating controls columns + branded header
+
+**Block 2 — Navigation & Module UX (8 items):**
+- Quick Nav in ALL module sidebars (was Dashboard only)
+- Responsive headers with truncation on small screens
+- Back button in header (ArrowLeft → `router.back()`)
+- Shared page module context: `moduleOwnsPath()` checks nav hrefs + sidebar links set `airm_active_module` cookie
+- Approvals page visible to admin (read-only)
+- Excel permission gaps placeholder row when empty
+- Validation page org-scoped (14 queries fixed)
+
+**Block 3 — Admin & Data Gaps (5 items):**
+- Remove direct password creation from admin — invite-only flow
+- Admin user actions: deactivate/reactivate, change role, send invite (dropdown per row)
+- Existing Production Access page (`app/data/existing-access/`)
+- Compliance workspace seeded with 8 SOD conflicts (5 escalated)
+- Assignments page: inline edit capability with PUT endpoints
+
+**Block 4 — Content (3 items):**
+- Bulk assign UI redesign with clearer layout
+- Permission changes drill-down: click rows to navigate to user detail
+- Admin onboarding guide (8 phases) + quick-start articles for mapper/approver
+
+**SOD Existing Access Labeling:**
+- `involved_existing_access` boolean on `sod_conflicts` table
+- SOD analysis tracks which roles come from existing production access
+- Blue "Existing Access" badge on SOD page for flagged conflicts
+- Info callout on existing access page linking to SOD analysis
+
+**Demo Environment Overhaul:**
+- Glassmorphism login page (dark bg, frosted glass card, teal accents) inspired by Cursus
+- Demo overview page at `/` with lead capture gate, 8 persona cards, feature grid, data stats
+- Lead capture: `demo_leads` table, `POST /api/demo/register`, Resend email notification, 30-day cookie
+- Hostname-based demo/prod separation (`lib/demo-mode.ts`):
+  - `demo.provisum.io` → demo mode (persona pills, env switcher, lead gate, restricted uploads)
+  - `app.provisum.io` → production mode (clean login, full upload functionality, no demo features)
+- All 8 persona types on login pills (added Security Architect + Compliance Officer)
+- Upload page: shows full UI in demo but disables upload buttons + template downloads
+- Upload/template APIs return 403 in demo mode (server-side enforcement)
+
+**Sales Site Polish (provisum-site):**
+- Darkened teal accent for WCAG contrast (#0d9488 → #0a7a70)
+- Updated CTAs: "Request early access" → "Request a demo"
+- Tightened hero padding
+
+**DB Credential Fixes:**
+- demo.pm: email corrected to @provisum.io, password reset
+- demo.security + demo.compliance: passwords reset to DemoGuide2026!
+
+**Unit Tests:** 92 total (51 new) covering SOD scoped delete, provisioning export, SOD exception report, app-users PATCH, help articles, auth roles
+
+**Schema Changes (applied via Supabase MCP SQL):**
+- ALTER TABLE `sod_conflicts`: +`involved_existing_access` boolean
+- CREATE TABLE `demo_leads` (id, name, email, company, role, created_at, source)
+- **Total: 56 tables** in Supabase Postgres
+
+**New Files:**
+- `lib/demo-mode.ts` — Hostname-based demo detection (server + client)
+- `app/demo-gate.tsx` — Lead capture gate component (glassmorphism form)
+- `app/api/demo/register/route.ts` — Public lead capture endpoint
+- `app/data/existing-access/page.tsx` + `existing-access-client.tsx` — Existing production access page
+- `__tests__/lib/sod-analysis.test.ts` — 8 tests for SOD scoped delete
+- `__tests__/lib/provisioning-export.test.ts` — 7 tests
+- `__tests__/lib/sod-exception-report.test.ts` — 6 tests
+- `__tests__/api/app-users-patch.test.ts` — 12 tests
+- `__tests__/lib/help-articles.test.ts` — 20 tests
+
+### v1.2.0 Market-Ready Sprint (2026-04-02)
+
+Commit `624dd8f` — full autonomous sprint. All features shipped in a single session.
+
+**Block A — Target Role Editing + Approval Workflow:**
+- `target_roles` table: added `status` (draft/active/archived), `source` (uploaded/ai_generated/manual), `approved_by`, `approved_at`, `updated_at`, `updated_by`
+- API: `GET/PUT/DELETE /api/target-roles/[id]`, `POST /api/target-roles/[id]/approve`, `POST /api/target-roles/[id]/reject`
+- UI: `RoleEditDialog` with approve/archive/restore actions; filter tabs (All/Active/Draft/Archived); pencil edit button; draft amber banner
+- Mapping page filters out draft/archived roles from the role selector
+
+**Block B — Mitigating Controls for Accepted SOD Risks:**
+- `sod_conflicts` table: added `mitigating_control`, `control_owner`, `control_frequency`, `control_last_reviewed_at`
+- Accept-risk API passes control fields; resolution dialog has collapsible control section
+- Green "Controlled" badge on accepted risks in conflict list
+- Risk analysis page shows controls coverage row (X of Y accepted risks have documented controls)
+
+**Block C — SSO/SAML Configuration:**
+- New `sso_configurations` table with RLS deny-all policies
+- CRUD at `/api/admin/sso`, domain lookup at `/api/auth/sso` (public)
+- Admin console SSO tab with add/enable/disable/delete
+- Login form "Sign in with SSO" flow with domain-based provider lookup
+- Note: actual IdP redirect requires Supabase Enterprise — MVP stores config and shows activation CTA
+
+**Block D — Security Design Export (Excel):**
+- `GET /api/exports/security-design` — 3-sheet Excel workbook (ExcelJS)
+  - Sheet 1: Role Catalog (name, code, status, source, approved by, perm count, user count)
+  - Sheet 2: Permission Matrix (roles × top 50 permissions, ✓ marks)
+  - Sheet 3: SOD Summary (type, roles, rule, severity, status, mitigating control)
+- Teal header styling + alternating cream rows
+- "Export Role Design" button in Security Workspace
+- Audit logged as `security_design_exported`
+
+**Block E — Mapper Notifications on Role Changes:**
+- PUT target-roles notifies mappers with active assignments via `createWorkflowNotification()`
+- POST approve notifies mappers that a new role is available for mapping
+- Fire-and-forget pattern — never breaks the main operation
+
+**Schema Changes (applied via Supabase MCP SQL):**
+- ALTER TABLE `target_roles`: +6 columns (status, source, approved_by, approved_at, updated_at, updated_by)
+- ALTER TABLE `sod_conflicts`: +4 columns (mitigating_control, control_owner, control_frequency, control_last_reviewed_at)
+- CREATE TABLE `sso_configurations` with RLS + deny-all policies
+- RLS deny-all added to `evidence_package_runs` and `workstream_items` (were missing)
+- **Total: 55 tables** in Supabase Postgres
+
+**New Files:**
+- `app/api/target-roles/[id]/route.ts` — Target role CRUD
+- `app/api/target-roles/[id]/approve/route.ts` — Approve draft roles
+- `app/api/target-roles/[id]/reject/route.ts` — Reject draft roles
+- `app/target-roles/role-edit-dialog.tsx` — Role edit/approve/archive dialog
+- `app/admin/sso-tab.tsx` — SSO admin tab
+- `app/api/admin/sso/route.ts` — SSO config CRUD (GET/POST)
+- `app/api/admin/sso/[id]/route.ts` — SSO config update/delete (PUT/DELETE)
+- `app/api/auth/sso/route.ts` — Public SSO domain lookup
+- `app/api/exports/security-design/route.ts` — Excel export endpoint
+
+**Modified Files:**
+- `db/schema.ts` — target_roles columns, sod_conflicts columns, sso_configurations table
+- `lib/queries/roles.ts` — TargetRoleRow + getTargetRoles with status/source/approval fields
+- `lib/queries/sod.ts` — SodConflictRow + getSodConflicts with mitigating control fields
+- `lib/queries/risk.ts` — controlsCoverage in AggregateRiskAnalysis
+- `app/target-roles/target-roles-client.tsx` — Status filter tabs, edit button, draft styling
+- `app/target-roles/page.tsx` — Passes userRole to client
+- `app/mapping/page.tsx` — Filters out non-active roles
+- `app/sod/resolution-dialogs.tsx` — Mitigating control section
+- `app/sod/sod-client.tsx` — Pass extra fields to approve/reject
+- `app/sod/conflict-list.tsx` — "Controlled" badge
+- `app/risk-analysis/risk-analysis-client.tsx` — Controls coverage row
+- `app/api/sod/accept-risk/route.ts` — Accepts control fields
+- `app/admin/admin-console-client.tsx` — SSO tab
+- `app/login/login-form.tsx` — SSO login flow
+- `app/workspace/security/security-client.tsx` — Export button
 
 ### v1.0.0 Release (2026-03-31)
 
@@ -252,6 +408,8 @@
 - **Sentry source maps not uploading** — DSN + auth token set, but `SENTRY_ORG` and `SENTRY_PROJECT` env vars not yet set on Vercel (Owner Action #7). Error tracking works; source maps don't.
 - **All other Owner Actions resolved** — RESEND_API_KEY, CRON_SECRET, SENTRY_DSN, SENTRY_AUTH_TOKEN, NEXT_PUBLIC_APP_URL all set (2026-03-30)
 - **DB tables created** — `mapping_feedback` + `incidents` tables created via Supabase MCP SQL (2026-03-31). `organization_id` NOT NULL applied on all entity tables.
+- **SSO activation** — SSO config is stored but actual IdP redirect requires Supabase Enterprise plan. MVP shows activation CTA.
+- **RLS deny-all** — All 55 tables now have RLS deny-all policies. App uses service role key to bypass.
 
 ---
 
@@ -260,7 +418,7 @@
 ### Middleware Auth Model (default-secure)
 ```
 PUBLIC_EXACT = Set(["/", "/login", "/setup", "/methodology", "/overview", "/quick-reference"])
-PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/review/", "/api/admin/users/invite/accept"]
+PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/api/cron/", "/review/", "/api/admin/users/invite/accept", "/api/demo/"]
 
 Everything else → requires Supabase JWT session → redirects to /login if missing
 ```
@@ -304,8 +462,37 @@ scheduled_exports          # Export schedule config
 chat_conversations         # Lumen chat history
 mapping_feedback           # AI mapping suggestion accept/reject learning loop (v1.0.0)
 incidents                  # Automated support incident detection + AI triage (v1.0.0)
+sso_configurations         # SSO/SAML provider config per org (v1.2.0)
+evidence_package_runs      # SOX/ITGC evidence package generation history (v1.1.0)
+workstream_items           # Workstream tracking (v1.1.0)
 ```
-Total: 51 tables in Supabase Postgres.
+Total: 56 tables in Supabase Postgres.
+
+### New Tables (v1.2.0 → v1.3.0)
+```
+sso_configurations         # SSO/SAML provider config (org-scoped, RLS deny-all) (v1.2.0)
+demo_leads                 # Lead capture from demo overview page (v1.3.0)
+```
+
+### Schema Changes (v1.2.0 → v1.3.0)
+```
+target_roles               # +status, +source, +approved_by, +approved_at, +updated_at, +updated_by (v1.2.0)
+sod_conflicts              # +mitigating_control, +control_owner, +control_frequency, +control_last_reviewed_at (v1.2.0)
+sod_conflicts              # +involved_existing_access (v1.3.0)
+```
+
+### Demo/Prod Mode Architecture (v1.3.0)
+```
+lib/demo-mode.ts
+├── isDemoMode()           # Server-side: checks headers().get("host")
+└── isDemoModeClient()     # Client-side: checks window.location.hostname
+
+Demo hosts: demo.provisum.io, localhost, *.vercel.app
+Prod hosts: app.provisum.io (everything else)
+
+Demo mode enables:  persona pills, env switcher, lead gate, upload restrictions
+Prod mode enables:  clean login, full uploads, no demo overview page
+```
 
 ### Org Isolation Architecture (Phase 3 complete — NOT NULL enforced)
 ```
