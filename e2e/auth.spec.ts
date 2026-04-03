@@ -39,7 +39,7 @@ test.describe("Authentication", () => {
     const page = await context.newPage();
 
     // Try to visit dashboard without logging in
-    await page.goto("http://localhost:3000/dashboard", { waitUntil: "commit" });
+    await page.goto("/dashboard", { waitUntil: "commit" });
 
     // Middleware should redirect to /login
     await expect(page).toHaveURL(/\/login/, { timeout: 15_000 });

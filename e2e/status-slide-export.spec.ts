@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers/auth";
 
+const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+
 /**
  * Status Slide PPTX Export — /api/exports/status-slide + dashboard button
  *
@@ -31,6 +33,8 @@ test.describe("Status Slide — Dashboard Button", () => {
 
   test("mapper sees Draft Status Slide button on dashboard", async ({ page }) => {
     await login(page, "demo.mapper.finance", undefined, "/dashboard");
+
+    await page.waitForLoadState("networkidle");
 
     await expect(
       page.getByRole("button", { name: /status slide|draft status/i })
@@ -98,7 +102,7 @@ test.describe("Status Slide — API Response", () => {
     const context = await browser.newContext();
     const request = context.request;
 
-    const response = await request.post("http://localhost:3000/api/exports/status-slide", {
+    const response = await request.post(`${BASE}/api/exports/status-slide`, {
       data: {},
       timeout: 15_000,
     });

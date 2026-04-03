@@ -25,12 +25,17 @@ const AUTH_DIR = path.join(__dirname, ".auth");
  * as storage state files. Tests load these instead of logging in each time.
  */
 async function globalSetup() {
+  // Clear stale cookies from previous runs (may target a different environment)
+  if (fs.existsSync(AUTH_DIR)) {
+    fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+  }
+
   // Ensure auth directory exists
   if (!fs.existsSync(AUTH_DIR)) {
     fs.mkdirSync(AUTH_DIR, { recursive: true });
   }
 
-  const baseURL = "http://localhost:3000";
+  const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
 
   for (const username of TEST_USERS) {
     const pw = PASSWORDS[username] ?? "DemoGuide2026!";

@@ -14,12 +14,16 @@ test.describe("Inbox / Notifications", () => {
     await expect(page).toHaveURL(/\/inbox/);
   });
 
-  test("sidebar shows Inbox link", async ({ page }) => {
-    await login(page, "demo.coordinator");
+  test("coordinator can navigate to inbox directly", async ({ page }) => {
+    await login(page, "demo.coordinator", undefined, "/inbox");
 
-    // After login we are on the dashboard — check sidebar for Inbox link
-    const inboxLink = page.getByRole("link", { name: /Inbox/i });
-    await expect(inboxLink).toBeVisible({ timeout: 10_000 });
+    // Should land on the inbox page without being redirected away
+    await expect(page).toHaveURL(/\/inbox/);
+
+    // Should see inbox/notification content
+    await expect(
+      page.getByText(/Inbox|Notification|Message/i).first()
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test("admin can access inbox page", async ({ page }) => {

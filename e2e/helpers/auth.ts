@@ -68,7 +68,8 @@ async function loginViaAPI(
 
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const response = await page.request.post("http://localhost:3000/api/auth/login", {
+      const baseURL = process.env.BASE_URL ?? "http://localhost:3000";
+      const response = await page.request.post(`${baseURL}/api/auth/login`, {
         data: { username, password: pw },
         timeout: 60_000,
       });

@@ -1,6 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { login } from "./helpers/auth";
 
+const BASE = process.env.BASE_URL ?? "http://localhost:3000";
+
 /**
  * API Smoke Tests
  *
@@ -20,7 +22,7 @@ import { login } from "./helpers/auth";
 
 test.describe("API — Health", () => {
   test("GET /api/health returns 200", async ({ request }) => {
-    const response = await request.get("http://localhost:3000/api/health", {
+    const response = await request.get(`${BASE}/api/health`, {
       timeout: 10_000,
     });
     expect(response.status()).toBe(200);
@@ -33,7 +35,7 @@ test.describe("API — Health", () => {
 
 test.describe("API — Auth", () => {
   test("POST /api/auth/login with valid credentials returns 200", async ({ request }) => {
-    const response = await request.post("http://localhost:3000/api/auth/login", {
+    const response = await request.post(`${BASE}/api/auth/login`, {
       data: { username: "demo.viewer", password: "DemoGuide2026!" },
       timeout: 20_000,
     });
@@ -41,7 +43,7 @@ test.describe("API — Auth", () => {
   });
 
   test("POST /api/auth/login with invalid credentials returns 401", async ({ request }) => {
-    const response = await request.post("http://localhost:3000/api/auth/login", {
+    const response = await request.post(`${BASE}/api/auth/login`, {
       data: { username: "demo.viewer", password: "wrongpassword" },
       timeout: 10_000,
     });
@@ -49,7 +51,7 @@ test.describe("API — Auth", () => {
   });
 
   test("POST /api/auth/login returns JSON", async ({ request }) => {
-    const response = await request.post("http://localhost:3000/api/auth/login", {
+    const response = await request.post(`${BASE}/api/auth/login`, {
       data: { username: "demo.viewer", password: "DemoGuide2026!" },
       timeout: 20_000,
     });
@@ -78,7 +80,7 @@ test.describe("API — Unauthenticated Access Blocked", () => {
       const request = context.request;
 
       const method = endpoint.includes("exports") || endpoint.includes("auth") ? "post" : "get";
-      const response = await request[method](`http://localhost:3000${endpoint}`, {
+      const response = await request[method](`${BASE}${endpoint}`, {
         data: {},
         timeout: 15_000,
         // Don't follow redirects so we catch 302 redirects to /login
