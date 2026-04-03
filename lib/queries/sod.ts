@@ -43,6 +43,7 @@ export interface SodConflictRow {
   mitigatingControl: string | null;
   controlOwner: string | null;
   controlFrequency: string | null;
+  involvedExistingAccess: boolean;
 }
 
 export async function getSodConflicts(orgId: number): Promise<SodConflictRow[]> {
@@ -67,6 +68,7 @@ export async function getSodConflicts(orgId: number): Promise<SodConflictRow[]> 
       mitigatingControl: schema.sodConflicts.mitigatingControl,
       controlOwner: schema.sodConflicts.controlOwner,
       controlFrequency: schema.sodConflicts.controlFrequency,
+      involvedExistingAccess: schema.sodConflicts.involvedExistingAccess,
     })
     .from(schema.sodConflicts)
     .innerJoin(schema.users, eq(schema.users.id, schema.sodConflicts.userId))
@@ -111,6 +113,7 @@ export async function getSodConflicts(orgId: number): Promise<SodConflictRow[]> 
       mitigatingControl: c.mitigatingControl,
       controlOwner: c.controlOwner,
       controlFrequency: c.controlFrequency,
+      involvedExistingAccess: c.involvedExistingAccess,
     };
   }));
 }

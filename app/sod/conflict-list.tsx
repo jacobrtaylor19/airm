@@ -161,6 +161,12 @@ export function ConflictList({
                 </Badge>
               )}
 
+              {c.involvedExistingAccess && (
+                <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800 border-blue-200">
+                  Existing Access
+                </Badge>
+              )}
+
               <span className="text-xs text-muted-foreground hidden md:block max-w-[160px] truncate">
                 {c.ruleName}
               </span>

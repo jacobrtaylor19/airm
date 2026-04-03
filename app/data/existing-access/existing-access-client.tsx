@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Users, ShieldCheck, Search, FileUp } from "lucide-react";
+import { Users, ShieldCheck, Search, FileUp, Info } from "lucide-react";
 import Link from "next/link";
 
 interface UserExistingAccess {
@@ -71,6 +71,22 @@ export function ExistingAccessClient({ data }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Callout: SOD conflicts involving existing access */}
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 flex items-start gap-2">
+        <Info className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+        <p className="text-sm text-blue-800">
+          SOD conflicts that involve existing production access roles are flagged with an{" "}
+          <span className="inline-flex items-center rounded-md border border-blue-200 bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-800">
+            Existing Access
+          </span>{" "}
+          badge on the{" "}
+          <Link href="/sod" className="font-medium underline hover:text-blue-900">
+            SOD Analysis
+          </Link>{" "}
+          page.
+        </p>
+      </div>
+
       {/* Summary cards */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

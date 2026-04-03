@@ -66,6 +66,43 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(inserted, { status: 201 });
 }
 
+export async function PUT(req: NextRequest) {
+  const user = await getSessionUser();
+  if (!user || !["admin", "system_admin"].includes(user.role)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  const body = await req.json();
+  const { id, appUserId, releaseId } = body;
+
+  if (!id || !appUserId || !releaseId) {
+    return NextResponse.json({ error: "id, appUserId, and releaseId required" }, { status: 400 });
+  }
+
+  // Check for duplicate (different record with same user+release)
+  const [duplicate] = await db
+    .select()
+    .from(schema.appUserReleases)
+    .where(
+      and(
+        eq(schema.appUserReleases.appUserId, appUserId),
+        eq(schema.appUserReleases.releaseId, releaseId)
+      )
+    )
+    .limit(1);
+
+  if (duplicate && duplicate.id !== Number(id)) {
+    return NextResponse.json({ error: "User is already assigned to this release" }, { status: 409 });
+  }
+
+  await db
+    .update(schema.appUserReleases)
+    .set({ appUserId, releaseId })
+    .where(eq(schema.appUserReleases.id, Number(id)));
+
+  return NextResponse.json({ ok: true });
+}
+
 export async function DELETE(req: NextRequest) {
   const user = await getSessionUser();
   if (!user || !["admin", "system_admin"].includes(user.role)) {

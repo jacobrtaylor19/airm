@@ -65,6 +65,50 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PUT(req: NextRequest) {
+  const user = await getSessionUser();
+  if (!user || user.role !== "admin") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+  }
+
+  try {
+    const { id, appUserId, scopeType, scopeValue } = await req.json();
+    if (!id || !appUserId || !scopeType || !scopeValue) {
+      return NextResponse.json({ error: "All fields required" }, { status: 400 });
+    }
+
+    const [existing] = await db
+      .select()
+      .from(schema.workAssignments)
+      .where(eq(schema.workAssignments.id, Number(id)))
+      .limit(1);
+
+    if (!existing) {
+      return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
+    }
+
+    await db
+      .update(schema.workAssignments)
+      .set({ appUserId, scopeType, scopeValue })
+      .where(eq(schema.workAssignments.id, Number(id)));
+
+    await db.insert(schema.auditLog).values({
+      organizationId: user.organizationId,
+      entityType: "workAssignment",
+      entityId: Number(id),
+      action: "updated",
+      oldValue: JSON.stringify({ appUserId: existing.appUserId, scopeType: existing.scopeType, scopeValue: existing.scopeValue }),
+      newValue: JSON.stringify({ appUserId, scopeType, scopeValue }),
+      actorEmail: user.username,
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    const message = safeError(err, "Failed to update assignment");
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   const user = await getSessionUser();
   if (!user || user.role !== "admin") {

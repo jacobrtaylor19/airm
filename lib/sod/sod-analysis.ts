@@ -47,6 +47,7 @@ export async function runSodAnalysis(scopedUserIds?: number[] | null): Promise<S
   // 3. Group ALL assignments by user (both existing and current draft)
   const userAllRoles = new Map<number, Set<number>>();
   const userDraftRoles = new Map<number, number[]>();
+  const userExistingRoles = new Map<number, Set<number>>();
 
   // Add draft assignments
   for (const a of draftAssignments) {
@@ -60,6 +61,8 @@ export async function runSodAnalysis(scopedUserIds?: number[] | null): Promise<S
   for (const a of existingAssignments) {
     if (!userAllRoles.has(a.userId)) userAllRoles.set(a.userId, new Set());
     userAllRoles.get(a.userId)!.add(a.targetRoleId);
+    if (!userExistingRoles.has(a.userId)) userExistingRoles.set(a.userId, new Set());
+    userExistingRoles.get(a.userId)!.add(a.targetRoleId);
   }
 
   // 4. For each target role, expand to its permissions
@@ -119,6 +122,13 @@ export async function runSodAnalysis(scopedUserIds?: number[] | null): Promise<S
           ? "within_role"
           : "between_role";
 
+        // Check if either conflicting role comes from existing production access
+        const existingRolesForUser = userExistingRoles.get(userId);
+        const involvedExistingAccess = existingRolesForUser
+          ? (roleIdA !== null && existingRolesForUser.has(roleIdA)) ||
+            (roleIdB !== null && existingRolesForUser.has(roleIdB))
+          : false;
+
         await db.insert(schema.sodConflicts).values({
           userId,
           sodRuleId: rule.id,
@@ -128,6 +138,7 @@ export async function runSodAnalysis(scopedUserIds?: number[] | null): Promise<S
           permissionIdB: rule.permissionB,
           severity: rule.severity,
           conflictType,
+          involvedExistingAccess,
           resolutionStatus: "open",
         });
       }

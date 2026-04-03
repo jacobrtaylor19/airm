@@ -456,6 +456,7 @@ export const sodConflicts = pgTable("sod_conflicts", {
   controlOwner: text("control_owner"),
   controlFrequency: text("control_frequency"), // daily | weekly | monthly | quarterly | annual | ad_hoc
   controlLastReviewedAt: text("control_last_reviewed_at"),
+  involvedExistingAccess: boolean("involved_existing_access").notNull().default(false),
   analysisJobId: integer("analysis_job_id").references(() => processingJobs.id),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
 });
