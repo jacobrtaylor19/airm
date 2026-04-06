@@ -8,30 +8,42 @@ const PUBLIC_EXACT = new Set(["/", "/login", "/setup", "/methodology", "/overvie
 const PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/api/cron/", "/review/", "/api/admin/users/invite/accept", "/api/demo/"];
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  try {
+    const { pathname } = request.nextUrl;
 
-  // Allow static assets and Next.js internals (no Supabase call needed)
-  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".")) {
-    return NextResponse.next();
+    // Allow static assets and Next.js internals (no Supabase call needed)
+    if (pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".")) {
+      return NextResponse.next();
+    }
+
+    // Allow public paths — still refresh session (keeps JWT fresh for subsequent nav)
+    const isPublic = PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+    if (isPublic) {
+      return addSecurityHeaders(await updateSession(request, NextResponse.next()));
+    }
+
+    // All non-public, non-static routes require authentication
+    let response = NextResponse.next({ request });
+    const supabase = createSupabaseMiddlewareClient(request, response);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      const loginUrl = new URL("/login", request.url);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl));
+    }
+
+    return addSecurityHeaders(response);
+  } catch (err) {
+    // Log the actual error for debugging middleware crashes
+    console.error("[middleware] Error:", err instanceof Error ? err.message : String(err));
+    // Fail open for public paths, fail closed for protected
+    const { pathname } = request.nextUrl;
+    const isPublic = PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
+    if (isPublic) {
+      return addSecurityHeaders(NextResponse.next());
+    }
+    return addSecurityHeaders(NextResponse.redirect(new URL("/login", request.url)));
   }
-
-  // Allow public paths — still refresh session (keeps JWT fresh for subsequent nav)
-  const isPublic = PUBLIC_EXACT.has(pathname) || PUBLIC_PREFIXES.some((p) => pathname.startsWith(p));
-  if (isPublic) {
-    return addSecurityHeaders(await updateSession(request, NextResponse.next()));
-  }
-
-  // All non-public, non-static routes require authentication
-  let response = NextResponse.next({ request });
-  const supabase = createSupabaseMiddlewareClient(request, response);
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    const loginUrl = new URL("/login", request.url);
-    return addSecurityHeaders(NextResponse.redirect(loginUrl));
-  }
-
-  return addSecurityHeaders(response);
 }
 
 /**
