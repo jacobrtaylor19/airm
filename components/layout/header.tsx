@@ -109,7 +109,11 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
   }
 
   return (
-    <header className="flex h-14 items-center justify-between border-b border-brand-border bg-brand-cream/80 backdrop-blur-sm px-3 sm:px-6">
+    <header className="flex h-14 items-center justify-between border-b border-brand-border bg-brand-cream/80 backdrop-blur-sm px-3 sm:px-6" role="banner">
+      {/* Skip to main content link — visible on focus for keyboard users */}
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-brand-accent focus:text-white focus:px-4 focus:py-2 focus:rounded-md focus:top-2 focus:left-2">
+        Skip to main content
+      </a>
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         {/* Module navigation */}
         {basePath === "/home" ? (
@@ -128,6 +132,7 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
                   className="h-8 w-8 p-0 text-brand-text-muted hover:text-brand-text"
                   onClick={() => router.push("/home")}
                   title="All Modules"
+                  aria-label="All Modules"
                 >
                   <LayoutGrid className="h-4 w-4" />
                 </Button>
@@ -145,6 +150,7 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
               className="h-8 w-8 p-0 text-brand-text-muted hover:text-brand-text shrink-0"
               onClick={() => router.back()}
               title="Go back"
+              aria-label="Go back"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -170,6 +176,7 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
             className="relative h-8 w-8 p-0 text-brand-text-muted hover:text-brand-text"
             onClick={() => router.push("/inbox")}
             title="Inbox"
+            aria-label={`Inbox${unreadNotificationCount > 0 ? ` (${unreadNotificationCount} unread)` : ""}`}
           >
             <Bell className="h-4 w-4" />
             {unreadNotificationCount > 0 && (
@@ -182,7 +189,7 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
           {/* User dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/60 transition-colors">
+              <button className="flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-white/60 transition-colors" aria-label={`User menu: ${user.displayName}`}>
                 <div className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-accent text-[10px] font-medium text-white">
                   {initials}
                 </div>

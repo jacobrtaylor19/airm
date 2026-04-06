@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getAllFeatureFlags, upsertFeatureFlag, deleteFeatureFlag } from "@/lib/feature-flags";
 import { reportError } from "@/lib/monitoring";
+import { parseBody } from "@/lib/api-validation";
+import { featureFlagUpsertSchema, featureFlagDeleteSchema } from "@/lib/validation/admin";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -25,19 +27,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { key, description, enabled, enabledForRoles, enabledForUsers, percentage, metadata } = body;
-
-    if (!key || typeof key !== "string") {
-      return NextResponse.json({ error: "key is required" }, { status: 400 });
-    }
-    if (typeof enabled !== "boolean") {
-      return NextResponse.json({ error: "enabled must be a boolean" }, { status: 400 });
-    }
+    const result = await parseBody(req, featureFlagUpsertSchema);
+    if ("error" in result) return result.error;
+    const { key, description, enabled, enabledForRoles, enabledForUsers, percentage, metadata } = result.data;
 
     await upsertFeatureFlag({
       key: key.trim().toLowerCase().replace(/\s+/g, "_"),
-      description,
+      description: description ?? undefined,
       enabled,
       enabledForRoles: enabledForRoles ?? null,
       enabledForUsers: enabledForUsers ?? null,
@@ -59,12 +55,10 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const { key } = await req.json();
-    if (!key) {
-      return NextResponse.json({ error: "key is required" }, { status: 400 });
-    }
+    const result = await parseBody(req, featureFlagDeleteSchema);
+    if ("error" in result) return result.error;
 
-    await deleteFeatureFlag(key);
+    await deleteFeatureFlag(result.data.key);
     return NextResponse.json({ success: true });
   } catch (err) {
     reportError(err, { route: "DELETE /api/admin/feature-flags" });

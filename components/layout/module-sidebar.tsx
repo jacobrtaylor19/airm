@@ -49,7 +49,7 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
   const ModuleIcon = resolveIcon(module.iconName);
 
   return (
-    <aside className="flex h-screen w-64 flex-col bg-brand-accent-dark">
+    <aside className="flex h-screen w-64 flex-col bg-brand-accent-dark" aria-label={`${module.label} module navigation`}>
       {/* Module header */}
       <div className="flex h-14 items-center border-b border-white/10 px-4">
         <div className="flex items-center gap-2 min-w-0">
@@ -63,7 +63,7 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3">
+      <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="Module pages">
         {/* Back to modules */}
         <Link
           href="/home"
@@ -99,6 +99,7 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
                   router.push(item.href);
                 });
               }}
+              aria-current={showActive ? "page" : undefined}
               className={cn(
                 "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
                 showActive
@@ -123,7 +124,7 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
         {allModules && allModules.length > 0 && (
           <>
             <div className="border-t border-white/10 my-3" />
-            <p className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-white/30">
+            <p id="quick-nav-heading" className="mb-1 px-2 text-xs font-semibold uppercase tracking-wider text-white/30">
               Quick Nav
             </p>
             {allModules
@@ -149,7 +150,7 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
       </nav>
 
       {/* User section */}
-      <div className="border-t border-white/10 px-4 py-3">
+      <div className="border-t border-white/10 px-4 py-3" role="contentinfo" aria-label="Current user">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-accent text-xs font-medium text-white">
             {initials}

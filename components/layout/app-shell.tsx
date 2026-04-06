@@ -66,7 +66,7 @@ export function AppShell({
           selectedReleaseId={selectedReleaseId}
           unreadNotificationCount={unreadNotificationCount}
         />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto">{children}</main>
       </div>
     );
   }
@@ -94,7 +94,7 @@ export function AppShell({
           activeModule={activeSwitcherModule}
           allModules={allModules}
         />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { ZodSchema, ZodError } from "zod";
+import { z, ZodError } from "zod";
 import { NextResponse } from "next/server";
 
 function formatZodErrors(error: ZodError): { field: string; message: string }[] {
@@ -9,7 +9,7 @@ function formatZodErrors(error: ZodError): { field: string; message: string }[] 
 }
 
 export function validateBody<T>(
-  schema: ZodSchema<T>,
+  schema: z.ZodType<T>,
   body: unknown
 ): { success: true; data: T } | { success: false; response: NextResponse } {
   const result = schema.safeParse(body);

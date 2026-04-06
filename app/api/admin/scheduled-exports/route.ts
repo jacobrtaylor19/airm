@@ -10,6 +10,12 @@ import {
   type ExportSchedule,
 } from "@/lib/scheduled-exports";
 import { reportError } from "@/lib/monitoring";
+import { parseBody } from "@/lib/api-validation";
+import {
+  scheduledExportCreateSchema,
+  scheduledExportUpdateSchema,
+  scheduledExportDeleteSchema,
+} from "@/lib/validation/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -35,28 +41,15 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { name, exportType, schedule, dayOfWeek, dayOfMonth, hour, enabled } = body;
-
-    if (!name || !exportType || !schedule) {
-      return NextResponse.json({ error: "name, exportType, and schedule are required" }, { status: 400 });
-    }
-
-    const validSchedules = ["daily", "weekly", "monthly"];
-    if (!validSchedules.includes(schedule)) {
-      return NextResponse.json({ error: "Invalid schedule" }, { status: 400 });
-    }
-
-    const validTypes = EXPORT_TYPES.map((t) => t.value);
-    if (!validTypes.includes(exportType)) {
-      return NextResponse.json({ error: "Invalid export type" }, { status: 400 });
-    }
+    const result = await parseBody(req, scheduledExportCreateSchema);
+    if ("error" in result) return result.error;
+    const { name, exportType, schedule, dayOfWeek, dayOfMonth, hour, enabled } = result.data;
 
     const nextRun = calculateNextRun(
       schedule as ExportSchedule,
-      hour ?? 6,
-      dayOfWeek,
-      dayOfMonth,
+      hour,
+      dayOfWeek ?? undefined,
+      dayOfMonth ?? undefined,
     );
     const now = new Date().toISOString();
 
@@ -68,8 +61,8 @@ export async function POST(req: NextRequest) {
         schedule,
         dayOfWeek: dayOfWeek ?? null,
         dayOfMonth: dayOfMonth ?? null,
-        hour: hour ?? 6,
-        enabled: enabled !== false,
+        hour,
+        enabled,
         nextRunAt: nextRun,
         createdBy: user.id,
         createdAt: now,
@@ -91,12 +84,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { id, name, schedule, dayOfWeek, dayOfMonth, hour, enabled } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: "id is required" }, { status: 400 });
-    }
+    const result = await parseBody(req, scheduledExportUpdateSchema);
+    if ("error" in result) return result.error;
+    const { id, name, schedule, dayOfWeek, dayOfMonth, hour, enabled } = result.data;
 
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
     if (name !== undefined) updates.name = name;
@@ -141,10 +131,10 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const { id } = await req.json();
-    if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
+    const result = await parseBody(req, scheduledExportDeleteSchema);
+    if ("error" in result) return result.error;
 
-    await db.delete(schema.scheduledExports).where(eq(schema.scheduledExports.id, id));
+    await db.delete(schema.scheduledExports).where(eq(schema.scheduledExports.id, result.data.id));
     return NextResponse.json({ success: true });
   } catch (err) {
     reportError(err, { route: "DELETE /api/admin/scheduled-exports" });

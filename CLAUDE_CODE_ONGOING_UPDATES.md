@@ -1,6 +1,6 @@
 # Provisum — Ongoing Updates (Session State)
 
-**Last updated:** 2026-04-02 | **Version:** v1.3.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 92 unit + 46 E2E (Playwright) | **Tech Debt:** 20/20 resolved (A)
+**Last updated:** 2026-04-05 | **Version:** v1.3.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 92 unit + 46 E2E (Playwright) | **Tech Debt:** 20/20 resolved (A)
 
 ---
 
@@ -19,6 +19,37 @@
 ---
 
 ## Recent Changes (This Session)
+
+### Market Readiness Hardening (2026-04-05)
+
+**Security Hardening:**
+- Security headers in `next.config.mjs`: X-Frame-Options DENY, HSTS 2yr preload, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy (deny camera/mic/geo)
+- IP-based rate limiting: `lib/rate-limit-memory.ts` (sliding window, auto-cleanup every 60s) + `lib/rate-limit-response.ts` (429 with Retry-After/X-RateLimit headers). Presets: GENERAL (100/60s), AUTH (10/60s), FORM (5/60s)
+- Rate limiting applied to: `POST /api/auth/accept-tos` (AUTH preset), `POST /api/demo/register` (FORM preset)
+- Zod validation standardized: `lib/api-validation.ts` with `parseBody<T>()` and `parseSearchParams<T>()` helpers
+- 11 new Zod schemas in `lib/validation/admin.ts` (feature flags, webhooks, scheduled exports, incidents, notifications)
+- 5 API routes refactored to use `parseBody`: feature-flags, webhooks, scheduled-exports, incidents, notifications
+
+**In-App ToS Acceptance:**
+- `app/accept-terms/page.tsx` + `accept-terms-form.tsx` — Terms acceptance page (server + client components)
+- `app/api/auth/accept-tos/route.ts` — Updates `tos_accepted_at` and `tos_version` on `app_users`
+- `CURRENT_TOS_VERSION = "2026-04-05"`
+- Added `/accept-terms` to `PUBLIC_EXACT` set in middleware
+
+**Operations:**
+- `docs/ON_CALL_RUNBOOK.md` — 8 failure scenario playbooks, alert triage decision tree, useful commands/URLs, post-incident template
+
+**Schema Changes (applied via Supabase MCP SQL):**
+- ALTER TABLE `app_users`: +`tos_accepted_at` TEXT, +`tos_version` TEXT
+- CREATE TABLE `contact_submissions` (for sales site contact form)
+- **Total: 57 tables** in Supabase Postgres
+
+**New Files:**
+- `lib/rate-limit-memory.ts`, `lib/rate-limit-response.ts` — Rate limiting
+- `lib/api-validation.ts` — Zod validation helpers
+- `app/accept-terms/page.tsx`, `app/accept-terms/accept-terms-form.tsx` — ToS acceptance
+- `app/api/auth/accept-tos/route.ts` — ToS acceptance API
+- `docs/ON_CALL_RUNBOOK.md` — On-call runbook
 
 ### v1.3.0 Clickthrough Fix Sprint + Demo UX (2026-04-02)
 
@@ -410,6 +441,7 @@ Commit `624dd8f` — full autonomous sprint. All features shipped in a single se
 - **DB tables created** — `mapping_feedback` + `incidents` tables created via Supabase MCP SQL (2026-03-31). `organization_id` NOT NULL applied on all entity tables.
 - **SSO activation** — SSO config is stored but actual IdP redirect requires Supabase Enterprise plan. MVP shows activation CTA.
 - **RLS deny-all** — All 55 tables now have RLS deny-all policies. App uses service role key to bypass.
+- **Tables count** — 57 total (app_users +2 columns, +contact_submissions table added 2026-04-05)
 
 ---
 
@@ -466,7 +498,7 @@ sso_configurations         # SSO/SAML provider config per org (v1.2.0)
 evidence_package_runs      # SOX/ITGC evidence package generation history (v1.1.0)
 workstream_items           # Workstream tracking (v1.1.0)
 ```
-Total: 56 tables in Supabase Postgres.
+Total: 57 tables in Supabase Postgres.
 
 ### New Tables (v1.2.0 → v1.3.0)
 ```

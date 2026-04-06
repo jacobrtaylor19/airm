@@ -5,6 +5,8 @@ import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getWebhookEndpoints, getWebhookDeliveries, WEBHOOK_EVENT_TYPES } from "@/lib/webhooks";
 import { reportError } from "@/lib/monitoring";
+import { parseBody } from "@/lib/api-validation";
+import { webhookCreateSchema, webhookUpdateSchema, webhookDeleteSchema } from "@/lib/validation/admin";
 import crypto from "crypto";
 
 export async function GET(req: NextRequest) {
@@ -36,15 +38,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { url, description, events, enabled } = body;
-
-    if (!url || typeof url !== "string" || !url.startsWith("https://")) {
-      return NextResponse.json({ error: "url must be a valid HTTPS URL" }, { status: 400 });
-    }
-    if (!Array.isArray(events) || events.length === 0) {
-      return NextResponse.json({ error: "events must be a non-empty array" }, { status: 400 });
-    }
+    const result = await parseBody(req, webhookCreateSchema);
+    if ("error" in result) return result.error;
+    const { url, description, events, enabled } = result.data;
 
     const secret = crypto.randomBytes(32).toString("hex");
     const now = new Date().toISOString();
@@ -56,7 +52,7 @@ export async function POST(req: NextRequest) {
         description: description || null,
         secret,
         events: JSON.stringify(events),
-        enabled: enabled !== false,
+        enabled,
         createdAt: now,
         updatedAt: now,
       })
@@ -76,12 +72,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { id, url, description, events, enabled } = body;
-
-    if (!id) {
-      return NextResponse.json({ error: "id is required" }, { status: 400 });
-    }
+    const result = await parseBody(req, webhookUpdateSchema);
+    if ("error" in result) return result.error;
+    const { id, url, description, events, enabled } = result.data;
 
     const updates: Record<string, unknown> = { updatedAt: new Date().toISOString() };
     if (url !== undefined) updates.url = url;
@@ -108,10 +101,9 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    const { id } = await req.json();
-    if (!id) {
-      return NextResponse.json({ error: "id is required" }, { status: 400 });
-    }
+    const result = await parseBody(req, webhookDeleteSchema);
+    if ("error" in result) return result.error;
+    const { id } = result.data;
 
     // Delete deliveries first, then endpoint
     await db.delete(schema.webhookDeliveries).where(eq(schema.webhookDeliveries.endpointId, id));

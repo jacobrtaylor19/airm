@@ -604,6 +604,8 @@ export const appUsers = pgTable("app_users", {
   lockedUntil: integer("locked_until"),
   demoEnvironment: text("demo_environment"),
   supabaseAuthId: text("supabase_auth_id").unique(),
+  tosAcceptedAt: text("tos_accepted_at"),
+  tosVersion: text("tos_version"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });

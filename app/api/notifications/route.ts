@@ -3,6 +3,8 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { requireAuth } from "@/lib/auth";
+import { parseBody } from "@/lib/api-validation";
+import { notificationSendSchema, notificationReadSchema } from "@/lib/validation/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -50,15 +52,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 
-  const body = await req.json();
-  const { toUserIds, notificationType, subject, message, relatedEntityType, relatedEntityId } = body;
-
-  if (!toUserIds?.length || !subject?.trim() || !message?.trim()) {
-    return NextResponse.json({ error: "toUserIds, subject, and message are required" }, { status: 400 });
-  }
+  const result = await parseBody(req, notificationSendSchema);
+  if ("error" in result) return result.error;
+  const { toUserIds, notificationType, subject, message, relatedEntityType, relatedEntityId } = result.data;
 
   const inserted: number[] = [];
-  for (const toUserId of toUserIds as number[]) {
+  for (const toUserId of toUserIds) {
     const [row] = await db.insert(schema.notifications).values({
       fromUserId: user.id,
       toUserId,
@@ -78,10 +77,9 @@ export async function POST(req: NextRequest) {
 // PATCH — mark notification as read
 export async function PATCH(req: NextRequest) {
   await requireAuth();
-  const body = await req.json();
-  const { id } = body;
-
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  const result = await parseBody(req, notificationReadSchema);
+  if ("error" in result) return result.error;
+  const { id } = result.data;
 
   await db.update(schema.notifications)
     .set({ status: "read", readAt: new Date().toISOString() })

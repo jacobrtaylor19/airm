@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { sendNotificationEmail } from "@/lib/email";
+import { withRateLimit } from "@/lib/rate-limit-response";
+import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit-memory";
 
 export async function POST(req: NextRequest) {
+  const limited = withRateLimit(req, RATE_LIMIT_PRESETS.FORM);
+  if (limited) return limited;
+
   try {
     const body = await req.json();
     const { name, email, company, role } = body;

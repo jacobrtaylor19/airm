@@ -6,6 +6,8 @@ import { eq, and, gte, lte, desc } from "drizzle-orm";
 import { reportError } from "@/lib/monitoring";
 import { getOrgId } from "@/lib/org-context";
 import { detectIncident } from "@/lib/incidents/detection";
+import { parseBody } from "@/lib/api-validation";
+import { incidentCreateSchema } from "@/lib/validation/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -65,18 +67,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    const { title, description, severity, affectedComponent, metadata } = body;
-
-    if (!title || typeof title !== "string") {
-      return NextResponse.json({ error: "title is required" }, { status: 400 });
-    }
-    if (!description || typeof description !== "string") {
-      return NextResponse.json({ error: "description is required" }, { status: 400 });
-    }
-    if (!["critical", "high", "medium", "low"].includes(severity)) {
-      return NextResponse.json({ error: "severity must be critical, high, medium, or low" }, { status: 400 });
-    }
+    const result = await parseBody(req, incidentCreateSchema);
+    if ("error" in result) return result.error;
+    const { title, description, severity, affectedComponent, metadata } = result.data;
 
     const orgId = getOrgId(user);
     const incidentId = await detectIncident({
