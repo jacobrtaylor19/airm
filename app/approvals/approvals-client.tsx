@@ -49,14 +49,10 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
   const [deptApproving, setDeptApproving] = useState(false);
   const router = useRouter();
 
-  const isViewer = userRole === "viewer";
-  const isMapper = userRole === "mapper";
-  const isCoordinator = userRole === "coordinator";
-  const isAdmin = userRole === "admin" || userRole === "system_admin";
-  // Only approvers, admins, and system_admins can approve — mappers can only send back
-  const canApprove = !isViewer && !isMapper && !isCoordinator;
-  // Mappers can send back assignments to draft for re-editing
-  const canSendBack = canApprove || isMapper;
+  const isAdmin = ["admin", "system_admin"].includes(userRole ?? "");
+  // Only approvers and system_admins can approve — admin role is view-only on approvals
+  const canApprove = ["approver", "system_admin"].includes(userRole ?? "");
+  const canSendBack = canApprove;
 
   // Get unique departments
   const departments = Array.from(new Set(queue.map(a => a.department).filter((d): d is string => d !== null))).sort();

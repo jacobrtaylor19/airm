@@ -45,7 +45,7 @@ export function TargetRolesClient({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [editingRole, setEditingRole] = useState<TargetRoleRow | null>(null);
 
-  const canEdit = ["admin", "system_admin", "security_architect"].includes(userRole);
+  const canEdit = ["system_admin", "security_architect"].includes(userRole);
   const draftCount = roles.filter((r) => r.status === "draft").length;
   const archivedCount = roles.filter((r) => r.status === "archived").length;
 
@@ -270,11 +270,11 @@ export function TargetRolesClient({
                           {(rolePermissions[role.id]?.length ?? 0) > 0 ? (
                             <div className="flex flex-wrap gap-1.5">
                               {rolePermissions[role.id].map((p) => (
-                                <Badge key={p.id} variant="outline" className="text-xs font-mono" title={p.permissionName ?? undefined}>
-                                  {p.permissionId}
-                                  {p.permissionType && <span className="ml-1 text-muted-foreground">[{p.permissionType}]</span>}
+                                <Badge key={p.id} variant="outline" className="text-xs" title={p.permissionName ?? undefined}>
+                                  <span className="font-mono">{p.permissionId}</span>
+                                  {p.permissionName && <span className="ml-1 font-normal text-muted-foreground">: {p.permissionName}</span>}
                                   {p.riskLevel && (
-                                    <span className={`ml-1 ${p.riskLevel === "high" ? "text-red-600" : p.riskLevel === "medium" ? "text-yellow-600" : "text-green-600"}`}>
+                                    <span className={`ml-1 font-medium ${p.riskLevel === "high" || p.riskLevel === "critical" ? "text-red-600" : p.riskLevel === "medium" ? "text-yellow-600" : "text-green-600"}`}>
                                       ({p.riskLevel})
                                     </span>
                                   )}

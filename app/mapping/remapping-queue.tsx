@@ -65,7 +65,7 @@ export function RemappingQueue({ items }: { items: RemappingQueueItem[] }) {
               className="text-xs h-7 border-indigo-300 text-indigo-700 hover:bg-indigo-50"
               asChild
             >
-              <a href={`/mapping?remapAssignment=${item.assignmentId}&userId=${item.userId}&roleId=${item.targetRoleId}`}>
+              <a href={`/mapping?tab=assignments&search=${encodeURIComponent(item.userName)}`}>
                 Remap &rarr;
               </a>
             </Button>

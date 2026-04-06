@@ -456,6 +456,14 @@ export function RefinementsTab({
                 {!isEditable && (
                   <div className="rounded-md bg-muted/50 border px-3 py-2 text-xs text-muted-foreground space-y-2">
                     <p>Assignments are locked ({selectedUserStatus === "pending_review" ? "pending SOD review" : selectedUserStatus.replace("_", " ")}).</p>
+                    {(selectedUserStatus === "sod_rejected" || selectedUserStatus === "remap_required") && (
+                      <a
+                        href={`/sod?search=${encodeURIComponent(selectedUser!.userName)}`}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700 hover:underline"
+                      >
+                        View SOD Conflicts &rarr;
+                      </a>
+                    )}
                     {isExecutor && (selectedUserStatus === "pending_review" || selectedUserStatus === "sod_clean") && (
                       <Button
                         size="sm"

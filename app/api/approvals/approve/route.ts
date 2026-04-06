@@ -9,7 +9,7 @@ import { dispatchWebhookEvent } from "@/lib/webhooks";
 
 export const dynamic = "force-dynamic";
 
-const APPROVER_ROLES = ["system_admin", "admin", "approver"];
+const APPROVER_ROLES = ["system_admin", "approver"];
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
@@ -31,8 +31,9 @@ export async function POST(req: NextRequest) {
     if (!assignment) {
       return NextResponse.json({ error: "Assignment not found" }, { status: 404 });
     }
-    if (assignment.status !== "ready_for_approval") {
-      return NextResponse.json({ error: `Cannot approve — status is ${assignment.status}, must be ready_for_approval` }, { status: 400 });
+    const approvableStatuses = ["ready_for_approval", "compliance_approved"];
+    if (!approvableStatuses.includes(assignment.status)) {
+      return NextResponse.json({ error: `Cannot approve — status is ${assignment.status}, must be ready_for_approval or compliance_approved` }, { status: 400 });
     }
 
     await db.update(schema.userTargetRoleAssignments).set({
