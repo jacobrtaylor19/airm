@@ -8,6 +8,13 @@
       "when": 1774713151562,
       "tag": "0000_breezy_aqueduct",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1775497375901,
+      "tag": "0001_slippery_madrox",
+      "breakpoints": true
     }
   ]
 }
