@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
-import { LayoutGrid } from "lucide-react";
+// LayoutGrid removed — using text arrow for back nav
 import { resolveIcon } from "@/lib/module-icons";
 import type { ModuleRoute } from "@/lib/modules";
 
@@ -64,13 +64,13 @@ export function ModuleSidebar({ module, allModules, userRole, userName }: Module
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 py-3" aria-label="Module pages">
-        {/* Back to modules */}
+        {/* Back to home */}
         <Link
           href="/home"
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs font-medium text-white/40 hover:bg-white/5 hover:text-white/70 transition-colors mb-3"
+          className="flex items-center gap-1.5 rounded-md px-2 py-1.5 text-xs font-medium text-white/50 hover:bg-white/5 hover:text-white/80 transition-colors mb-3"
         >
-          <LayoutGrid className="h-3.5 w-3.5" />
-          All Modules
+          <span className="text-white/30">&larr;</span>
+          Home
         </Link>
 
         <div className="border-t border-white/10 mb-3" />

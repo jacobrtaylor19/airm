@@ -10,52 +10,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { LogOut, Bell, LayoutGrid, ArrowLeft } from "lucide-react";
+import { LogOut, Bell, LayoutGrid } from "lucide-react";
 import { ReleaseSelector } from "@/components/layout/release-selector";
 import { ModuleSwitcher } from "@/components/layout/module-switcher";
 import type { ReleaseInfo } from "@/lib/releases";
 
-const pageInfo: Record<string, { title: string; description?: string }> = {
-  "/dashboard": { title: "Status Dashboard", description: "Project overview and workflow progress" },
-  "/upload": { title: "Data Upload", description: "Import source data, target roles, and compliance rules" },
-  "/personas": { title: "Personas", description: "AI-generated security personas and consolidated groups" },
-  "/mapping": { title: "Role Mapping Workspace", description: "Map personas to target roles" },
-  "/sod": { title: "SOD Conflict Analysis", description: "Segregation of duties conflict detection" },
-  "/approvals": { title: "Approval Queue", description: "Review and approve role mapping assignments" },
-  "/users": { title: "Users", description: "Source system users and mapping status" },
-  "/source-roles": { title: "Source Roles", description: "Legacy role definitions from source systems" },
-  "/target-roles": { title: "Target Roles", description: "Target role library for mapping" },
-  "/sod-rules": { title: "SOD Rules", description: "Segregation of duties ruleset" },
-  "/data": { title: "Legacy Access Browser" },
-  "/releases": { title: "Releases", description: "Migration waves and release management" },
-  "/exports": { title: "Exports", description: "Download reports and provisioning files" },
-  "/audit-log": { title: "Audit Log", description: "Complete record of all system actions" },
-  "/jobs": { title: "Processing Jobs", description: "Run pipeline stages and monitor progress" },
-  "/methodology": { title: "How Provisum Works", description: "Methodology and workflow design" },
-  "/overview": { title: "Platform Overview", description: "Capabilities, architecture, and security" },
-  "/quick-reference": { title: "Quick Reference Guide", description: "Step-by-step guide for your role" },
-  "/admin/users": { title: "Manage App Users", description: "Create and manage platform user accounts" },
-  "/admin/assignments": { title: "Work Assignments", description: "Mapper and approver org unit assignments" },
-  "/admin": { title: "System Settings", description: "Project configuration and AI settings" },
-  "/inbox": { title: "Inbox", description: "Your notifications and workflow updates" },
-  "/notifications": { title: "Send Reminders", description: "Send reminders to mappers and approvers" },
-  "/least-access": { title: "Provisioning Alerts", description: "Over-provisioning analysis" },
-  "/releases/compare": { title: "Release Comparison", description: "Side-by-side release metrics" },
-  "/releases/timeline": { title: "Project Timeline", description: "Multi-release timeline overview" },
-  "/review": { title: "External Review", description: "Read-only project snapshot" },
-  "/home": { title: "Provisum" },
-  "/help": { title: "Knowledge Base", description: "Help articles and guides" },
-  "/risk-analysis": { title: "Risk Analysis", description: "Permission changes and adoption risk" },
-  "/calibration": { title: "Calibration", description: "Confidence threshold tuning" },
-  "/workspace/security": { title: "Security Workspace", description: "Security design triage and redesign" },
-  "/workspace/compliance": { title: "Compliance Workspace", description: "SOD conflict resolution" },
-  "/workstream": { title: "Workstream Tracker", description: "Track workstream progress" },
-  "/admin/validation": { title: "Validation", description: "Pipeline attribution chain audit" },
-  "/admin/evidence-package": { title: "Audit Evidence", description: "SOX/ITGC evidence package" },
-  "/admin/security-design": { title: "Security Design", description: "Target system role management" },
-  "/admin/incidents": { title: "Incidents", description: "Incident detection and triage" },
-  "/admin/migration-health": { title: "Migration Health", description: "Migration readiness dashboard" },
-};
+// Page titles moved to content area — header only shows module switcher + user controls
 
 interface HeaderUser {
   username: string;
@@ -83,9 +43,6 @@ interface HeaderProps {
 export function Header({ user, releases, selectedReleaseId, unreadNotificationCount = 0, activeModule, allModules }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const basePath = "/" + (pathname.split("/").slice(1, pathname.startsWith("/admin") ? 3 : 2).join("/") || "dashboard");
-  const page = pageInfo[basePath] || { title: "Dashboard" };
-
   const roleLabel =
     user?.role === "system_admin"
       ? "System Admin"
@@ -116,7 +73,7 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
       </a>
       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         {/* Module navigation */}
-        {basePath === "/home" ? (
+        {pathname === "/home" ? (
           /* Tile launcher: Provisum wordmark — Geist Sans Bold, no icon (per branding spec §5) */
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold tracking-tight text-brand-accent-dark">Provisum</span>
@@ -141,26 +98,6 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
               </div>
             )}
 
-            <div className="h-4 w-px bg-brand-border" />
-
-            {/* Back button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-brand-text-muted hover:text-brand-text shrink-0"
-              onClick={() => router.back()}
-              title="Go back"
-              aria-label="Go back"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-
-            <div className="min-w-0">
-              <h1 className="text-base sm:text-lg font-semibold text-brand-text truncate">{page.title}</h1>
-              {page.description && (
-                <p className="text-xs text-brand-text-muted -mt-0.5 hidden md:block">{page.description}</p>
-              )}
-            </div>
           </>
         )}
         {releases && releases.length > 0 && (

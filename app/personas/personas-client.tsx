@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DataTable, type Column } from "@/components/shared/data-table";
+// DataTable removed — groups now use custom expandable table
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,38 +18,22 @@ import {
   Loader2,
   Trash2,
   ExternalLink,
+  Plus,
 } from "lucide-react";
 import { BulkDeleteBar } from "@/components/shared/bulk-delete-bar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Clock } from "lucide-react";
 import type { PersonaRow, GroupRow } from "@/lib/queries";
 
-const groupColumns: Column<GroupRow & Record<string, unknown>>[] = [
-  { key: "name", header: "Name", sortable: true },
-  { key: "description", header: "Description" },
-  {
-    key: "accessLevel",
-    header: "Access Level",
-    sortable: true,
-    render: (row) => (row as GroupRow).accessLevel ?? "\u2014",
-  },
-  {
-    key: "domain",
-    header: "Domain",
-    sortable: true,
-    render: (row) => (row as GroupRow).domain ?? "\u2014",
-  },
-  {
-    key: "personaCount",
-    header: "Personas",
-    sortable: true,
-    className: "text-right",
-  },
-  {
-    key: "userCount",
-    header: "Users",
-    sortable: true,
-    className: "text-right",
-  },
-];
 
 const canExecuteJobs = (role: string) => ["system_admin", "admin", "mapper"].includes(role);
 
@@ -57,10 +41,12 @@ export function PersonasPageClient({
   personas,
   groups,
   userRole = "viewer",
+  isDemo = false,
 }: {
   personas: PersonaRow[];
   groups: GroupRow[];
   userRole?: string;
+  isDemo?: boolean;
 }) {
   const router = useRouter();
   const isAdminRole = ["system_admin", "admin"].includes(userRole);
@@ -74,6 +60,9 @@ export function PersonasPageClient({
   // Generate personas state
   const [generating, setGenerating] = useState(false);
   const [genProgress, setGenProgress] = useState<{ processed: number; total: number } | null>(null);
+  const [showAiConfirm, setShowAiConfirm] = useState(false);
+  const [showAddPersona, setShowAddPersona] = useState(false);
+  const [addingPersona, setAddingPersona] = useState(false);
 
   // Extract unique business functions for filter dropdown
   const businessFunctions = Array.from(
@@ -138,6 +127,14 @@ export function PersonasPageClient({
     }
   }
 
+  function onGenerateClick() {
+    if (isDemo) {
+      setShowAiConfirm(true);
+    } else {
+      handleGeneratePersonas();
+    }
+  }
+
   async function handleGeneratePersonas() {
     setGenerating(true);
     setGenProgress(null);
@@ -190,34 +187,134 @@ export function PersonasPageClient({
     }
   }
 
+  const aiConfirmDialog = (
+    <AlertDialog open={showAiConfirm} onOpenChange={setShowAiConfirm}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-teal-600" />
+            AI Persona Generation
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            This operation uses AI to analyze your user population and may take up to <strong className="text-foreground">3 minutes</strong> to complete. You can navigate away and check back &mdash; progress is tracked on the Processing Jobs page.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-teal-600 hover:bg-teal-700"
+            onClick={() => {
+              setShowAiConfirm(false);
+              handleGeneratePersonas();
+            }}
+          >
+            Start Generation
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+
   // ── Empty state: no personas yet ──
   if (personas.length === 0 && !generating) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Users className="h-12 w-12 text-slate-300 mb-4" />
-        <h3 className="text-lg font-semibold text-slate-900 mb-1">No personas generated yet</h3>
-        <p className="text-sm text-slate-500 mb-6 max-w-md">
-          Analyze your user population to generate security personas using AI.
-          Personas group users with similar access patterns for efficient role mapping.
-        </p>
-        {canExecuteJobs(userRole) ? (
-          <Button
-            onClick={handleGeneratePersonas}
-            disabled={generating}
-            className="bg-teal-500 hover:bg-teal-600 text-white"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Generate Personas
-          </Button>
-        ) : (
-          <p className="text-sm text-slate-400">Waiting for personas to be generated by a mapper or admin.</p>
-        )}
-      </div>
+      <>
+        {aiConfirmDialog}
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Users className="h-12 w-12 text-slate-300 mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 mb-1">No personas generated yet</h3>
+          <p className="text-sm text-slate-500 mb-6 max-w-md">
+            Analyze your user population to generate security personas using AI.
+            Personas group users with similar access patterns for efficient role mapping.
+          </p>
+          {canExecuteJobs(userRole) ? (
+            <Button
+              onClick={onGenerateClick}
+              disabled={generating}
+              className="bg-teal-500 hover:bg-teal-600 text-white"
+            >
+              <Sparkles className="h-4 w-4 mr-2" />
+              Generate Personas
+            </Button>
+          ) : (
+            <p className="text-sm text-slate-400">Waiting for personas to be generated by a mapper or admin.</p>
+          )}
+        </div>
+      </>
     );
   }
 
   return (
     <>
+      {aiConfirmDialog}
+
+      {/* Add Persona Dialog */}
+      <AlertDialog open={showAddPersona} onOpenChange={setShowAddPersona}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add Persona Manually</AlertDialogTitle>
+            <AlertDialogDescription>
+              Create a new security persona. You can assign users and map target roles after creation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setAddingPersona(true);
+              const form = e.currentTarget;
+              const name = (form.elements.namedItem("personaName") as HTMLInputElement).value.trim();
+              const businessFunction = (form.elements.namedItem("businessFunction") as HTMLInputElement).value.trim();
+              const description = (form.elements.namedItem("description") as HTMLTextAreaElement).value.trim();
+              if (!name) { setAddingPersona(false); return; }
+              try {
+                const res = await fetch("/api/personas/create", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ name, businessFunction: businessFunction || null, description: description || null }),
+                });
+                if (!res.ok) {
+                  const data = await res.json();
+                  toast.error(data.error || "Failed to create persona");
+                } else {
+                  toast.success(`Persona "${name}" created`);
+                  setShowAddPersona(false);
+                  router.refresh();
+                }
+              } catch {
+                toast.error("Failed to create persona");
+              } finally {
+                setAddingPersona(false);
+              }
+            }}
+            className="space-y-3 mt-2"
+          >
+            <div>
+              <label className="text-sm font-medium">Name *</label>
+              <Input name="personaName" placeholder="e.g. Financial Controller" required className="mt-1" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Business Function</label>
+              <Input name="businessFunction" placeholder="e.g. Finance" className="mt-1" />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Description</label>
+              <textarea
+                name="description"
+                placeholder="Describe the persona's role and access requirements..."
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none"
+                rows={3}
+              />
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogCancel type="button">Cancel</AlertDialogCancel>
+              <Button type="submit" disabled={addingPersona} className="bg-teal-600 hover:bg-teal-700">
+                {addingPersona ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Persona"}
+              </Button>
+            </AlertDialogFooter>
+          </form>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Generating progress overlay */}
       {generating && (
         <div className="rounded-lg border bg-slate-50 p-4 mb-4 flex items-center gap-3">
@@ -271,13 +368,23 @@ export function PersonasPageClient({
             </select>
             {canExecuteJobs(userRole) && (
               <Button
-                onClick={handleGeneratePersonas}
+                onClick={onGenerateClick}
                 disabled={generating}
                 className="bg-teal-500 hover:bg-teal-600 text-white"
                 size="sm"
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 {personas.length > 0 ? "Regenerate Personas" : "Generate Personas"}
+              </Button>
+            )}
+            {isAdminRole && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddPersona(true)}
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Persona
               </Button>
             )}
           </div>
@@ -358,13 +465,44 @@ export function PersonasPageClient({
         </TabsContent>
 
         <TabsContent value="groups" className="mt-4">
-          <DataTable
-            data={groups as (GroupRow & Record<string, unknown>)[]}
-            columns={groupColumns}
-            searchKey="name"
-            searchPlaceholder="Search groups..."
-            emptyMessage="No consolidated groups found."
-          />
+          {groups.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">No consolidated groups found.</p>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8" />
+                    <TableHead>Name</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Access Level</TableHead>
+                    <TableHead>Domain</TableHead>
+                    <TableHead className="text-right">Personas</TableHead>
+                    <TableHead className="text-right">Users</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {groups.map((g) => (
+                    <TableRow
+                      key={g.id}
+                      className="cursor-pointer hover:bg-slate-50"
+                      onClick={() => router.push(`/personas/group/${g.id}`)}
+                    >
+                      <TableCell>
+                        <ChevronRight className="h-4 w-4 text-slate-400" />
+                      </TableCell>
+                      <TableCell className="font-medium">{g.name}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm max-w-xs truncate">{g.description || "—"}</TableCell>
+                      <TableCell>{g.accessLevel || "—"}</TableCell>
+                      <TableCell>{g.domain || "—"}</TableCell>
+                      <TableCell className="text-right">{g.personaCount}</TableCell>
+                      <TableCell className="text-right">{g.userCount}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </>

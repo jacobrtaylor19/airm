@@ -2,6 +2,7 @@ import { getPersonas, getConsolidatedGroups } from "@/lib/queries";
 import { getSessionUser } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 import { PersonasPageClient } from "./personas-client";
+import { isDemoMode } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,7 @@ export default async function PersonasPage() {
   const personas = await getPersonas(orgId);
   const groups = await getConsolidatedGroups(orgId);
   const userRole = currentUser?.role ?? "viewer";
+  const isDemo = isDemoMode();
 
   return (
     <div className="space-y-4">
@@ -21,6 +23,7 @@ export default async function PersonasPage() {
         personas={personas}
         groups={groups}
         userRole={userRole}
+        isDemo={isDemo}
       />
     </div>
   );
