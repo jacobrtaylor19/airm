@@ -58,8 +58,10 @@ export async function rateLimit(
     }
 
     return { allowed: true, remaining: limit - count, resetAt };
-  } catch {
+  } catch (err) {
     // If DB is unavailable, fall through (don't block requests due to rate limiter failure)
+    // Log the failure so it's visible in monitoring
+    console.error("[rate-limit] DB error, failing open:", err instanceof Error ? err.message : String(err));
     return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };
   }
 }

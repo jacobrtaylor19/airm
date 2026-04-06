@@ -75,46 +75,53 @@ export async function getSodConflicts(orgId: number): Promise<SodConflictRow[]> 
     .innerJoin(schema.sodRules, eq(schema.sodRules.id, schema.sodConflicts.sodRuleId))
     .where(orgScope(schema.users.organizationId, orgId));
 
-  // Resolve role names and permission names
-  return await Promise.all(conflicts.map(async (c) => {
-    const [roleA] = c.roleIdA
-      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdA))
-      : [null];
-    const [roleB] = c.roleIdB
-      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, c.roleIdB))
-      : [null];
-    const [permA] = c.permissionIdA
-      ? await db.select({ permissionName: schema.targetPermissions.permissionName }).from(schema.targetPermissions).where(eq(schema.targetPermissions.permissionId, c.permissionIdA))
-      : [null];
-    const [permB] = c.permissionIdB
-      ? await db.select({ permissionName: schema.targetPermissions.permissionName }).from(schema.targetPermissions).where(eq(schema.targetPermissions.permissionId, c.permissionIdB))
-      : [null];
-    return {
-      id: c.id,
-      userId: c.userId,
-      userName: c.userName,
-      department: c.department,
-      severity: c.severity,
-      conflictType: c.conflictType,
-      ruleName: c.ruleName,
-      ruleDescription: c.ruleDescription,
-      permissionIdA: c.permissionIdA,
-      permissionIdB: c.permissionIdB,
-      permissionNameA: permA?.permissionName ?? null,
-      permissionNameB: permB?.permissionName ?? null,
-      roleIdA: c.roleIdA,
-      roleIdB: c.roleIdB,
-      roleNameA: roleA?.roleName ?? null,
-      roleNameB: roleB?.roleName ?? null,
-      resolutionStatus: c.resolutionStatus,
-      resolvedBy: c.resolvedBy,
-      resolutionNotes: c.resolutionNotes,
-      riskExplanation: c.riskExplanation,
-      mitigatingControl: c.mitigatingControl,
-      controlOwner: c.controlOwner,
-      controlFrequency: c.controlFrequency,
-      involvedExistingAccess: c.involvedExistingAccess,
-    };
+  // Batch-resolve role names and permission names (avoids N+1)
+  const allRoleIds = Array.from(new Set(
+    conflicts.flatMap(c => [c.roleIdA, c.roleIdB]).filter((id): id is number => id !== null)
+  ));
+  const allPermIds = Array.from(new Set(
+    conflicts.flatMap(c => [c.permissionIdA, c.permissionIdB]).filter((id): id is string => id !== null)
+  ));
+
+  const roleNameMap = new Map<number, string>();
+  if (allRoleIds.length > 0) {
+    const roleRows = await db.select({ id: schema.targetRoles.id, roleName: schema.targetRoles.roleName })
+      .from(schema.targetRoles).where(inArray(schema.targetRoles.id, allRoleIds));
+    for (const r of roleRows) roleNameMap.set(r.id, r.roleName);
+  }
+
+  const permNameMap = new Map<string, string | null>();
+  if (allPermIds.length > 0) {
+    const permRows = await db.select({ permissionId: schema.targetPermissions.permissionId, permissionName: schema.targetPermissions.permissionName })
+      .from(schema.targetPermissions).where(inArray(schema.targetPermissions.permissionId, allPermIds));
+    for (const p of permRows) permNameMap.set(p.permissionId, p.permissionName);
+  }
+
+  return conflicts.map(c => ({
+    id: c.id,
+    userId: c.userId,
+    userName: c.userName,
+    department: c.department,
+    severity: c.severity,
+    conflictType: c.conflictType,
+    ruleName: c.ruleName,
+    ruleDescription: c.ruleDescription,
+    permissionIdA: c.permissionIdA,
+    permissionIdB: c.permissionIdB,
+    permissionNameA: c.permissionIdA ? (permNameMap.get(c.permissionIdA) ?? null) : null,
+    permissionNameB: c.permissionIdB ? (permNameMap.get(c.permissionIdB) ?? null) : null,
+    roleIdA: c.roleIdA,
+    roleIdB: c.roleIdB,
+    roleNameA: c.roleIdA ? (roleNameMap.get(c.roleIdA) ?? null) : null,
+    roleNameB: c.roleIdB ? (roleNameMap.get(c.roleIdB) ?? null) : null,
+    resolutionStatus: c.resolutionStatus,
+    resolvedBy: c.resolvedBy,
+    resolutionNotes: c.resolutionNotes,
+    riskExplanation: c.riskExplanation,
+    mitigatingControl: c.mitigatingControl,
+    controlOwner: c.controlOwner,
+    controlFrequency: c.controlFrequency,
+    involvedExistingAccess: c.involvedExistingAccess,
   }));
 }
 
@@ -199,15 +206,20 @@ export async function getOpenSodConflictsByPersona(orgId: number): Promise<Map<n
     .innerJoin(schema.userPersonaAssignments, eq(schema.userPersonaAssignments.userId, schema.sodConflicts.userId))
     .where(and(eq(schema.sodConflicts.resolutionStatus, "open"), orgScope(schema.users.organizationId, orgId)));
 
+  // Batch-resolve role names (avoids N+1)
+  const allRoleIds = Array.from(new Set(
+    rows.flatMap(r => [r.roleIdA, r.roleIdB]).filter((id): id is number => id !== null)
+  ));
+  const roleNameMap = new Map<number, string>();
+  if (allRoleIds.length > 0) {
+    const roleRows = await db.select({ id: schema.targetRoles.id, roleName: schema.targetRoles.roleName })
+      .from(schema.targetRoles).where(inArray(schema.targetRoles.id, allRoleIds));
+    for (const r of roleRows) roleNameMap.set(r.id, r.roleName);
+  }
+
   const result = new Map<number, PersonaSodConflict[]>();
   for (const r of rows) {
     if (!r.personaId) continue;
-    const [roleA] = r.roleIdA
-      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, r.roleIdA))
-      : [null];
-    const [roleB] = r.roleIdB
-      ? await db.select({ roleName: schema.targetRoles.roleName }).from(schema.targetRoles).where(eq(schema.targetRoles.id, r.roleIdB))
-      : [null];
     const entry: PersonaSodConflict = {
       personaId: r.personaId,
       conflictId: r.conflictId,
@@ -219,8 +231,8 @@ export async function getOpenSodConflictsByPersona(orgId: number): Promise<Map<n
       permissionIdB: r.permissionIdB,
       roleIdA: r.roleIdA,
       roleIdB: r.roleIdB,
-      roleNameA: roleA?.roleName ?? null,
-      roleNameB: roleB?.roleName ?? null,
+      roleNameA: r.roleIdA ? (roleNameMap.get(r.roleIdA) ?? null) : null,
+      roleNameB: r.roleIdB ? (roleNameMap.get(r.roleIdB) ?? null) : null,
     };
     const existing = result.get(r.personaId) || [];
     existing.push(entry);

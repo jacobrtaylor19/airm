@@ -7,6 +7,7 @@
  */
 export function validateEnv(): void {
   const required: Record<string, string> = {
+    PROVISUM_ENV: "Environment detection will default to 'development' — safety guards rely on this",
     DATABASE_URL: "Database connection will fail",
     ENCRYPTION_KEY: "Sensitive settings will be stored in plaintext",
   };

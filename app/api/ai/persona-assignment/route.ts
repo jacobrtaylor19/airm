@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
 import { reportError } from "@/lib/monitoring";
 import { waitUntil } from "@vercel/functions";
+import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -15,6 +17,11 @@ export const maxDuration = 300;
  * Matches users by: department → business function, then permission overlap score.
  */
 export async function POST() {
+  const user = await getSessionUser();
+  if (!user || !["admin", "system_admin", "mapper"].includes(user.role)) {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  }
+  const orgId = getOrgId(user);
   const [job] = await db.insert(schema.processingJobs).values({
     jobType: "persona_assignment",
     status: "running",
@@ -175,11 +182,12 @@ export async function POST() {
       }).where(eq(schema.processingJobs.id, job.id));
 
       await db.insert(schema.auditLog).values({
-        organizationId: 1,
+        organizationId: orgId,
         entityType: "processingJob",
         entityId: job.id,
         action: "persona_assignment_completed",
         newValue: JSON.stringify({ usersAssigned, failed }),
+        actorEmail: user.email ?? user.username,
       });
 
       return { jobId: job.id, usersAssigned, failed };

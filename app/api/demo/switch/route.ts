@@ -5,6 +5,7 @@ import { setSetting } from "@/lib/settings";
 import { safeError } from "@/lib/errors";
 import { seedDatabase } from "@/db/seed";
 import { db } from "@/db";
+import { isProduction } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,10 @@ const VALID_DEMOS = [
 ];
 
 export async function POST(req: NextRequest) {
+  if (isProduction()) {
+    return NextResponse.json({ error: "Demo switch is disabled in production" }, { status: 403 });
+  }
+
   try {
     const body = await req.json();
     const { demo } = body;

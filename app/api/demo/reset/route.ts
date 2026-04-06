@@ -4,10 +4,15 @@ import { getSetting } from "@/lib/settings";
 import { safeError } from "@/lib/errors";
 import { seedDatabase } from "@/db/seed";
 import { db } from "@/db";
+import { isProduction } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
+  if (isProduction()) {
+    return NextResponse.json({ error: "Demo reset is disabled in production" }, { status: 403 });
+  }
+
   const user = await getSessionUser();
   if (!user || (user.role !== "system_admin" && user.role !== "admin")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });

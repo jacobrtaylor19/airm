@@ -4,7 +4,9 @@ import * as schema from "@/db/schema";
 import { parse } from "csv-parse/sync";
 import { eq } from "drizzle-orm";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { isDemoMode } from "@/lib/demo-mode";
+import { isUploadDisabled } from "@/lib/demo-mode";
+import { getSessionUser } from "@/lib/auth";
+import { getOrgId } from "@/lib/org-context";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +61,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { type: string } }
 ) {
-  if (isDemoMode()) {
+  const user = await getSessionUser();
+  if (!user || !["admin", "system_admin"].includes(user.role)) {
+    return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+  }
+
+  if (isUploadDisabled()) {
     return NextResponse.json(
       { error: "Uploads are disabled in the demo environment" },
       { status: 403 }
@@ -216,7 +223,8 @@ export async function POST(
     }
 
     // Commit mode: insert into DB
-    const result = await commitUpload(uploadType, records);
+    const orgId = getOrgId(user);
+    const result = await commitUpload(uploadType, records, orgId);
 
     return NextResponse.json({
       status: "committed",
@@ -232,7 +240,27 @@ export async function POST(
 
 async function commitUpload(
   type: UploadType,
-  records: CsvRow[]
+  records: CsvRow[],
+  orgId: number
+) {
+  // Types that clear-and-replace need a transaction to prevent data loss on partial failure
+  const destructiveTypes: UploadType[] = [
+    "users", "source-roles", "role-assignments", "role-permissions",
+    "target-roles", "target-permissions", "sod-rules", "personas",
+  ];
+  const useTransaction = destructiveTypes.includes(type);
+
+  if (useTransaction) {
+    return db.transaction(async (tx) => commitUploadInner(tx, type, records, orgId));
+  }
+  return commitUploadInner(db, type, records, orgId);
+}
+
+async function commitUploadInner(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0] | typeof db,
+  type: UploadType,
+  records: CsvRow[],
+  orgId: number
 ) {
   let inserted = 0;
   let skipped = 0;
@@ -240,23 +268,23 @@ async function commitUpload(
 
   switch (type) {
     case "users": {
-      // Clear existing and insert
-      await db.delete(schema.users);
+      // Clear existing and insert (wrapped in transaction)
+      await tx.delete(schema.users);
       for (const row of records) {
         try {
           // Resolve orgUnitId by name if org units have been loaded
           let orgUnitId: number | null = null;
           const orgUnitName = (row.org_unit || row.org_unit_name)?.trim();
           if (orgUnitName) {
-            const [ou] = await db.select({ id: schema.orgUnits.id })
+            const [ou] = await tx.select({ id: schema.orgUnits.id })
               .from(schema.orgUnits)
               .where(eq(schema.orgUnits.name, orgUnitName))
               .limit(1);
             orgUnitId = ou?.id ?? null;
           }
-          await db.insert(schema.users)
+          await tx.insert(schema.users)
             .values({
-              organizationId: 1,
+              organizationId: orgId,
               sourceUserId: row.source_user_id,
               displayName: row.display_name,
               email: row.email || null,
@@ -279,12 +307,12 @@ async function commitUpload(
     }
 
     case "source-roles": {
-      await db.delete(schema.sourceRoles);
+      await tx.delete(schema.sourceRoles);
       for (const row of records) {
         try {
-          await db.insert(schema.sourceRoles)
+          await tx.insert(schema.sourceRoles)
             .values({
-              organizationId: 1,
+              organizationId: orgId,
               roleId: row.role_id,
               roleName: row.role_name,
               description: row.description || null,
@@ -303,20 +331,20 @@ async function commitUpload(
     }
 
     case "role-assignments": {
-      await db.delete(schema.userSourceRoleAssignments);
+      await tx.delete(schema.userSourceRoleAssignments);
       for (const row of records) {
-        const [user] = await db
+        const [user] = await tx
           .select()
           .from(schema.users)
           .where(eq(schema.users.sourceUserId, row.user_id))
           .limit(1);
-        const [role] = await db
+        const [role] = await tx
           .select()
           .from(schema.sourceRoles)
           .where(eq(schema.sourceRoles.roleId, row.role_id))
           .limit(1);
         if (user && role) {
-          await db.insert(schema.userSourceRoleAssignments)
+          await tx.insert(schema.userSourceRoleAssignments)
             .values({
               userId: user.id,
               sourceRoleId: role.id,
@@ -333,43 +361,43 @@ async function commitUpload(
     }
 
     case "role-permissions": {
-      await db.delete(schema.sourceRolePermissions);
+      await tx.delete(schema.sourceRolePermissions);
       // Also ensure source permissions exist
       for (const row of records) {
         // Auto-create permission if missing
-        let [perm] = await db
+        let [perm] = await tx
           .select()
           .from(schema.sourcePermissions)
           .where(eq(schema.sourcePermissions.permissionId, row.permission_id))
           .limit(1);
         if (!perm) {
           // Derive system from the associated source role, or use CSV value, or default
-          const [assocRole] = await db
+          const [assocRole] = await tx
             .select({ system: schema.sourceRoles.system })
             .from(schema.sourceRoles)
             .where(eq(schema.sourceRoles.roleId, row.role_id))
             .limit(1);
-          await db.insert(schema.sourcePermissions)
+          await tx.insert(schema.sourcePermissions)
             .values({
               permissionId: row.permission_id,
               permissionName: row.permission_name || null,
               system: row.system || assocRole?.system || "SAP ECC",
             });
-          [perm] = await db
+          [perm] = await tx
             .select()
             .from(schema.sourcePermissions)
             .where(eq(schema.sourcePermissions.permissionId, row.permission_id))
             .limit(1);
         }
 
-        const [role] = await db
+        const [role] = await tx
           .select()
           .from(schema.sourceRoles)
           .where(eq(schema.sourceRoles.roleId, row.role_id))
           .limit(1);
 
         if (role && perm) {
-          await db.insert(schema.sourceRolePermissions)
+          await tx.insert(schema.sourceRolePermissions)
             .values({
               sourceRoleId: role.id,
               sourcePermissionId: perm.id,
@@ -383,12 +411,12 @@ async function commitUpload(
     }
 
     case "target-roles": {
-      await db.delete(schema.targetRoles);
+      await tx.delete(schema.targetRoles);
       for (const row of records) {
         try {
-          await db.insert(schema.targetRoles)
+          await tx.insert(schema.targetRoles)
             .values({
-              organizationId: 1,
+              organizationId: orgId,
               roleId: row.role_id,
               roleName: row.role_name,
               description: row.description || null,
@@ -406,10 +434,10 @@ async function commitUpload(
     }
 
     case "target-permissions": {
-      await db.delete(schema.targetPermissions);
+      await tx.delete(schema.targetPermissions);
       for (const row of records) {
         try {
-          await db.insert(schema.targetPermissions)
+          await tx.insert(schema.targetPermissions)
             .values({
               permissionId: row.permission_id,
               permissionName: row.permission_name || null,
@@ -428,12 +456,12 @@ async function commitUpload(
     }
 
     case "sod-rules": {
-      await db.delete(schema.sodRules);
+      await tx.delete(schema.sodRules);
       for (const row of records) {
         try {
-          await db.insert(schema.sodRules)
+          await tx.insert(schema.sodRules)
             .values({
-              organizationId: 1,
+              organizationId: orgId,
               ruleId: row.rule_id,
               ruleName: row.rule_name,
               description: row.description || null,
@@ -452,12 +480,12 @@ async function commitUpload(
     }
 
     case "personas": {
-      await db.delete(schema.personas);
+      await tx.delete(schema.personas);
       for (const row of records) {
         try {
-          await db.insert(schema.personas)
+          await tx.insert(schema.personas)
             .values({
-              organizationId: 1,
+              organizationId: orgId,
               name: row.name,
               description: row.description || null,
               businessFunction: row.business_function || null,
@@ -476,19 +504,19 @@ async function commitUpload(
       // Upload existing production access (from previous waves/releases)
       // Does NOT clear existing — appends with releasePhase="existing"
       for (const row of records) {
-        const [user] = await db
+        const [user] = await tx
           .select()
           .from(schema.users)
           .where(eq(schema.users.sourceUserId, row.source_user_id))
           .limit(1);
-        const [role] = await db
+        const [role] = await tx
           .select()
           .from(schema.targetRoles)
           .where(eq(schema.targetRoles.roleId, row.target_role_id))
           .limit(1);
         if (user && role) {
           try {
-            await db.insert(schema.userTargetRoleAssignments)
+            await tx.insert(schema.userTargetRoleAssignments)
               .values({
                 userId: user.id,
                 targetRoleId: role.id,
@@ -519,7 +547,7 @@ async function commitUpload(
           try {
             let parentId: number | null = null;
             if (row.parent_name?.trim()) {
-              const [parent] = await db
+              const [parent] = await tx
                 .select({ id: schema.orgUnits.id })
                 .from(schema.orgUnits)
                 .where(eq(schema.orgUnits.name, row.parent_name.trim()))
@@ -527,15 +555,15 @@ async function commitUpload(
               parentId = parent?.id ?? null;
             }
             // Upsert by name: skip if already exists
-            const [existing] = await db
+            const [existing] = await tx
               .select({ id: schema.orgUnits.id })
               .from(schema.orgUnits)
               .where(eq(schema.orgUnits.name, row.name.trim()))
               .limit(1);
             if (!existing) {
-              await db.insert(schema.orgUnits)
+              await tx.insert(schema.orgUnits)
                 .values({
-                  organizationId: 1,
+                  organizationId: orgId,
                   name: row.name.trim(),
                   level: level,
                   parentId,
@@ -558,7 +586,7 @@ async function commitUpload(
         try {
           const name = row.name?.trim();
           if (!name) { skipped++; continue; }
-          const [existing] = await db
+          const [existing] = await tx
             .select({ id: schema.releases.id })
             .from(schema.releases)
             .where(eq(schema.releases.name, name))
@@ -567,11 +595,11 @@ async function commitUpload(
           const isActive = row.is_active?.toLowerCase() === "true";
           // If this release is active, deactivate all others first
           if (isActive) {
-            await db.update(schema.releases).set({ isActive: false });
+            await tx.update(schema.releases).set({ isActive: false });
           }
-          await db.insert(schema.releases)
+          await tx.insert(schema.releases)
             .values({
-              organizationId: 1,
+              organizationId: orgId,
               name,
               description: row.description || null,
               status: row.status || "planning",
@@ -593,12 +621,12 @@ async function commitUpload(
       // Links org units to releases — appends, does not clear existing
       for (const row of records) {
         try {
-          const [release] = await db
+          const [release] = await tx
             .select({ id: schema.releases.id })
             .from(schema.releases)
             .where(eq(schema.releases.name, row.release_name?.trim()))
             .limit(1);
-          const [orgUnit] = await db
+          const [orgUnit] = await tx
             .select({ id: schema.orgUnits.id })
             .from(schema.orgUnits)
             .where(eq(schema.orgUnits.name, row.org_unit_name?.trim()))
@@ -614,13 +642,13 @@ async function commitUpload(
             continue;
           }
           // Skip if already linked
-          const existingLinks = await db
+          const existingLinks = await tx
             .select()
             .from(schema.releaseOrgUnits)
             .where(eq(schema.releaseOrgUnits.releaseId, release.id));
           const exists = existingLinks.find((r) => r.orgUnitId === orgUnit.id);
           if (exists) { skipped++; continue; }
-          await db.insert(schema.releaseOrgUnits)
+          await tx.insert(schema.releaseOrgUnits)
             .values({ releaseId: release.id, orgUnitId: orgUnit.id, addedBy: "data_upload" });
           inserted++;
         } catch (e: unknown) {
@@ -642,7 +670,7 @@ async function commitUpload(
           }
 
           // Check if username already exists
-          const [existing] = await db.select().from(schema.appUsers)
+          const [existing] = await tx.select().from(schema.appUsers)
             .where(eq(schema.appUsers.username, row.username.trim()))
             .limit(1);
           if (existing) {
@@ -653,7 +681,7 @@ async function commitUpload(
           // Resolve org unit by name
           let assignedOrgUnitId: number | null = null;
           if (row.org_unit_name?.trim()) {
-            const [orgUnit] = await db.select().from(schema.orgUnits)
+            const [orgUnit] = await tx.select().from(schema.orgUnits)
               .where(eq(schema.orgUnits.name, row.org_unit_name.trim()))
               .limit(1);
             if (orgUnit) {
@@ -678,8 +706,8 @@ async function commitUpload(
             continue;
           }
 
-          await db.insert(schema.appUsers).values({
-            organizationId: 1,
+          await tx.insert(schema.appUsers).values({
+            organizationId: orgId,
             username: row.username.trim(),
             displayName: row.display_name.trim(),
             email: authEmail,
@@ -699,49 +727,49 @@ async function commitUpload(
   }
 
   // Auto-associate uploaded data with the active release
-  const [activeRelease] = await db.select().from(schema.releases)
+  const [activeRelease] = await tx.select().from(schema.releases)
     .where(eq(schema.releases.isActive, true)).limit(1);
 
   if (activeRelease && inserted > 0) {
     try {
       if (type === "users") {
-        const allUserIds = await db.select({ id: schema.users.id }).from(schema.users);
-        const linkedRows = await db.select({ uid: schema.releaseUsers.userId }).from(schema.releaseUsers)
+        const allUserIds = await tx.select({ id: schema.users.id }).from(schema.users);
+        const linkedRows = await tx.select({ uid: schema.releaseUsers.userId }).from(schema.releaseUsers)
           .where(eq(schema.releaseUsers.releaseId, activeRelease.id));
         const linkedIds = new Set(linkedRows.map(r => r.uid));
         for (const u of allUserIds) {
           if (!linkedIds.has(u.id)) {
-            await db.insert(schema.releaseUsers).values({ releaseId: activeRelease.id, userId: u.id });
+            await tx.insert(schema.releaseUsers).values({ releaseId: activeRelease.id, userId: u.id });
           }
         }
       } else if (type === "source-roles") {
-        const allRoleIds = await db.select({ id: schema.sourceRoles.id }).from(schema.sourceRoles);
-        const linkedRows = await db.select({ rid: schema.releaseSourceRoles.sourceRoleId }).from(schema.releaseSourceRoles)
+        const allRoleIds = await tx.select({ id: schema.sourceRoles.id }).from(schema.sourceRoles);
+        const linkedRows = await tx.select({ rid: schema.releaseSourceRoles.sourceRoleId }).from(schema.releaseSourceRoles)
           .where(eq(schema.releaseSourceRoles.releaseId, activeRelease.id));
         const linkedIds = new Set(linkedRows.map(r => r.rid));
         for (const r of allRoleIds) {
           if (!linkedIds.has(r.id)) {
-            await db.insert(schema.releaseSourceRoles).values({ releaseId: activeRelease.id, sourceRoleId: r.id });
+            await tx.insert(schema.releaseSourceRoles).values({ releaseId: activeRelease.id, sourceRoleId: r.id });
           }
         }
       } else if (type === "target-roles") {
-        const allRoleIds = await db.select({ id: schema.targetRoles.id }).from(schema.targetRoles);
-        const linkedRows = await db.select({ rid: schema.releaseTargetRoles.targetRoleId }).from(schema.releaseTargetRoles)
+        const allRoleIds = await tx.select({ id: schema.targetRoles.id }).from(schema.targetRoles);
+        const linkedRows = await tx.select({ rid: schema.releaseTargetRoles.targetRoleId }).from(schema.releaseTargetRoles)
           .where(eq(schema.releaseTargetRoles.releaseId, activeRelease.id));
         const linkedIds = new Set(linkedRows.map(r => r.rid));
         for (const r of allRoleIds) {
           if (!linkedIds.has(r.id)) {
-            await db.insert(schema.releaseTargetRoles).values({ releaseId: activeRelease.id, targetRoleId: r.id });
+            await tx.insert(schema.releaseTargetRoles).values({ releaseId: activeRelease.id, targetRoleId: r.id });
           }
         }
       } else if (type === "sod-rules") {
-        const allRuleIds = await db.select({ id: schema.sodRules.id }).from(schema.sodRules);
-        const linkedRows = await db.select({ rid: schema.releaseSodRules.sodRuleId }).from(schema.releaseSodRules)
+        const allRuleIds = await tx.select({ id: schema.sodRules.id }).from(schema.sodRules);
+        const linkedRows = await tx.select({ rid: schema.releaseSodRules.sodRuleId }).from(schema.releaseSodRules)
           .where(eq(schema.releaseSodRules.releaseId, activeRelease.id));
         const linkedIds = new Set(linkedRows.map(r => r.rid));
         for (const r of allRuleIds) {
           if (!linkedIds.has(r.id)) {
-            await db.insert(schema.releaseSodRules).values({ releaseId: activeRelease.id, sodRuleId: r.id });
+            await tx.insert(schema.releaseSodRules).values({ releaseId: activeRelease.id, sodRuleId: r.id });
           }
         }
       }

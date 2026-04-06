@@ -11,6 +11,7 @@ import { getReleasesForAppUser } from "@/lib/releases";
 import { getUnreadNotificationCount } from "@/lib/notifications";
 import { validateEnv } from "@/lib/validate-env";
 import { MODULES, getVisibleModules, getModuleNav, getModuleDefaultRoute } from "@/lib/modules";
+import { EnvironmentBanner } from "@/components/layout/environment-banner";
 
 export const metadata: Metadata = {
   title: "Provisum — Intelligent Role Mapping for Enterprise Migrations",
@@ -30,6 +31,7 @@ export default async function RootLayout({
     return (
       <html lang="en">
         <body className={`${GeistSans.variable} font-sans antialiased`}>
+          <EnvironmentBanner />
           <nav className="flex items-center justify-between px-6 py-3 border-b bg-background">
             <a href="/" className="flex items-center gap-2 text-sm font-bold tracking-tight text-brand-accent-dark">
               Provisum
@@ -71,6 +73,7 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={`${GeistSans.variable} font-sans antialiased`}>
+        <EnvironmentBanner />
         <AppShell
           user={user}
           releases={releases}

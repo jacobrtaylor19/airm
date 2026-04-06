@@ -232,7 +232,7 @@ export function LoginForm({ isDemo = true }: { isDemo?: boolean }) {
                 <button
                   key={cred.user}
                   type="button"
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium transition-all ${
                     isSelected
                       ? "border-teal-400/50 bg-teal-400/15 text-teal-300"
                       : "border-white/10 text-slate-400 hover:border-teal-400/30 hover:bg-white/[0.04] hover:text-slate-200"
@@ -244,7 +244,7 @@ export function LoginForm({ isDemo = true }: { isDemo?: boolean }) {
                   }}
                 >
                   <span
-                    className={`h-1.5 w-1.5 rounded-full ${
+                    className={`h-2 w-2 rounded-full ${
                       isSelected ? "bg-teal-400" : "bg-slate-600"
                     }`}
                   />

@@ -5,6 +5,7 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { safeError } from "@/lib/errors";
 import { reportError } from "@/lib/monitoring";
+import { checkLoginRate } from "@/lib/rate-limit-middleware";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,10 @@ function getClientIP(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   try {
+    // IP-based rate limiting
+    const rateLimited = await checkLoginRate(req);
+    if (rateLimited) return rateLimited;
+
     const body = await req.json();
     const { username, password } = body;
     const ip = getClientIP(req);
