@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 import { getUserScopeDepartments, getUserScope } from "@/lib/scope";
 import { getSetting } from "@/lib/settings";
+import { getEffectiveReleaseIds, getUserIdsForReleases } from "@/lib/release-context";
 import { KpiCard } from "@/components/dashboard/kpi-card";
 import { WorkflowStepper, type WorkflowStage } from "@/components/layout/workflow-stepper";
 import { Upload, UserCircle, Route, ShieldAlert, Shield, CheckCircle, Info, AlertTriangle, CheckCircle2, Zap, RefreshCw, Sparkles } from "lucide-react";
@@ -85,9 +86,13 @@ export default async function DashboardPage() {
 async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
   const orgId = getOrgId(user);
 
+  // Get release filter from the release selector cookie
+  const releaseIds = await getEffectiveReleaseIds(user.id, user.role);
+  const releaseUserIds = await getUserIdsForReleases(releaseIds);
+
   const [stats, allDeptStatus, sourceSystemStats, scopeDepts, recentActivity] = await Promise.all([
-    getDashboardStats(orgId),
-    getDepartmentMappingStatus(orgId),
+    getDashboardStats(orgId, releaseUserIds),
+    getDepartmentMappingStatus(orgId, releaseUserIds),
     getSourceSystemStats(orgId),
     getUserScopeDepartments(user),
     getRecentActivity(orgId, 8),

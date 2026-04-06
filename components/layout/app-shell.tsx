@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { ModuleSidebar } from "@/components/layout/module-sidebar";
 import { Header } from "@/components/layout/header";
@@ -46,6 +47,11 @@ export function AppShell({
 }: AppShellProps) {
   const pathname = usePathname();
   const isTileLauncher = pathname === "/home";
+
+  // Scroll main content to top on route change
+  useEffect(() => {
+    document.getElementById("main-content")?.scrollTo(0, 0);
+  }, [pathname]);
 
   // Read cookie for module context (shared pages like /target-roles)
   const cookieModuleId =

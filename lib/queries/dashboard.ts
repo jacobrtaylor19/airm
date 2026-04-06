@@ -1,7 +1,15 @@
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { count, sql, eq, and } from "drizzle-orm";
+import { count, sql, eq, and, inArray } from "drizzle-orm";
 import { orgScope } from "@/lib/org-context";
+
+/** Build a WHERE condition that combines org scope with optional release user filtering */
+function userOrgAndRelease(orgId: number, releaseUserIds: number[] | null) {
+  if (releaseUserIds === null) {
+    return orgScope(schema.users.organizationId, orgId);
+  }
+  return and(orgScope(schema.users.organizationId, orgId), inArray(schema.users.id, releaseUserIds));
+}
 
 export interface DepartmentMappingStatus {
   department: string;
@@ -19,8 +27,12 @@ export interface SourceSystemStat {
   userCount: number;
 }
 
-export async function getDashboardStats(orgId: number) {
-  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users).where(orgScope(schema.users.organizationId, orgId));
+export async function getDashboardStats(orgId: number, releaseUserIds: number[] | null = null) {
+  const userFilter = releaseUserIds !== null
+    ? and(orgScope(schema.users.organizationId, orgId), inArray(schema.users.id, releaseUserIds))
+    : orgScope(schema.users.organizationId, orgId);
+
+  const [totalUsersRow] = await db.select({ count: count() }).from(schema.users).where(userFilter);
   const totalUsers = totalUsersRow!.count;
 
   const [totalPersonasRow] = await db.select({ count: count() }).from(schema.personas).where(orgScope(schema.personas.organizationId, orgId));
@@ -194,11 +206,13 @@ export async function getDashboardStats(orgId: number) {
   };
 }
 
-export async function getDepartmentMappingStatus(orgId: number): Promise<DepartmentMappingStatus[]> {
+export async function getDepartmentMappingStatus(orgId: number, releaseUserIds: number[] | null = null): Promise<DepartmentMappingStatus[]> {
+  const deptUserFilter = userOrgAndRelease(orgId, releaseUserIds);
+
   const departments = await db.select({
     department: schema.users.department,
     totalUsers: count(),
-  }).from(schema.users).where(orgScope(schema.users.organizationId, orgId)).groupBy(schema.users.department);
+  }).from(schema.users).where(deptUserFilter).groupBy(schema.users.department);
 
   return await Promise.all(departments.map(async (d) => {
     const dept = d.department || "Unknown";
@@ -206,7 +220,7 @@ export async function getDepartmentMappingStatus(orgId: number): Promise<Departm
     const [withPersonaRow] = await db.select({ count: count() })
       .from(schema.userPersonaAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userPersonaAssignments.userId))
-      .where(and(eq(schema.users.department, dept), orgScope(schema.users.organizationId, orgId)));
+      .where(and(eq(schema.users.department, dept), deptUserFilter));
     const withPersona = withPersonaRow!.count;
 
     // Users who have at least one target role assignment
@@ -215,7 +229,7 @@ export async function getDepartmentMappingStatus(orgId: number): Promise<Departm
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(and(eq(schema.users.department, dept), orgScope(schema.users.organizationId, orgId)));
+      .where(and(eq(schema.users.department, dept), deptUserFilter));
     const mapped = Number(mappedRow!.count);
 
     // Users with at least one sod_rejected assignment

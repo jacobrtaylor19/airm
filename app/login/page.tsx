@@ -3,7 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { ShieldCheck } from "lucide-react";
+
 import { isDemoMode } from "@/lib/demo-mode";
 
 export const dynamic = "force-dynamic";
@@ -41,22 +41,13 @@ export default async function LoginPage() {
         />
       </div>
 
-      {/* Brand watermark top-left */}
-      <div className="absolute left-6 top-6 z-10 flex items-center gap-2 text-white/40">
-        <ShieldCheck className="h-4 w-4" />
-        <span className="text-sm font-semibold tracking-tight">Provisum</span>
-      </div>
-
       {/* Brand header */}
       <div className="relative z-10 mb-8 text-center">
-        <div className="flex items-center justify-center gap-3 mb-3">
-          <ShieldCheck className="h-8 w-8 text-teal-400" />
-          <h1 className="text-3xl font-bold text-white tracking-tight">
-            Provisum
-          </h1>
-        </div>
+        <h1 className="text-3xl font-bold text-white tracking-tight mb-3">
+          Provisum
+        </h1>
         <p className="text-base font-medium text-slate-300">
-          Intelligent Role Mapping for Enterprise Migrations.
+          Intelligent Role Mapping for Enterprise Migrations
         </p>
         <p className="mt-1 text-sm text-slate-500">
           {isDemo ? "Sign in to your demo workspace." : "Sign in to your workspace."}
@@ -70,10 +61,6 @@ export default async function LoginPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <p className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 text-xs text-slate-600">
-        Navigate change. Build resilience.
-      </p>
     </div>
   );
 }

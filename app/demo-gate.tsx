@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
-import { ShieldCheck, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp("(^| )" + name + "=([^;]+)"));
@@ -81,14 +81,11 @@ export function DemoGate({ children }: { children: ReactNode }) {
       <div className="relative z-10 w-full max-w-md px-4">
         {/* Brand header */}
         <div className="mb-8 text-center">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <ShieldCheck className="h-8 w-8 text-teal-400" />
-            <h1 className="text-3xl font-bold text-white tracking-tight">
-              Provisum
-            </h1>
-          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight mb-3">
+            Provisum
+          </h1>
           <p className="text-base font-medium text-slate-300">
-            Intelligent Role Mapping for Enterprise Migrations.
+            Intelligent Role Mapping for Enterprise Migrations
           </p>
         </div>
 

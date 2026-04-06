@@ -137,7 +137,7 @@ export function LoginForm({ isDemo = true }: { isDemo?: boolean }) {
             <label className="text-sm font-medium text-slate-300">
               Password
             </label>
-            {!showSso && (
+            {!showSso && !isDemo && (
               <button
                 type="button"
                 onClick={() => setShowSso(true)}

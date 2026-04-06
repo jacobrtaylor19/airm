@@ -6,7 +6,7 @@ import { getSessionUser } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { ChatWidget } from "@/components/chat/chat-widget";
 import { WelcomeTour } from "@/components/onboarding/welcome-tour";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getReleasesForAppUser } from "@/lib/releases";
 import { getUnreadNotificationCount } from "@/lib/notifications";
 import { validateEnv } from "@/lib/validate-env";
@@ -28,21 +28,27 @@ export default async function RootLayout({
 
   // If no user (login/setup/public pages), render with minimal nav
   if (!user) {
+    // Pages with their own full-screen layout — no nav bar
+    const pathname = headers().get("x-next-url") || headers().get("x-invoke-path") || "";
+    const hideNav = pathname === "/login" || pathname === "/";
+
     return (
       <html lang="en">
         <body className={`${GeistSans.variable} font-sans antialiased`}>
           <EnvironmentBanner />
-          <nav className="flex items-center justify-between px-6 py-3 border-b bg-background">
-            <a href="/" className="flex items-center gap-2 text-sm font-bold tracking-tight text-brand-accent-dark">
-              Provisum
-              <span className="text-[10px] font-mono font-normal text-brand-text-light border border-brand-border rounded px-1.5 py-0.5">beta</span>
-            </a>
-            <div className="flex items-center gap-4 text-sm">
-              <a href="/methodology" className="text-muted-foreground hover:text-foreground">How It Works</a>
-              <a href="/overview" className="text-muted-foreground hover:text-foreground">Overview</a>
-              <a href="/login" className="text-teal-600 font-medium hover:text-teal-700">Sign In</a>
-            </div>
-          </nav>
+          {!hideNav && (
+            <nav className="flex items-center justify-between px-6 py-3 border-b bg-background">
+              <a href="/" className="flex items-center gap-2 text-sm font-bold tracking-tight text-brand-accent-dark">
+                Provisum
+                <span className="text-[10px] font-mono font-normal text-brand-text-light border border-brand-border rounded px-1.5 py-0.5">beta</span>
+              </a>
+              <div className="flex items-center gap-4 text-sm">
+                <a href="/methodology" className="text-muted-foreground hover:text-foreground">How It Works</a>
+                <a href="/overview" className="text-muted-foreground hover:text-foreground">Overview</a>
+                <a href="/login" className="text-teal-600 font-medium hover:text-teal-700">Sign In</a>
+              </div>
+            </nav>
+          )}
           {children}
         </body>
       </html>

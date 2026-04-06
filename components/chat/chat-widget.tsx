@@ -142,7 +142,7 @@ export function ChatWidget({ userRole, userName }: ChatWidgetProps) {
 
   // Scroll to bottom on new messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
   // Focus input when panel opens
