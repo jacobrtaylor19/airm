@@ -234,7 +234,7 @@ export function RiskAnalysisClient({ risk }: Props) {
             <DialogTitle>Permission Changes — Source vs Target</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Users with significant permission differences between source and target systems. Gains may indicate over-provisioning in the target; reductions may indicate the user was over-provisioned in the source system and is now correctly scoped to their persona.
+            Users with significant permission changes between source and target systems. New access represents target permissions not present in the source; removed represents source permissions not carried forward. Since source and target use different permission models, high removal counts typically indicate the user was over-provisioned in the source system.
           </p>
 
           {/* Filter tabs */}
@@ -265,9 +265,9 @@ export function RiskAnalysisClient({ risk }: Props) {
                   <th className="pb-2 pr-3 font-medium">Persona</th>
                   <th className="pb-2 pr-3 font-medium text-right">Source Perms</th>
                   <th className="pb-2 pr-3 font-medium text-right">Target Perms</th>
-                  <th className="pb-2 pr-3 font-medium text-right">Gained</th>
-                  <th className="pb-2 pr-3 font-medium text-right">Lost</th>
-                  <th className="pb-2 font-medium">Change</th>
+                  <th className="pb-2 pr-3 font-medium text-right">New Access</th>
+                  <th className="pb-2 pr-3 font-medium text-right">Removed</th>
+                  <th className="pb-2 font-medium">Net Change</th>
                 </tr>
               </thead>
               <tbody>
