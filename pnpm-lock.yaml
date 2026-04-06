@@ -45,10 +45,10 @@ importers:
         specifier: ^10.46.0
         version: 10.46.0(@opentelemetry/context-async-hooks@2.6.1(@opentelemetry/api@1.9.1))(@opentelemetry/core@2.6.1(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.6.1(@opentelemetry/api@1.9.1))(next@14.2.35(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(@playwright/test@1.58.2)(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react@18.3.1)(webpack@5.105.4(esbuild@0.27.4))
       '@supabase/ssr':
-        specifier: ^0.9.0
+        specifier: 0.9.0
         version: 0.9.0(@supabase/supabase-js@2.100.1)
       '@supabase/supabase-js':
-        specifier: ^2.100.1
+        specifier: 2.100.1
         version: 2.100.1
       '@tanstack/react-table':
         specifier: ^8.21.3
