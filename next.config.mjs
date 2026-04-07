@@ -2,9 +2,11 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  outputFileTracingIncludes: {
-    "/api/demo/reset": ["./data/**/*"],
-    "/api/demo/switch": ["./data/**/*"],
+  experimental: {
+    outputFileTracingIncludes: {
+      "/api/demo/reset": ["./data/**/*"],
+      "/api/demo/switch": ["./data/**/*"],
+    },
   },
   async headers() {
     return [

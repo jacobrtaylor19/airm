@@ -95,10 +95,12 @@ export async function POST() {
 
       // Collect all target permission IDs covered by mapped roles
       const coveredPermIds = new Set<string>();
-      for (const trId of mappedTargetRoleIds) {
+      const mappedRoleArr = Array.from(mappedTargetRoleIds);
+      for (const trId of mappedRoleArr) {
         const perms = targetRolePermMap.get(trId);
         if (perms) {
-          for (const pid of perms) coveredPermIds.add(pid);
+          const permArr = Array.from(perms);
+          for (const pid of permArr) coveredPermIds.add(pid);
         }
       }
 
