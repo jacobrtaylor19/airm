@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { AlertTriangle, Loader2, Search, X, Save, GripVertical, TrendingUp, Sparkles } from "lucide-react";
-import type { PersonaMappingRow, TargetRoleRow, PersonaSodConflict } from "@/lib/queries";
+import { Loader2, Search, X, Save, GripVertical, TrendingUp, Sparkles } from "lucide-react";
+import type { PersonaMappingRow, TargetRoleRow } from "@/lib/queries";
 import type { PersonaDetailInfo } from "./mapping-client";
 
 export interface RoleAssignmentPanelProps {
@@ -20,7 +20,6 @@ export interface RoleAssignmentPanelProps {
   dragRoleIdRef: React.MutableRefObject<number | null>;
   dragSourceRef: React.MutableRefObject<"mapped" | "available" | null>;
   targetRoles: TargetRoleRow[];
-  sodConflictsByPersona: Record<number, PersonaSodConflict[]>;
   personaSourceSystems: Record<number, string[]>;
   excessThreshold: number;
   roleSearch: string;
@@ -44,7 +43,6 @@ export function RoleAssignmentPanel({
   dragRoleIdRef,
   dragSourceRef,
   targetRoles,
-  sodConflictsByPersona,
   personaSourceSystems,
   excessThreshold,
   roleSearch,
@@ -92,40 +90,6 @@ export function RoleAssignmentPanel({
                 </div>
               )}
             </div>
-
-            {/* SOD Conflict Warning Banner */}
-            {selectedPersonaId && sodConflictsByPersona[selectedPersonaId] && sodConflictsByPersona[selectedPersonaId].length > 0 && (
-              <div className="rounded-md border border-red-200 bg-red-50 p-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
-                  <div className="text-sm">
-                    <p className="font-medium text-red-800">
-                      SOD Conflicts Detected ({sodConflictsByPersona[selectedPersonaId].length})
-                    </p>
-                    <p className="text-red-700 mt-1">
-                      Users in this persona have segregation of duties conflicts. Consider removing one of the conflicting roles below to resolve.
-                    </p>
-                    <div className="mt-2 space-y-1">
-                      {sodConflictsByPersona[selectedPersonaId].map((sc) => (
-                        <div key={sc.conflictId} className="flex items-center gap-2 text-xs text-red-700 bg-red-100 rounded px-2 py-1">
-                          <Badge variant="secondary" className="text-[10px] bg-red-200 text-red-800">
-                            {sc.severity}
-                          </Badge>
-                          <span className="font-medium">{sc.userName}:</span>
-                          <span>
-                            {sc.roleNameA ?? "?"} <span className="text-red-400">vs</span> {sc.roleNameB ?? "?"}
-                          </span>
-                          <span className="text-red-500">({sc.ruleName})</span>
-                        </div>
-                      ))}
-                    </div>
-                    <a href="/sod" className="inline-block mt-2 text-xs font-medium text-red-700 underline hover:text-red-900">
-                      Go to SOD Conflicts page to fix &rarr;
-                    </a>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Least Access Warning Banner */}
             {selectedPersonaId && selectedDetail.mappedRoles.some(r => r.excessPercent != null && r.excessPercent >= excessThreshold) && (

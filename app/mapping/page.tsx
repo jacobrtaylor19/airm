@@ -5,14 +5,12 @@ import {
   getTargetRoles,
   getPersonaDetail,
   getPersonaIdsForUsers,
-  getOpenSodConflictsByPersona,
   getPersonaSourceSystems,
   getGapAnalysisSummary,
   getUserRefinementDetails,
   getRemappingQueue,
 } from "@/lib/queries";
 import { getSetting } from "@/lib/settings";
-import type { PersonaSodConflict } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 import { getUserScope } from "@/lib/scope";
@@ -106,16 +104,6 @@ export default async function MappingPage() {
   const scopedIds = user.role === "mapper" ? await getUserScope(user) : null;
   const remappingQueueItems = await getRemappingQueue(orgId, scopedIds);
 
-  // Get open SOD conflicts grouped by persona for warning banners
-  const sodConflictMap = await getOpenSodConflictsByPersona(orgId);
-  const sodConflictsByPersona: Record<number, PersonaSodConflict[]> = {};
-  sodConflictMap.forEach((conflicts, personaId) => {
-    // Only include personas that are in the current workspace
-    if (personas.some(p => p.personaId === personaId)) {
-      sodConflictsByPersona[personaId] = conflicts;
-    }
-  });
-
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
@@ -128,7 +116,6 @@ export default async function MappingPage() {
         refinements={refinements}
         gaps={gaps}
         targetRoles={targetRoles}
-        sodConflictsByPersona={sodConflictsByPersona}
         personaSourceSystems={personaSourceSystemsObj}
         gapSummary={gapSummary}
         refinementDetails={refinementDetails}

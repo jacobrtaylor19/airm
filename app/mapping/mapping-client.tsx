@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, PersonaSodConflict, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
+import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
 
 import { PersonaSelector } from "./persona-selector";
 import { RoleAssignmentPanel } from "./role-assignment-panel";
@@ -25,7 +25,6 @@ interface MappingClientProps {
   refinements: UserRefinementRow[];
   gaps: GapRow[];
   targetRoles: TargetRoleRow[];
-  sodConflictsByPersona?: Record<number, PersonaSodConflict[]>;
   personaSourceSystems?: Record<number, string[]>;
   gapSummary?: GapAnalysisSummary;
   refinementDetails?: UserRefinementDetail[];
@@ -33,7 +32,7 @@ interface MappingClientProps {
   userRole?: string;
 }
 
-export function MappingClient({ personas, personaDetails, gaps, targetRoles, sodConflictsByPersona = {}, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30, userRole }: MappingClientProps) {
+export function MappingClient({ personas, personaDetails, gaps, targetRoles, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30, userRole }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const [autoMapProgress, setAutoMapProgress] = useState<{ processed: number; total: number } | null>(null);
@@ -271,7 +270,6 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, sod
             dragRoleIdRef={dragRoleIdRef}
             dragSourceRef={dragSourceRef}
             targetRoles={targetRoles}
-            sodConflictsByPersona={sodConflictsByPersona}
             personaSourceSystems={personaSourceSystems}
             excessThreshold={excessThreshold}
             roleSearch={roleSearch}
