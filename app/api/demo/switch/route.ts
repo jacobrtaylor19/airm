@@ -8,6 +8,7 @@ import { db } from "@/db";
 import { isProduction } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 300;
 
 const VALID_DEMOS = [
   "default",

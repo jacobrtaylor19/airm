@@ -654,6 +654,26 @@ export function GapAnalysisTab({
   gapSummary,
 }: GapAnalysisTabProps) {
   const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
+  const [runningGapAnalysis, setRunningGapAnalysis] = useState(false);
+  const router = useRouter();
+
+  async function runGapAnalysis() {
+    setRunningGapAnalysis(true);
+    try {
+      const res = await fetch("/api/mapping/gap-analysis", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Gap analysis failed");
+      } else {
+        toast.success(`Gap analysis complete: ${data.totalGaps} gaps found across ${data.personasWithGaps} personas`);
+        router.refresh();
+      }
+    } catch {
+      toast.error("Failed to run gap analysis");
+    } finally {
+      setRunningGapAnalysis(false);
+    }
+  }
 
   if (gaps.length === 0 && (!gapSummary || gapSummary.gapsByPersona.length === 0)) {
     return (
@@ -663,6 +683,9 @@ export function GapAnalysisTab({
           <p className="text-muted-foreground text-center">
             No permission gaps detected. All source permissions have target role coverage, or no gap analysis has been run yet.
           </p>
+          <Button onClick={runGapAnalysis} disabled={runningGapAnalysis} variant="outline" className="mt-2">
+            {runningGapAnalysis ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Running...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Run Gap Analysis</>}
+          </Button>
         </CardContent>
       </Card>
     );
@@ -673,6 +696,11 @@ export function GapAnalysisTab({
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button onClick={runGapAnalysis} disabled={runningGapAnalysis} variant="outline" size="sm">
+          {runningGapAnalysis ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Running...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Re-run Gap Analysis</>}
+        </Button>
+      </div>
       {/* Summary Card */}
       {useComputedSummary && (
         <Card>

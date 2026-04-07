@@ -928,6 +928,84 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   ]).onConflictDoNothing();
   console.log("  ✓ 5 default feature flags");
 
+  // ─── 15. Permission Gap Analysis ───
+  // Compute gaps: source permissions not covered by mapped target role permissions
+  const seedPersonaSourcePerms = await db
+    .select({
+      personaId: schema.personaSourcePermissions.personaId,
+      sourcePermissionId: schema.personaSourcePermissions.sourcePermissionId,
+    })
+    .from(schema.personaSourcePermissions);
+
+  const seedPersonaTargetMappings = await db
+    .select({
+      personaId: schema.personaTargetRoleMappings.personaId,
+      targetRoleId: schema.personaTargetRoleMappings.targetRoleId,
+    })
+    .from(schema.personaTargetRoleMappings);
+
+  // Build target role → covered permission IDs
+  const seedTargetRolePerms = new Map<number, Set<string>>();
+  const seedTrpRows = await db.select({
+    roleId: schema.targetRolePermissions.targetRoleId,
+    permId: schema.targetPermissions.permissionId,
+  }).from(schema.targetRolePermissions)
+    .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id));
+  for (const row of seedTrpRows) {
+    if (!seedTargetRolePerms.has(row.roleId)) seedTargetRolePerms.set(row.roleId, new Set());
+    seedTargetRolePerms.get(row.roleId)!.add(row.permId);
+  }
+
+  // Build source permission ID lookup
+  const seedSourcePermLookup = new Map<number, string>();
+  const seedAllSourcePerms = await db.select({ id: schema.sourcePermissions.id, permissionId: schema.sourcePermissions.permissionId }).from(schema.sourcePermissions);
+  for (const sp of seedAllSourcePerms) seedSourcePermLookup.set(sp.id, sp.permissionId);
+
+  // Build persona → mapped target roles
+  const seedPersonaMappings = new Map<number, Set<number>>();
+  for (const m of seedPersonaTargetMappings) {
+    if (!seedPersonaMappings.has(m.personaId)) seedPersonaMappings.set(m.personaId, new Set());
+    seedPersonaMappings.get(m.personaId)!.add(m.targetRoleId);
+  }
+
+  // Build persona → source permission DB IDs
+  const seedPersonaSrcPerms = new Map<number, number[]>();
+  for (const psp of seedPersonaSourcePerms) {
+    if (!seedPersonaSrcPerms.has(psp.personaId)) seedPersonaSrcPerms.set(psp.personaId, []);
+    seedPersonaSrcPerms.get(psp.personaId)!.push(psp.sourcePermissionId);
+  }
+
+  // Compute gaps
+  const seedGapRecords: { personaId: number; sourcePermissionId: number; gapType: string; notes: string }[] = [];
+  for (const [personaId, srcPermIds] of Array.from(seedPersonaSrcPerms)) {
+    const mappedRoles = seedPersonaMappings.get(personaId) || new Set<number>();
+    const coveredPerms = new Set<string>();
+    for (const trId of mappedRoles) {
+      const perms = seedTargetRolePerms.get(trId);
+      if (perms) for (const p of perms) coveredPerms.add(p);
+    }
+    for (const spDbId of srcPermIds) {
+      const spId = seedSourcePermLookup.get(spDbId);
+      if (spId && !coveredPerms.has(spId)) {
+        seedGapRecords.push({
+          personaId,
+          sourcePermissionId: spDbId,
+          gapType: mappedRoles.size === 0 ? "no_mapping" : "no_coverage",
+          notes: mappedRoles.size === 0 ? "Persona has no target roles mapped" : `Source permission ${spId} not covered`,
+        });
+      }
+    }
+  }
+
+  if (seedGapRecords.length > 0) {
+    for (let i = 0; i < seedGapRecords.length; i += 500) {
+      await db.insert(schema.permissionGaps).values(seedGapRecords.slice(i, i + 500));
+    }
+    console.log(`  ✓ ${seedGapRecords.length} permission gaps computed`);
+  } else {
+    console.log("  ⊘ No persona source permissions to analyze for gaps");
+  }
+
   // ─── Verification ───
   console.log("\n📊 Verification:");
   const counts = {

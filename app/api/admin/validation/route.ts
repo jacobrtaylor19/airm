@@ -15,6 +15,7 @@ export async function GET() {
 
   const orgId = getOrgId(user);
 
+  try {
   // ─────────────────────────────────────────────
   // 1. Core counts
   // ─────────────────────────────────────────────
@@ -247,4 +248,11 @@ export async function GET() {
     personaRoleMappings,
     users: enrichedChain,
   });
+  } catch (error) {
+    console.error("[validation] Query failed:", error);
+    return NextResponse.json(
+      { error: "Failed to load validation data", detail: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
+  }
 }
