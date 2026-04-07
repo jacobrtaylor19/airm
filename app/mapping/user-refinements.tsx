@@ -680,8 +680,11 @@ export function GapAnalysisTab({
       <Card>
         <CardContent className="flex flex-col items-center gap-3 py-12">
           <CheckCircle className="h-8 w-8 text-green-500" />
-          <p className="text-muted-foreground text-center">
-            No permission gaps detected. All source permissions have target role coverage, or no gap analysis has been run yet.
+          <p className="text-muted-foreground text-center max-w-md">
+            No access gaps detected. All legacy permissions are covered by target role mappings, or gap analysis has not been run yet.
+          </p>
+          <p className="text-xs text-muted-foreground text-center max-w-md">
+            Gap analysis compares each persona&apos;s current (source) access against their future (target) roles to identify where users may lose access to capabilities they use today.
           </p>
           <Button onClick={runGapAnalysis} disabled={runningGapAnalysis} variant="outline" className="mt-2">
             {runningGapAnalysis ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Running...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Run Gap Analysis</>}
@@ -712,18 +715,18 @@ export function GapAnalysisTab({
                     {gapSummary.coveragePercent}%
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Permission Coverage
+                    Access Continuity
                   </div>
                 </div>
                 <p className="text-sm">
                   <span className="font-medium">{gapSummary.coveredPermissions}</span> of{" "}
                   <span className="font-medium">{gapSummary.totalSourcePermissions}</span>{" "}
-                  source permissions are covered by target roles
+                  current permissions carry forward to the target state
                 </p>
                 {gapSummary.gapsByPersona.length > 0 && (
                   <p className="text-sm text-amber-700 mt-1">
-                    {gapSummary.totalSourcePermissions - gapSummary.coveredPermissions} uncovered permissions across{" "}
-                    {gapSummary.gapsByPersona.length} persona{gapSummary.gapsByPersona.length !== 1 ? "s" : ""}
+                    {gapSummary.totalSourcePermissions - gapSummary.coveredPermissions} access gap{gapSummary.totalSourcePermissions - gapSummary.coveredPermissions !== 1 ? "s" : ""} across{" "}
+                    {gapSummary.gapsByPersona.length} persona{gapSummary.gapsByPersona.length !== 1 ? "s" : ""} — review for additional role needs or change impact
                   </p>
                 )}
               </div>
@@ -768,20 +771,26 @@ export function GapAnalysisTab({
                   <span>{pg.personaName}</span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <Badge variant={pg.uncoveredCount > 5 ? "destructive" : "outline"} className="text-xs">
+                    {pg.uncoveredCount} access gap{pg.uncoveredCount !== 1 ? "s" : ""}
+                  </Badge>
                   <Badge variant="outline" className="text-xs">
-                    {pg.uncoveredCount} uncovered / {pg.totalPermissions} total
+                    {pg.totalPermissions - pg.uncoveredCount}/{pg.totalPermissions} covered
                   </Badge>
                 </div>
               </CardTitle>
             </CardHeader>
             {expandedPersona === pg.personaName && (
               <CardContent>
+                <p className="text-xs text-muted-foreground mb-3">
+                  These legacy permissions are not covered by any mapped target role. Users in this persona may need additional access, or this represents a change in their day-to-day workflow.
+                </p>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Permission ID</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Description</TableHead>
+                      <TableHead>Permission</TableHead>
+                      <TableHead>Capability</TableHead>
+                      <TableHead>Impact</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -789,7 +798,7 @@ export function GapAnalysisTab({
                       <TableRow key={p.permissionId}>
                         <TableCell className="font-mono text-xs">{p.permissionId}</TableCell>
                         <TableCell className="text-sm">{p.permissionName ?? "\u2014"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{p.description ?? "\u2014"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{p.description ?? "Access removed in target state"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -815,8 +824,8 @@ export function GapAnalysisTab({
                   )}
                   <span>{personaName}</span>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  {personaGaps.length} uncovered permissions
+                <Badge variant={personaGaps.length > 5 ? "destructive" : "outline"} className="text-xs">
+                  {personaGaps.length} access gap{personaGaps.length !== 1 ? "s" : ""}
                 </Badge>
               </CardTitle>
             </CardHeader>
