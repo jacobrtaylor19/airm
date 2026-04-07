@@ -97,7 +97,7 @@ export async function POST(request: Request) {
           VALUES (${userId}, ${orgId}, 'confirmed_as_is', ${changeImpactLevel},
             ${coveragePercent}, ${uncoveredCount}, ${Number(row?.new_perm_count ?? 0)},
             ${Number(row?.source_role_count ?? 0)}, ${Number(row?.target_role_count ?? 0)},
-            ${user.appUserId}, ${now}, ${notes ?? null}, ${now})
+            ${user.id}, ${now}, ${notes ?? null}, ${now})
           ON CONFLICT (organization_id, user_id) DO UPDATE SET
             review_status = 'confirmed_as_is',
             change_impact_level = ${changeImpactLevel},
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
             new_perm_count = ${Number(row?.new_perm_count ?? 0)},
             source_role_count = ${Number(row?.source_role_count ?? 0)},
             target_role_count = ${Number(row?.target_role_count ?? 0)},
-            reviewed_by = ${user.appUserId},
+            reviewed_by = ${user.id},
             reviewed_at = ${now},
             review_notes = ${notes ?? null},
             updated_at = ${now}
