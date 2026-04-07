@@ -53,6 +53,11 @@ export function RemappingQueue({ items }: { items: RemappingQueueItem[] }) {
                   <span className="font-mono">{item.conflictPermB}</span>
                 </p>
               )}
+              {item.sentBackReason && (
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Sent back: {item.sentBackReason}
+                </p>
+              )}
             </div>
             {item.conflictSeverity && (
               <Badge variant="outline" className={`text-xs ${severityStyles[item.conflictSeverity] ?? ""}`}>

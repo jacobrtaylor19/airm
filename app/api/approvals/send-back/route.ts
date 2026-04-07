@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     await db.update(schema.userTargetRoleAssignments).set({
-      status: "draft",
+      status: "remap_required",
       sentBackReason: reason,
       updatedAt: new Date().toISOString(),
     }).where(eq(schema.userTargetRoleAssignments.id, assignmentId));
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
       action: "sent_back",
       actorEmail: user.username,
       oldValue: JSON.stringify({ status: assignment.status }),
-      newValue: JSON.stringify({ status: "draft", reason }),
+      newValue: JSON.stringify({ status: "remap_required", reason }),
     });
 
     dispatchWebhookEvent("mapping.rejected", { assignmentId, rejectedBy: user.displayName }).catch(() => {});

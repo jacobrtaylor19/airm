@@ -16,6 +16,7 @@ export interface RemappingQueueItem {
   conflictPermA: string | null;
   conflictPermB: string | null;
   conflictSeverity: string | null;
+  sentBackReason: string | null;
 }
 
 export async function getRemappingQueue(
@@ -38,6 +39,7 @@ export async function getRemappingQueue(
       roleName: schema.targetRoles.roleName,
       roleCode: schema.targetRoles.roleId,
       personaId: schema.userTargetRoleAssignments.derivedFromPersonaId,
+      sentBackReason: schema.userTargetRoleAssignments.sentBackReason,
     })
     .from(schema.userTargetRoleAssignments)
     .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))

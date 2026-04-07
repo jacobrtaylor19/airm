@@ -234,28 +234,28 @@ export async function getDepartmentMappingStatus(orgId: number, releaseUserIds: 
 
     // Users with at least one sod_rejected assignment
     const [sodRejectedRow] = await db.select({
-      count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
+      count: sql<number>`count(distinct ${schema.userTargetRoleAssignments.userId})`,
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'sod_rejected' AND (${schema.users.organizationId} = ${orgId} OR ${schema.users.organizationId} IS NULL)`);
+      .where(and(eq(schema.users.department, dept), eq(schema.userTargetRoleAssignments.status, "sod_rejected"), deptUserFilter));
     const sodRejected = Number(sodRejectedRow!.count);
 
-    // Users whose ALL assignments are compliance_approved or sod_risk_accepted or approved
+    // Users with clean status
     const [sodCleanRow] = await db.select({
-      count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
+      count: sql<number>`count(distinct ${schema.userTargetRoleAssignments.userId})`,
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status IN ('compliance_approved', 'sod_risk_accepted', 'ready_for_approval', 'approved') AND (${schema.users.organizationId} = ${orgId} OR ${schema.users.organizationId} IS NULL)`);
+      .where(and(eq(schema.users.department, dept), inArray(schema.userTargetRoleAssignments.status, ["compliance_approved", "sod_risk_accepted", "ready_for_approval", "approved"]), deptUserFilter));
     const sodClean = Number(sodCleanRow!.count);
 
     const [approvedRow] = await db.select({
-      count: sql<number>`count(distinct user_target_role_assignments.user_id)`,
+      count: sql<number>`count(distinct ${schema.userTargetRoleAssignments.userId})`,
     })
       .from(schema.userTargetRoleAssignments)
       .innerJoin(schema.users, eq(schema.users.id, schema.userTargetRoleAssignments.userId))
-      .where(sql`users.department = ${dept} AND user_target_role_assignments.status = 'approved' AND (${schema.users.organizationId} = ${orgId} OR ${schema.users.organizationId} IS NULL)`);
+      .where(and(eq(schema.users.department, dept), eq(schema.userTargetRoleAssignments.status, "approved"), deptUserFilter));
     const approved = Number(approvedRow!.count);
 
     return { department: dept, totalUsers: d.totalUsers, withPersona, mapped, sodRejected, sodClean, approved };
