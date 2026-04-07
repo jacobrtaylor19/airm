@@ -3,7 +3,7 @@ import postgres from "postgres";
 import * as schema from "./schema";
 import { parse } from "csv-parse/sync";
 import { readFileSync, existsSync } from "fs";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import path from "path";
 import { createClient } from "@supabase/supabase-js";
 
@@ -84,49 +84,25 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   }).onConflictDoNothing();
   console.log("  ✓ Default organization");
 
-  // ─── Clear tables (reverse dependency order) ───
-  // Tables added post-launch that reference core tables (must go first)
-  await db.delete(schema.mappingFeedback);
-  await db.delete(schema.securityWorkItems);
-  await db.delete(schema.evidencePackageRuns);
-  await db.delete(schema.incidents);
-  await db.delete(schema.chatConversations);
-  await db.delete(schema.scheduledExports);
-  await db.delete(schema.webhookDeliveries);
-  await db.delete(schema.webhookEndpoints);
-  await db.delete(schema.personaConfirmations);
-  await db.delete(schema.reviewLinks);
-  await db.delete(schema.notifications);
-  await db.delete(schema.userInvites);
-  await db.delete(schema.rateLimitEntries);
-  await db.delete(schema.securityDesignChanges);
-  await db.delete(schema.workstreamItems);
-  await db.delete(schema.releaseOrgUnits);
-  // Original core tables
-  await db.delete(schema.auditLog);
-  await db.delete(schema.processingJobs);
-  await db.delete(schema.permissionGaps);
-  await db.delete(schema.sodConflicts);
-  await db.delete(schema.sodRules);
-  await db.delete(schema.userTargetRoleAssignments);
-  await db.delete(schema.personaTargetRoleMappings);
-  await db.delete(schema.userPersonaAssignments);
-  await db.delete(schema.personaSourcePermissions);
-  await db.delete(schema.userSourceRoleAssignments);
-  await db.delete(schema.sourceRolePermissions);
-  await db.delete(schema.targetSecurityRoleTasks);
-  await db.delete(schema.targetTaskRolePermissions);
-  await db.delete(schema.targetRolePermissions);
-  await db.delete(schema.targetTaskRoles);
-  await db.delete(schema.leastAccessExceptions);
-  await db.delete(schema.personas);
-  await db.delete(schema.consolidatedGroups);
-  await db.delete(schema.sourcePermissions);
-  await db.delete(schema.sourceRoles);
-  await db.delete(schema.targetPermissions);
-  await db.delete(schema.targetRoles);
-  await db.delete(schema.users);
-  await db.delete(schema.orgUnits);
+  // ─── Clear all data tables via TRUNCATE CASCADE ───
+  // Using raw SQL TRUNCATE ... CASCADE avoids FK ordering issues entirely.
+  // We preserve `organizations` and `demo_leads` (not part of seed data).
+  await db.execute(sql`TRUNCATE TABLE
+    mapping_feedback, security_work_items, evidence_package_runs, incidents,
+    chat_conversations, scheduled_exports, webhook_deliveries, webhook_endpoints,
+    persona_confirmations, review_links, notifications, user_invites,
+    rate_limit_entries, security_design_changes, workstream_items, release_org_units,
+    audit_log, processing_jobs, permission_gaps, sod_conflicts, sod_rules,
+    user_target_role_assignments, persona_target_role_mappings, user_persona_assignments,
+    persona_source_permissions, user_source_role_assignments, source_role_permissions,
+    target_security_role_tasks, target_task_role_permissions, target_role_permissions,
+    target_task_roles, least_access_exceptions, personas, consolidated_groups,
+    source_permissions, source_roles, target_permissions, target_roles,
+    users, org_units, release_users, release_source_roles, release_target_roles,
+    release_sod_rules, app_user_releases, releases, feature_flags, system_settings,
+    work_assignments, app_user_sessions, app_users, sso_configurations
+    CASCADE
+  `);
 
   // ─── 0. Org Hierarchy ───
   const orgHierarchy: { name: string; level: string; parentName?: string; description?: string }[] = [
@@ -704,15 +680,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   console.log(`    (${seedUserAssignments.size - seedUsersWithConflicts.size} users clean, ${seedUsersWithConflicts.size} users with conflicts)`);
 
   // ─── 12. Default Admin User ───
-  await db.delete(schema.notifications);
-  await db.delete(schema.reviewLinks);
-  await db.delete(schema.personaConfirmations);
-  await db.delete(schema.chatConversations);
-  await db.delete(schema.incidents);
-  await db.delete(schema.userInvites);
-  await db.delete(schema.workAssignments);
-  await db.delete(schema.appUserSessions);
-  await db.delete(schema.appUsers);
+  // (app_users already cleared by TRUNCATE CASCADE above)
 
   const testUsers = [
     { username: "sysadmin", displayName: "System Administrator", role: "system_admin", password: "Sysadmin@2026!", orgUnit: null as string | null },
@@ -825,7 +793,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   console.log("    Password: DemoGuide2026!");
 
   // ─── 13. Default System Settings ───
-  await db.delete(schema.systemSettings);
+  // (system_settings already cleared by TRUNCATE CASCADE above)
   const defaultSettings = [
     { key: "project.name", value: "SAP S/4HANA Migration" },
     { key: "project.sourceSystem", value: "SAP ECC" },
@@ -857,12 +825,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   console.log(`  ✓ ${defaultSettings.length} default system settings`);
 
   // ─── 14. Releases + Release Scoping ───
-  await db.delete(schema.releaseUsers);
-  await db.delete(schema.releaseSourceRoles);
-  await db.delete(schema.releaseTargetRoles);
-  await db.delete(schema.releaseSodRules);
-  await db.delete(schema.appUserReleases);
-  await db.delete(schema.releases);
+  // (release tables already cleared by TRUNCATE CASCADE above)
 
   const [wave1] = await db.insert(schema.releases).values({
     organizationId: 1,
