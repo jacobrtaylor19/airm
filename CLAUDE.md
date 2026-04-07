@@ -9,7 +9,7 @@ This file gives Claude Code the context needed to work effectively in this codeb
 
 ## What this project is
 
-Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It uses Supabase Auth with JWT sessions, 7 roles (including `project_manager`), and org-unit-based scoping. Multi-tenant org isolation is Phase 3 complete (`organization_id` NOT NULL on all entity tables). The `airm/` directory name is retained for now — display strings use "Provisum" everywhere. Schema has **55 tables** in Supabase Postgres. **Current version: v1.2.0** — deployed at https://demo.provisum.io.
+Provisum (formerly AIRM) is a **Next.js 14** web tool for enterprise role migration projects (e.g. SAP ECC → S/4HANA). It manages the full workflow: upload source data → AI persona generation → role mapping → SOD conflict analysis → approvals. It uses Supabase Auth with JWT sessions, 7 roles (including `project_manager`), and org-unit-based scoping. Multi-tenant org isolation is Phase 3 complete (`organization_id` NOT NULL on all entity tables). The `airm/` directory name is retained locally — display strings use "Provisum" everywhere. Schema has **57 tables** in Supabase Postgres. **Current version: v1.3.0** — deployed at https://demo.provisum.io (demo) and https://app.provisum.io (prod). Vercel projects: `provisum-demo`, `provisum-sandbox`, `provisum-prod` on team `team_fEadrGrB1ys7beUytc8Eh5bw`. The old `airm` Vercel project has been deleted.
 
 ---
 

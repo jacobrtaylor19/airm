@@ -811,7 +811,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
     { key: "workflow.sodSeverity.low", value: "allowed" },
     { key: "email_enabled", value: "true" },
     { key: "email_provider", value: "resend" },
-    { key: "email_from_address", value: "Provisum <notifications@provisum.io>" },
+    { key: "email_from_address", value: "Provisum <hello@provisum.io>" },
     { key: "email_from_name", value: "Provisum" },
     { key: "email_reply_to", value: "" },
   ];

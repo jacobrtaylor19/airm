@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendInviteEmail } from "@/lib/email";
 import { safeError } from "@/lib/errors";
 import { getOrgId } from "@/lib/org-context";
+import { checkUserLimit } from "@/lib/license";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,17 @@ export async function POST(req: NextRequest) {
 
     if (rows.length > MAX_ROWS) {
       return NextResponse.json({ error: `Maximum ${MAX_ROWS} users per upload` }, { status: 400 });
+    }
+
+    // Check license user limit before processing
+    const licenseCheck = await checkUserLimit(getOrgId(user));
+    if (licenseCheck.maxUsers !== null) {
+      const remaining = licenseCheck.maxUsers - licenseCheck.currentCount;
+      if (rows.length > remaining) {
+        return NextResponse.json({
+          error: `Cannot invite ${rows.length} users. Plan allows ${licenseCheck.maxUsers} total (${remaining} slots remaining).`,
+        }, { status: 403 });
+      }
     }
 
     // Validate all rows first

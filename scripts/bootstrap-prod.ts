@@ -36,7 +36,7 @@ if (!connectionString.includes(PROD_REF)) {
   process.exit(1);
 }
 
-const ADMIN_EMAIL = "jacobrtaylor@gmail.com";
+const ADMIN_EMAIL = "hello@provisum.io";
 const ADMIN_NAME = "Jacob Taylor";
 
 async function main() {

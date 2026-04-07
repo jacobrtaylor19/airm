@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
       source: "demo_overview",
     });
 
-    // Fire-and-forget email notification to Jacob
+    // Fire-and-forget email notification
     sendNotificationEmail(
-      "jacob@provisum.io",
+      "hello@provisum.io",
       "New Demo Lead",
       `<strong>${name.trim()}</strong> (${email.trim()}) just registered for the Provisum demo.` +
         (company ? `<br/><strong>Company:</strong> ${company.trim()}` : "") +

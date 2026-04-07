@@ -21,7 +21,7 @@ function getBaseUrl(): string {
 }
 
 /** Default from address used when no setting is configured */
-const DEFAULT_FROM = "Provisum <notifications@provisum.io>";
+const DEFAULT_FROM = "Provisum <hello@provisum.io>";
 
 /**
  * Read email settings from DB. Returns null if email is disabled.

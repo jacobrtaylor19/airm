@@ -9,6 +9,7 @@ import { sendInviteEmail } from "@/lib/email";
 import { safeError } from "@/lib/errors";
 import { dispatchWebhookEvent } from "@/lib/webhooks";
 import { getOrgId } from "@/lib/org-context";
+import { checkUserLimit } from "@/lib/license";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const { email, displayName, role, assignedOrgUnitId } = await req.json();
+
+    // Check license user limit
+    const licenseCheck = await checkUserLimit(getOrgId(user));
+    if (!licenseCheck.allowed) {
+      return NextResponse.json({
+        error: `User limit reached (${licenseCheck.currentCount}/${licenseCheck.maxUsers}). Upgrade your plan to add more users.`,
+      }, { status: 403 });
+    }
 
     if (!email || !displayName || !role) {
       return NextResponse.json(

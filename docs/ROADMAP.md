@@ -2,7 +2,7 @@
 
 This document outlines planned features and improvements. Sprint 2 is the active build queue. Items below it are prioritised but not yet scheduled.
 
-*Last updated: March 31, 2026*
+*Last updated: April 6, 2026 — v1.3.0*
 
 ---
 
@@ -11,7 +11,7 @@ This document outlines planned features and improvements. Sprint 2 is the active
 | # | Action | Blocks | Status |
 |---|--------|--------|--------|
 | 1-6 | ~~Sentry DSN, auth token, Resend API key, app URL, cron secret~~ | Various | ✅ ALL DONE (2026-03-30) |
-| 7 | **Set `SENTRY_ORG` + `SENTRY_PROJECT`** on Vercel `airm` project | Source map uploads to Sentry | ⬜ TODO |
+| 7 | **Set `SENTRY_ORG` + `SENTRY_PROJECT`** on Vercel (provisum-demo/prod) | Source map uploads to Sentry | ⬜ TODO |
 
 ---
 
@@ -55,7 +55,9 @@ This document outlines planned features and improvements. Sprint 2 is the active
 ### ~~12. Multi-release project timeline~~ ✅ DONE
 - Gantt-style timeline view
 
-### ~~13. SSO / SAML integration~~ — DEFERRED (until real customer conversation)
+### ~~13. SSO / SAML integration~~ ✅ MVP DONE (v1.2.0)
+- Admin SSO configuration UI, domain lookup API, login SSO flow built
+- Actual IdP redirect needs Supabase Enterprise or direct SAML library — deferred until real customer conversation
 
 ### ~~14. GRC provisioning export adapter~~ ✅ DONE
 - SAP GRC, ServiceNow, SailPoint export formats
@@ -215,4 +217,22 @@ These are valuable features that are not prioritised for the current sprint. The
 | **Source/Target System Typing — `system-context.ts` (10 source + 7 target types), release UI dropdowns, AI pipeline injection, system type badges** | v1.1.0 |
 | **Permission Changes drill-down — bidirectional tracking (gained + reduced), per-user detail modal with persona/perm counts** | v1.1.0 |
 | **In-App Knowledge Base — `/help` + `/help/[slug]`, 10 role-aware articles, search, category filtering, Lumen integration** | v1.1.0 |
-| **SOX/ITGC Audit Evidence Package — 5-section Excel (SOX 404 + SOC 2 CC6), `/admin/evidence-package`, generation history** | v1.1.0 |
+| **SOX/ITGC Audit Evidence Package — 6-tab Excel (SOX 404 + SOC 2 CC6), `/admin/evidence-package`, generation history** | v1.1.0 |
+| **App Modularization — tile-based module launcher (`/home`), 9 modules, scoped sidebars, cookie-based module context** | v1.1.0 |
+| **Target Role Editing + Approval — draft/active/archived lifecycle, CRUD + approve/reject API, security_architect gated** | v1.2.0 |
+| **Mitigating Controls — control description, owner, frequency on accepted SOD risks, "Controlled" badge** | v1.2.0 |
+| **SSO/SAML MVP — `sso_configurations` table, admin SSO tab, domain lookup API, login SSO flow** | v1.2.0 |
+| **Security Design Export — 3-sheet Excel (Role Catalog, Permission Matrix, SOD Summary), teal headers, audit logged** | v1.2.0 |
+| **Mapper Notifications — fire-and-forget notifications on role update/approval** | v1.2.0 |
+| **RLS deny-all policies on all 57 tables (including evidence_package_runs, workstream_items)** | v1.2.0 |
+| **35-item clickthrough fix sprint — SOD scoped delete, optimistic updates, remap queue, admin UX, navigation** | v1.3.0 |
+| **Demo Environment Overhaul — glassmorphism login, persona pills, lead capture gate, hostname-based demo/prod** | v1.3.0 |
+| **Existing Access labeling on SOD conflicts (blue "Existing Access" badge)** | v1.3.0 |
+| **92 Vitest unit tests (51 new) + Playwright E2E stabilization** | v1.3.0 |
+| **Sales site: legal pages (privacy, terms, security, DPA), cookie consent, ToS acceptance flow** | v1.3.0 |
+| **Sales site: security headers (HSTS, CSP, X-Frame-Options), WCAG a11y, JSON-LD, sitemap (18+ pages)** | v1.3.0 |
+| **Sales site: `/partners` page, pricing overhaul (Project License / Annual License model)** | v1.3.0 |
+| **Sales site: competitive comparison page, ROI calculator, 10 SEO blog posts** | v1.3.0 |
+| **All "beta" badges/references removed from product app and sales site** | v1.3.0 |
+| **Vercel project cleanup — 3 projects (provisum-demo/sandbox/prod), old `airm` project deleted** | v1.3.0 |
+| **IP-based rate limiting, Zod validation standardization, on-call runbook** | v1.3.0 |

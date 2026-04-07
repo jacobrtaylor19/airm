@@ -11,6 +11,10 @@ export const organizations = pgTable("organizations", {
   slug: text("slug").notNull().unique(),
   description: text("description"),
   settings: text("settings"), // JSON blob for org-level config
+  planTier: text("plan_tier"), // "standard" | "professional" | "enterprise"
+  maxUsers: integer("max_users"), // 500 standard, 3000 professional
+  licenseYears: integer("license_years"), // 1, 2, or 3
+  licenseExpiresAt: text("license_expires_at"), // ISO timestamp
   isActive: boolean("is_active").notNull().default(true),
   createdAt: text("created_at").$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").$defaultFn(() => new Date().toISOString()),
@@ -1106,6 +1110,28 @@ export const ssoConfigurations = pgTable("sso_configurations", {
   metadataXml: text("metadata_xml"),
   supabaseSsoId: text("supabase_sso_id"),
   enabled: boolean("enabled").notNull().default(false),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
+// PROVISIONING REQUESTS (tracks get-started purchases)
+// ─────────────────────────────────────────────
+
+export const provisioningRequests = pgTable("provisioning_requests", {
+  id: serial("id").primaryKey(),
+  externalId: text("external_id").notNull().unique(),
+  customerName: text("customer_name").notNull(),
+  customerEmail: text("customer_email").notNull(),
+  company: text("company").notNull(),
+  orgName: text("org_name").notNull(),
+  plan: text("plan").notNull(), // "standard" | "professional"
+  licenseYears: integer("license_years").notNull(),
+  totalAmount: integer("total_amount").notNull(),
+  status: text("status").notNull().default("pending"), // pending | welcome_sent | provisioning | ready | failed
+  organizationId: integer("organization_id"),
+  errorMessage: text("error_message"),
+  workflowRunId: text("workflow_run_id"),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
 });

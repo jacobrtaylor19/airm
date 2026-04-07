@@ -160,10 +160,10 @@ export function EmailSettingsSection({
                     id="email-from-address"
                     value={settings["email_from_address"] || ""}
                     onChange={(e) => onUpdateSetting("email_from_address", e.target.value)}
-                    placeholder="Provisum <notifications@provisum.io>"
+                    placeholder="Provisum <hello@provisum.io>"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Full from address including display name, e.g. &quot;Provisum &lt;noreply@provisum.io&gt;&quot;
+                    Full from address including display name, e.g. &quot;Provisum &lt;hello@provisum.io&gt;&quot;
                   </p>
                 </div>
                 <div className="space-y-2">
