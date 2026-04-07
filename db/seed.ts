@@ -980,9 +980,10 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   for (const [personaId, srcPermIds] of Array.from(seedPersonaSrcPerms)) {
     const mappedRoles = seedPersonaMappings.get(personaId) || new Set<number>();
     const coveredPerms = new Set<string>();
-    for (const trId of mappedRoles) {
+    const mappedRoleArr = Array.from(mappedRoles);
+    for (const trId of mappedRoleArr) {
       const perms = seedTargetRolePerms.get(trId);
-      if (perms) for (const p of perms) coveredPerms.add(p);
+      if (perms) { const permArr = Array.from(perms); for (const p of permArr) coveredPerms.add(p); }
     }
     for (const spDbId of srcPermIds) {
       const spId = seedSourcePermLookup.get(spDbId);
