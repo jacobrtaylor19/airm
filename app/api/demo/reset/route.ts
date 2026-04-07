@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { getSetting } from "@/lib/settings";
-import { safeError } from "@/lib/errors";
 import { seedDatabase } from "@/db/seed";
 import { db } from "@/db";
 import { isProduction } from "@/lib/env";
@@ -22,7 +21,12 @@ export async function POST() {
   try {
     const activePack = await getSetting("active_demo_pack") || "default";
 
+    console.log(`[demo-reset] Starting reset with pack: ${activePack}`);
+    console.log(`[demo-reset] cwd: ${process.cwd()}`);
+
     await seedDatabase(db, activePack);
+
+    console.log(`[demo-reset] Reset complete`);
 
     return NextResponse.json({
       success: true,
@@ -30,7 +34,9 @@ export async function POST() {
       message: `Demo environment "${activePack}" has been reset.`,
     });
   } catch (error) {
-    const message = safeError(error, "Failed to reset demo environment");
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[demo-reset] Failed:", error instanceof Error ? error.message : error);
+    console.error("[demo-reset] Stack:", error instanceof Error ? error.stack : "no stack");
+    const detail = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: "Failed to reset demo environment", detail }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 
@@ -23,11 +23,11 @@ export async function POST() {
   const orgId = getOrgId(user);
 
   try {
-    // 1. Get all personas for this org
+    // 1. Get all active personas for this org
     const personas = await db
       .select({ id: schema.personas.id, name: schema.personas.name })
       .from(schema.personas)
-      .where(eq(schema.personas.organizationId, orgId));
+      .where(and(eq(schema.personas.organizationId, orgId), eq(schema.personas.isActive, true)));
 
     // 2. Get all persona source permissions
     const allPersonaSourcePerms = await db
@@ -93,6 +93,10 @@ export async function POST() {
       const sourcePermIds = personaSourcePermMap.get(persona.id) || [];
       const mappedTargetRoleIds = personaMappingMap.get(persona.id) || new Set<number>();
 
+      // Skip personas with no source permissions or no target role mappings
+      // (unmapped personas aren't "gaps" — they just haven't been mapped yet)
+      if (sourcePermIds.length === 0 || mappedTargetRoleIds.size === 0) continue;
+
       // Collect all target permission IDs covered by mapped roles
       const coveredPermIds = new Set<string>();
       const mappedRoleArr = Array.from(mappedTargetRoleIds);
@@ -110,15 +114,11 @@ export async function POST() {
         if (!sourcePermId) continue;
 
         if (!coveredPermIds.has(sourcePermId)) {
-          // Gap: source permission not covered by any target role
-          const gapType = mappedTargetRoleIds.size === 0 ? "no_mapping" : "no_coverage";
           gapRecords.push({
             personaId: persona.id,
             sourcePermissionId: spDbId,
-            gapType,
-            notes: gapType === "no_mapping"
-              ? "Persona has no target roles mapped"
-              : `Source permission ${sourcePermId} not covered by any mapped target role`,
+            gapType: "no_coverage",
+            notes: `Source permission ${sourcePermId} not covered by any mapped target role`,
           });
         }
       }
@@ -136,13 +136,19 @@ export async function POST() {
     }
 
     const personasWithGaps = new Set(gapRecords.map(g => g.personaId)).size;
+    // Count personas that were actually eligible for analysis (have both source perms and mappings)
+    const personasAnalyzed = personas.filter(p => {
+      const sp = personaSourcePermMap.get(p.id);
+      const tm = personaMappingMap.get(p.id);
+      return sp && sp.length > 0 && tm && tm.size > 0;
+    }).length;
 
     return NextResponse.json({
       success: true,
       totalGaps: gapRecords.length,
-      personasAnalyzed: personas.length,
+      personasAnalyzed,
       personasWithGaps,
-      personasClean: personas.length - personasWithGaps,
+      personasClean: personasAnalyzed - personasWithGaps,
     });
   } catch (error) {
     console.error("[gap-analysis] Failed:", error);

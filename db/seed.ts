@@ -57,6 +57,7 @@ const DATA_DIR = path.join(process.cwd(), "data");
  */
 export async function seedDatabase(seedDb: ReturnType<typeof drizzle<typeof schema>>, seedPackName: string): Promise<void> {
   const seedCsvDir = path.join(DATA_DIR, "demos", seedPackName);
+  console.log(`[seed] DATA_DIR=${DATA_DIR}, seedCsvDir=${seedCsvDir}, exists=${existsSync(seedCsvDir)}`);
   if (!existsSync(seedCsvDir)) {
     throw new Error(`Demo pack not found: ${seedCsvDir}`);
   }
@@ -84,6 +85,24 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   console.log("  ✓ Default organization");
 
   // ─── Clear tables (reverse dependency order) ───
+  // Tables added post-launch that reference core tables (must go first)
+  await db.delete(schema.mappingFeedback);
+  await db.delete(schema.securityWorkItems);
+  await db.delete(schema.evidencePackageRuns);
+  await db.delete(schema.incidents);
+  await db.delete(schema.chatConversations);
+  await db.delete(schema.scheduledExports);
+  await db.delete(schema.webhookDeliveries);
+  await db.delete(schema.webhookEndpoints);
+  await db.delete(schema.personaConfirmations);
+  await db.delete(schema.reviewLinks);
+  await db.delete(schema.notifications);
+  await db.delete(schema.userInvites);
+  await db.delete(schema.rateLimitEntries);
+  await db.delete(schema.securityDesignChanges);
+  await db.delete(schema.workstreamItems);
+  await db.delete(schema.releaseOrgUnits);
+  // Original core tables
   await db.delete(schema.auditLog);
   await db.delete(schema.processingJobs);
   await db.delete(schema.permissionGaps);
@@ -99,6 +118,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   await db.delete(schema.targetTaskRolePermissions);
   await db.delete(schema.targetRolePermissions);
   await db.delete(schema.targetTaskRoles);
+  await db.delete(schema.leastAccessExceptions);
   await db.delete(schema.personas);
   await db.delete(schema.consolidatedGroups);
   await db.delete(schema.sourcePermissions);
@@ -684,6 +704,12 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   console.log(`    (${seedUserAssignments.size - seedUsersWithConflicts.size} users clean, ${seedUsersWithConflicts.size} users with conflicts)`);
 
   // ─── 12. Default Admin User ───
+  await db.delete(schema.notifications);
+  await db.delete(schema.reviewLinks);
+  await db.delete(schema.personaConfirmations);
+  await db.delete(schema.chatConversations);
+  await db.delete(schema.incidents);
+  await db.delete(schema.userInvites);
   await db.delete(schema.workAssignments);
   await db.delete(schema.appUserSessions);
   await db.delete(schema.appUsers);
@@ -975,10 +1001,12 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
     seedPersonaSrcPerms.get(psp.personaId)!.push(psp.sourcePermissionId);
   }
 
-  // Compute gaps
+  // Compute gaps — only for personas that have both source permissions AND target role mappings
   const seedGapRecords: { personaId: number; sourcePermissionId: number; gapType: string; notes: string }[] = [];
   for (const [personaId, srcPermIds] of Array.from(seedPersonaSrcPerms)) {
     const mappedRoles = seedPersonaMappings.get(personaId) || new Set<number>();
+    // Skip personas with no target role mappings (not yet mapped, not a "gap")
+    if (mappedRoles.size === 0) continue;
     const coveredPerms = new Set<string>();
     const mappedRoleArr = Array.from(mappedRoles);
     for (const trId of mappedRoleArr) {
@@ -991,8 +1019,8 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
         seedGapRecords.push({
           personaId,
           sourcePermissionId: spDbId,
-          gapType: mappedRoles.size === 0 ? "no_mapping" : "no_coverage",
-          notes: mappedRoles.size === 0 ? "Persona has no target roles mapped" : `Source permission ${spId} not covered`,
+          gapType: "no_coverage",
+          notes: `Source permission ${spId} not covered by any mapped target role`,
         });
       }
     }
