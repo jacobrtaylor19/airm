@@ -9,6 +9,7 @@ import {
   getGapAnalysisSummary,
   getUserRefinementDetails,
   getRemappingQueue,
+  getBatchUserGapSummary,
 } from "@/lib/queries";
 import { getSetting } from "@/lib/settings";
 import { requireAuth } from "@/lib/auth";
@@ -34,6 +35,7 @@ export default async function MappingPage() {
   const targetRoles = allTargetRoles.filter((r) => r.status === "active");
   const gapSummary = await getGapAnalysisSummary(orgId);
   let refinementDetails = await getUserRefinementDetails(orgId);
+  const userGapData = await getBatchUserGapSummary(orgId);
 
   // Filter for mappers — only show personas containing their assigned users
   if (user.role === "mapper") {
@@ -67,7 +69,9 @@ export default async function MappingPage() {
     if (releaseUserIds !== null) {
       const releaseSet = new Set(releaseUserIds);
       const releasePersonaIds = new Set(await getPersonaIdsForUsers(orgId, Array.from(releaseSet)));
-      personas = personas.filter((p) => releasePersonaIds.has(p.personaId));
+      // Include release-scoped personas AND personas with 0 users (AI-generated archetypes
+      // from permission patterns that need review — they shouldn't silently disappear)
+      personas = personas.filter((p) => releasePersonaIds.has(p.personaId) || p.userCount === 0);
       refinements = refinements.filter((r) => releaseSet.has(r.userId));
       gaps = gaps.filter((g) => releasePersonaIds.has(g.personaId));
       refinementDetails = refinementDetails.filter((r) => releaseSet.has(r.userId));
@@ -121,6 +125,7 @@ export default async function MappingPage() {
         refinementDetails={refinementDetails}
         excessThreshold={excessThreshold}
         userRole={user.role}
+        userGapData={userGapData}
       />
     </div>
   );

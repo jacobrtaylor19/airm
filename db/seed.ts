@@ -88,7 +88,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   // Using raw SQL TRUNCATE ... CASCADE avoids FK ordering issues entirely.
   // We preserve `organizations` and `demo_leads` (not part of seed data).
   await db.execute(sql`TRUNCATE TABLE
-    mapping_feedback, security_work_items, evidence_package_runs, incidents,
+    user_gap_reviews, mapping_feedback, security_work_items, evidence_package_runs, incidents,
     chat_conversations, scheduled_exports, webhook_deliveries, webhook_endpoints,
     persona_confirmations, review_links, notifications, user_invites,
     rate_limit_entries, security_design_changes, workstream_items, release_org_units,

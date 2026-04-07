@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
+import type { PersonaMappingRow, UserRefinementRow, GapRow, TargetRoleRow, GapAnalysisSummary, UserRefinementDetail, UserGapSummaryRow } from "@/lib/queries";
 
 import { PersonaSelector } from "./persona-selector";
 import { RoleAssignmentPanel } from "./role-assignment-panel";
@@ -12,7 +12,7 @@ import { AutoMapProgress } from "./auto-map-progress";
 import { RefinementsTab, GapAnalysisTab } from "./user-refinements";
 import { AISuggestionsModal } from "./ai-suggestions-modal";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Route } from "lucide-react";
+import { Route, AlertTriangle } from "lucide-react";
 
 export interface PersonaDetailInfo {
   sourcePermissionCount: number;
@@ -30,9 +30,10 @@ interface MappingClientProps {
   refinementDetails?: UserRefinementDetail[];
   excessThreshold?: number;
   userRole?: string;
+  userGapData?: UserGapSummaryRow[];
 }
 
-export function MappingClient({ personas, personaDetails, gaps, targetRoles, personaSourceSystems = {}, gapSummary, refinementDetails = [], excessThreshold = 30, userRole }: MappingClientProps) {
+export function MappingClient({ personas, personaDetails, targetRoles, personaSourceSystems = {}, refinementDetails = [], excessThreshold = 30, userRole, userGapData = [] }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const [autoMapProgress, setAutoMapProgress] = useState<{ processed: number; total: number } | null>(null);
@@ -103,8 +104,15 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, per
   }
 
   const [roleSearch, setRoleSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("persona-mapping");
+  const [remapUserId, setRemapUserId] = useState<number | null>(null);
   const selectedDetail = selectedPersonaId ? personaDetails[selectedPersonaId] : null;
   const selectedPersona = personas.find(p => p.personaId === selectedPersonaId);
+
+  function handleRemapUser(userId: number) {
+    setRemapUserId(userId);
+    setActiveTab("refinements");
+  }
 
   async function autoMapAll() {
     setAutoMapping(true);
@@ -191,13 +199,7 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, per
     });
   }
 
-  // Group gaps by persona
-  const gapsByPersona = new Map<string, GapRow[]>();
-  for (const gap of gaps) {
-    const existing = gapsByPersona.get(gap.personaName) || [];
-    existing.push(gap);
-    gapsByPersona.set(gap.personaName, existing);
-  }
+  // Note: old persona-level gapsByPersona removed — gap analysis now uses per-user userGapData
 
   // Count refinements vs defaults
   const refinementCount = refinementDetails.filter(r => r.individualOverrides.length > 0).length;
@@ -217,7 +219,7 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, per
   }
 
   return (
-    <Tabs defaultValue="persona-mapping">
+    <Tabs value={activeTab} onValueChange={setActiveTab}>
       <TabsList>
         <TabsTrigger value="persona-mapping">Persona Mapping</TabsTrigger>
         <TabsTrigger value="refinements">User Role Assignments</TabsTrigger>
@@ -243,6 +245,22 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, per
           onSetBulkTargetRoleId={setBulkTargetRoleId}
           onBulkAssign={bulkAssign}
         />
+
+        {personas.filter(p => p.userCount === 0).length > 0 && (
+          <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-amber-800">
+                {personas.filter(p => p.userCount === 0).length} persona{personas.filter(p => p.userCount === 0).length !== 1 ? "s have" : " has"} permission patterns but no assigned users
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                AI generation identified these access patterns in the source data, but no users currently match them.
+                Review whether users should be assigned to these personas or if the patterns represent access that is being retired.
+                This is also flagged in the Gap Analysis tab.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <PersonaSelector
@@ -301,15 +319,20 @@ export function MappingClient({ personas, personaDetails, gaps, targetRoles, per
           refinementCount={refinementCount}
           totalUsersWithAssignments={totalUsersWithAssignments}
           userRole={userRole}
+          preSelectedUserId={remapUserId}
+          onUserSelected={() => setRemapUserId(null)}
         />
       </TabsContent>
 
-      {/* Tab C: Gap Analysis */}
+      {/* Tab C: Gap Analysis — User-Level Access Change Workbench */}
       <TabsContent value="gap-analysis" className="mt-4">
         <GapAnalysisTab
-          gaps={gaps}
-          gapsByPersona={gapsByPersona}
-          gapSummary={gapSummary}
+          userGapData={userGapData}
+          unassignedPersonas={personas
+            .filter(p => p.userCount === 0)
+            .map(p => ({ personaId: p.personaId, personaName: p.personaName, sourcePermissionCount: p.sourcePermissionCount }))}
+          onRemapUser={handleRemapUser}
+          userRole={userRole}
         />
       </TabsContent>
     </Tabs>

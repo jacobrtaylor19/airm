@@ -512,6 +512,28 @@ export const permissionGaps = pgTable("permission_gaps", {
 });
 
 // ─────────────────────────────────────────────
+// USER GAP REVIEWS (per-user access change review)
+// ─────────────────────────────────────────────
+
+export const userGapReviews = pgTable("user_gap_reviews", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  organizationId: integer("organization_id").notNull().references(() => organizations.id),
+  reviewStatus: text("review_status").notNull().default("pending"), // pending | confirmed_as_is | remapped
+  changeImpactLevel: text("change_impact_level").notNull().default("none"), // none | low | medium | high
+  coveragePercent: real("coverage_percent"),
+  uncoveredCount: integer("uncovered_count").default(0),
+  newPermCount: integer("new_perm_count").default(0),
+  sourceRoleCount: integer("source_role_count").default(0),
+  targetRoleCount: integer("target_role_count").default(0),
+  reviewedBy: integer("reviewed_by"),
+  reviewedAt: text("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+});
+
+// ─────────────────────────────────────────────
 // PROCESSING JOBS
 // ─────────────────────────────────────────────
 

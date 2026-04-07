@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ConfidenceBadge } from "@/components/shared/confidence-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
-import { CheckCircle, CheckCircle2, XCircle, Loader2, Filter, ChevronDown, Building2, AlertTriangle, ClipboardCheck } from "lucide-react";
+import { CheckCircle, CheckCircle2, Loader2, Filter, ChevronDown, ChevronRight, Building2, AlertTriangle, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import type { ApprovalRow } from "@/lib/queries";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -19,6 +19,52 @@ interface DepartmentStat {
   name: string;
   total: number;
   sodFlagged: number;
+}
+
+interface UserGroup {
+  userId: number;
+  userName: string;
+  department: string | null;
+  personaName: string | null;
+  assignments: ApprovalRow[];
+  worstStatus: string;
+  totalSodConflicts: number;
+  avgConfidence: number | null;
+}
+
+function groupByUser(rows: ApprovalRow[]): UserGroup[] {
+  const map = new Map<number, ApprovalRow[]>();
+  for (const row of rows) {
+    const existing = map.get(row.userId) || [];
+    existing.push(row);
+    map.set(row.userId, existing);
+  }
+
+  const statusPriority: Record<string, number> = {
+    remap_required: 0, sod_rejected: 1, pending_review: 2,
+    ready_for_approval: 3, compliance_approved: 4, sod_risk_accepted: 5, approved: 6,
+  };
+
+  return Array.from(map.entries()).map(([userId, assignments]) => {
+    const first = assignments[0];
+    const totalSod = assignments.reduce((sum, a) => sum + (a.sodConflictCount ?? 0), 0);
+    const scores = assignments.map(a => a.confidenceScore).filter((s): s is number => s !== null);
+    const avgConf = scores.length > 0 ? Math.round(scores.reduce((s, v) => s + v, 0) / scores.length) : null;
+    const worstStatus = assignments.reduce((worst, a) =>
+      (statusPriority[a.status] ?? 99) < (statusPriority[worst] ?? 99) ? a.status : worst,
+      assignments[0].status
+    );
+    return {
+      userId,
+      userName: first.userName,
+      department: first.department,
+      personaName: first.personaName,
+      assignments,
+      worstStatus,
+      totalSodConflicts: totalSod,
+      avgConfidence: avgConf,
+    };
+  }).sort((a, b) => (statusPriority[a.worstStatus] ?? 99) - (statusPriority[b.worstStatus] ?? 99));
 }
 
 interface ApprovalsProps {
@@ -47,15 +93,23 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
   const [deptConfirmDialog, setDeptConfirmDialog] = useState(false);
   const [selectedDept, setSelectedDept] = useState<DepartmentStat | null>(null);
   const [deptApproving, setDeptApproving] = useState(false);
+  const [expandedUsers, setExpandedUsers] = useState<Set<number>>(new Set());
+  const [showApproved, setShowApproved] = useState(false);
   const router = useRouter();
 
   const isAdmin = ["admin", "system_admin"].includes(userRole ?? "");
-  // Only approvers and system_admins can approve — admin role is view-only on approvals
   const canApprove = ["approver", "system_admin"].includes(userRole ?? "");
   const canSendBack = canApprove;
 
-  // Get unique departments
   const departments = Array.from(new Set(queue.map(a => a.department).filter((d): d is string => d !== null))).sort();
+
+  function toggleExpandUser(userId: number) {
+    setExpandedUsers(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId); else next.add(userId);
+      return next;
+    });
+  }
 
   async function approveMapping(assignmentId: number) {
     try {
@@ -73,6 +127,26 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
     } finally {
       router.refresh();
     }
+  }
+
+  async function approveAllForUser(assignments: ApprovalRow[]) {
+    const approvable = assignments.filter(a => ["ready_for_approval", "compliance_approved"].includes(a.status));
+    if (approvable.length === 0) return;
+    setSubmitting(true);
+    let approved = 0;
+    for (const a of approvable) {
+      try {
+        const res = await fetch("/api/approvals/approve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ assignmentId: a.assignmentId }),
+        });
+        if (res.ok) approved++;
+      } catch { /* continue */ }
+    }
+    setSubmitting(false);
+    toast.success(`Approved ${approved} role${approved !== 1 ? "s" : ""}`);
+    router.refresh();
   }
 
   async function sendBack() {
@@ -138,19 +212,6 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
     router.refresh();
   }
 
-  function toggleSelect(id: number) {
-    setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  }
-
-  function toggleSelectAll() {
-    const approvableIds = actionable.filter(a => a.status !== "approved").map(a => a.assignmentId);
-    if (selectedIds.length === approvableIds.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(approvableIds);
-    }
-  }
-
   function openDeptConfirm(dept: DepartmentStat) {
     setSelectedDept(dept);
     setDeptConfirmDialog(true);
@@ -185,15 +246,19 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
     }
   }
 
-  // Filter to show actionable items, optionally by department
-  // Admins see all statuses (including pending_review) for visibility; approvers see approval-stage items
+  // Split queue: pending (actionable) vs approved
   const visibleStatuses = isAdmin
-    ? ["pending_review", "ready_for_approval", "compliance_approved", "sod_risk_accepted", "approved"]
-    : ["ready_for_approval", "compliance_approved", "sod_risk_accepted", "approved"];
-  const actionable = queue.filter(a =>
+    ? ["pending_review", "ready_for_approval", "compliance_approved", "sod_risk_accepted"]
+    : ["ready_for_approval", "compliance_approved", "sod_risk_accepted"];
+  const pendingQueue = queue.filter(a =>
     visibleStatuses.includes(a.status) &&
     (deptFilter === "all" || a.department === deptFilter)
   );
+  const approvedQueue = queue.filter(a => a.status === "approved");
+
+  // Group by user
+  const pendingGroups = groupByUser(pendingQueue);
+  const approvedGroups = groupByUser(approvedQueue);
 
   if (queue.length === 0) {
     return (
@@ -314,8 +379,8 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
         )}
       </div>
 
-      {/* Queue Table */}
-      {actionable.length === 0 ? (
+      {/* Pending Queue — Grouped by User */}
+      {pendingGroups.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 px-6 text-center">
           <CheckCircle2 className="h-12 w-12 text-slate-300 mb-4" />
           <h3 className="text-sm font-semibold text-slate-700 mb-1">No assignments pending approval</h3>
@@ -326,98 +391,174 @@ export function ApprovalsClient({ queue, counts, userRole, departmentStats = [] 
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Assignments ({actionable.length})</CardTitle>
+            <CardTitle className="text-base">Pending Approval ({pendingGroups.length} users, {pendingQueue.length} assignments)</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  {canApprove && (
-                    <TableHead className="w-10">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 accent-primary"
-                        checked={selectedIds.length > 0 && selectedIds.length === actionable.filter(x => x.status !== "approved").length}
-                        onChange={toggleSelectAll}
-                      />
-                    </TableHead>
-                  )}
+                  <TableHead className="w-8"></TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Department</TableHead>
                   <TableHead>Persona</TableHead>
-                  <TableHead>Target Role</TableHead>
+                  <TableHead>Target Roles</TableHead>
                   <TableHead>Confidence</TableHead>
                   <TableHead>SOD</TableHead>
                   <TableHead>Status</TableHead>
-                  {canSendBack && <TableHead>Actions</TableHead>}
+                  {canSendBack && <TableHead className="text-right">Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {actionable.map((a) => (
-                  <TableRow key={a.assignmentId}>
-                    {canApprove && (
-                      <TableCell>
-                        {a.status !== "approved" && (
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 accent-primary"
-                            checked={selectedIds.includes(a.assignmentId)}
-                            onChange={() => toggleSelect(a.assignmentId)}
-                          />
-                        )}
-                      </TableCell>
-                    )}
-                    <TableCell className="text-sm font-medium">{a.userName}</TableCell>
-                    <TableCell className="text-sm">{a.department ?? "—"}</TableCell>
-                    <TableCell className="text-sm">{a.personaName ?? "—"}</TableCell>
-                    <TableCell className="text-sm">{a.targetRoleName}</TableCell>
-                    <TableCell>
-                      <ConfidenceBadge score={a.confidenceScore} />
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {(a.sodConflictCount ?? 0) > 0 ? (
-                        <Badge variant="secondary" className="text-xs bg-red-100 text-red-700">{a.sodConflictCount} conflicts</Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Clean</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={a.status} />
-                    </TableCell>
-                    {canSendBack && (
-                      <TableCell>
-                        {a.status !== "approved" && (
-                          <div className="flex items-center gap-1">
-                            {canApprove && (
+                {pendingGroups.map((group) => {
+                  const isExpanded = expandedUsers.has(group.userId);
+                  const approvableCount = group.assignments.filter(a => ["ready_for_approval", "compliance_approved"].includes(a.status)).length;
+                  return (
+                    <>
+                      {/* User summary row */}
+                      <TableRow key={group.userId} className="cursor-pointer hover:bg-muted/50" onClick={() => toggleExpandUser(group.userId)}>
+                        <TableCell className="px-2">
+                          {isExpanded
+                            ? <ChevronRight className="h-4 w-4 rotate-90 transition-transform text-muted-foreground" />
+                            : <ChevronRight className="h-4 w-4 transition-transform text-muted-foreground" />
+                          }
+                        </TableCell>
+                        <TableCell className="text-sm font-medium">{group.userName}</TableCell>
+                        <TableCell className="text-sm">{group.department ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{group.personaName ?? "—"}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className="text-xs">
+                            {group.assignments.length} role{group.assignments.length !== 1 ? "s" : ""}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <ConfidenceBadge score={group.avgConfidence} />
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {group.totalSodConflicts > 0 ? (
+                            <Badge variant="secondary" className="text-xs bg-red-100 text-red-700">{group.totalSodConflicts} conflicts</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Clean</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={group.worstStatus} />
+                        </TableCell>
+                        {canSendBack && (
+                          <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+                            {canApprove && approvableCount > 0 && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className="h-7 text-xs"
-                                onClick={() => approveMapping(a.assignmentId)}
+                                onClick={() => approveAllForUser(group.assignments)}
+                                disabled={submitting}
                               >
-                                <CheckCircle className="h-3 w-3 mr-1" /> Approve
+                                <CheckCircle className="h-3 w-3 mr-1" /> Approve All ({approvableCount})
                               </Button>
                             )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs"
-                              onClick={() => {
-                                setSelectedAssignment(a.assignmentId);
-                                setSendBackDialog(true);
-                              }}
-                            >
-                              <XCircle className="h-3 w-3 mr-1" /> Send Back
-                            </Button>
-                          </div>
+                          </TableCell>
                         )}
-                      </TableCell>
-                    )}
-                  </TableRow>
-                ))}
+                      </TableRow>
+
+                      {/* Expanded: individual role assignments */}
+                      {isExpanded && group.assignments.map((a) => (
+                        <TableRow key={a.assignmentId} className="bg-slate-50/50">
+                          <TableCell></TableCell>
+                          <TableCell colSpan={2} className="text-xs text-muted-foreground pl-6">
+                            Role assignment #{a.assignmentId}
+                          </TableCell>
+                          <TableCell></TableCell>
+                          <TableCell className="text-sm">{a.targetRoleName}</TableCell>
+                          <TableCell>
+                            <ConfidenceBadge score={a.confidenceScore} />
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {(a.sodConflictCount ?? 0) > 0 ? (
+                              <Badge variant="secondary" className="text-xs bg-red-100 text-red-700">{a.sodConflictCount}</Badge>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge status={a.status} />
+                          </TableCell>
+                          {canSendBack && (
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {canApprove && ["ready_for_approval", "compliance_approved"].includes(a.status) && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 text-[11px]"
+                                    onClick={() => approveMapping(a.assignmentId)}
+                                  >
+                                    Approve
+                                  </Button>
+                                )}
+                                {a.status !== "approved" && (
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="h-6 text-[11px]"
+                                    onClick={() => {
+                                      setSelectedAssignment(a.assignmentId);
+                                      setSendBackDialog(true);
+                                    }}
+                                  >
+                                    Send Back
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))}
+                    </>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
+        </Card>
+      )}
+
+      {/* Approved Section — Collapsible */}
+      {approvedGroups.length > 0 && (
+        <Card>
+          <CardHeader
+            className="cursor-pointer"
+            onClick={() => setShowApproved(!showApproved)}
+          >
+            <CardTitle className="text-base flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                Approved ({approvedGroups.length} users, {approvedQueue.length} assignments)
+              </div>
+              <ChevronRight className={`h-4 w-4 transition-transform ${showApproved ? "rotate-90" : ""}`} />
+            </CardTitle>
+          </CardHeader>
+          {showApproved && (
+            <CardContent className="pt-0">
+              <div className="divide-y">
+                {approvedGroups.map((group) => (
+                  <div key={group.userId} className="py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium">{group.userName}</span>
+                      <span className="text-xs text-muted-foreground">{group.department}</span>
+                      <span className="text-xs text-muted-foreground">{group.personaName}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {group.assignments.map((a) => (
+                        <Badge key={a.assignmentId} variant="outline" className="text-xs border-green-200 text-green-700">
+                          {a.targetRoleName}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          )}
         </Card>
       )}
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { CheckCircle, ChevronRight, Loader2, Search, X, Save, Send, Plus, Undo2, RefreshCw } from "lucide-react";
-import type { TargetRoleRow, GapRow, GapAnalysisSummary, UserRefinementDetail } from "@/lib/queries";
+import { AlertTriangle, CheckCircle, ChevronRight, Loader2, Search, X, Save, Send, Plus, Undo2, RefreshCw } from "lucide-react";
+import type { TargetRoleRow, UserRefinementDetail, UserGapSummaryRow } from "@/lib/queries";
 
 // -----------------------------------------------
 // Helpers
@@ -58,6 +58,8 @@ export interface RefinementsTabProps {
   refinementCount?: number;
   totalUsersWithAssignments: number;
   userRole?: string;
+  preSelectedUserId?: number | null;
+  onUserSelected?: () => void;
 }
 
 export function RefinementsTab({
@@ -65,11 +67,22 @@ export function RefinementsTab({
   targetRoles,
   totalUsersWithAssignments,
   userRole,
+  preSelectedUserId,
+  onUserSelected,
 }: RefinementsTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deptFilter, setDeptFilter] = useState<string>("all");
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(preSelectedUserId ?? null);
+
+  // Handle remap navigation from gap analysis tab
+  useEffect(() => {
+    if (preSelectedUserId != null) {
+      setSelectedUserId(preSelectedUserId);
+      onUserSelected?.();
+    }
+  }, [preSelectedUserId, onUserSelected]);
+
   const [editRoles, setEditRoles] = useState<number[]>([]);
   const [saving, setSaving] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -642,209 +655,415 @@ export function RefinementsTab({
 // GapAnalysisTab
 // -----------------------------------------------
 
+// ─────────────────────────────────────────────
+// GAP ANALYSIS TAB — User-Level Access Change Workbench
+// ─────────────────────────────────────────────
+
+const IMPACT_CONFIG = {
+  high: { label: "High Impact", color: "bg-red-100 text-red-800 border-red-200", dot: "bg-red-500", description: "Significant workflow changes likely" },
+  medium: { label: "Medium Impact", color: "bg-amber-100 text-amber-800 border-amber-200", dot: "bg-amber-500", description: "Moderate access changes" },
+  low: { label: "Low Impact", color: "bg-blue-100 text-blue-800 border-blue-200", dot: "bg-blue-500", description: "Minor access adjustments" },
+  none: { label: "No Change", color: "bg-slate-100 text-slate-700 border-slate-200", dot: "bg-slate-400", description: "Full access continuity" },
+} as const;
+
 export interface GapAnalysisTabProps {
-  gaps: GapRow[];
-  gapsByPersona: Map<string, GapRow[]>;
-  gapSummary?: GapAnalysisSummary;
+  userGapData: UserGapSummaryRow[];
+  unassignedPersonas?: { personaId: number; personaName: string; sourcePermissionCount: number }[];
+  onRemapUser?: (userId: number) => void;
+  userRole?: string;
 }
 
 export function GapAnalysisTab({
-  gaps,
-  gapsByPersona,
-  gapSummary,
+  userGapData,
+  unassignedPersonas = [],
+  onRemapUser,
+  userRole,
 }: GapAnalysisTabProps) {
-  const [expandedPersona, setExpandedPersona] = useState<string | null>(null);
-  const [runningGapAnalysis, setRunningGapAnalysis] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [impactFilter, setImpactFilter] = useState<"all" | "high" | "medium" | "low" | "none">("all");
+  // statusFilter reserved for future use (filter between pending/confirmed in main table)
+  const [expandedUserId, setExpandedUserId] = useState<number | null>(null);
+  const [confirming, setConfirming] = useState<number | null>(null);
+  const [bulkSelected, setBulkSelected] = useState<Set<number>>(new Set());
+  const [bulkConfirming, setBulkConfirming] = useState(false);
+  const [runningAnalysis, setRunningAnalysis] = useState(false);
   const router = useRouter();
 
+  const canEdit = userRole && ["system_admin", "admin", "mapper"].includes(userRole);
+
   async function runGapAnalysis() {
-    setRunningGapAnalysis(true);
+    setRunningAnalysis(true);
     try {
       const res = await fetch("/api/mapping/gap-analysis", { method: "POST" });
       const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Gap analysis failed");
-      } else {
-        toast.success(`Gap analysis complete: ${data.totalGaps} gaps found across ${data.personasWithGaps} personas`);
+      if (!res.ok) toast.error(data.error || "Gap analysis failed");
+      else {
+        toast.success(`Analysis complete: ${data.totalGaps} access gaps found`);
         router.refresh();
       }
-    } catch {
-      toast.error("Failed to run gap analysis");
-    } finally {
-      setRunningGapAnalysis(false);
-    }
+    } catch { toast.error("Failed to run gap analysis"); }
+    finally { setRunningAnalysis(false); }
   }
 
-  if (gaps.length === 0 && (!gapSummary || gapSummary.gapsByPersona.length === 0)) {
+  async function confirmUser(userId: number) {
+    setConfirming(userId);
+    try {
+      const res = await fetch("/api/mapping/gap-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action: "confirm" }),
+      });
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Failed"); }
+      else { toast.success("User confirmed as-is"); router.refresh(); }
+    } catch { toast.error("Failed to confirm"); }
+    finally { setConfirming(null); }
+  }
+
+  async function undoConfirm(userId: number) {
+    setConfirming(userId);
+    try {
+      const res = await fetch("/api/mapping/gap-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, action: "undo" }),
+      });
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Failed"); }
+      else { toast.success("Confirmation undone"); router.refresh(); }
+    } catch { toast.error("Failed to undo"); }
+    finally { setConfirming(null); }
+  }
+
+  async function bulkConfirm() {
+    if (bulkSelected.size === 0) return;
+    setBulkConfirming(true);
+    try {
+      const res = await fetch("/api/mapping/gap-review/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userIds: Array.from(bulkSelected) }),
+      });
+      if (!res.ok) { const d = await res.json(); toast.error(d.error || "Failed"); }
+      else {
+        const d = await res.json();
+        toast.success(`${d.confirmed} user${d.confirmed !== 1 ? "s" : ""} confirmed`);
+        setBulkSelected(new Set());
+        router.refresh();
+      }
+    } catch { toast.error("Bulk confirm failed"); }
+    finally { setBulkConfirming(false); }
+  }
+
+  // Separate pending vs confirmed
+  const pending = userGapData.filter(u => u.reviewStatus === "pending");
+  const confirmed = userGapData.filter(u => u.reviewStatus === "confirmed_as_is");
+
+  // Filter pending users
+  const filtered = pending.filter(u => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!u.displayName.toLowerCase().includes(q) && !(u.department ?? "").toLowerCase().includes(q) && !(u.personaName ?? "").toLowerCase().includes(q)) return false;
+    }
+    if (impactFilter !== "all" && u.changeImpactLevel !== impactFilter) return false;
+    return true;
+  });
+
+  // Summary counts
+  const highCount = userGapData.filter(u => u.changeImpactLevel === "high").length;
+  const medCount = userGapData.filter(u => u.changeImpactLevel === "medium").length;
+  const lowCount = userGapData.filter(u => u.changeImpactLevel === "low").length;
+  const noneCount = userGapData.filter(u => u.changeImpactLevel === "none").length;
+
+  // Group confirmed by impact
+  const confirmedByImpact = {
+    high: confirmed.filter(u => u.changeImpactLevel === "high"),
+    medium: confirmed.filter(u => u.changeImpactLevel === "medium"),
+    low: confirmed.filter(u => u.changeImpactLevel === "low"),
+    none: confirmed.filter(u => u.changeImpactLevel === "none"),
+  };
+
+  if (userGapData.length === 0 && unassignedPersonas.length === 0) {
     return (
       <Card>
         <CardContent className="flex flex-col items-center gap-3 py-12">
           <CheckCircle className="h-8 w-8 text-green-500" />
           <p className="text-muted-foreground text-center max-w-md">
-            No access gaps detected. All legacy permissions are covered by target role mappings, or gap analysis has not been run yet.
+            No users with access data to analyze. Run target role mapping first, then come back to review access changes.
           </p>
-          <p className="text-xs text-muted-foreground text-center max-w-md">
-            Gap analysis compares each persona&apos;s current (source) access against their future (target) roles to identify where users may lose access to capabilities they use today.
-          </p>
-          <Button onClick={runGapAnalysis} disabled={runningGapAnalysis} variant="outline" className="mt-2">
-            {runningGapAnalysis ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Running...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Run Gap Analysis</>}
+          <Button onClick={runGapAnalysis} disabled={runningAnalysis} variant="outline" className="mt-2">
+            {runningAnalysis ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Running...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Run Gap Analysis</>}
           </Button>
         </CardContent>
       </Card>
     );
   }
 
-  // Use gapSummary if available (computed), fallback to raw gaps
-  const useComputedSummary = gapSummary && gapSummary.totalSourcePermissions > 0;
-
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
-        <Button onClick={runGapAnalysis} disabled={runningGapAnalysis} variant="outline" size="sm">
-          {runningGapAnalysis ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Running...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Re-run Gap Analysis</>}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground">
+            Review how each user&apos;s access changes under the least access principle. Confirm reductions are intentional or remap users who need different roles.
+          </p>
+        </div>
+        <Button onClick={runGapAnalysis} disabled={runningAnalysis} variant="outline" size="sm">
+          {runningAnalysis ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Running...</> : <><RefreshCw className="h-4 w-4 mr-2" /> Re-analyze</>}
         </Button>
       </div>
-      {/* Summary Card */}
-      {useComputedSummary && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="text-3xl font-bold">
-                    {gapSummary.coveragePercent}%
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Access Continuity
-                  </div>
-                </div>
-                <p className="text-sm">
-                  <span className="font-medium">{gapSummary.coveredPermissions}</span> of{" "}
-                  <span className="font-medium">{gapSummary.totalSourcePermissions}</span>{" "}
-                  current permissions carry forward to the target state
-                </p>
-                {gapSummary.gapsByPersona.length > 0 && (
-                  <p className="text-sm text-amber-700 mt-1">
-                    {gapSummary.totalSourcePermissions - gapSummary.coveredPermissions} access gap{gapSummary.totalSourcePermissions - gapSummary.coveredPermissions !== 1 ? "s" : ""} across{" "}
-                    {gapSummary.gapsByPersona.length} persona{gapSummary.gapsByPersona.length !== 1 ? "s" : ""} — review for additional role needs or change impact
-                  </p>
-                )}
-              </div>
-              <div className="w-32 h-32 relative">
-                <svg viewBox="0 0 36 36" className="w-full h-full">
-                  <path
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="#e5e7eb"
-                    strokeWidth="3"
-                  />
-                  <path
-                    d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke={gapSummary.coveragePercent >= 90 ? "#22c55e" : gapSummary.coveragePercent >= 70 ? "#f59e0b" : "#ef4444"}
-                    strokeWidth="3"
-                    strokeDasharray={`${gapSummary.coveragePercent}, 100`}
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setImpactFilter(impactFilter === "high" ? "all" : "high")}>
+          <CardContent className="pt-4 pb-3 px-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+              <span className="text-xs font-medium text-muted-foreground">High Impact</span>
+            </div>
+            <div className="text-2xl font-bold">{highCount}</div>
+            <p className="text-[11px] text-muted-foreground">&gt;30% access loss</p>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setImpactFilter(impactFilter === "medium" ? "all" : "medium")}>
+          <CardContent className="pt-4 pb-3 px-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+              <span className="text-xs font-medium text-muted-foreground">Medium Impact</span>
+            </div>
+            <div className="text-2xl font-bold">{medCount}</div>
+            <p className="text-[11px] text-muted-foreground">10-30% access loss</p>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setImpactFilter(impactFilter === "low" ? "all" : "low")}>
+          <CardContent className="pt-4 pb-3 px-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+              <span className="text-xs font-medium text-muted-foreground">Low Impact</span>
+            </div>
+            <div className="text-2xl font-bold">{lowCount}</div>
+            <p className="text-[11px] text-muted-foreground">&lt;10% access loss</p>
+          </CardContent>
+        </Card>
+        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setImpactFilter(impactFilter === "none" ? "all" : "none")}>
+          <CardContent className="pt-4 pb-3 px-4">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="h-2.5 w-2.5 rounded-full bg-slate-400" />
+              <span className="text-xs font-medium text-muted-foreground">No Change</span>
+            </div>
+            <div className="text-2xl font-bold">{noneCount}</div>
+            <p className="text-[11px] text-muted-foreground">Full continuity</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Unassigned Personas Warning */}
+      {unassignedPersonas.length > 0 && (
+        <Card className="border-amber-200">
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center gap-2 text-amber-800">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              {unassignedPersonas.length} persona{unassignedPersonas.length !== 1 ? "s" : ""} with permission patterns but no assigned users
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="flex flex-wrap gap-2">
+              {unassignedPersonas.map(p => (
+                <Badge key={p.personaId} variant="outline" className="text-xs border-amber-300 text-amber-700">
+                  {p.personaName} ({p.sourcePermissionCount} perms)
+                </Badge>
+              ))}
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Gaps by Persona -- from computed summary */}
-      {useComputedSummary ? (
-        gapSummary.gapsByPersona.map((pg) => (
-          <Card key={pg.personaId}>
-            <CardHeader
-              className="cursor-pointer"
-              onClick={() => setExpandedPersona(expandedPersona === pg.personaName ? null : pg.personaName)}
-            >
-              <CardTitle className="text-base flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {expandedPersona === pg.personaName ? (
-                    <ChevronRight className="h-4 w-4 rotate-90 transition-transform" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 transition-transform" />
-                  )}
-                  <span>{pg.personaName}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={pg.uncoveredCount > 5 ? "destructive" : "outline"} className="text-xs">
-                    {pg.uncoveredCount} access gap{pg.uncoveredCount !== 1 ? "s" : ""}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {pg.totalPermissions - pg.uncoveredCount}/{pg.totalPermissions} covered
-                  </Badge>
-                </div>
+      {/* Pending Users Table */}
+      {pending.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">
+                Pending Review ({pending.length})
               </CardTitle>
-            </CardHeader>
-            {expandedPersona === pg.personaName && (
-              <CardContent>
-                <p className="text-xs text-muted-foreground mb-3">
-                  These legacy permissions are not covered by any mapped target role. Users in this persona may need additional access, or this represents a change in their day-to-day workflow.
-                </p>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Permission</TableHead>
-                      <TableHead>Capability</TableHead>
-                      <TableHead>Impact</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {pg.uncoveredPermissions.map((p) => (
-                      <TableRow key={p.permissionId}>
-                        <TableCell className="font-mono text-xs">{p.permissionId}</TableCell>
-                        <TableCell className="text-sm">{p.permissionName ?? "\u2014"}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{p.description ?? "Access removed in target state"}</TableCell>
+              <div className="flex items-center gap-2">
+                {canEdit && bulkSelected.size > 0 && (
+                  <Button size="sm" variant="outline" onClick={bulkConfirm} disabled={bulkConfirming}>
+                    {bulkConfirming ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <CheckCircle className="h-3 w-3 mr-1" />}
+                    Confirm {bulkSelected.size} as-is
+                  </Button>
+                )}
+              </div>
+            </div>
+            {/* Filters */}
+            <div className="flex items-center gap-2 mt-2">
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input placeholder="Search users..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-8 text-xs pl-8" />
+              </div>
+              <div className="flex gap-1">
+                {(["all", "high", "medium", "low", "none"] as const).map(level => (
+                  <Button
+                    key={level}
+                    variant={impactFilter === level ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 text-[11px] px-2"
+                    onClick={() => setImpactFilter(level)}
+                  >
+                    {level === "all" ? "All" : IMPACT_CONFIG[level].label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {canEdit && <TableHead className="w-8"><input type="checkbox" className="h-3.5 w-3.5" checked={filtered.length > 0 && filtered.every(u => bulkSelected.has(u.userId))} onChange={() => { if (filtered.every(u => bulkSelected.has(u.userId))) setBulkSelected(new Set()); else setBulkSelected(new Set(filtered.map(u => u.userId))); }} /></TableHead>}
+                  <TableHead>User</TableHead>
+                  <TableHead>Persona</TableHead>
+                  <TableHead>Access Change</TableHead>
+                  <TableHead>Impact</TableHead>
+                  {canEdit && <TableHead className="text-right">Actions</TableHead>}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.length === 0 && (
+                  <TableRow><TableCell colSpan={canEdit ? 6 : 4} className="text-center text-muted-foreground py-8">No users match the current filter</TableCell></TableRow>
+                )}
+                {filtered.map(u => {
+                  const impact = IMPACT_CONFIG[u.changeImpactLevel];
+                  const isExpanded = expandedUserId === u.userId;
+                  return (
+                    <>
+                      <TableRow key={u.userId} className="cursor-pointer hover:bg-muted/50" onClick={() => setExpandedUserId(isExpanded ? null : u.userId)}>
+                        {canEdit && (
+                          <TableCell onClick={e => e.stopPropagation()}>
+                            <input type="checkbox" className="h-3.5 w-3.5" checked={bulkSelected.has(u.userId)} onChange={() => setBulkSelected(prev => { const n = new Set(prev); if (n.has(u.userId)) n.delete(u.userId); else n.add(u.userId); return n; })} />
+                          </TableCell>
+                        )}
+                        <TableCell>
+                          <div>
+                            <p className="font-medium text-sm">{u.displayName}</p>
+                            {u.department && <p className="text-xs text-muted-foreground">{u.department}</p>}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{u.personaName ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{u.sourceRoleCount} → {u.targetRoleCount} roles</span>
+                            <div className="flex gap-1">
+                              {u.uncoveredCount > 0 && <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-red-200 text-red-700">-{u.uncoveredCount}</Badge>}
+                              {u.newPermCount > 0 && <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-green-200 text-green-700">+{u.newPermCount}</Badge>}
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">{u.coveragePercent}% access continuity</p>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`text-xs ${impact.color}`}>
+                            <div className={`h-1.5 w-1.5 rounded-full ${impact.dot} mr-1`} />
+                            {impact.label}
+                          </Badge>
+                        </TableCell>
+                        {canEdit && (
+                          <TableCell className="text-right" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center justify-end gap-1">
+                              {onRemapUser && (
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => onRemapUser(u.userId)}>
+                                  Remap
+                                </Button>
+                              )}
+                              <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => confirmUser(u.userId)} disabled={confirming === u.userId}>
+                                {confirming === u.userId ? <Loader2 className="h-3 w-3 animate-spin" /> : "Confirm"}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            )}
-          </Card>
-        ))
-      ) : (
-        /* Fallback: use raw gaps data */
-        Array.from(gapsByPersona.entries()).map(([personaName, personaGaps]) => (
-          <Card key={personaName}>
-            <CardHeader
-              className="cursor-pointer"
-              onClick={() => setExpandedPersona(expandedPersona === personaName ? null : personaName)}
-            >
-              <CardTitle className="text-base flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {expandedPersona === personaName ? (
-                    <ChevronRight className="h-4 w-4 rotate-90 transition-transform" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 transition-transform" />
-                  )}
-                  <span>{personaName}</span>
-                </div>
-                <Badge variant={personaGaps.length > 5 ? "destructive" : "outline"} className="text-xs">
-                  {personaGaps.length} access gap{personaGaps.length !== 1 ? "s" : ""}
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            {expandedPersona === personaName && (
-              <CardContent>
-                <div className="flex flex-wrap gap-1.5">
-                  {personaGaps.map((g) => (
-                    <Badge key={g.gapId} variant="outline" className="text-xs font-mono">
-                      {g.permissionId}
-                      {g.permissionName && (
-                        <span className="ml-1 text-muted-foreground font-sans">({g.permissionName})</span>
+                      {isExpanded && (
+                        <TableRow key={`${u.userId}-detail`}>
+                          <TableCell colSpan={canEdit ? 6 : 4} className="bg-slate-50 px-8 py-4">
+                            <div className="grid grid-cols-2 gap-6 text-sm">
+                              <div>
+                                <p className="font-medium mb-1 text-xs uppercase tracking-wide text-muted-foreground">Source Access ({u.sourceRoleCount} roles, {u.sourcePermCount} permissions)</p>
+                                <p className="text-muted-foreground text-xs">This user had {u.sourceRoleCount} source role{u.sourceRoleCount !== 1 ? "s" : ""} providing {u.sourcePermCount} unique permission{u.sourcePermCount !== 1 ? "s" : ""} in the legacy system.</p>
+                              </div>
+                              <div>
+                                <p className="font-medium mb-1 text-xs uppercase tracking-wide text-muted-foreground">Target Access ({u.targetRoleCount} roles, {u.targetPermCount} permissions)</p>
+                                <p className="text-muted-foreground text-xs">Under least access, mapped to {u.targetRoleCount} target role{u.targetRoleCount !== 1 ? "s" : ""} with {u.targetPermCount} permission{u.targetPermCount !== 1 ? "s" : ""}.</p>
+                              </div>
+                            </div>
+                            {u.uncoveredCount > 0 && (
+                              <div className="mt-3 p-3 rounded border border-red-100 bg-red-50">
+                                <p className="text-xs font-medium text-red-800">{u.uncoveredCount} permission{u.uncoveredCount !== 1 ? "s" : ""} will be removed — {u.changeImpactLevel === "high" ? "significant workflow impact likely" : u.changeImpactLevel === "medium" ? "moderate impact on daily tasks" : "minor impact expected"}</p>
+                              </div>
+                            )}
+                            {u.newPermCount > 0 && (
+                              <div className="mt-2 p-3 rounded border border-green-100 bg-green-50">
+                                <p className="text-xs font-medium text-green-800">{u.newPermCount} new permission{u.newPermCount !== 1 ? "s" : ""} will be granted in the target state</p>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
                       )}
-                    </Badge>
-                  ))}
+                    </>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Confirmed Users Section */}
+      {confirmed.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              Confirmed As-Is ({confirmed.length})
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">
+              These users&apos; access reductions have been reviewed and confirmed. Grouped by anticipated change impact for OCM planning.
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(["high", "medium", "low", "none"] as const).map(level => {
+              const users = confirmedByImpact[level];
+              if (users.length === 0) return null;
+              const impact = IMPACT_CONFIG[level];
+              const avgCoverage = Math.round(users.reduce((s, u) => s + u.coveragePercent, 0) / users.length);
+              return (
+                <div key={level} className="border rounded-md">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <div className={`h-2 w-2 rounded-full ${impact.dot}`} />
+                      <span className="text-sm font-medium">{impact.label}</span>
+                      <span className="text-xs text-muted-foreground">· {users.length} user{users.length !== 1 ? "s" : ""} · avg {avgCoverage}% continuity</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">{impact.description}</span>
+                  </div>
+                  <div className="divide-y">
+                    {users.map(u => (
+                      <div key={u.userId} className="flex items-center justify-between px-4 py-2 text-sm">
+                        <div className="flex items-center gap-3">
+                          <span className="font-medium">{u.displayName}</span>
+                          <span className="text-xs text-muted-foreground">{u.department}</span>
+                          <span className="text-xs text-muted-foreground">{u.sourceRoleCount} → {u.targetRoleCount} roles</span>
+                          {u.uncoveredCount > 0 && <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 border-red-200 text-red-700">-{u.uncoveredCount} perms</Badge>}
+                        </div>
+                        {canEdit && (
+                          <Button size="sm" variant="ghost" className="h-6 text-xs text-muted-foreground" onClick={() => undoConfirm(u.userId)} disabled={confirming === u.userId}>
+                            {confirming === u.userId ? <Loader2 className="h-3 w-3 animate-spin" /> : <><Undo2 className="h-3 w-3 mr-1" /> Undo</>}
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </CardContent>
-            )}
-          </Card>
-        ))
+              );
+            })}
+          </CardContent>
+        </Card>
       )}
     </div>
   );

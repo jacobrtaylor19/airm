@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { CheckCircle, Circle, Search, Filter } from "lucide-react";
+import { CheckCircle, Circle, Search, Filter, AlertTriangle } from "lucide-react";
 import type { PersonaMappingRow } from "@/lib/queries";
 import type { PersonaDetailInfo } from "./mapping-client";
 
-type PersonaFilter = "all" | "unmapped" | "low-coverage";
+type PersonaFilter = "all" | "unmapped" | "low-coverage" | "no-users";
 
 export interface PersonaSelectorProps {
   personas: PersonaMappingRow[];
@@ -55,6 +55,7 @@ export function PersonaSelector({
     }
     // Filter by mapping status
     if (filter === "unmapped") return p.mappedRoleCount === 0;
+    if (filter === "no-users") return p.userCount === 0;
     if (filter === "low-coverage") {
       const maxCov = getMaxCoverage(personaDetails[p.personaId]);
       return maxCov !== null && maxCov < 70;
@@ -63,6 +64,7 @@ export function PersonaSelector({
   });
 
   const unmappedCount = personas.filter((p) => p.mappedRoleCount === 0).length;
+  const noUsersCount = personas.filter((p) => p.userCount === 0).length;
   const lowCoverageCount = personas.filter((p) => {
     const maxCov = getMaxCoverage(personaDetails[p.personaId]);
     return maxCov !== null && maxCov < 70;
@@ -103,6 +105,17 @@ export function PersonaSelector({
             <Circle className="h-3 w-3 mr-1" />
             Unmapped ({unmappedCount})
           </Button>
+          {noUsersCount > 0 && (
+            <Button
+              variant={filter === "no-users" ? "default" : "outline"}
+              size="sm"
+              className="h-6 text-[11px] px-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+              onClick={() => setFilter("no-users")}
+            >
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              No Users ({noUsersCount})
+            </Button>
+          )}
           <Button
             variant={filter === "low-coverage" ? "default" : "outline"}
             size="sm"
@@ -163,7 +176,9 @@ export function PersonaSelector({
                       onClick={(e) => e.stopPropagation()}
                     />
                   )}
-                  {isMapped ? (
+                  {p.userCount === 0 ? (
+                    <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                  ) : isMapped ? (
                     <CheckCircle className="h-3.5 w-3.5 text-green-600 shrink-0" />
                   ) : (
                     <Circle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -171,9 +186,15 @@ export function PersonaSelector({
                   <div className="min-w-0">
                     <p className="font-medium truncate">{p.personaName}</p>
                     <div className="flex items-center gap-2">
-                      <p className="text-xs text-muted-foreground">
-                        {p.userCount} users
-                      </p>
+                      {p.userCount === 0 ? (
+                        <p className="text-xs text-amber-600 font-medium">
+                          No users — needs review
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {p.userCount} users
+                        </p>
+                      )}
                       {maxCov !== null && (
                         <Badge
                           variant="outline"

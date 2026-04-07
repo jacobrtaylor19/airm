@@ -417,3 +417,148 @@ export async function getGapAnalysisSummary(orgId: number): Promise<GapAnalysisS
     gapsByPersona,
   };
 }
+
+// ─────────────────────────────────────────────
+// BATCH USER GAP ANALYSIS (per-user access change summary)
+// ─────────────────────────────────────────────
+
+export interface UserGapSummaryRow {
+  userId: number;
+  displayName: string;
+  department: string | null;
+  jobTitle: string | null;
+  personaName: string | null;
+  personaId: number | null;
+  sourceRoleCount: number;
+  targetRoleCount: number;
+  sourcePermCount: number;
+  targetPermCount: number;
+  uncoveredCount: number;
+  newPermCount: number;
+  coveragePercent: number;
+  changeImpactLevel: "none" | "low" | "medium" | "high";
+  reviewStatus: "pending" | "confirmed_as_is" | "remapped";
+  reviewedAt: string | null;
+}
+
+/**
+ * Batch gap analysis: computes per-user access change summary in a single query.
+ * Shows how each user's source permissions compare to their target permissions
+ * under the least access principle.
+ */
+export async function getBatchUserGapSummary(orgId: number): Promise<UserGapSummaryRow[]> {
+  const rows = await db.execute(sql`
+    WITH user_source_perms AS (
+      SELECT usra.user_id,
+             count(DISTINCT sp.permission_id) AS perm_count,
+             array_agg(DISTINCT sp.permission_id) AS perm_ids
+      FROM user_source_role_assignments usra
+      JOIN source_role_permissions srp ON srp.source_role_id = usra.source_role_id
+      JOIN source_permissions sp ON sp.id = srp.source_permission_id
+      JOIN users u ON u.id = usra.user_id AND u.organization_id = ${orgId}
+      GROUP BY usra.user_id
+    ),
+    user_target_perms AS (
+      SELECT utra.user_id,
+             count(DISTINCT tp.permission_id) AS perm_count,
+             array_agg(DISTINCT tp.permission_id) AS perm_ids
+      FROM user_target_role_assignments utra
+      JOIN target_role_permissions trp ON trp.target_role_id = utra.target_role_id
+      JOIN target_permissions tp ON tp.id = trp.target_permission_id
+      JOIN users u ON u.id = utra.user_id AND u.organization_id = ${orgId}
+      GROUP BY utra.user_id
+    ),
+    user_source_role_counts AS (
+      SELECT usra.user_id, count(DISTINCT usra.source_role_id) AS role_count
+      FROM user_source_role_assignments usra
+      JOIN users u ON u.id = usra.user_id AND u.organization_id = ${orgId}
+      GROUP BY usra.user_id
+    ),
+    user_target_role_counts AS (
+      SELECT utra.user_id, count(DISTINCT utra.target_role_id) AS role_count
+      FROM user_target_role_assignments utra
+      JOIN users u ON u.id = utra.user_id AND u.organization_id = ${orgId}
+      GROUP BY utra.user_id
+    ),
+    gap_calc AS (
+      SELECT
+        u.id AS user_id,
+        COALESCE(usp.perm_count, 0)::int AS source_perm_count,
+        COALESCE(utp.perm_count, 0)::int AS target_perm_count,
+        COALESCE(
+          (SELECT count(*) FROM unnest(usp.perm_ids) AS sid
+           WHERE sid NOT IN (SELECT unnest(COALESCE(utp.perm_ids, ARRAY[]::text[])))),
+          0
+        )::int AS uncovered_count,
+        COALESCE(
+          (SELECT count(*) FROM unnest(utp.perm_ids) AS tid
+           WHERE tid NOT IN (SELECT unnest(COALESCE(usp.perm_ids, ARRAY[]::text[])))),
+          0
+        )::int AS new_perm_count
+      FROM users u
+      LEFT JOIN user_source_perms usp ON usp.user_id = u.id
+      LEFT JOIN user_target_perms utp ON utp.user_id = u.id
+      WHERE u.organization_id = ${orgId}
+        AND (usp.user_id IS NOT NULL OR utp.user_id IS NOT NULL)
+    )
+    SELECT
+      u.id AS user_id,
+      u.display_name,
+      u.department,
+      u.job_title,
+      p.name AS persona_name,
+      upa.persona_id,
+      COALESCE(src.role_count, 0)::int AS source_role_count,
+      COALESCE(tgt.role_count, 0)::int AS target_role_count,
+      gc.source_perm_count,
+      gc.target_perm_count,
+      gc.uncovered_count,
+      gc.new_perm_count,
+      CASE WHEN gc.source_perm_count > 0
+        THEN round(((gc.source_perm_count - gc.uncovered_count)::numeric / gc.source_perm_count) * 100)
+        ELSE 100
+      END AS coverage_percent,
+      CASE
+        WHEN gc.uncovered_count = 0 THEN 'none'
+        WHEN (gc.uncovered_count::numeric / GREATEST(gc.source_perm_count, 1)) > 0.3 OR gc.uncovered_count > 20 THEN 'high'
+        WHEN (gc.uncovered_count::numeric / GREATEST(gc.source_perm_count, 1)) > 0.1 OR gc.uncovered_count > 5 THEN 'medium'
+        ELSE 'low'
+      END AS change_impact_level,
+      COALESCE(ugr.review_status, 'pending') AS review_status,
+      ugr.reviewed_at
+    FROM gap_calc gc
+    JOIN users u ON u.id = gc.user_id
+    LEFT JOIN user_persona_assignments upa ON upa.user_id = u.id
+    LEFT JOIN personas p ON p.id = upa.persona_id
+    LEFT JOIN user_source_role_counts src ON src.user_id = u.id
+    LEFT JOIN user_target_role_counts tgt ON tgt.user_id = u.id
+    LEFT JOIN user_gap_reviews ugr ON ugr.user_id = u.id AND ugr.organization_id = ${orgId}
+    ORDER BY
+      CASE
+        WHEN gc.uncovered_count = 0 THEN 3
+        WHEN (gc.uncovered_count::numeric / GREATEST(gc.source_perm_count, 1)) > 0.3 OR gc.uncovered_count > 20 THEN 0
+        WHEN (gc.uncovered_count::numeric / GREATEST(gc.source_perm_count, 1)) > 0.1 OR gc.uncovered_count > 5 THEN 1
+        ELSE 2
+      END,
+      gc.uncovered_count DESC
+  `);
+
+  return (rows as unknown as Record<string, unknown>[]).map((r) => ({
+    userId: Number(r.user_id),
+    displayName: String(r.display_name ?? ""),
+    department: r.department ? String(r.department) : null,
+    jobTitle: r.job_title ? String(r.job_title) : null,
+    personaName: r.persona_name ? String(r.persona_name) : null,
+    personaId: r.persona_id ? Number(r.persona_id) : null,
+    sourceRoleCount: Number(r.source_role_count ?? 0),
+    targetRoleCount: Number(r.target_role_count ?? 0),
+    sourcePermCount: Number(r.source_perm_count ?? 0),
+    targetPermCount: Number(r.target_perm_count ?? 0),
+    uncoveredCount: Number(r.uncovered_count ?? 0),
+    newPermCount: Number(r.new_perm_count ?? 0),
+    coveragePercent: Number(r.coverage_percent ?? 100),
+    changeImpactLevel: (r.change_impact_level as "none" | "low" | "medium" | "high") ?? "none",
+    reviewStatus: (r.review_status as "pending" | "confirmed_as_is" | "remapped") ?? "pending",
+    reviewedAt: r.reviewed_at ? String(r.reviewed_at) : null,
+  }));
+}

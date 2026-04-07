@@ -60,7 +60,7 @@ export async function GET() {
     .from(schema.userPersonaAssignments)
     .innerJoin(schema.personas, eq(schema.userPersonaAssignments.personaId, schema.personas.id))
     .where(eq(schema.personas.organizationId, orgId))
-    .groupBy(schema.userPersonaAssignments.personaId)
+    .groupBy(schema.userPersonaAssignments.personaId, schema.personas.name, schema.personas.businessFunction)
     .orderBy(sql`count(*) desc`);
 
   // ─────────────────────────────────────────────
