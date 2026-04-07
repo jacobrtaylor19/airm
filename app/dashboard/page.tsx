@@ -11,7 +11,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { DashboardFiltered } from "./dashboard-filtered";
-import { DashboardChat } from "@/components/chat/dashboard-chat";
+// DashboardChat removed — caused scroll-to-middle on page load
 import { StatusSlideButton } from "@/components/dashboard/status-slide-button";
 import { generateStrapline } from "@/lib/strapline";
 import { db } from "@/db";
@@ -401,9 +401,6 @@ async function renderDashboard(user: Awaited<ReturnType<typeof requireAuth>>) {
           )}
         </div>
       </div>
-
-      {/* Inline Lumen AI Chat */}
-      <DashboardChat userRole={user.role} userName={user.displayName} />
 
       {/* Existing Production Access Summary */}
       {stats.existingAccessCount > 0 && (

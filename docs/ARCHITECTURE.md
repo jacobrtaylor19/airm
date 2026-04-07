@@ -6,7 +6,7 @@ This document describes the system design, technical decisions, and component ar
 
 ## System Overview
 
-Provisum is a Next.js 14 web application that automates enterprise role migration workflows. The system ingests source user data and role hierarchies, uses Claude AI to cluster users into security personas, maps those personas to target roles, performs SOD conflict analysis, and routes the results through a structured approval workflow. It also includes an AI chatbot (Lumen), risk quantification, feature flags, webhooks, scheduled exports, multi-tenant organization support, migration health dashboard, incident detection with AI triage, and AI-assisted mapping suggestions. **Current version: v1.0.0** (51 tables, 40+ pages).
+Provisum is a Next.js 14 web application that automates enterprise role migration workflows. The system ingests source user data and role hierarchies, uses Claude AI to cluster users into security personas, maps those personas to target roles, performs SOD conflict analysis, and routes the results through a structured approval workflow. It also includes an AI chatbot (Lumen), 3-phase SOD triage, risk quantification, feature flags, webhooks, scheduled exports, multi-tenant organization support, migration health dashboard, incident detection with AI triage, SOX evidence packages, and AI-assisted mapping suggestions. **Current version: v1.1.0** (55 tables, 51 pages, 92+ API routes).
 
 ```
 ┌─────────────┐      ┌──────────────┐      ┌──────────┐      ┌────────────┐      ┌──────────┐
@@ -91,101 +91,9 @@ export function ApproveButton({ assignmentId }: { assignmentId: number }) {
 
 ### 2. API Layer (`/app/api`)
 
-RESTful endpoints for mutations (writes). All endpoints validate the Supabase JWT session, check role-based access, and return JSON. There are 70+ route handlers organized across 24 directories:
+RESTful endpoints for mutations (writes). All endpoints validate the Supabase JWT session, check role-based access, and return JSON. There are 92+ route handlers organized across 28 directories. See `docs/API_REFERENCE.md` for the full reference.
 
-```
-# Auth
-POST /api/auth/login              # Authenticate via Supabase Auth
-POST /api/auth/setup              # Create initial admin (first-run only)
-POST /api/auth/logout             # Clear session
-POST /api/auth/signup             # Accept invite + create account
-POST /api/auth/callback           # Supabase OAuth callback
-
-# Admin
-GET/POST        /api/admin/app-users          # App user CRUD
-POST            /api/admin/bulk-delete         # Bulk delete source users
-GET/POST/DELETE /api/admin/assignments         # Work assignment CRUD
-GET/POST        /api/admin/feature-flags       # Feature flag management
-GET/POST        /api/admin/webhooks            # Webhook endpoint management
-GET/POST        /api/admin/scheduled-exports   # Scheduled export config
-GET             /api/admin/validation          # Pipeline validation data
-GET             /api/admin/validation/export   # Validation Excel export
-POST            /api/admin/invite              # Single user invite
-POST            /api/admin/bulk-invite         # Bulk CSV invite
-POST            /api/admin/resend-invite       # Resend pending invite
-
-# Settings
-GET/POST        /api/settings                  # System settings (key-value)
-
-# AI processing
-POST /api/ai/persona-generation     # Trigger Claude persona clustering
-POST /api/ai/persona-assignment     # AI-assisted user -> persona assignment
-POST /api/ai/target-role-mapping    # AI-assisted persona -> target role mapping
-POST /api/ai/end-user-mapping       # AI-assisted direct user mapping
-POST /api/ai/sod-analysis           # AI-assisted SOD conflict analysis
-
-# Lumen chatbot
-POST /api/assistant                 # Lumen AI chat endpoint
-
-# Mapping & approvals
-POST /api/mapping/persona-roles            # Save persona -> target role mappings
-POST /api/approvals/approve                # Approve an assignment
-POST /api/approvals/send-back              # Send assignment back for revision
-POST /api/approvals/bulk-approve           # Bulk approve assignments
-
-# SOD
-POST /api/sod/analyze                      # Run SOD conflict analysis
-POST /api/sod/accept-risk                  # Accept a SOD conflict with justification
-POST /api/sod/escalate                     # Escalate SOD conflict for review
-POST /api/sod/fix-mapping                  # Fix mapping to resolve SOD conflict
-POST /api/sod/request-risk-acceptance      # Request risk acceptance from approver
-
-# SOD Rules
-GET/POST /api/sod-rules                    # SOD rule CRUD
-
-# Provisioning alerts
-POST   /api/least-access/exceptions        # Accept over-provisioning exception
-DELETE /api/least-access/exceptions        # Revoke exception
-
-# Releases
-GET/POST/PATCH/DELETE /api/releases        # Release management
-
-# Review links
-GET/POST /api/review-links                 # External review link management
-
-# Calibration
-GET/POST /api/calibration                  # Low-confidence assignment review
-
-# Notifications
-POST  /api/notifications                   # Send notifications
-PATCH /api/notifications                   # Mark as read
-
-# Jobs
-GET /api/jobs/[id]                         # Poll job status
-
-# Exports
-GET /api/exports/provisioning              # Provisioning export (CSV)
-GET /api/exports/excel                     # Full data export (Excel)
-GET /api/exports/pdf                       # Report export (PDF)
-GET /api/exports/sod-exceptions            # SOD exceptions export
-
-# Cron
-GET /api/cron/exports                      # Scheduled export execution (Vercel cron)
-
-# Upload
-POST /api/upload/[type]                    # Upload CSV/Excel data files
-
-# Health
-GET /api/health                            # Health check (DB connectivity)
-
-# Personas
-GET/POST /api/personas                     # Persona CRUD
-
-# Utilities
-GET  /api/org-hierarchy                    # Fetch org unit tree
-POST /api/refinements/save                 # Save AI refinement feedback
-POST /api/demo/switch                      # Switch demo mode (dev only)
-```
+See `docs/API_REFERENCE.md` for the complete endpoint reference grouped by domain.
 
 ### 3. Business Logic Layer (`/lib`)
 
@@ -242,7 +150,7 @@ export async function getDashboardStats(userId?: number) {
 
 ### 4. Data Access Layer (Drizzle + Supabase Postgres)
 
-**Schema** (`db/schema.ts`): Single source of truth for all 51 tables. Drizzle ORM maps TypeScript types to SQL using `pgTable` from `drizzle-orm/pg-core`.
+**Schema** (`db/schema.ts`): Single source of truth for all 55 tables. Drizzle ORM maps TypeScript types to SQL using `pgTable` from `drizzle-orm/pg-core`.
 
 ```typescript
 export const users = pgTable("users", {
@@ -279,7 +187,7 @@ const users = await db.select().from(schema.users).where(inArray(schema.users.id
 - Connection string: `DATABASE_URL` env var pointing to Supabase pooled endpoint
 - 56 database indexes across all tables for hot query paths
 
-**Tables** (47 total):
+**Tables** (55 total):
 
 | Category | Tables |
 |----------|--------|
@@ -287,11 +195,11 @@ const users = await db.select().from(schema.users).where(inArray(schema.users.id
 | **Personas** | `personas`, `userPersonaAssignments`, `personaSourcePermissions`, `personaConfirmations`, `consolidatedGroups` |
 | **Mapping** | `personaTargetRoleMappings`, `userTargetRoleAssignments`, `userSourceRoleAssignments`, `workAssignments` |
 | **Permissions** | `sourcePermissions`, `targetPermissions`, `sourceRolePermissions`, `targetRolePermissions`, `permissionGaps`, `targetSecurityRoleTasks`, `targetTaskRoles`, `targetTaskRolePermissions` |
-| **SOD** | `sodConflicts`, `leastAccessExceptions`, `securityDesignChanges` |
+| **SOD** | `sodConflicts`, `leastAccessExceptions`, `securityDesignChanges`, `securityWorkItems` |
 | **Releases** | `releases`, `releaseUsers`, `releaseOrgUnits`, `releaseSourceRoles`, `releaseTargetRoles`, `releaseSodRules` |
-| **Auth & users** | `appUsers`, `appUserSessions`, `appUserReleases`, `userInvites` |
-| **Platform** | `organizations`, `featureFlags`, `webhookEndpoints`, `webhookDeliveries`, `scheduledExports`, `notifications`, `chatConversations`, `rateLimitEntries`, `reviewLinks` |
-| **System** | `systemSettings`, `auditLog`, `processingJobs` |
+| **Auth & users** | `appUsers`, `appUserSessions`, `appUserReleases`, `userInvites`, `ssoConfigurations` |
+| **Platform** | `organizations`, `featureFlags`, `webhookEndpoints`, `webhookDeliveries`, `scheduledExports`, `notifications`, `chatConversations`, `rateLimitEntries`, `reviewLinks`, `workstreamItems` |
+| **System** | `systemSettings`, `auditLog`, `processingJobs`, `incidents`, `evidencePackageRuns`, `demoLeads`, `mappingFeedback` |
 
 ---
 
@@ -437,13 +345,14 @@ export async function getUserScope(appUser: AppUser): Promise<number[] | null> {
 
 ## Multi-Tenant Organization Support
 
-**Status**: Phase 1 implemented (backward-compatible).
+**Status**: Phase 3 complete — `organization_id NOT NULL` enforced on all entity tables.
 
-Every top-level entity table has an `organization_id` FK referencing the `organizations` table. Junction tables and assignment tables inherit tenant scope through their parent FKs.
+Every top-level entity table has a required `organization_id` FK referencing the `organizations` table. Junction tables and assignment tables inherit tenant scope through their parent FKs.
 
-- In standalone Provisum, a default organization is auto-created
-- All queries are organization-scoped (RLS policies enforce tenant isolation at the database level)
-- Designed for future SaaS mode where multiple organizations share a single deployment
+- In standalone Provisum, a default organization is auto-created on first run
+- All queries are organization-scoped via Drizzle `where` clauses
+- RLS policies on Supabase enforce tenant isolation at the database level as a second layer
+- Designed for SaaS mode where multiple organizations share a single Vercel deployment
 
 ---
 
@@ -619,6 +528,48 @@ Configured via admin console and executed by Vercel cron jobs.
 - Cron trigger: `GET /api/cron/exports` (secured via `CRON_SECRET` env var)
 - Configuration stored in `scheduledExports` table
 - Supports filtering by release, department, and export type
+
+---
+
+## Module Launcher
+
+The application entry point at `/home` renders a tile-based module launcher with 9 shortcuts. Each module tile loads a dedicated sidebar on navigation. This replaces the previous single-sidebar layout and allows mappers, approvers, and coordinators to enter their role-specific workflow without passing through unrelated screens.
+
+---
+
+## Source System Typing
+
+Source and target roles can be tagged with a system type (10 source types including SAP ECC, Oracle EBS, Workday, Salesforce, ServiceNow; 7 target types). System type is injected into Claude API prompts so persona generation and role mapping suggestions are context-aware for the specific platform being migrated.
+
+---
+
+## Knowledge Base
+
+In-app help at `/help` serves 10 role-aware articles with full-text search and category filter. Articles are statically rendered and do not require a CMS. The system automatically filters visible articles by the current user's role.
+
+---
+
+## SOD Triage Workflow
+
+SOD conflict resolution follows a 3-phase workflow:
+
+1. **Phase 1 — Within-Role Intelligence**: Auto-detect conflicts that can be resolved by splitting within the same role family. Surfaced as suggestions before manual review begins.
+2. **Phase 2 — Remapping Workspace**: Analyst re-maps individual users to alternative target roles to eliminate conflicts. Real-time conflict recalculation.
+3. **Phase 3 — Compliance & Security Workspaces**: Remaining conflicts routed to compliance (risk acceptance with justification) or security (escalation to security design review). Accepted risks stored with mitigating controls documentation.
+
+Triage state is tracked per `sodConflicts` row (`status`: open → remapping → accepted / escalated / resolved).
+
+---
+
+## SSO / SAML
+
+SSO configurations are stored in `ssoConfigurations` (provider, metadata URL, entity ID, enabled flag). The admin console exposes an SSO tab at `/admin/sso` for setup. Login page checks for active SSO configs and renders a provider-specific button. Domain-based SSO lookup via `GET /api/admin/sso` allows redirect without manual provider selection. Underlying implementation uses Supabase's built-in SAML 2.0 support.
+
+---
+
+## SOX Evidence Package
+
+Available at `/admin/evidence-package` (admin and above). Generates a structured Excel workbook containing: user-persona assignment audit trail, SOD conflict log with resolution status, approval workflow timestamps, and change log. Used to support SOX control testing and external audits.
 
 ---
 

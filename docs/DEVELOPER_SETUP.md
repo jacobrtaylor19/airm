@@ -8,8 +8,8 @@ Welcome to the Provisum team! This guide walks you through setting up your local
 
 Before you start, make sure you have:
 
-- **Node.js**: v18+ ([download](https://nodejs.org))
-- **pnpm**: v8+ (faster, more reliable than npm)
+- **Node.js**: v20+ ([download](https://nodejs.org)) — the `engines` field in `package.json` enforces this
+- **pnpm**: v10+ (the repo uses `pnpm@10.32.1` — mismatched versions can cause lock file drift)
   ```bash
   npm install -g pnpm
   pnpm --version  # verify
@@ -57,20 +57,24 @@ DATABASE_URL=postgresql://postgres.xxxxx:password@aws-1-us-east-1.pooler.supabas
 ANTHROPIC_API_KEY=sk-ant-v4-...
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...   # required for pnpm db:seed (creates Supabase Auth users)
+RESEND_API_KEY=re_...              # optional locally; required for invite emails
 ```
 
 **Get your credentials**:
 1. Go to [Supabase Dashboard](https://supabase.com/dashboard) and create or select a project
 2. Under **Settings > Database**, copy the pooled connection string (port 6543) for `DATABASE_URL`
-3. Under **Settings > API**, copy the project URL and anon key for the `NEXT_PUBLIC_SUPABASE_*` vars
+3. Under **Settings > API**, copy the project URL, anon key, and service role key for the `NEXT_PUBLIC_SUPABASE_*` and `SUPABASE_SERVICE_ROLE_KEY` vars
 4. Go to [Anthropic Console](https://console.anthropic.com) and copy your API key for `ANTHROPIC_API_KEY`
+
+> **Note:** `SUPABASE_SERVICE_ROLE_KEY` is a privileged server-side credential. Never expose it to the browser — it bypasses RLS.
 
 ---
 
 ## Step 3: Initialize Database
 
 ```bash
-# Push Drizzle schema to Supabase Postgres (creates all 51 tables)
+# Push Drizzle schema to Supabase Postgres (creates all 55 tables)
 pnpm db:push
 
 # Load demo data (1K users, 17 auth users, SOD rules, roles, etc.)
@@ -113,14 +117,13 @@ You'll be redirected to the login page. Demo credentials seeded by `pnpm db:seed
 | Username | Password | Role |
 |----------|----------|------|
 | `demo.admin` | `DemoGuide2026!` | admin |
-| `demo.mapper.finance` | `DemoGuide2026!` | mapper |
-| `demo.mapper.operations` | `DemoGuide2026!` | mapper |
+| `demo.mapper.finance` | `DemoGuide2026!` | mapper (Finance org unit) |
+| `demo.mapper.operations` | `DemoGuide2026!` | mapper (Operations org unit) |
 | `demo.approver` | `DemoGuide2026!` | approver |
 | `demo.viewer` | `DemoGuide2026!` | viewer |
 | `demo.coordinator` | `DemoGuide2026!` | coordinator |
 | `demo.pm` | `DemoGuide2026!` | project_manager |
 | `sysadmin` | `Sysadmin@2026!` | system_admin |
-| `admin` | `AdminPass@2026!` | admin |
 
 Quick-login pills are shown on the login page for convenience.
 
@@ -430,17 +433,20 @@ WHERE table_name = 'users' ORDER BY ordinal_position;
 
 ## Environment Variables Explained
 
-| Variable | Purpose | Example |
-|----------|---------|---------|
-| `DATABASE_URL` | Supabase Postgres pooled connection (port 6543) | `postgresql://postgres.xxx:pw@aws-1-us-east-1.pooler.supabase.com:6543/postgres` |
-| `ANTHROPIC_API_KEY` | Claude API authentication | `sk-ant-v4-...` |
-| `ENCRYPTION_KEY` | AES-256-GCM key for encrypting sensitive settings | base64 string |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | `https://xxx.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key (public, safe for client) | `eyJ...` |
-| `RESEND_API_KEY` | Email transport via Resend (optional) | `re_...` |
-| `CRON_SECRET` | Vercel cron job auth (optional, production only) | random string |
+| Variable | Required | Purpose | Example |
+|----------|----------|---------|---------|
+| `DATABASE_URL` | Yes | Supabase Postgres pooled connection (port 6543) | `postgresql://postgres.xxx:pw@aws-1-us-east-1.pooler.supabase.com:6543/postgres` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL | `https://xxx.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous key (public, safe for browser) | `eyJ...` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service role key — seeder and admin API calls | `eyJ...` |
+| `ANTHROPIC_API_KEY` | Yes | Claude API authentication | `sk-ant-v4-...` |
+| `ENCRYPTION_KEY` | Yes | AES-256-GCM key for encrypting sensitive settings | base64 string |
+| `RESEND_API_KEY` | For email | Resend API key for invite and notification emails | `re_...` |
+| `CRON_SECRET` | For cron | Vercel cron job auth token | random string |
+| `NEXT_PUBLIC_APP_URL` | For email | Public app URL used in invite email links | `https://demo.provisum.io` |
+| `NEXT_PUBLIC_SENTRY_DSN` | For monitoring | Sentry error tracking DSN | `https://...@sentry.io/...` |
 
-Provisum uses Supabase JWT sessions (httpOnly cookies managed by `@supabase/ssr`), so no `NEXTAUTH_SECRET` is required.
+Provisum uses Supabase JWT sessions managed by `@supabase/ssr`. No `NEXTAUTH_SECRET` is required. Never commit `.env.local` — it is gitignored.
 
 **Never commit `.env.local`** — it's gitignored and contains secrets.
 
@@ -618,6 +624,7 @@ const threshold = parseInt(await getSetting("least_access_threshold") ?? "30", 1
 ### Documentation
 - **CLAUDE.md**: Developer context and common patterns
 - **ARCHITECTURE.md**: System design and technical decisions
+- **API_REFERENCE.md**: All 92+ API endpoints grouped by domain
 - **CONTRIBUTING.md**: Code standards and PR process
 - **QA_TESTING_STRATEGY.md**: 130+ test cases across 23 modules
 - **TECH_DEBT.md**: Prioritized tech debt register

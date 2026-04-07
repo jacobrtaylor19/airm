@@ -174,9 +174,6 @@ export function Sidebar({ userRole, userName }: SidebarProps) {
             <span className="text-sm font-bold tracking-tight text-white">
               Provisum
             </span>
-            <span className="text-[10px] font-mono font-normal text-white/50 border border-white/20 rounded px-1.5 py-0.5">
-              beta
-            </span>
           </div>
         </Link>
       </div>

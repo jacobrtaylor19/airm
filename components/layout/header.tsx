@@ -77,7 +77,6 @@ export function Header({ user, releases, selectedReleaseId, unreadNotificationCo
           /* Tile launcher: Provisum wordmark — Geist Sans Bold, no icon (per branding spec §5) */
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold tracking-tight text-brand-accent-dark">Provisum</span>
-            <span className="text-[10px] font-mono font-normal text-brand-text-light border border-brand-border rounded px-1.5 py-0.5">beta</span>
           </div>
         ) : (
           <>

@@ -50,7 +50,22 @@ export function AppShell({
 
   // Scroll main content to top on route change
   useEffect(() => {
-    document.getElementById("main-content")?.scrollTo(0, 0);
+    // Disable browser scroll restoration (we manage scroll ourselves)
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  useEffect(() => {
+    // Immediate + deferred scroll to top on every route change
+    const el = document.getElementById("main-content");
+    if (el) el.scrollTop = 0;
+    // Fire again after render to catch async content
+    const timer = setTimeout(() => {
+      const el2 = document.getElementById("main-content");
+      if (el2) el2.scrollTop = 0;
+    }, 50);
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   // Read cookie for module context (shared pages like /target-roles)

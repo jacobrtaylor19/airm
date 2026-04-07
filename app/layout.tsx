@@ -40,7 +40,6 @@ export default async function RootLayout({
             <nav className="flex items-center justify-between px-6 py-3 border-b bg-background">
               <a href="/" className="flex items-center gap-2 text-sm font-bold tracking-tight text-brand-accent-dark">
                 Provisum
-                <span className="text-[10px] font-mono font-normal text-brand-text-light border border-brand-border rounded px-1.5 py-0.5">beta</span>
               </a>
               <div className="flex items-center gap-4 text-sm">
                 <a href="/methodology" className="text-muted-foreground hover:text-foreground">How It Works</a>
