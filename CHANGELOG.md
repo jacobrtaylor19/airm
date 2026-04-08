@@ -4,6 +4,44 @@ All notable feature additions and changes are documented here. Most recent first
 
 ---
 
+## [1.4.0] — 2026-04-07 — Gap Analysis Redesign + Approval UX + Sales Site Overhaul
+
+### Gap Analysis → User Access Change Workbench
+- **Complete redesign**: Replaced persona-level permission gap view with a user-level access change workbench
+- **User-centric view**: Shows "Jacob had 10 roles, now mapped to 1 business role" with clear change impact indicators
+- **Batch query**: Single SQL CTE (`getBatchUserGapSummary`) computes per-user permission deltas in one query instead of N+1
+- **Change impact scoring**: Formula-based classification (>30% loss OR >20 uncovered = high, >10% OR >5 = medium, else low)
+- **Actionable controls**: Remap (navigates to refinements tab with user pre-selected) and Confirm (snapshot gap data) per user
+- **Bulk operations**: Select multiple users, bulk confirm with batch processing (50 at a time)
+- **Confirmed user grouping**: Confirmed users grouped by change impact level (OCM lens) — data designed for future Cursus integration
+- **New table**: `user_gap_reviews` (per-user review status, change impact level, coverage stats)
+- **New API**: `POST /api/mapping/gap-review` (confirm/undo), `POST /api/mapping/gap-review/bulk` (bulk confirm)
+
+### Approval UX Improvements
+- **Group by user**: Approval queue now groups assignments by user with expandable role detail (not multiple rows per role)
+- **Approved separation**: Approved users moved out of the pending approval queue into a collapsible "Approved" section
+- **Status priority sorting**: Worst-status users appear first in the queue
+- **Approve All per user**: Single button to approve all of a user's pending assignments
+
+### Additional Fixes
+- **Existing production access seeding**: Added `release_phase` column and 30 "existing" rows to financial-services demo data
+- **Remap button**: Now navigates to refinements tab with the user pre-selected (controlled tabs + useEffect)
+- **Validation page 500 fix**: Added missing `personas.name` and `personas.businessFunction` to GROUP BY clause
+- **Release filter fix**: Stopped filtering personas by release, so all 21 personas are visible (not just 19 with users)
+
+### Sales Site (provisum.io)
+- **Pricing overhaul**: Removed project/annual toggle. Three tiers by migration size: Standard (≤500 users, $18k/yr), Professional (500–3,000, $42k/yr), Enterprise (3,000+, custom). One-year license terms with multi-year discount
+- **Contact page simplified**: Stripped to simple form — removed "what to expect" box, "Interested..." subtitle, migration type field, industry demos section
+- **Nav CTA updated**: "Request a demo" → "Try Live Demo Now" linking to demo.provisum.io
+- **Self-service purchase flow**: New `/get-started` page with 4-step wizard (Plan → License Term → Account → Setup). Supports `?plan=` query param pre-selection. Multi-year discount (10% per additional year) with live price breakdown. API route sends notification email via Resend.
+
+### Infrastructure
+- **New table**: `user_gap_reviews` (58 tables total in Supabase Postgres)
+- **New API routes**: `/api/mapping/gap-review`, `/api/mapping/gap-review/bulk`
+- **Sales site API**: `/api/get-started` (purchase notification endpoint)
+
+---
+
 ## [1.1.0] — 2026-04-01 — Source System Typing + Knowledge Base + SOX Evidence
 
 ### Source and Target System Typing

@@ -1,6 +1,6 @@
 # Provisum — Ongoing Updates (Session State)
 
-**Last updated:** 2026-04-05 | **Version:** v1.3.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 92 unit + 46 E2E (Playwright) | **Tech Debt:** 20/20 resolved (A)
+**Last updated:** 2026-04-07 | **Version:** v1.4.0 | **Build:** clean (zero errors, zero warnings) | **Tests:** 92 unit + 46 E2E (Playwright) | **Tech Debt:** 20/20 resolved (A)
 
 ---
 
@@ -19,6 +19,47 @@
 ---
 
 ## Recent Changes (This Session)
+
+### Gap Analysis Redesign + Approval UX + Sales Site Overhaul (2026-04-07)
+
+**Gap Analysis → User Access Change Workbench:**
+- Complete redesign from persona-level permission gaps to user-level access change workbench
+- New `getBatchUserGapSummary()` — single SQL CTE computing per-user permission deltas (source roles, target roles, uncovered/new permissions, coverage %, change impact level)
+- New `user_gap_reviews` table for per-user review status tracking (confirm/undo with gap data snapshot)
+- Change impact formula: >30% loss OR >20 uncovered = high, >10% OR >5 = medium, else low
+- Remap button navigates to refinements tab with user pre-selected (controlled tabs + useEffect)
+- Bulk confirm processes in batches of 50
+- Confirmed users grouped by change impact level — OCM data designed for future Cursus integration
+- New API routes: `POST /api/mapping/gap-review` (confirm/undo), `POST /api/mapping/gap-review/bulk`
+
+**Approval UX:**
+- Approval queue groups assignments by user with expandable role detail (was showing multiple rows per role)
+- Approved users separated into collapsible section (removed from pending queue)
+- "Approve All" per-user button, status priority sorting
+
+**Bug Fixes:**
+- Existing production access seeding: added `release_phase` column + 30 "existing" rows to financial-services demo
+- Validation page 500: added missing GROUP BY columns (`personas.name`, `personas.businessFunction`)
+- Release filter: stopped filtering personas, all 21 visible (was 19)
+
+**Sales Site (provisum.io):**
+- Pricing: removed project/annual toggle, 3 tiers by migration size (Standard ≤500/$18k, Professional 500–3k/$42k, Enterprise 3k+/custom), one-year terms, multi-year discount
+- Contact: stripped to simple form (removed "what to expect", "Interested..." text, migration type, industry demos)
+- Nav: "Request a demo" → "Try Live Demo Now" → demo.provisum.io
+- New `/get-started` self-service purchase flow: 4-step wizard (Plan → Term → Account → Setup), `?plan=` preselect, multi-year discount (10%/yr), API notification via Resend
+
+**New Files (provisum-app):**
+- `app/api/mapping/gap-review/route.ts` — Confirm/undo gap review
+- `app/api/mapping/gap-review/bulk/route.ts` — Bulk confirm
+- Schema: `user_gap_reviews` table definition in `db/schema.ts`
+
+**New Files (provisum-site):**
+- `app/get-started/page.tsx` + `get-started-flow.tsx` — Self-service purchase wizard
+- `app/api/get-started/route.ts` — Purchase notification endpoint
+
+**Schema Changes (applied via Supabase MCP SQL):**
+- CREATE TABLE `user_gap_reviews` (id, user_id, organization_id, review_status, change_impact_level, coverage_percent, uncovered_count, new_perm_count, source_role_count, target_role_count, reviewed_by, reviewed_at, review_notes, created_at, updated_at)
+- **Total: 58 tables** in Supabase Postgres
 
 ### Market Readiness Hardening (2026-04-05)
 
@@ -441,7 +482,7 @@ Commit `624dd8f` — full autonomous sprint. All features shipped in a single se
 - **DB tables created** — `mapping_feedback` + `incidents` tables created via Supabase MCP SQL (2026-03-31). `organization_id` NOT NULL applied on all entity tables.
 - **SSO activation** — SSO config is stored but actual IdP redirect requires Supabase Enterprise plan. MVP shows activation CTA.
 - **RLS deny-all** — All 55 tables now have RLS deny-all policies. App uses service role key to bypass.
-- **Tables count** — 57 total (app_users +2 columns, +contact_submissions table added 2026-04-05)
+- **Tables count** — 58 total (+user_gap_reviews added 2026-04-07)
 
 ---
 
@@ -498,7 +539,12 @@ sso_configurations         # SSO/SAML provider config per org (v1.2.0)
 evidence_package_runs      # SOX/ITGC evidence package generation history (v1.1.0)
 workstream_items           # Workstream tracking (v1.1.0)
 ```
-Total: 57 tables in Supabase Postgres.
+Total: 58 tables in Supabase Postgres.
+
+### New Tables (v1.3.0 → v1.4.0)
+```
+user_gap_reviews           # Per-user gap analysis review tracking (v1.4.0)
+```
 
 ### New Tables (v1.2.0 → v1.3.0)
 ```
