@@ -49,27 +49,38 @@ export async function POST() {
       .innerJoin(schema.personas, eq(schema.personas.id, schema.personaTargetRoleMappings.personaId))
       .where(eq(schema.personas.organizationId, orgId));
 
-    // 4. Get all target role permissions (permissionId level for matching)
+    // 4. Get all target role permissions (use permissionName for cross-system matching)
     const allTargetRolePerms = await db
       .select({
         targetRoleId: schema.targetRolePermissions.targetRoleId,
         targetPermissionId: schema.targetRolePermissions.targetPermissionId,
         permissionId: schema.targetPermissions.permissionId,
+        permissionName: schema.targetPermissions.permissionName,
       })
       .from(schema.targetRolePermissions)
       .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id));
 
-    // 5. Get source permission IDs for matching
+    // 5. Get source permission details for matching by name
     const sourcePermRows = await db
-      .select({ id: schema.sourcePermissions.id, permissionId: schema.sourcePermissions.permissionId })
+      .select({
+        id: schema.sourcePermissions.id,
+        permissionId: schema.sourcePermissions.permissionId,
+        permissionName: schema.sourcePermissions.permissionName,
+      })
       .from(schema.sourcePermissions);
     const sourcePermIdMap = new Map(sourcePermRows.map(r => [r.id, r.permissionId]));
+    const sourcePermNameMap = new Map(sourcePermRows.map(r => [r.id, r.permissionName]));
 
-    // Build lookup: targetRoleId → Set of permissionId strings
+    // Normalize permission key: use lowercased name for cross-system comparison,
+    // fall back to permissionId if name is null
+    const permKey = (name: string | null, id: string): string =>
+      name ? name.toLowerCase().trim() : id;
+
+    // Build lookup: targetRoleId → Set of normalized permission keys
     const targetRolePermMap = new Map<number, Set<string>>();
     for (const trp of allTargetRolePerms) {
       if (!targetRolePermMap.has(trp.targetRoleId)) targetRolePermMap.set(trp.targetRoleId, new Set());
-      targetRolePermMap.get(trp.targetRoleId)!.add(trp.permissionId);
+      targetRolePermMap.get(trp.targetRoleId)!.add(permKey(trp.permissionName, trp.permissionId));
     }
 
     // Build lookup: personaId → Set of targetRoleIds
@@ -108,17 +119,21 @@ export async function POST() {
         }
       }
 
-      // Check each source permission
+      // Check each source permission — match by name so equivalent capabilities
+      // across different systems are recognized (e.g. SAP ECC → S/4HANA)
       for (const spDbId of sourcePermIds) {
         const sourcePermId = sourcePermIdMap.get(spDbId);
         if (!sourcePermId) continue;
 
-        if (!coveredPermIds.has(sourcePermId)) {
+        const sourceName = sourcePermNameMap.get(spDbId);
+        const key = permKey(sourceName ?? null, sourcePermId);
+
+        if (!coveredPermIds.has(key)) {
           gapRecords.push({
             personaId: persona.id,
             sourcePermissionId: spDbId,
             gapType: "no_coverage",
-            notes: `Source permission ${sourcePermId} not covered by any mapped target role`,
+            notes: `Source permission ${sourcePermId} (${sourceName ?? "unnamed"}) not covered by any mapped target role`,
           });
         }
       }

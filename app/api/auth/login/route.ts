@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Use the email associated with the Supabase Auth account
-    const email = appUser.email || `${username}@provisum.demo`;
+    const email = appUser.email || `${username}@provisum.local`;
 
     // Create a Supabase client that can set cookies on the response
     const response = NextResponse.json({

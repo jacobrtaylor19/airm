@@ -71,7 +71,7 @@ async function main() {
   // 3. Create persona login accounts
   let created = 0;
   for (const persona of PERSONA_ACCOUNTS) {
-    const email = `${persona.username}@provisum.demo`;
+    const email = `${persona.username}@provisum.local`;
 
     // Create Supabase Auth user
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({

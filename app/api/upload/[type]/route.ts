@@ -693,7 +693,7 @@ async function commitUploadInner(
 
           // Create Supabase Auth user
           const supabaseAdmin = createAdminClient();
-          const authEmail = row.email?.trim() || `${row.username.trim()}@provisum.demo`;
+          const authEmail = row.email?.trim() || `${row.username.trim()}@provisum.local`;
           const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: authEmail,
             password: row.password,

@@ -90,6 +90,7 @@ export interface AdoptionUser {
   targetPermCount: number;
   newPermCount: number;
   lostPermCount: number;
+  continuedPermCount: number;
   direction: "gained" | "reduced" | "both";
 }
 
@@ -223,6 +224,7 @@ export async function getAggregateRiskAnalysis(
       ? db.select({
           sourceRoleId: schema.sourceRolePermissions.sourceRoleId,
           permissionId: schema.sourcePermissions.permissionId,
+          permissionName: schema.sourcePermissions.permissionName,
         })
         .from(schema.sourceRolePermissions)
         .innerJoin(schema.sourcePermissions, eq(schema.sourceRolePermissions.sourcePermissionId, schema.sourcePermissions.id))
@@ -232,6 +234,7 @@ export async function getAggregateRiskAnalysis(
       ? db.select({
           targetRoleId: schema.targetRolePermissions.targetRoleId,
           permissionId: schema.targetPermissions.permissionId,
+          permissionName: schema.targetPermissions.permissionName,
         })
         .from(schema.targetRolePermissions)
         .innerJoin(schema.targetPermissions, eq(schema.targetRolePermissions.targetPermissionId, schema.targetPermissions.id))
@@ -239,14 +242,20 @@ export async function getAggregateRiskAnalysis(
       : Promise.resolve([]),
   ]);
 
-  // Build: sourceRoleId -> Set<permissionId>
+  // Normalize permission key: use lowercased name for cross-system comparison,
+  // fall back to permissionId if name is null. This ensures "Enter Invoice" (source)
+  // matches "Enter Invoice" (target) even when system IDs differ (FB60 vs F0717).
+  const permKey = (name: string | null, id: string): string =>
+    name ? name.toLowerCase().trim() : id;
+
+  // Build: sourceRoleId -> Set<normalizedPermKey>
   const sourceRolePermMap = new Map<number, Set<string>>();
   for (const r of sourceRolePermRows) {
     if (!sourceRolePermMap.has(r.sourceRoleId)) sourceRolePermMap.set(r.sourceRoleId, new Set());
-    sourceRolePermMap.get(r.sourceRoleId)!.add(r.permissionId);
+    sourceRolePermMap.get(r.sourceRoleId)!.add(permKey(r.permissionName, r.permissionId));
   }
 
-  // Build: userId -> Set<sourcePermissionId>
+  // Build: userId -> Set<normalizedPermKey>
   const userSourcePerms = new Map<number, Set<string>>();
   for (const a of sourceRoleAssignments) {
     if (!userSourcePerms.has(a.userId)) userSourcePerms.set(a.userId, new Set());
@@ -259,7 +268,7 @@ export async function getAggregateRiskAnalysis(
   const targetRolePermMap = new Map<number, Set<string>>();
   for (const r of targetRolePermRows) {
     if (!targetRolePermMap.has(r.targetRoleId)) targetRolePermMap.set(r.targetRoleId, new Set());
-    targetRolePermMap.get(r.targetRoleId)!.add(r.permissionId);
+    targetRolePermMap.get(r.targetRoleId)!.add(permKey(r.permissionName, r.permissionId));
   }
 
   const userTargetPerms = new Map<number, Set<string>>();
@@ -327,6 +336,12 @@ export async function getAggregateRiskAnalysis(
     if (newCount > 10) usersWithNewAccess++;
     if (uncoveredCount > 10) usersWithReducedAccess++;
 
+    // Continued: permissions that exist in both source and target (same capability carried forward)
+    let continuedCount = 0;
+    for (const p of Array.from(source)) {
+      if (target.has(p)) continuedCount++;
+    }
+
     // Build adoption drill-down for users with significant permission changes
     if (newCount > 10 || uncoveredCount > 10) {
       const direction: "gained" | "reduced" | "both" =
@@ -341,6 +356,7 @@ export async function getAggregateRiskAnalysis(
         targetPermCount: target.size,
         newPermCount: newCount,
         lostPermCount: uncoveredCount,
+        continuedPermCount: continuedCount,
         direction,
       });
     }

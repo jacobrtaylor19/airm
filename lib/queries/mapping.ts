@@ -270,16 +270,31 @@ export async function getUserGapAnalysis(userId: number): Promise<UserGapAnalysi
     }
   }
 
-  // Source permission IDs and target permission IDs (unique)
-  const sourcePermIds = new Set(Array.from(sourcePermMap.keys()));
-  const targetPermIds = new Set(Array.from(targetPermMap.keys()));
+  // Build normalized name sets for cross-system comparison.
+  // Source/target systems use different permission IDs (e.g. FB60 vs F0717),
+  // so we compare by lowercased permission name to find equivalent capabilities.
+  const permKey = (name: string | null, id: string): string =>
+    name ? name.toLowerCase().trim() : id;
 
-  // Uncovered: source perms not in target
+  const sourcePermKeys = new Set<string>();
+  Array.from(sourcePermMap.keys()).forEach((id) => {
+    const p = sourcePerms.find(sp => sp.permissionId === id);
+    sourcePermKeys.add(permKey(p?.permissionName ?? null, id));
+  });
+
+  const targetPermKeys = new Set<string>();
+  Array.from(targetPermMap.keys()).forEach((id) => {
+    const p = targetPerms.find(tp => tp.permissionId === id);
+    targetPermKeys.add(permKey(p?.permissionName ?? null, id));
+  });
+
+  // Uncovered: source perms whose capability is not in target
   const uncovered: UserGapAnalysis["uncoveredPermissions"] = [];
   const seen = new Set<string>();
   for (const p of sourcePerms) {
-    if (!targetPermIds.has(p.permissionId) && !seen.has(p.permissionId)) {
-      seen.add(p.permissionId);
+    const key = permKey(p.permissionName, p.permissionId);
+    if (!targetPermKeys.has(key) && !seen.has(key)) {
+      seen.add(key);
       uncovered.push({
         permissionId: p.permissionId,
         permissionName: p.permissionName,
@@ -289,12 +304,13 @@ export async function getUserGapAnalysis(userId: number): Promise<UserGapAnalysi
     }
   }
 
-  // New: target perms not in source
+  // New: target perms whose capability is not in source
   const newPerms: UserGapAnalysis["newPermissions"] = [];
   const seenNew = new Set<string>();
   for (const p of targetPerms) {
-    if (!sourcePermIds.has(p.permissionId) && !seenNew.has(p.permissionId)) {
-      seenNew.add(p.permissionId);
+    const key = permKey(p.permissionName, p.permissionId);
+    if (!sourcePermKeys.has(key) && !seenNew.has(key)) {
+      seenNew.add(key);
       newPerms.push({
         permissionId: p.permissionId,
         permissionName: p.permissionName,
@@ -304,7 +320,7 @@ export async function getUserGapAnalysis(userId: number): Promise<UserGapAnalysi
     }
   }
 
-  const totalSource = sourcePermIds.size;
+  const totalSource = sourcePermKeys.size;
   const covered = totalSource - uncovered.length;
   const coveragePercent = totalSource > 0 ? Math.round((covered / totalSource) * 100) : 100;
 

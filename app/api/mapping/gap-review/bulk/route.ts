@@ -34,18 +34,22 @@ export async function POST(request: Request) {
 
       for (const userId of batch) {
         // Compute gap data per user
+        // Compare by permission_name (lowercased) instead of permission_id
+        // so that equivalent capabilities across source/target systems match
+        // (e.g. source "Enter Invoice" matches target "Enter Invoice" even though
+        // IDs differ: FB60 vs F0717). Falls back to permission_id when name is null.
         const gapData = await db.execute(sql`
           WITH src AS (
-            SELECT count(DISTINCT sp.permission_id) AS cnt,
-                   array_agg(DISTINCT sp.permission_id) AS ids
+            SELECT count(DISTINCT COALESCE(lower(trim(sp.permission_name)), sp.permission_id)) AS cnt,
+                   array_agg(DISTINCT COALESCE(lower(trim(sp.permission_name)), sp.permission_id)) AS ids
             FROM user_source_role_assignments usra
             JOIN source_role_permissions srp ON srp.source_role_id = usra.source_role_id
             JOIN source_permissions sp ON sp.id = srp.source_permission_id
             WHERE usra.user_id = ${userId}
           ),
           tgt AS (
-            SELECT count(DISTINCT tp.permission_id) AS cnt,
-                   array_agg(DISTINCT tp.permission_id) AS ids
+            SELECT count(DISTINCT COALESCE(lower(trim(tp.permission_name)), tp.permission_id)) AS cnt,
+                   array_agg(DISTINCT COALESCE(lower(trim(tp.permission_name)), tp.permission_id)) AS ids
             FROM user_target_role_assignments utra
             JOIN target_role_permissions trp ON trp.target_role_id = utra.target_role_id
             JOIN target_permissions tp ON tp.id = trp.target_permission_id

@@ -264,7 +264,7 @@ export function RiskAnalysisClient({ risk }: Props) {
                   <th className="pb-2 pr-3 font-medium">Department</th>
                   <th className="pb-2 pr-3 font-medium">Persona</th>
                   <th className="pb-2 pr-3 font-medium text-right">Source Perms</th>
-                  <th className="pb-2 pr-3 font-medium text-right">Target Perms</th>
+                  <th className="pb-2 pr-3 font-medium text-right">Continued</th>
                   <th className="pb-2 pr-3 font-medium text-right">New Access</th>
                   <th className="pb-2 pr-3 font-medium text-right">Removed</th>
                   <th className="pb-2 font-medium">Net Change</th>
@@ -279,7 +279,7 @@ export function RiskAnalysisClient({ risk }: Props) {
                   )
                   .slice(0, 100)
                   .map((u) => {
-                    const net = u.targetPermCount - u.sourcePermCount;
+                    const net = u.newPermCount - u.lostPermCount;
                     return (
                       <tr key={u.userId} className="border-b last:border-0 hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/users/${u.userId}`)}>
                         <td className="py-2 pr-3 font-medium">{u.userName}</td>
@@ -290,7 +290,11 @@ export function RiskAnalysisClient({ risk }: Props) {
                           ) : "—"}
                         </td>
                         <td className="py-2 pr-3 text-right tabular-nums">{u.sourcePermCount}</td>
-                        <td className="py-2 pr-3 text-right tabular-nums">{u.targetPermCount}</td>
+                        <td className="py-2 pr-3 text-right tabular-nums">
+                          {u.continuedPermCount > 0 ? (
+                            <span className="text-emerald-600 font-medium">{u.continuedPermCount}</span>
+                          ) : "0"}
+                        </td>
                         <td className="py-2 pr-3 text-right tabular-nums">
                           {u.newPermCount > 0 ? (
                             <span className="text-blue-600 font-medium">+{u.newPermCount}</span>

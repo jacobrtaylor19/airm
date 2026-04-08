@@ -698,7 +698,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
 
   for (const u of testUsers) {
     const ouId = u.orgUnit ? (orgUnitIdMap.get(u.orgUnit) ?? null) : null;
-    const email = `${u.username}@provisum.demo`;
+    const email = `${u.username}@provisum.local`;
     const supabaseAuthId = await createSupabaseAuthUser(email, u.password);
 
     await db.insert(schema.appUsers).values({
@@ -755,7 +755,7 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
 
   for (const u of demoUsers) {
     const ouId = u.orgUnit ? (orgUnitIdMap.get(u.orgUnit) ?? null) : null;
-    const email = `${u.username}@provisum.demo`;
+    const email = `${u.username}@provisum.local`;
     const supabaseAuthId = await createSupabaseAuthUser(email, demoPassword);
 
     await db.insert(schema.appUsers).values({

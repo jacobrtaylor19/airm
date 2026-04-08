@@ -39,8 +39,9 @@ export async function createWorkflowNotification(params: {
       .from(schema.appUsers)
       .where(eq(schema.appUsers.id, params.toUserId));
 
-    if (recipient?.email) {
+    if (recipient?.email && !recipient.email.endsWith("@provisum.local")) {
       // Don't await — fire and forget
+      // Skip placeholder demo emails (not a real domain)
       sendNotificationEmail(
         recipient.email,
         params.subject,

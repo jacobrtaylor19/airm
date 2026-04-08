@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     // Create Supabase Auth user via admin API
     const supabaseAdmin = createAdminClient();
-    const authEmail = email || `${username}@provisum.demo`;
+    const authEmail = email || `${username}@provisum.local`;
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: authEmail,
