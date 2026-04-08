@@ -92,7 +92,7 @@ export function DemoGate({ children }: { children: ReactNode }) {
         {/* Glass card */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-8 shadow-2xl backdrop-blur-xl">
           <h2 className="text-xl font-semibold text-white text-center mb-1">
-            Request Demo Access
+            Access the Live Demo
           </h2>
           <p className="text-sm text-slate-400 text-center mb-6">
             Enter your details to explore the live demo environment.
