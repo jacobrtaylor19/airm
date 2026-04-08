@@ -33,6 +33,7 @@ import {
   GitBranch,
   Database,
   GraduationCap,
+  LifeBuoy,
   HelpCircle as FallbackIcon,
   type LucideIcon,
 } from "lucide-react";
@@ -72,6 +73,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   GitBranch,
   Database,
   GraduationCap,
+  LifeBuoy,
 };
 
 /** Resolve an icon name string to a Lucide React component. */

@@ -188,11 +188,12 @@ export const MODULES: AppModule[] = [
     visibleTo: ALL,
     nav: [
       { href: "/help", label: "Knowledge Base", iconName: "HelpCircle", isDefault: true },
+      { href: "/support", label: "Support", iconName: "LifeBuoy" },
       { href: "/methodology", label: "How It Works", iconName: "BookOpen" },
       { href: "/overview", label: "Platform Overview", iconName: "Info" },
       { href: "/quick-reference", label: "Quick Reference", iconName: "BookOpen" },
     ],
-    routePrefixes: ["/help", "/methodology", "/overview", "/quick-reference"],
+    routePrefixes: ["/help", "/support", "/methodology", "/overview", "/quick-reference"],
   },
 
   // 9. Admin
