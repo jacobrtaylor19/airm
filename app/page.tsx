@@ -465,7 +465,7 @@ export default async function Home() {
       {/* Footer */}
       <footer className="bg-brand-accent-dark border-t border-slate-700 px-6 py-8 text-center">
         <p className="text-xs text-slate-500">
-          &copy; {new Date().getFullYear()} Provisum. All rights reserved.
+          &copy; {new Date().getFullYear()} Provisum Corp. All rights reserved.
         </p>
         <p className="mt-1 text-xs text-slate-600">
           This is a demonstration environment with simulated data.
