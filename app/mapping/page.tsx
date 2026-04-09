@@ -8,7 +8,6 @@ import {
   getPersonaSourceSystems,
   getGapAnalysisSummary,
   getUserRefinementDetails,
-  getRemappingQueue,
   getBatchUserGapSummary,
 } from "@/lib/queries";
 import { getSetting } from "@/lib/settings";
@@ -18,7 +17,6 @@ import { getUserScope } from "@/lib/scope";
 import { getReleasesForAppUser, getReleaseUserIds } from "@/lib/releases";
 import { cookies } from "next/headers";
 import { MappingClient } from "./mapping-client";
-import { RemappingQueue } from "./remapping-queue";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -104,16 +102,16 @@ export default async function MappingPage() {
     }
   });
 
-  // Get remapping queue items (scoped to mapper's org units)
-  const scopedIds = user.role === "mapper" ? await getUserScope(user) : null;
-  const remappingQueueItems = await getRemappingQueue(orgId, scopedIds);
+  // Count remap_required assignments for the tab badge
+  const remapCount = refinementDetails.filter(u =>
+    u.allAssignments.some(a => a.status === "remap_required")
+  ).length;
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
         Map personas to target security roles using least-access principles.
       </p>
-      <RemappingQueue items={remappingQueueItems} />
       <MappingClient
         personas={personas}
         personaDetails={personaDetails}
@@ -126,6 +124,7 @@ export default async function MappingPage() {
         excessThreshold={excessThreshold}
         userRole={user.role}
         userGapData={userGapData}
+        remapCount={remapCount}
       />
     </div>
   );

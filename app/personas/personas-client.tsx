@@ -49,7 +49,7 @@ export function PersonasPageClient({
   isDemo?: boolean;
 }) {
   const router = useRouter();
-  const isAdminRole = ["system_admin", "admin"].includes(userRole);
+  const isAdminRole = ["system_admin", "admin", "mapper", "coordinator"].includes(userRole);
 
   // Expandable list state
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
@@ -377,7 +377,7 @@ export function PersonasPageClient({
                 {personas.length > 0 ? "Regenerate Personas" : "Generate Personas"}
               </Button>
             )}
-            {isAdminRole && (
+            {["system_admin", "admin", "mapper", "coordinator"].includes(userRole) && (
               <Button
                 variant="outline"
                 size="sm"
@@ -390,7 +390,7 @@ export function PersonasPageClient({
           </div>
 
           {/* Bulk action bar */}
-          {["system_admin", "admin"].includes(userRole) && selectedIds.size > 0 && (
+          {isAdminRole && selectedIds.size > 0 && (
             <BulkDeleteBar
               selectedCount={selectedIds.size}
               entityLabel="personas"

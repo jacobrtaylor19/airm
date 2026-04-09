@@ -12,6 +12,7 @@ import { AutoMapProgress } from "./auto-map-progress";
 import { RefinementsTab, GapAnalysisTab } from "./user-refinements";
 import { AISuggestionsModal } from "./ai-suggestions-modal";
 import { EmptyState } from "@/components/shared/empty-state";
+import { Badge } from "@/components/ui/badge";
 import { Route, AlertTriangle } from "lucide-react";
 
 export interface PersonaDetailInfo {
@@ -31,9 +32,10 @@ interface MappingClientProps {
   excessThreshold?: number;
   userRole?: string;
   userGapData?: UserGapSummaryRow[];
+  remapCount?: number;
 }
 
-export function MappingClient({ personas, personaDetails, targetRoles, personaSourceSystems = {}, refinementDetails = [], excessThreshold = 30, userRole, userGapData = [] }: MappingClientProps) {
+export function MappingClient({ personas, personaDetails, targetRoles, personaSourceSystems = {}, refinementDetails = [], excessThreshold = 30, userRole, userGapData = [], remapCount = 0 }: MappingClientProps) {
   const [selectedPersonaId, setSelectedPersonaId] = useState<number | null>(personas[0]?.personaId ?? null);
   const [autoMapping, setAutoMapping] = useState(false);
   const [autoMapProgress, setAutoMapProgress] = useState<{ processed: number; total: number } | null>(null);
@@ -223,6 +225,12 @@ export function MappingClient({ personas, personaDetails, targetRoles, personaSo
       <TabsList>
         <TabsTrigger value="persona-mapping">Persona Mapping</TabsTrigger>
         <TabsTrigger value="refinements">User Role Assignments</TabsTrigger>
+        <TabsTrigger value="remapping" className="gap-1.5">
+          Re-mapping
+          {remapCount > 0 && (
+            <Badge variant="outline" className="ml-1 h-5 px-1.5 text-[10px] bg-amber-100 text-amber-700 border-amber-200">{remapCount}</Badge>
+          )}
+        </TabsTrigger>
         <TabsTrigger value="gap-analysis">Gap Analysis</TabsTrigger>
       </TabsList>
 
@@ -324,7 +332,18 @@ export function MappingClient({ personas, personaDetails, targetRoles, personaSo
         />
       </TabsContent>
 
-      {/* Tab C: Gap Analysis — User-Level Access Change Workbench */}
+      {/* Tab C: Re-mapping — assignments sent back for rework */}
+      <TabsContent value="remapping" className="mt-4">
+        <RefinementsTab
+          refinementDetails={refinementDetails}
+          targetRoles={targetRoles}
+          totalUsersWithAssignments={refinementDetails.filter(u => u.allAssignments.some(a => a.status === "remap_required")).length}
+          userRole={userRole}
+          fixedStatusFilter="remap_required"
+        />
+      </TabsContent>
+
+      {/* Tab D: Gap Analysis — User-Level Access Change Workbench */}
       <TabsContent value="gap-analysis" className="mt-4">
         <GapAnalysisTab
           userGapData={userGapData}

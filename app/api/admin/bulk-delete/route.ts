@@ -23,7 +23,7 @@ type EntityType = keyof typeof ALLOWED_ENTITIES;
 
 export async function POST(request: NextRequest) {
   const user = await getSessionUser();
-  if (!user || !["admin", "system_admin"].includes(user.role)) {
+  if (!user || !["admin", "system_admin", "mapper", "coordinator"].includes(user.role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 

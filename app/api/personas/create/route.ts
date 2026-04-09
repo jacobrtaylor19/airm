@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
-  if (!user || !["admin", "system_admin", "mapper"].includes(user.role)) {
+  if (!user || !["admin", "system_admin", "mapper", "coordinator"].includes(user.role)) {
     return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
   }
 

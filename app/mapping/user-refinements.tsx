@@ -60,6 +60,8 @@ export interface RefinementsTabProps {
   userRole?: string;
   preSelectedUserId?: number | null;
   onUserSelected?: () => void;
+  /** When set, pre-filter to only show users with at least one assignment in this status */
+  fixedStatusFilter?: string;
 }
 
 export function RefinementsTab({
@@ -69,6 +71,7 @@ export function RefinementsTab({
   userRole,
   preSelectedUserId,
   onUserSelected,
+  fixedStatusFilter,
 }: RefinementsTabProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -94,21 +97,26 @@ export function RefinementsTab({
   const [localDetails, setLocalDetails] = useState(refinementDetails);
   const router = useRouter();
 
+  // When fixedStatusFilter is set (e.g. "remap_required"), pre-filter to only those users
+  const baseDetails = fixedStatusFilter
+    ? localDetails.filter(u => u.allAssignments.some(a => a.status === fixedStatusFilter))
+    : localDetails;
+
   const isExecutor = userRole && ["system_admin", "admin", "mapper"].includes(userRole);
-  const selectedUser = localDetails.find(u => u.userId === selectedUserId);
+  const selectedUser = baseDetails.find(u => u.userId === selectedUserId);
 
   // Unique departments for filter
-  const departments = Array.from(new Set(localDetails.map(u => u.department).filter((d): d is string => d !== null))).sort();
+  const departments = Array.from(new Set(baseDetails.map(u => u.department).filter((d): d is string => d !== null))).sort();
 
   // Status counts
-  const statusCounts = localDetails.reduce((acc, u) => {
+  const statusCounts = baseDetails.reduce((acc, u) => {
     const s = getUserStatus(u);
     acc[s] = (acc[s] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
   // Filter users
-  const filteredDetails = localDetails.filter(u => {
+  const filteredDetails = baseDetails.filter(u => {
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!u.userName.toLowerCase().includes(q) &&
