@@ -4,6 +4,29 @@ All notable feature additions and changes are documented here. Most recent first
 
 ---
 
+## [1.4.1] — 2026-04-11 — Security Hardening + Structured Logging + QA Refresh
+
+### Security
+- **Cron endpoint timing-safe comparison**: `/api/cron/exports` now uses `crypto.timingSafeEqual` instead of string equality
+- **RLS + deny-all policies**: Enabled on all 55 tables in demo DB (prod already had RLS)
+- **Sentry source maps**: Set `SENTRY_ORG` + `SENTRY_PROJECT` env vars on both provisum-demo and provisum-prod
+
+### Structured Logging
+- **Console cleanup**: Replaced all 25 `console.error`/`console.log` calls across 17 API routes with `reportError`/`reportMessage` from `lib/monitoring.ts`
+- **Rate limiter**: Fail-open path now reports to Sentry via `reportError` instead of `console.error`
+
+### QA & Testing
+- **QA strategy refresh**: Updated `docs/QA_TESTING_STRATEGY.md` from v0.7.0 to v1.4.0
+- **Test results**: 92 unit tests (Vitest) + 130 E2E tests (Playwright) — all passing against demo.provisum.io
+- **Code review**: Middleware auth model verified secure, SQL injection safe, no XSS, no exposed secrets
+
+### Documentation
+- **API reference**: Added `docs/API_REFERENCE.md`
+- **Roadmap refresh**: Updated `docs/ROADMAP.md` and `docs/product/ROADMAP.md` to reflect current state
+- **Tech debt verification**: Spot-checked all 20 items — 19/20 confirmed resolved, 1 corrected (console.log cleanup was incomplete)
+
+---
+
 ## [1.4.0] — 2026-04-07 — Gap Analysis Redesign + Approval UX + Sales Site Overhaul
 
 ### Gap Analysis → User Access Change Workbench

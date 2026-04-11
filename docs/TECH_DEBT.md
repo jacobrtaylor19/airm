@@ -1,6 +1,8 @@
 # Provisum — Technical Debt Register
 
-**Generated:** 2026-03-28 | **Updated:** 2026-03-31 | **Version:** v1.0.0 | **Codebase:** 40+ pages, ~143 files, Supabase Postgres + Vercel
+**Generated:** 2026-03-28 | **Updated:** 2026-04-11 | **Version:** v1.4.1 | **Codebase:** 40+ pages, ~143 files, Supabase Postgres + Vercel
+
+> **Verification (2026-04-11):** All 20 items spot-checked. 19/20 confirmed resolved. Item 18 (console.log cleanup) was incomplete — 25 raw console calls remained in API routes. Fixed in v1.4.1 commit `7038bfd`.
 
 ---
 

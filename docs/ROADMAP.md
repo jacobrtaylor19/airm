@@ -2,7 +2,7 @@
 
 This document outlines planned features and improvements. Sprint 2 is the active build queue. Items below it are prioritised but not yet scheduled.
 
-*Last updated: April 6, 2026 — v1.3.0*
+*Last updated: April 11, 2026 — v1.4.1*
 
 ---
 
@@ -11,7 +11,7 @@ This document outlines planned features and improvements. Sprint 2 is the active
 | # | Action | Blocks | Status |
 |---|--------|--------|--------|
 | 1-6 | ~~Sentry DSN, auth token, Resend API key, app URL, cron secret~~ | Various | ✅ ALL DONE (2026-03-30) |
-| 7 | **Set `SENTRY_ORG` + `SENTRY_PROJECT`** on Vercel (provisum-demo/prod) | Source map uploads to Sentry | ⬜ TODO |
+| 7 | ~~Set `SENTRY_ORG` + `SENTRY_PROJECT`~~ on Vercel (provisum-demo/prod) | Source map uploads to Sentry | ✅ DONE (2026-04-11) |
 
 ---
 
