@@ -5,6 +5,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { generateAIMappingSuggestions } from "@/lib/ai/mapping-suggestions";
+import { reportError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -143,7 +144,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ suggestions });
   } catch (error) {
-    console.error("AI suggestion error:", error);
+    reportError(error instanceof Error ? error : new Error(String(error)), { context: "ai-suggestions" });
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to generate AI suggestions" },
       { status: 500 }

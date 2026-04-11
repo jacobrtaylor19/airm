@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { getSessionUser } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
 import { sendNotificationEmail } from "@/lib/email";
+import { reportError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, ticketNumber });
   } catch (error) {
-    console.error("[support] Error:", error);
+    reportError(error instanceof Error ? error : new Error(String(error)), { context: "support" });
     return NextResponse.json(
       { error: "Failed to submit ticket" },
       { status: 500 }

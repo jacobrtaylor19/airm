@@ -4,6 +4,7 @@ import { getOrgId } from "@/lib/org-context";
 import { createSecurityWorkItem, updateConflictResolutionStatus } from "@/lib/queries/sod-triage";
 import { auditLog } from "@/lib/audit";
 import { notifyUsersWithRoles } from "@/lib/notifications";
+import { reportError } from "@/lib/monitoring";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, workItemId: workItem.id });
   } catch (err) {
-    console.error("route-to-security error:", err);
+    reportError(err instanceof Error ? err : new Error(String(err)), { context: "route-to-security" });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

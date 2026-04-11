@@ -4,6 +4,7 @@ import { getSetting } from "@/lib/settings";
 import { seedDatabase } from "@/db/seed";
 import { db } from "@/db";
 import { isProduction } from "@/lib/env";
+import { reportError, reportMessage } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -21,12 +22,12 @@ export async function POST() {
   try {
     const activePack = await getSetting("active_demo_pack") || "default";
 
-    console.log(`[demo-reset] Starting reset with pack: ${activePack}`);
-    console.log(`[demo-reset] cwd: ${process.cwd()}`);
+    reportMessage(`[demo-reset] Starting reset with pack: ${activePack}`, "info");
+    reportMessage(`[demo-reset] cwd: ${process.cwd()}`, "info");
 
     await seedDatabase(db, activePack);
 
-    console.log(`[demo-reset] Reset complete`);
+    reportMessage("[demo-reset] Reset complete", "info");
 
     return NextResponse.json({
       success: true,
@@ -34,8 +35,8 @@ export async function POST() {
       message: `Demo environment "${activePack}" has been reset.`,
     });
   } catch (error) {
-    console.error("[demo-reset] Failed:", error instanceof Error ? error.message : error);
-    console.error("[demo-reset] Stack:", error instanceof Error ? error.stack : "no stack");
+    reportError(error instanceof Error ? error : new Error(String(error)), { context: "demo-reset" });
+    
     const detail = error instanceof Error ? error.message : String(error);
     return NextResponse.json({ error: "Failed to reset demo environment", detail }, { status: 500 });
   }

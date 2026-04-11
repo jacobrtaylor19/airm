@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
+import { reportError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 120;
@@ -166,7 +167,7 @@ export async function POST() {
       personasClean: personasAnalyzed - personasWithGaps,
     });
   } catch (error) {
-    console.error("[gap-analysis] Failed:", error);
+    reportError(error instanceof Error ? error : new Error(String(error)), { context: "gap-analysis" });
     return NextResponse.json(
       { error: "Gap analysis failed", detail: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 },

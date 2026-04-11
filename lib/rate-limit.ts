@@ -8,6 +8,7 @@
 
 import { db } from "@/db";
 import { sql } from "drizzle-orm";
+import { reportError } from "@/lib/monitoring";
 
 /**
  * Check and increment a rate limit counter.
@@ -61,7 +62,7 @@ export async function rateLimit(
   } catch (err) {
     // If DB is unavailable, fall through (don't block requests due to rate limiter failure)
     // Log the failure so it's visible in monitoring
-    console.error("[rate-limit] DB error, failing open:", err instanceof Error ? err.message : String(err));
+    reportError(err instanceof Error ? err : new Error(String(err)), { context: "rate-limit DB error, failing open" });
     return { allowed: true, remaining: limit - 1, resetAt: now + windowMs };
   }
 }

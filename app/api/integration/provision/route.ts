@@ -7,6 +7,7 @@ import { eq } from "drizzle-orm";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { validateApiKey } from "@/lib/integration-auth";
 import { safeError } from "@/lib/errors";
+import { reportError, reportMessage } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -54,7 +55,7 @@ export async function POST(request: Request) {
 
     const { externalId, customerName, customerEmail, company, orgName, plan, licenseYears } = parsed.data;
 
-    console.log(`[provision] Starting provisioning for ${customerEmail} (${plan} plan, ${licenseYears}yr)`);
+    reportMessage(`[provision] Starting provisioning for ${customerEmail} (${plan} plan, ${licenseYears}yr)`, "info");
 
     // 3. Check email doesn't already exist in appUsers
     const [existing] = await db
@@ -109,7 +110,7 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    console.log(`[provision] Created organization ${org.id} (slug: ${slug})`);
+    reportMessage(`[provision] Created organization ${org.id} (slug: ${slug})`, "info");
 
     // 7. Create Supabase Auth user (no password — they'll set it via invite)
     const supabaseAdmin = createAdminClient();
@@ -119,7 +120,7 @@ export async function POST(request: Request) {
     });
 
     if (authError || !authData.user) {
-      console.error(`[provision] Supabase auth error:`, authError?.message);
+      reportError(new Error(authError?.message || "Unknown auth error"), { context: "provision-supabase-auth" });
       return NextResponse.json(
         { success: false, error: `Failed to create auth user: ${authError?.message || "Unknown error"}` },
         { status: 500 }
@@ -146,7 +147,7 @@ export async function POST(request: Request) {
       })
       .returning();
 
-    console.log(`[provision] Created app user ${appUser.id} (admin) for org ${org.id}`);
+    reportMessage(`[provision] Created app user ${appUser.id} (admin) for org ${org.id}`, "info");
 
     // 9. Generate invite token (7-day expiry for new customers)
     const token = crypto.randomUUID();
@@ -179,7 +180,7 @@ export async function POST(request: Request) {
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://app.provisum.io";
     const setupUrl = `${baseUrl}/setup?token=${token}`;
 
-    console.log(`[provision] Provisioning complete for ${customerEmail}`);
+    reportMessage(`[provision] Provisioning complete for ${customerEmail}`, "info");
 
     return NextResponse.json({
       success: true,
@@ -190,7 +191,7 @@ export async function POST(request: Request) {
       environmentUrl: baseUrl,
     });
   } catch (err: unknown) {
-    console.error(`[provision] Error:`, err);
+    reportError(err instanceof Error ? err : new Error(String(err)), { context: "provision" });
     const message = safeError(err, "Provisioning failed");
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }

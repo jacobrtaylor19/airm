@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { sendNotificationEmail } from "@/lib/email";
 import { withRateLimit } from "@/lib/rate-limit-response";
 import { RATE_LIMIT_PRESETS } from "@/lib/rate-limit-memory";
+import { reportError } from "@/lib/monitoring";
 
 export async function POST(req: NextRequest) {
   const limited = withRateLimit(req, RATE_LIMIT_PRESETS.FORM);
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("[demo/register] Error:", err);
+    reportError(err instanceof Error ? err : new Error(String(err)), { context: "demo/register" });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

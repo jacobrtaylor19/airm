@@ -1,16 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDueExports, markExportCompleted } from "@/lib/scheduled-exports";
 import { reportError, reportMessage } from "@/lib/monitoring";
+import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 
 // Vercel cron jobs call this endpoint
 export async function GET(req: NextRequest) {
-  // Verify cron secret
+  // Verify cron secret (constant-time comparison to prevent timing attacks)
   const authHeader = req.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || !authHeader) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const expected = `Bearer ${cronSecret}`;
+  const a = Buffer.from(authHeader);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

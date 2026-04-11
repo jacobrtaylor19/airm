@@ -4,6 +4,7 @@ import * as schema from "@/db/schema";
 import { eq, count, sql, isNotNull, and } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
+import { reportError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 
@@ -249,7 +250,7 @@ export async function GET() {
     users: enrichedChain,
   });
   } catch (error) {
-    console.error("[validation] Query failed:", error);
+    reportError(error instanceof Error ? error : new Error(String(error)), { context: "validation" });
     return NextResponse.json(
       { error: "Failed to load validation data", detail: error instanceof Error ? error.message : "Unknown error" },
       { status: 500 }

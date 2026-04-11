@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { updateWorkItemStatus } from "@/lib/queries/sod-triage";
+import { reportError } from "@/lib/monitoring";
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await getSessionUser();
@@ -27,7 +28,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     await updateWorkItemStatus(workItemId, status, securityNotes);
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("work-item update error:", err);
+    reportError(err instanceof Error ? err : new Error(String(err)), { context: "work-item-update" });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }

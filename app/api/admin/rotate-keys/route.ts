@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { checkBulkRate } from "@/lib/rate-limit-middleware";
 import { rotateAllSettings } from "@/lib/encryption";
 import { safeError } from "@/lib/errors";
+import { reportError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
       total: result.total,
     });
   } catch (err) {
-    console.error("Key rotation failed:", err);
+    reportError(err instanceof Error ? err : new Error(String(err)), { context: "key-rotation" });
     return NextResponse.json(
       { error: safeError(err, "Key rotation failed") },
       { status: 500 }

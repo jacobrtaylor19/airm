@@ -3,6 +3,7 @@ import { getSessionUser } from "@/lib/auth";
 import { getOrgIdForInsert } from "@/lib/org-context";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
+import { reportError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ id: inserted.id, ok: true });
   } catch (error) {
-    console.error("Feedback save error:", error);
+    reportError(error instanceof Error ? error : new Error(String(error)), { context: "feedback-save" });
     return NextResponse.json(
       { error: "Failed to save feedback" },
       { status: 500 }

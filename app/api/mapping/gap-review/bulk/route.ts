@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { sql } from "drizzle-orm";
 import { getSessionUser } from "@/lib/auth";
 import { getOrgId } from "@/lib/org-context";
+import { reportError } from "@/lib/monitoring";
 
 export const dynamic = "force-dynamic";
 
@@ -121,7 +122,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, confirmed });
   } catch (error) {
-    console.error("[gap-review-bulk] Failed:", error);
+    reportError(error instanceof Error ? error : new Error(String(error)), { context: "gap-review-bulk" });
     return NextResponse.json(
       { error: "Bulk gap review failed", detail: error instanceof Error ? error.message : "Unknown" },
       { status: 500 }

@@ -7,6 +7,7 @@ import { createWorkflowNotification } from "@/lib/notifications";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { eq } from "drizzle-orm";
+import { reportError } from "@/lib/monitoring";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const user = await getSessionUser();
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       roleName: result.roleName,
     });
   } catch (err) {
-    console.error("work-item complete error:", err);
+    reportError(err instanceof Error ? err : new Error(String(err)), { context: "work-item-complete" });
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
