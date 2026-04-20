@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import type { SodConflictDetailed, WithinRoleViolation } from "@/lib/queries";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
 
 import { SodSummaryCards } from "./sod-summary-cards";
 import type { SodSummary } from "./sod-summary-cards";
@@ -286,17 +287,25 @@ export function SodPageClient({
   return (
     <div className="space-y-6">
       {/* Action Bar */}
-      {userRole && ["system_admin", "admin", "mapper"].includes(userRole) && (
-        <div className="flex items-center gap-3">
-          <Button onClick={runAnalysis} disabled={running} size="sm" className="bg-teal-500 hover:bg-teal-600 text-white">
-            {running ? (
-              <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
-            ) : (
-              <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
-            )}
-          </Button>
-        </div>
-      )}
+      <div className="flex items-center justify-between gap-3">
+        {userRole && ["system_admin", "admin", "mapper"].includes(userRole) ? (
+          <div className="flex items-center gap-3">
+            <Button onClick={runAnalysis} disabled={running} size="sm" className="bg-teal-500 hover:bg-teal-600 text-white">
+              {running ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Running...</>
+              ) : (
+                <><Sparkles className="h-4 w-4 mr-2" /> Run SOD Analysis</>
+              )}
+            </Button>
+          </div>
+        ) : <div />}
+        <HelpTooltip
+          slug="sod-conflict-resolution"
+          label="Learn about SOD conflicts and resolution"
+          size="md"
+          className="text-muted-foreground"
+        />
+      </div>
 
       {/* Summary Cards */}
       <SodSummaryCards summary={summary} />

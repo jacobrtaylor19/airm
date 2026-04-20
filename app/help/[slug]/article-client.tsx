@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, ChevronRight, MessageCircle } from "lucide-react";
 import { HELP_CATEGORIES } from "@/content/help/articles";
+import { ArticleFeedback } from "./article-feedback";
 
 interface ArticleData {
   slug: string;
@@ -179,6 +180,11 @@ export function ArticleClient({ article, related }: Props) {
           />
         </CardContent>
       </Card>
+
+      {/* Article feedback */}
+      <div className="flex justify-end py-2">
+        <ArticleFeedback slug={article.slug} />
+      </div>
 
       {/* Ask Lumen */}
       <Card className="border-teal-200 bg-teal-50/30">

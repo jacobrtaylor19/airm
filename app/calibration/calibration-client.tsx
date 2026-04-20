@@ -20,6 +20,7 @@ import {
   Brain,
 } from "lucide-react";
 import { toast } from "sonner";
+import { HelpTooltip } from "@/components/ui/help-tooltip";
 
 interface Assignment {
   assignmentId: number;
@@ -138,9 +139,10 @@ export default function CalibrationClient({ userRole }: { userRole: string }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground inline-flex items-center gap-1">
             Review low-confidence AI persona assignments. Accept, reassign, or
             remove.
+            <HelpTooltip slug="ai-confidence-scores" label="Learn about confidence scores" />
           </p>
         </div>
         <div className="flex items-center gap-3">

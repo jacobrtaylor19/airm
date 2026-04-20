@@ -620,6 +620,627 @@ As an approver, you review role assignments that mappers have submitted and eith
 
 Approved users are locked and ready for provisioning export. You can view approved users in the Approvals module under the "Approved" filter tab.`,
   },
+  {
+    slug: "mapping-queue",
+    title: "The Mapping Queue",
+    summary: "How the queue is structured, what the status columns mean, and how to filter efficiently.",
+    category: "workflow",
+    roles: MAPPER_ROLES,
+    relatedSlugs: ["bulk-mapping", "submitting-for-approval", "overriding-ai-suggestions"],
+    content: `## The Mapping Queue
+
+The mapping queue is the mapper's primary workspace. Found at **/mapping**, it shows the users and assignments in your scope that need attention.
+
+### Tabs
+
+The queue has four tabs:
+
+- **Personas** — your list of security personas with mapping status per persona
+- **User Role Assignments** — individual user-to-role assignments with status badges
+- **Refinements** — low-confidence or flagged assignments that need human review
+- **Re-mapping** — assignments with \`remap_required\` status, sent back by approvers or triggered by target role changes
+
+### Status Columns
+
+Each row shows its current workflow status. The common states you'll see:
+
+- **Draft** — editable, not yet submitted for review
+- **Pending Review** — locked, awaiting SOD analysis
+- **SOD Rejected** — SOD conflicts found, needs resolution before approval
+- **Compliance Approved** — SOD clean, ready for approver
+- **Ready for Approval** — high-confidence assignments auto-promoted
+- **Approved** — final state, ready for provisioning export
+
+### Filters
+
+Each tab has filters for status, release, and (where relevant) department. Your mapping queue is scoped to your assigned org unit and its descendants — you won't see users outside your scope.
+
+### What to Do First
+
+1. Start with **Refinements** — these are the highest-leverage edits
+2. Check **Re-mapping** — these are assignments the system explicitly wants you to revisit
+3. Clean up any **Draft** rows older than a few days
+4. Work through **SOD Rejected** with the compliance officer if needed`,
+  },
+  {
+    slug: "bulk-mapping",
+    title: "Bulk Mapping Operations",
+    summary: "When to use bulk mapping, how to apply changes across multiple users or personas, and when NOT to.",
+    category: "workflow",
+    roles: MAPPER_ROLES,
+    relatedSlugs: ["mapping-queue", "overriding-ai-suggestions"],
+    content: `## Bulk Mapping Operations
+
+Bulk mapping lets you apply the same mapping decision to multiple personas or users at once. Used well, it's a significant time-saver. Used badly, it propagates errors at scale.
+
+### Bulk Persona Mapping
+
+On the **Personas** tab, select multiple personas using the checkboxes, then click **Bulk Assign**. You can assign the same target role to all selected personas in one action. Useful when several personas in the same business function share the same baseline access.
+
+### Bulk Submit for Review
+
+Select multiple rows in **User Role Assignments** and click **Submit Selected** to move them all to \`pending_review\`. The system will run SOD analysis on each in the background.
+
+### Bulk Delete
+
+Admins and mappers can delete multiple assignments via **Bulk Delete**. This is destructive — there is no undo. The action is audit-logged.
+
+### When NOT to Bulk Map
+
+- When personas have different business functions (even if the names look similar)
+- When you haven't reviewed the AI confidence scores for each row
+- When SOD implications differ across the selection
+- When you're in a hurry — bulk mapping under time pressure is how errors creep in
+
+### Safety Net
+
+Every bulk action is audit-logged with your user ID, timestamp, and the list of affected records. If you discover a mistake, the audit log tells you exactly what to revert.`,
+  },
+  {
+    slug: "overriding-ai-suggestions",
+    title: "Overriding AI Suggestions",
+    summary: "How the override flow works, what happens downstream, and when an override is warranted.",
+    category: "workflow",
+    roles: MAPPER_ROLES,
+    relatedSlugs: ["mapping-queue", "ai-confidence-scores"],
+    content: `## Overriding AI Suggestions
+
+The AI mapping engine proposes persona-to-role mappings with a confidence score. You are the final decision maker — overrides are expected and sometimes required.
+
+### How the Override Flow Works
+
+1. The AI suggests a target role with a confidence score and reasoning
+2. You open the **AI Suggest** modal on the mapping workspace
+3. Review the AI's reasoning, permission overlap percentage, and historical acceptance rate
+4. Accept the suggestion, choose a different role, or write in a custom assignment
+5. Your decision is recorded in the \`mapping_feedback\` table
+
+### When to Override
+
+- **Low confidence (<60%)** — always review. The AI is flagging uncertainty.
+- **Business function mismatch** — if the AI suggests a role that doesn't match the user's department, override it.
+- **SOD conflict that can't be mitigated** — if accepting the suggestion would create an unavoidable conflict, pick a different role.
+- **New regulatory requirement** — if policy has changed since the AI was last tuned, your override reflects the new policy.
+
+### What Happens Downstream
+
+Your override becomes training data for the next run. The composite confidence formula weights:
+
+- **60%** AI reasoning
+- **30%** permission overlap
+- **10%** historical acceptance rate
+
+So if you consistently override a specific AI pattern, the system learns to deprioritize that suggestion over time.
+
+### Notes
+
+If you override, leave a short note explaining why. Approvers review overrides more carefully than accepted suggestions — a clear note saves them time and reduces back-and-forth.`,
+  },
+  {
+    slug: "submitting-for-approval",
+    title: "Submitting for Approval",
+    summary: "What happens when you submit a mapping and what the approver sees on their end.",
+    category: "workflow",
+    roles: MAPPER_ROLES,
+    relatedSlugs: ["mapping-queue", "approving-and-rejecting"],
+    content: `## Submitting for Approval
+
+Submitting a mapping moves it from \`draft\` into the approval workflow. This is a one-click action, but it triggers a cascade of automated checks and notifications.
+
+### What Happens When You Submit
+
+1. The assignment status changes from \`draft\` to \`pending_review\`
+2. SOD analysis runs automatically in the background
+3. If SOD clean → status becomes \`compliance_approved\`, appears in approver's queue
+4. If SOD conflicts found → status becomes \`sod_rejected\`, returns to your queue with conflict details
+5. The approver receives a notification (email + in-app) when their queue gains new items
+
+### Bulk vs. Individual Submit
+
+- **Individual submit** — use the Submit button on a single row. Best for reviewing each one before submission.
+- **Bulk submit** — select multiple rows and click **Submit Selected**. Best when you've reviewed a batch and are confident.
+
+### What the Approver Sees
+
+Approvers see your submission in **/approvals** grouped by user. They see:
+
+- The assignment(s) you submitted
+- The persona and target role with AI confidence score
+- Any SOD conflicts (with your resolution if you documented one)
+- Your mapper notes (if you wrote any)
+- The source role(s) that gave this user access historically
+
+### If the Approver Rejects
+
+A rejected assignment returns to your queue as \`remap_required\` with the approver's comments attached. Appears in the **Re-mapping** tab. Fix the issue and resubmit.
+
+### Sending Back Yourself
+
+You can also send a mapping back to draft yourself before an approver gets to it — useful if you realize a mistake after hitting submit. Use the **Send Back to Draft** action on the assignment detail panel.`,
+  },
+  {
+    slug: "approval-queue",
+    title: "The Approval Queue",
+    summary: "How the approval queue is organized and how to filter efficiently.",
+    category: "workflow",
+    roles: APPROVER_ROLES,
+    relatedSlugs: ["approving-and-rejecting", "reviewing-sod-conflicts"],
+    content: `## The Approval Queue
+
+Found at **/approvals**, the queue shows user assignments awaiting your decision. Assignments are grouped by user (not by role) so you can make a holistic decision about each person's access.
+
+### Queue Structure
+
+- **Pending** — users with at least one assignment awaiting approval
+- **Approved** — users whose assignments have all been approved (collapsible section at the bottom)
+- **Worst status first** — users with the most problematic statuses (SOD Rejected, high risk) appear at the top
+
+### Expanding a User
+
+Click a user row to expand their assignments. You'll see:
+
+- Each assignment (persona → target role) with status badge
+- AI confidence score and reasoning
+- Any SOD conflicts flagged for this user
+- Mapper notes explaining any overrides
+- Change impact (permissions gained vs. lost compared to source access)
+
+### Filters
+
+- **Release** — limit to a specific release wave
+- **Department** — filter by business unit or org unit
+- **Status** — focus on SOD-rejected or high-risk cases first
+
+### Approve All per User
+
+The **Approve All** button on a user row approves every pending assignment for that user at once. Use this when you've reviewed the user's full access and are confident.
+
+### Bulk Approve for Department
+
+On the Department filter view, **Approve All for Department** is available — a batch action for low-risk, high-volume approvals. Use carefully.`,
+  },
+  {
+    slug: "approving-and-rejecting",
+    title: "Approving and Rejecting",
+    summary: "How to approve or reject a mapping, and what feedback to provide on rejection.",
+    category: "workflow",
+    roles: APPROVER_ROLES,
+    relatedSlugs: ["approval-queue", "reviewing-sod-conflicts"],
+    content: `## Approving and Rejecting
+
+Your approval decision is the final gate before provisioning. Approve with confidence when the mapping is sound; reject with clear feedback when it isn't.
+
+### Approving
+
+Click **Approve** on an assignment to set its status to \`approved\`. This locks the assignment — mappers can no longer edit it without going through a re-mapping cycle.
+
+Approved assignments are ready for provisioning export.
+
+### Rejecting
+
+Click **Reject** on an assignment to return it to the mapper with \`remap_required\` status. The assignment appears in the mapper's **Re-mapping** tab.
+
+### What Feedback to Provide
+
+When you reject, always include a comment. Without a comment, the mapper has no idea what you want changed. Good rejection comments:
+
+- **Specific** — "This role grants write access to vendor master data — our policy requires read-only for AP clerks"
+- **Actionable** — "Replace with AP_VENDOR_READ instead of AP_VENDOR_EDIT"
+- **Contextual** — "See the SOX control AP-03 decision memo attached to this user's audit log"
+
+Bad rejection comments: "No", "Wrong role", "Reconsider"
+
+### When to Approve Despite a Concern
+
+Sometimes a mapping is imperfect but acceptable. Options:
+
+- **Approve with mitigating control documented** — on an SOD conflict, you can accept the risk with a documented control (owner, frequency, description). A green "Controlled" badge appears.
+- **Approve with note** — leave a note on the audit log for future auditors explaining your reasoning
+- **Approve now, flag for recertification** — approve for go-live, schedule a review in Access Governance for 90 days post-go-live`,
+  },
+  {
+    slug: "reviewing-sod-conflicts",
+    title: "Reviewing SOD Conflicts During Approval",
+    summary: "How to evaluate an SOD conflict in the context of an approval decision.",
+    category: "workflow",
+    roles: APPROVER_ROLES,
+    relatedSlugs: ["sod-conflict-resolution", "approving-and-rejecting"],
+    content: `## Reviewing SOD Conflicts During Approval
+
+An SOD (Segregation of Duties) conflict means a single user would have access that creates fraud risk — for example, the ability to both create a vendor and approve payments to that vendor. Your job as approver is to decide: resolve it, accept it with a mitigating control, or reject the mapping.
+
+### Conflict Severity
+
+- **Critical** — material fraud risk, almost always requires resolution
+- **High** — significant risk, requires resolution or strong mitigating control
+- **Medium** — moderate risk, acceptable with documented controls
+- **Low** — minor risk, often inherent in the role design
+
+### Three Paths Forward
+
+1. **Resolve** — the mapper removes one of the conflicting roles, eliminating the conflict. Best option when the user doesn't actually need both roles.
+2. **Accept with Mitigating Control** — document how the organization detects and prevents the fraud scenario. Required fields: control description, control owner, review frequency.
+3. **Reject the Mapping** — send back to the mapper with instructions. Use when neither resolve nor accept is appropriate.
+
+### Existing Access
+
+If the conflict is marked **Existing Access** (blue badge), the user already had this combination in the source system. This doesn't make it safe — but it does mean you're not creating new risk, just carrying forward an existing one. Document the decision to carry forward in the audit log.
+
+### What Auditors Look For
+
+When an auditor reviews your decisions, they want to see:
+
+- The conflict was identified before go-live
+- A clear decision (resolve / accept / reject)
+- If accepted, a documented mitigating control with an owner
+- Evidence the control is actually operating post-go-live
+
+This is all captured in the SOX Audit Evidence Package export.`,
+  },
+  {
+    slug: "coordinator-overview",
+    title: "Coordinator Responsibilities",
+    summary: "What the coordinator role manages and the key dashboards to monitor.",
+    category: "workflow",
+    roles: COORDINATOR_ROLES,
+    relatedSlugs: ["setting-due-dates", "sending-notifications"],
+    content: `## Coordinator Responsibilities
+
+Coordinators run the day-to-day operations of a role migration. You're the glue between the mappers, approvers, and the security architect — keeping work moving, surfacing blockers, and hitting deadlines.
+
+### What You Manage
+
+- **Release-level deadlines** — mapping, review, and approval cut-off dates
+- **Org unit scope assignments** — which mappers work on which business units
+- **Workflow health** — are mappers making progress? Are approvers responsive?
+- **Communications** — notifications to mappers and approvers when deadlines approach or blockers appear
+
+### Key Dashboards
+
+- **Dashboard** — the top-level view of project health. Shows coverage percentages, pending work by status, recent activity.
+- **Migration Health** (admin) — deeper KPI cards: persona coverage, mapping coverage, SOD resolution, approval rate. Overall health score.
+- **Release Readiness Checklist** — per-release 8-point checklist (scope, assignments, SOD, approvals, deadlines). Tells you at a glance if a release is on track.
+- **Activity Pulse** (admin) — last 24h / 7d activity counts, broken down by action type. Good for spotting drops in mapper throughput.
+
+### Your Typical Workflow
+
+1. Start the day on the Dashboard, scanning the strapline and coverage numbers
+2. Check Release Readiness for any release with upcoming deadlines
+3. If a release is behind, use **Send Reminders** to notify the responsible mappers or approvers
+4. Update deadlines if you've agreed extensions with the project manager
+5. Review any new SOD conflicts surfaced by the compliance officer`,
+  },
+  {
+    slug: "setting-due-dates",
+    title: "Setting Release Due Dates",
+    summary: "How to set and update release-level mapping, review, and approval deadlines.",
+    category: "workflow",
+    roles: COORDINATOR_ROLES,
+    relatedSlugs: ["coordinator-overview", "releases-and-waves"],
+    content: `## Setting Release Due Dates
+
+Each release has three deadline fields that drive the workflow and the reminder system:
+
+- **Mapping Deadline** — by when all user mappings must be submitted
+- **Review Deadline** — by when approvers must finish approving submitted mappings
+- **Approval Deadline** — the final cut-off before the release is considered closed
+
+### How to Set Them
+
+1. Go to **/releases**
+2. Click the release name to open the edit dialog
+3. Set Cutover Date and Go-Live Date (anchor dates)
+4. Set the three deadline fields
+5. Save
+
+### How the Deadlines Are Used
+
+- The **Release Readiness Checklist** uses the deadlines to compute on-track status
+- The **Dashboard strapline** mentions deadlines when they're approaching
+- The **notification system** sends automatic reminders at 7-day, 3-day, and 1-day marks
+- The **status slide export** includes the timeline for project reporting
+
+### Adjusting Deadlines
+
+If you need to extend a deadline, just edit the release — the change is audit-logged and downstream systems pick up the new date automatically. Consider sending a notification to affected mappers and approvers so they know the date moved.
+
+### Common Mistake
+
+Setting the approval deadline before allowing enough time for SOD analysis. Rule of thumb: at least 5 business days between the mapping deadline and the approval deadline to give the approver and compliance officer time to work through conflicts.`,
+  },
+  {
+    slug: "sending-notifications",
+    title: "Sending Notifications",
+    summary: "How to compose and send notifications to mappers and approvers.",
+    category: "workflow",
+    roles: COORDINATOR_ROLES,
+    relatedSlugs: ["coordinator-overview"],
+    content: `## Sending Notifications
+
+Notifications are how you communicate with mappers and approvers in-app and via email. Use them for deadline reminders, blocker escalations, and status updates.
+
+### Compose a Notification
+
+1. Go to **/notifications**
+2. Click **Send Notification**
+3. Select recipients (one or more users by role or individually)
+4. Choose a quick message template or write your own
+5. Send
+
+### Delivery
+
+Notifications are delivered two ways simultaneously:
+
+- **In-app** — appears in the recipient's inbox at /notifications, badge count on the sidebar
+- **Email** — sent via Resend from \`hello@provisum.io\` (fire-and-forget — if email fails, the in-app notification still arrives)
+
+### Quick Message Templates
+
+Pre-built templates cover common scenarios:
+
+- Deadline reminder (mapping / review / approval)
+- SOD conflict escalation
+- New assignment ready for your review
+- Release milestone update
+
+### Send Reminders (Automated)
+
+From the dashboard or release page, you can trigger a **Send Reminders** action that notifies all users with overdue work. This is bulk — use when a deadline is approaching and multiple users need nudging.
+
+### Good Notification Practice
+
+- Be specific about the action required
+- Include a link to the relevant page (the template does this automatically)
+- Don't over-notify — one escalation per blocker per day is plenty
+- Acknowledge the recipient's effort — "Thanks for wrapping up Wave 1, checking in on Wave 2" goes further than "Wave 2 is late"`,
+  },
+  {
+    slug: "permission-gap-analysis",
+    title: "Permission Gap Analysis",
+    summary: "What a permission gap is, the gap vs. overlap distinction, and what 'access continuity' means.",
+    category: "workflow",
+    roles: ALL_ROLES,
+    relatedSlugs: ["understanding-personas", "releases-and-waves"],
+    content: `## Permission Gap Analysis
+
+When a user moves from the source system to the target system, their access is likely to change. Gap analysis tells you how much.
+
+### Core Terms
+
+- **Overlap** — permissions the user had in the source system that they also have in the target system. This is *access continuity* — they can do the same things as before.
+- **Gap** — permissions the user had in the source system that they no longer have in the target system. This is *reduced access*.
+- **New Access** — permissions the user did NOT have in the source system that they now have in the target system. This is *expanded access*.
+
+### Why It Matters
+
+Gaps aren't automatically bad. Sometimes a gap is intentional (we're removing excessive access). Sometimes a gap is a problem (the user needs that permission to do their job). The gap view lets you see both cases at once.
+
+### How to Read the View
+
+Go to **/mapping** → **Gap Analysis** tab. For each user:
+
+- **Coverage %** — what percentage of their source permissions are carried forward in the target mapping
+- **Access Gaps** — specific permissions that aren't covered (with capability descriptions, not just permission IDs)
+- **Continued** — permissions explicitly carried forward
+
+### Confirm vs. Remap
+
+For each user, you have two actions:
+
+- **Confirm** — the gap is intentional. The user doesn't need that permission in the new system. This snapshot is saved for Cursus OCM integration (future).
+- **Remap** — the gap is a problem. Navigate to refinements with the user pre-selected and add the missing role or permissions.
+
+### Change Impact Grouping
+
+Confirmed users are grouped by change impact level — High / Medium / Low / None. This aligns with the Organizational Change Management workstream and flags users who will experience the most disruption.`,
+  },
+  {
+    slug: "releases-and-waves",
+    title: "Releases and Waves",
+    summary: "How releases structure a migration project and how org units are scoped within a release.",
+    category: "workflow",
+    roles: ALL_ROLES,
+    relatedSlugs: ["coordinator-overview", "setting-due-dates"],
+    content: `## Releases and Waves
+
+Most enterprise ERP migrations don't happen all at once. They're broken into waves — regional go-lives, business unit rollouts, phased plant cutovers. Provisum models this with **releases**.
+
+### What a Release Is
+
+A release represents one go-live event. It has:
+
+- A name (e.g., "Wave 1 — North America Finance")
+- A cutover date and go-live date
+- A scope: which users, source roles, target roles, and SOD rules are in scope
+- Deadline fields: mapping, review, approval
+- A status: Planning → In Progress → Approved → Deployed → Stabilizing → Completed
+
+### Org Unit Scoping
+
+Within a release, you can scope to specific org units. Only users in the scoped org units are part of that release. A user can appear in multiple releases (if they're in multiple org units being migrated at different times).
+
+### Source and Target System Typing
+
+Each release declares its source and target system types (SAP ECC, S/4HANA, Oracle EBS, etc.). This drives the AI pipeline's context — the same set of personas is mapped differently depending on the target system.
+
+### Working Across Releases
+
+- **Release Selector** (top of sidebar) — switch between releases to focus your view
+- **Release Comparison** (/releases/compare) — see two releases side-by-side
+- **Timeline View** (/releases/timeline) — Gantt-style view of all releases in the program
+
+### Programs
+
+Releases roll up to a **program** (e.g., "SAP S/4HANA Migration — Global"). Every release has a program. In standalone Provisum, programs are flat. In Cursus-embedded mode, programs roll up to portfolios.`,
+  },
+  {
+    slug: "uploading-target-roles",
+    title: "Uploading Target Roles",
+    summary: "File format requirements, supported columns, and validation rules for target role uploads.",
+    category: "admin",
+    roles: ADMIN_ROLES,
+    relatedSlugs: ["uploading-data", "running-the-ai-pipeline"],
+    content: `## Uploading Target Roles
+
+Target roles are the roles in your new (target) system — typically S/4HANA, Oracle Cloud, Workday, or similar. Provisum needs to know about them before mapping can begin.
+
+### Two Upload Paths
+
+1. **CSV Upload** — manual upload via **/data/upload** → Target Roles tab. Best for one-time loads or when you don't have API access to the target system.
+2. **Adapter Pull** — automated pull via the target system adapter. Available for SAP S/4HANA (mock) today; real adapters ship when customers need them. See **/admin/security-design**.
+
+### CSV Format
+
+Required columns (case-insensitive):
+
+- \`role_name\` — unique role identifier in the target system
+- \`role_description\` — human-readable description
+- \`business_function\` — finance, operations, HR, etc. (free text, used by AI)
+- \`permissions\` — comma-separated list of permission codes
+
+Optional columns:
+
+- \`department\` — owning department
+- \`parent_role\` — for role hierarchy
+- \`risk_level\` — high/medium/low classification
+- \`sod_sensitive\` — boolean flag
+
+### Validation
+
+On upload, Provisum validates:
+
+- All required columns present
+- No duplicate role names
+- Permissions reference known permission codes (if target permissions were uploaded first)
+- Role names match the target system's naming convention (if system type is set)
+
+Validation errors appear inline with row-level detail. Fix the CSV and re-upload.
+
+### After Upload
+
+New target roles default to status **draft**. A security_architect or admin must approve them (status → **active**) before they appear in the mapper's role selector. This gates who can introduce new roles into the mapping workflow.
+
+### Downloading a Template
+
+The upload page has a **Download Template** button that generates a blank CSV with the correct column headers and a few sample rows.`,
+  },
+  {
+    slug: "running-the-ai-pipeline",
+    title: "Running the AI Pipeline",
+    summary: "The four AI jobs in order, when to run each, and how to check status.",
+    category: "admin",
+    roles: ADMIN_ROLES,
+    relatedSlugs: ["understanding-personas", "uploading-data"],
+    content: `## Running the AI Pipeline
+
+The AI pipeline is a sequence of four jobs that turns raw source data into mapped, SOD-analyzed role assignments.
+
+### The Four Jobs (in order)
+
+1. **Persona Generation** — Claude analyzes source users and their access patterns, proposes security personas
+2. **User-Persona Assignment** — programmatic permission-overlap matching assigns each source user to the best-fit persona
+3. **Target Role Mapping** — Claude matches each persona to target roles, weighted by business function and permission coverage
+4. **SOD Analysis** — evaluates every proposed assignment against the SOD rulebook, flagging conflicts
+
+### Where to Run Them
+
+- **/admin** → pipeline jobs — one-click triggers for each stage
+- **Lumen chat** — ask Lumen to trigger a job (e.g., "run SOD analysis for the finance wave")
+- **API** — \`POST /api/ai/persona-generation\`, \`POST /api/ai/auto-map\`, etc. (programmatic, used by integration tests)
+
+### Order Matters
+
+The jobs have dependencies. Running them out of order gives bad results:
+
+- Persona Generation must complete before User-Persona Assignment
+- Target Role Mapping requires personas to exist AND target roles to be uploaded + active
+- SOD Analysis requires assignments to exist
+
+### How to Check Status
+
+- **Processing Jobs** table on /admin — live status (pending, running, succeeded, failed)
+- **Job detail page** — per-job logs, error messages, retry button
+- **Notifications** — you'll get an in-app notification when a job completes or fails
+
+### When Jobs Fail
+
+The \`job-runner\` wraps each pipeline task with retry (3 attempts, exponential backoff). If all retries fail, the job goes to a dead-letter state and triggers an incident in \`/admin/incidents\` with AI triage.
+
+### Re-Running
+
+It's safe to re-run any pipeline job. The output is idempotent — existing rows are updated, not duplicated. But re-running Persona Generation will overwrite existing persona assignments, so confirm with your mappers before triggering it mid-project.`,
+  },
+  {
+    slug: "exporting-data",
+    title: "Exporting Data",
+    summary: "What the Excel exports contain and how to use them for downstream provisioning.",
+    category: "admin",
+    roles: ADMIN_ROLES,
+    relatedSlugs: ["submitting-for-approval"],
+    content: `## Exporting Data
+
+Provisum produces several exports for downstream consumers: provisioning teams, auditors, program managers, and integrations with other tools.
+
+### Export Types
+
+| Export | Location | Consumer |
+|--------|----------|----------|
+| **Provisioning Export (Excel)** | /exports | Provisioning team (SAP GRC, SailPoint, manual) |
+| **Status Slide (PowerPoint)** | /exports | Program manager |
+| **Security Design (Excel, 3-tab)** | /exports | Security architect |
+| **SOX/ITGC Audit Evidence Package (Excel, 6-tab)** | /admin/evidence-package | SOX auditor |
+| **Scheduled Exports** | /admin/scheduled-exports | Recurring distribution (daily/weekly/monthly) |
+
+### Provisioning Export
+
+The main Excel export contains approved assignments ready to be loaded into the target system's provisioning engine. Columns include:
+
+- User ID, name, email
+- Target roles (one row per role, or pivoted)
+- Effective date (tied to release go-live)
+- Approval audit info (approver, timestamp)
+
+Format adapters are available for SAP GRC, ServiceNow, and SailPoint. The adapter reshapes the Excel into each tool's expected layout.
+
+### SOX Audit Evidence Package
+
+A 6-tab Excel designed to satisfy SOX 404 and SOC 2 CC6 audit requirements:
+
+1. Cover Sheet — project metadata, export timestamp
+2. Control Summary — mapped to SOX 404 and SOC 2 CC6 control objectives
+3. User Access Matrix — user × role pivot
+4. Persona Assignments — user → persona → roles chain
+5. SOD Conflicts — all conflicts with resolution status and mitigating controls
+6. Approval Audit Trail — every approval/rejection with timestamp and approver
+
+### Scheduled Exports
+
+For recurring distribution — daily, weekly, or monthly. Configured in /admin/scheduled-exports. Runs via Vercel cron and emails the export to configured recipients.
+
+### Access Control
+
+Exports are scoped and audit-logged. Mappers can only export their scope; admins can export everything. Every export creates an audit log entry with the user, timestamp, export type, and row count.`,
+  },
 ];
 
 export function getArticleBySlug(slug: string): HelpArticle | undefined {
