@@ -2,7 +2,7 @@
 
 This document outlines planned features and improvements. Sprint 2 is the active build queue. Items below it are prioritised but not yet scheduled.
 
-*Last updated: April 11, 2026 — v1.4.1*
+*Last updated: April 20, 2026 — v1.5.0*
 
 ---
 

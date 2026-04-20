@@ -4,6 +4,45 @@ All notable feature additions and changes are documented here. Most recent first
 
 ---
 
+## [1.5.0] — 2026-04-20 — Knowledge Base Phase 2
+
+### Articles
+- **Expanded KB from 13 → 28 articles** (15 new) covering:
+  - Mapper Workflow (4): `mapping-queue`, `bulk-mapping`, `overriding-ai-suggestions`, `submitting-for-approval`
+  - Approver Workflow (3): `approval-queue`, `approving-and-rejecting`, `reviewing-sod-conflicts`
+  - Coordinator Workflow (3): `coordinator-overview`, `setting-due-dates`, `sending-notifications`
+  - Core Concepts (2): `permission-gap-analysis`, `releases-and-waves`
+  - Admin Reference (3): `uploading-target-roles`, `running-the-ai-pipeline`, `exporting-data`
+- All articles are role-gated and have related-slug cross-links
+- Implementation remains TypeScript source (not MDX) — MDX migration deferred until >30 articles
+
+### Contextual Help Links
+- **New reusable `HelpTooltip` component** at `components/ui/help-tooltip.tsx`
+- Wired `?` link on `/calibration` page → `ai-confidence-scores` article
+- Wired `?` link on `/sod` page → `sod-conflict-resolution` article
+- Opens in new tab, preserves workflow context, accessible via keyboard
+
+### Article Feedback
+- **New `ArticleFeedback` component** at `app/help/[slug]/article-feedback.tsx`
+- "Was this helpful?" thumbs up/down at the bottom of every article
+- localStorage-backed (MVP) — prevents double-submit per browser
+- No DB persistence at MVP; deferred to future analytics phase
+
+### Spec & PRDs
+- **New PRD:** `docs/product/PRD_InApp_KnowledgeBase_Phase2.md`
+- **Refreshed all 5 LATER module PRDs** with v1.4.1 validation stamps:
+  - `PRD_Target_System_Design.md`
+  - `PRD_Provisioning_Integration.md`
+  - `PRD_Access_Governance.md`
+  - `PRD_Change_Management_Analytics.md`
+  - `PRD_Cross_System_Role_Fabric.md`
+
+### Tests
+- **100 unit tests passing** (up from 92, +8 Phase 2 coverage tests)
+- Validates all 15 new slugs present, role filtering correct, admin-only articles hidden from non-admin roles
+
+---
+
 ## [1.4.1] — 2026-04-11 — Security Hardening + Structured Logging + QA Refresh
 
 ### Security
