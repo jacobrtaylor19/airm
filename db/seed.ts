@@ -84,6 +84,15 @@ async function runSeed(db: ReturnType<typeof drizzle>, readCsvFn: <T>(f: string)
   }).onConflictDoNothing();
   console.log("  ✓ Default organization");
 
+  // ─── Ensure reserved system organization exists (id=0) ───
+  // Used as the tenant for platform-level incidents. See lib/incidents/detection.ts (SYSTEM_ORG_ID).
+  await db.execute(sql`
+    INSERT INTO public.organizations (id, name, slug, is_active, created_at, updated_at)
+    VALUES (0, '__system__', 'system', true, now()::text, now()::text)
+    ON CONFLICT (id) DO NOTHING
+  `);
+  console.log("  ✓ System organization (id=0)");
+
   // ─── Clear all data tables via TRUNCATE CASCADE ───
   // Using raw SQL TRUNCATE ... CASCADE avoids FK ordering issues entirely.
   // We preserve `organizations` and `demo_leads` (not part of seed data).
