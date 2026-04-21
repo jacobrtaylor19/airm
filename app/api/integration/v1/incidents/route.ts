@@ -13,7 +13,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and, gt, desc, sql } from "drizzle-orm";
+import { eq, and, gt, sql } from "drizzle-orm";
 import { validateApiKey } from "@/lib/integration-auth";
 import { reportError } from "@/lib/monitoring";
 import { scrubNullableString, scrubJson } from "@/lib/integration/pii-scrub";
@@ -146,12 +146,15 @@ export async function GET(request: Request) {
     const page = hasMore ? rows.slice(0, limit) : rows;
 
     const incidents: IncidentResponseRow[] = page.map((r) => {
-      // Scrub free-text fields and metadata JSON
+      // Scrub free-text fields, metadata JSON, and AI-generated text. The AI
+      // prompt sees the full incident description, so its rootCause /
+      // suggestedFix can paraphrase user-supplied PII back out.
       const desc = scrubNullableString(r.description);
       const res = scrubNullableString(r.resolution);
       const meta = scrubJson(safeParseJson(r.metadata));
+      const ai = scrubJson(safeParseJson<AiClassification>(r.aiClassification));
 
-      const containsPii = desc.hadMatch || res.hadMatch || meta.hadMatch;
+      const containsPii = desc.hadMatch || res.hadMatch || meta.hadMatch || ai.hadMatch;
 
       return {
         id: r.id,
@@ -161,7 +164,7 @@ export async function GET(request: Request) {
         status: r.status,
         source: r.source,
         sourceRef: r.sourceRef,
-        aiClassification: safeParseJson<AiClassification>(r.aiClassification),
+        aiClassification: ai.value as AiClassification | null,
         aiTriagedAt: r.aiTriagedAt,
         resolution: res.value,
         resolvedBy: r.resolvedBy,
@@ -180,6 +183,23 @@ export async function GET(request: Request) {
     // nextSince = the last row's updatedAt, so the consumer can resume from there.
     // If empty, echo back the same `since` they sent.
     const nextSince = incidents.length > 0 ? incidents[incidents.length - 1].updatedAt : since;
+
+    // SOC 2 / CC6.1 — record every external read so an auditor can answer
+    // "who pulled what when". Awaited so audit failures fail the request.
+    await db.insert(schema.auditLog).values({
+      organizationId: orgFilter ?? SYSTEM_ORG_ID,
+      entityType: "integration",
+      entityId: 0,
+      action: "incidents.read",
+      newValue: JSON.stringify({
+        since,
+        limit,
+        organizationId: orgFilter,
+        returned: incidents.length,
+        hasMore,
+      }),
+      actorEmail: "mgmt-suite@integration",
+    });
 
     return NextResponse.json({
       incidents,

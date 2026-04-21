@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { reportError } from "@/lib/monitoring";
 import { getOrgId } from "@/lib/org-context";
+import { SYSTEM_ORG_ID } from "@/lib/incidents/detection";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export async function GET(
       .where(
         and(
           eq(schema.incidents.id, id),
-          eq(schema.incidents.organizationId, orgId),
+          inArray(schema.incidents.organizationId, [orgId, SYSTEM_ORG_ID]),
         ),
       );
 
@@ -113,7 +114,7 @@ export async function PATCH(
       .where(
         and(
           eq(schema.incidents.id, id),
-          eq(schema.incidents.organizationId, orgId),
+          inArray(schema.incidents.organizationId, [orgId, SYSTEM_ORG_ID]),
         ),
       );
 
