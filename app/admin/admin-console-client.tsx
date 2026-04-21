@@ -33,6 +33,7 @@ import {
   CalendarClock,
   Mail,
   Shield,
+  Landmark,
 } from "lucide-react";
 import { SsoTab } from "./sso-tab";
 
@@ -48,6 +49,7 @@ import { FeatureFlagsSection } from "./feature-flags-section";
 import { WebhooksSection } from "./webhooks-section";
 import { ScheduledExportsSection } from "./scheduled-exports-section";
 import { EmailSettingsSection } from "./email-settings-section";
+import { OrgsSection } from "./orgs-section";
 
 // -----------------------------------------------
 // Types
@@ -342,6 +344,10 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
             <Shield className="h-4 w-4" />
             SSO
           </TabsTrigger>
+          <TabsTrigger value="orgs" className="flex items-center gap-1.5">
+            <Landmark className="h-4 w-4" />
+            Organizations
+          </TabsTrigger>
         </TabsList>
 
         {/* -- ORG HIERARCHY TAB -- */}
@@ -429,6 +435,11 @@ export function AdminConsoleClient({ currentUser }: { currentUser: string }) {
 
         <TabsContent value="sso" className="mt-4">
           <SsoTab />
+        </TabsContent>
+
+        {/* -- ORGANIZATIONS TAB -- */}
+        <TabsContent value="orgs" className="mt-4">
+          <OrgsSection />
         </TabsContent>
       </Tabs>
 
