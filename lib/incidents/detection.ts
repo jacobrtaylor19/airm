@@ -32,17 +32,15 @@ interface DetectIncidentParams {
  * Create an incident after deduplication checks.
  * Returns the incident ID (existing or new).
  */
+// Reserved organization id for platform-level incidents that have no real
+// tenant context (health checks, job-runner failures, webhook failures).
+// Backed by the `__system__` row inserted via migration
+// add_system_org_for_platform_incidents.
+export const SYSTEM_ORG_ID = 0;
+
 export async function detectIncident(params: DetectIncidentParams): Promise<number> {
   try {
-    // Resolve org ID — fall back to first org if not provided
-    let orgId = params.organizationId;
-    if (!orgId) {
-      const [org] = await db
-        .select({ id: schema.organizations.id })
-        .from(schema.organizations)
-        .limit(1);
-      orgId = org?.id ?? 1;
-    }
+    const orgId = params.organizationId ?? SYSTEM_ORG_ID;
 
     // --- Dedup check ---
     // 1. Same source + sourceRef (exact match)

@@ -52,6 +52,10 @@ This document maps all implemented security controls to SOC 2 Trust Service Crit
 | Role-based access | 7 roles with hierarchical permissions | `lib/auth.ts` |
 | Session management | httpOnly, secure, sameSite cookies | Login route, middleware |
 | Admin-only routes | system_admin required for settings, user management, GDPR | Admin API routes |
+| Integration auth | Bearer-token (`PROVISUM_API_KEY`) with constant-time compare on `/api/integration/*` | `lib/integration-auth.ts` |
+| Webhook auth | HMAC-SHA256 signature verification on inbound webhooks | `app/api/webhooks/sentry/route.ts` |
+| Integration read auditing | Every external read of `/api/integration/v1/incidents` writes an `audit_log` row (entityType=`integration`, action=`incidents.read`) | `app/api/integration/v1/incidents/route.ts` |
+| Secret rotation | 90/180/365-day cadences per secret type, tracked via Vercel + 1Password | `docs/security/SECRETS_ROTATION.md` |
 
 ### CC7 — System Operations
 

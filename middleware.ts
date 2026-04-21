@@ -4,8 +4,11 @@ import { createServerClient } from "@supabase/ssr";
 // Exact-match public pages (no prefix matching — prevents accidental exposure)
 const PUBLIC_EXACT = new Set(["/", "/login", "/setup", "/methodology", "/overview", "/quick-reference", "/accept-terms"]);
 
-// Prefix-match public API routes and paths with known sub-routes
-const PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/api/cron/", "/review/", "/api/admin/users/invite/accept", "/api/demo/", "/api/integration/"];
+// Prefix-match public API routes and paths with known sub-routes.
+// SECURITY NOTE: webhook receivers are listed individually, NOT as a
+// "/api/webhooks/" wildcard. Every new webhook route MUST be added here
+// explicitly AND must verify its inbound signature inside the route handler.
+const PUBLIC_PREFIXES = ["/api/auth/", "/api/health", "/api/cron/", "/review/", "/api/admin/users/invite/accept", "/api/demo/", "/api/integration/", "/api/webhooks/sentry"];
 
 export async function middleware(request: NextRequest) {
   try {

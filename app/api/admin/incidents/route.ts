@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte, desc, inArray } from "drizzle-orm";
 import { reportError } from "@/lib/monitoring";
 import { getOrgId } from "@/lib/org-context";
-import { detectIncident } from "@/lib/incidents/detection";
+import { detectIncident, SYSTEM_ORG_ID } from "@/lib/incidents/detection";
 import { parseBody } from "@/lib/api-validation";
 import { incidentCreateSchema } from "@/lib/validation/admin";
 
@@ -29,7 +29,9 @@ export async function GET(req: NextRequest) {
     const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "50", 10), 200);
 
     const orgId = getOrgId(user);
-    const conditions = [eq(schema.incidents.organizationId, orgId)];
+    // Admins see incidents from their own org AND from the reserved system org
+    // (id=0), where platform-level alarms (health/jobs/webhooks) are filed.
+    const conditions = [inArray(schema.incidents.organizationId, [orgId, SYSTEM_ORG_ID])];
 
     if (status) conditions.push(eq(schema.incidents.status, status));
     if (severity) conditions.push(eq(schema.incidents.severity, severity));
